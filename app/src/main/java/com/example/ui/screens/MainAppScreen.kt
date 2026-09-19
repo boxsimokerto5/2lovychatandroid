@@ -132,15 +132,32 @@ fun MainAppScreen(
         is CurrentScreen.ChatDetail -> {
             val messages = uiState.messagesMap[screen.conversationId] ?: emptyList()
             val conv = uiState.conversations.find { it.id == screen.conversationId }
+            val partnerUser = uiState.nearbyUsers.find {
+                it.name.equals(screen.partnerName, ignoreCase = true) || it.id == conv?.partnerId
+            }
             ChatDetailScreen(
                 conversationId = screen.conversationId,
                 partnerName = screen.partnerName,
                 partnerAvatarHex = screen.partnerAvatarHex,
                 partnerAvatarUrl = conv?.partnerAvatarUrl,
+                partnerBio = partnerUser?.bio ?: "Senang berteman dan mencari cerita seru di Lovy Chat ✨",
+                partnerCity = partnerUser?.city ?: "Jakarta Selatan",
+                partnerDistance = partnerUser?.formattedDistance ?: "500m",
+                partnerGender = partnerUser?.gender ?: conv?.partnerGender ?: com.example.model.Gender.FEMALE,
+                partnerAge = partnerUser?.age ?: 22,
                 messages = messages,
                 onBack = { viewModel.navigateBack() },
                 onSendMessage = { text ->
                     viewModel.sendMessage(screen.conversationId, text, screen.partnerName)
+                }
+            )
+        }
+        is CurrentScreen.UserProfile -> {
+            UserProfileScreen(
+                userProfile = uiState.userProfile,
+                onBack = { viewModel.navigateBack() },
+                onSaveProfile = { profile ->
+                    viewModel.saveUserProfile(profile)
                 }
             )
         }
@@ -199,11 +216,15 @@ fun MainAppScreen(
                             myName = uiState.myName,
                             myBio = uiState.myBio,
                             myLovyId = uiState.myLovyId,
+                            profilePicture = uiState.userProfile.profilePicture,
                             isSupabaseConnected = uiState.isSupabaseConnected,
                             language = uiState.language,
                             detectedGeoArea = uiState.detectedGeoArea,
                             isLocalMode = uiState.isLocalLanguageMode,
                             onLanguageChange = { viewModel.setLanguage(it) },
+                            onNavigateToUserProfile = {
+                                viewModel.navigateTo(CurrentScreen.UserProfile)
+                            },
                             onNavigateToBottle = {
                                 viewModel.navigateTo(CurrentScreen.Bottle)
                             },

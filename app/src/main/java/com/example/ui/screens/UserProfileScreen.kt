@@ -1,0 +1,655 @@
+package com.example.ui.screens
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.FormatQuote
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Wc
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import com.example.model.UserProfile
+import com.example.ui.theme.EmeraldGreen
+import com.example.ui.theme.LovyChatTheme
+import com.example.ui.theme.NeutralBorder
+import com.example.ui.theme.NeutralDark
+import com.example.ui.theme.NeutralLight
+import com.example.ui.theme.NeutralMedium
+import com.example.ui.theme.ScreenBackground
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun UserProfileScreen(
+    userProfile: UserProfile,
+    onBack: () -> Unit,
+    onSaveProfile: (UserProfile) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var showEditDialog by remember { mutableStateOf(false) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Detail Profil Pengguna",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                },
+                navigationIcon = {
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier.testTag("btn_back_user_profile")
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Kembali",
+                            tint = Color.White
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = { showEditDialog = true },
+                        modifier = Modifier.testTag("btn_edit_profile_top")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit Profil",
+                            tint = Color.White
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = EmeraldGreen
+                )
+            )
+        },
+        modifier = modifier.fillMaxSize()
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(ScreenBackground)
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Header Card with Avatar, Display Name, and Lovy ID
+            Card(
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("card_profile_header")
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp, horizontal = 16.dp)
+                ) {
+                    // Profile Picture with circular styling & online badge
+                    Box(
+                        contentAlignment = Alignment.BottomEnd,
+                        modifier = Modifier
+                            .size(104.dp)
+                            .testTag("profile_picture_container")
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(104.dp)
+                                .clip(CircleShape)
+                                .border(3.dp, EmeraldGreen, CircleShape)
+                                .background(
+                                    Brush.linearGradient(
+                                        listOf(EmeraldGreen, Color(0xFF00796B))
+                                    )
+                                )
+                        ) {
+                            if (!userProfile.profilePicture.isNullOrBlank()) {
+                                AsyncImage(
+                                    model = userProfile.profilePicture,
+                                    contentDescription = "Foto Profil ${userProfile.displayName}",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(CircleShape)
+                                )
+                            } else {
+                                Text(
+                                    text = userProfile.displayName.take(1).uppercase(),
+                                    color = Color.White,
+                                    fontSize = 42.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+
+                        // Edit overlay circle button
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(EmeraldGreen)
+                                .border(2.dp, Color.White, CircleShape)
+                                .clickable { showEditDialog = true }
+                                .testTag("btn_avatar_edit")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Ubah Foto",
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Display Name
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = userProfile.displayName,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = NeutralDark,
+                            modifier = Modifier.testTag("text_display_name")
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Terverifikasi",
+                            tint = EmeraldGreen,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Lovy ID Tag
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = NeutralLight,
+                        modifier = Modifier.padding(top = 2.dp)
+                    ) {
+                        Text(
+                            text = "ID: ${userProfile.lovyId}",
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = NeutralMedium,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Bio Section Card
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("card_profile_bio")
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FormatQuote,
+                            contentDescription = null,
+                            tint = EmeraldGreen,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Tentang Saya (Bio)",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = NeutralDark
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = userProfile.bio.ifBlank { "Belum ada bio yang ditulis. Ketuk tombol edit untuk menambahkan bio." },
+                        fontSize = 14.sp,
+                        lineHeight = 20.sp,
+                        fontStyle = if (userProfile.bio.isBlank()) FontStyle.Italic else FontStyle.Normal,
+                        color = if (userProfile.bio.isBlank()) NeutralMedium else NeutralDark,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("text_profile_bio")
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // User Details Information Card
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("card_profile_details")
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "Informasi Akun",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = NeutralDark,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+
+                    ProfileDetailRow(
+                        icon = Icons.Default.LocationOn,
+                        label = "Kota / Domisili",
+                        value = userProfile.city
+                    )
+
+                    HorizontalDivider(color = NeutralBorder, thickness = 0.6.dp, modifier = Modifier.padding(vertical = 8.dp))
+
+                    ProfileDetailRow(
+                        icon = Icons.Default.Wc,
+                        label = "Jenis Kelamin & Usia",
+                        value = "${userProfile.gender} • ${userProfile.age} tahun"
+                    )
+
+                    HorizontalDivider(color = NeutralBorder, thickness = 0.6.dp, modifier = Modifier.padding(vertical = 8.dp))
+
+                    ProfileDetailRow(
+                        icon = Icons.Default.Email,
+                        label = "Email Akun",
+                        value = userProfile.email ?: "Belum terhubung"
+                    )
+
+                    HorizontalDivider(color = NeutralBorder, thickness = 0.6.dp, modifier = Modifier.padding(vertical = 8.dp))
+
+                    ProfileDetailRow(
+                        icon = Icons.Default.Badge,
+                        label = "Lovy ID Unik",
+                        value = userProfile.lovyId
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Room Database Local Storage Indicator Card
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFFE8F5E9)
+                ),
+                border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldGreen.copy(alpha = 0.3f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("card_room_database_status")
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(EmeraldGreen.copy(alpha = 0.15f))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Storage,
+                            contentDescription = "Room Storage",
+                            tint = EmeraldGreen,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(14.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Room Local Database",
+                            fontSize = 14.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1B5E20)
+                        )
+                        Text(
+                            text = "Tersimpan secara lokal di tabel user_profiles (SQLite Room) dengan Flow reaktif.",
+                            fontSize = 11.5.sp,
+                            color = Color(0xFF2E7D32),
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Primary Action: Edit Profile Button
+            Button(
+                onClick = { showEditDialog = true },
+                colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .testTag("btn_edit_profile_action")
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Edit Detail Profil",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+
+    // Edit Profile Dialog
+    if (showEditDialog) {
+        EditProfileDialog(
+            currentProfile = userProfile,
+            onDismiss = { showEditDialog = false },
+            onSave = { updatedProfile ->
+                onSaveProfile(updatedProfile)
+                showEditDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+private fun ProfileDetailRow(
+    icon: ImageVector,
+    label: String,
+    value: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = EmeraldGreen,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                fontSize = 11.5.sp,
+                color = NeutralMedium
+            )
+            Text(
+                text = value,
+                fontSize = 13.5.sp,
+                fontWeight = FontWeight.Medium,
+                color = NeutralDark
+            )
+        }
+    }
+}
+
+@Composable
+fun EditProfileDialog(
+    currentProfile: UserProfile,
+    onDismiss: () -> Unit,
+    onSave: (UserProfile) -> Unit
+) {
+    var displayName by remember { mutableStateOf(currentProfile.displayName) }
+    var bio by remember { mutableStateOf(currentProfile.bio) }
+    var profilePictureUrl by remember { mutableStateOf(currentProfile.profilePicture ?: "") }
+    var city by remember { mutableStateOf(currentProfile.city) }
+
+    // Preset Avatar Options for quick testing
+    val presetAvatars = listOf(
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" to "Wanita 1",
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150" to "Pria 1",
+        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150" to "Wanita 2",
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150" to "Pria 2"
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = null,
+                    tint = EmeraldGreen
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Edit Profil (Room DB)",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = NeutralDark
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedTextField(
+                    value = displayName,
+                    onValueChange = { displayName = it },
+                    label = { Text("Nama Tampilan (Display Name)") },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("input_edit_display_name")
+                )
+
+                OutlinedTextField(
+                    value = bio,
+                    onValueChange = { bio = it },
+                    label = { Text("Bio / Status Singkat") },
+                    maxLines = 3,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("input_edit_bio")
+                )
+
+                OutlinedTextField(
+                    value = profilePictureUrl,
+                    onValueChange = { profilePictureUrl = it },
+                    label = { Text("URL Foto Profil (Opsional)") },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("input_edit_avatar_url")
+                )
+
+                // Quick preset avatar buttons
+                Text(
+                    text = "Pilih Contoh Foto Profil Cepat:",
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = NeutralMedium
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    presetAvatars.forEach { (url, label) ->
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (profilePictureUrl == url) EmeraldGreen.copy(alpha = 0.15f) else NeutralLight,
+                            border = if (profilePictureUrl == url) androidx.compose.foundation.BorderStroke(1.dp, EmeraldGreen) else null,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { profilePictureUrl = url }
+                        ) {
+                            Text(
+                                text = label,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = if (profilePictureUrl == url) EmeraldGreen else NeutralDark,
+                                modifier = Modifier.padding(vertical = 6.dp, horizontal = 4.dp),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    }
+                }
+
+                OutlinedTextField(
+                    value = city,
+                    onValueChange = { city = it },
+                    label = { Text("Kota / Lokasi") },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("input_edit_city")
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val updated = currentProfile.copy(
+                        displayName = displayName.trim().ifBlank { currentProfile.displayName },
+                        bio = bio.trim(),
+                        profilePicture = profilePictureUrl.trim().ifBlank { null },
+                        city = city.trim().ifBlank { currentProfile.city },
+                        updatedAt = System.currentTimeMillis()
+                    )
+                    onSave(updated)
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
+                modifier = Modifier.testTag("btn_save_edit_profile")
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Save,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Simpan ke Room")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.testTag("btn_cancel_edit_profile")
+            ) {
+                Text("Batal", color = NeutralMedium)
+            }
+        }
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun UserProfileScreenPreview() {
+    LovyChatTheme {
+        UserProfileScreen(
+            userProfile = UserProfile(
+                displayName = "Aisyah Putri",
+                bio = "Suka fotografi langit senja dan menjelajahi tempat baru bersama Lovy Chat ✨",
+                lovyId = "lovy_778129",
+                city = "Bandung, Jawa Barat",
+                profilePicture = null
+            ),
+            onBack = {},
+            onSaveProfile = {}
+        )
+    }
+}

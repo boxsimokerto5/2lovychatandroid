@@ -4,6 +4,8 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.MockDataSource
+import com.example.data.local.AppDatabase
+import com.example.data.local.UserProfileRepository
 import com.example.data.supabase.SupabaseClient
 import com.example.data.supabase.SupabaseRepository
 import com.example.model.BottleMessage
@@ -12,6 +14,7 @@ import com.example.model.ChatMessage
 import com.example.model.Gender
 import com.example.model.MomentItem
 import com.example.model.User
+import com.example.model.UserProfile
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,6 +31,7 @@ sealed interface CurrentScreen {
     object Bottle : CurrentScreen
     object Moments : CurrentScreen
     object SupabaseConfig : CurrentScreen
+    object UserProfile : CurrentScreen
     data class ChatDetail(val conversationId: String, val partnerName: String, val partnerAvatarHex: Long) : CurrentScreen
 }
 
@@ -35,7 +39,9 @@ data class LovyChatUiState(
     val currentTab: Int = 2, // Default to Temukan (matching the screenshot)
     val currentScreen: CurrentScreen = CurrentScreen.Splash,
     val isLoggedIn: Boolean = false,
+    val userProfile: UserProfile = UserProfile(),
     val nearbyUsers: List<User> = MockDataSource.initialNearbyUsers,
+
     val nearbyGenderFilter: Gender? = null,
     val isScanningNearby: Boolean = false,
     val conversations: List<ChatConversation> = MockDataSource.initialConversations,
@@ -70,6 +76,11 @@ data class LovyChatUiState(
 
 class LovyChatViewModel(application: Application) : AndroidViewModel(application) {
     private val supabaseRepo = SupabaseRepository()
+    private val userProfileRepo by lazy {
+        val app = getApplication<Application>()
+        val db = AppDatabase.getInstance(app)
+        UserProfileRepository(db.userProfileDao())
+    }
     private val _uiState = MutableStateFlow(LovyChatUiState())
     val uiState: StateFlow<LovyChatUiState> = _uiState.asStateFlow()
 
@@ -81,8 +92,59 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
         refreshSupabaseState()
         detectAndApplyGeoLanguage()
+        observeUserProfile()
         // Coba sinkronisasi data awal jika Supabase sudah terkonfigurasi
         syncFromSupabase()
+    }
+
+    private fun observeUserProfile() {
+        viewModelScope.launch {
+            try {
+                userProfileRepo.currentProfile.collect { profile ->
+                    if (profile != null) {
+                        _uiState.update {
+                            it.copy(
+                                userProfile = profile,
+                                myName = profile.displayName,
+                                myBio = profile.bio,
+                                myLovyId = profile.lovyId
+                            )
+                        }
+                    } else {
+                        // Seed initial profile in Room database
+                        val initialProfile = UserProfile(
+                            id = "current_user",
+                            displayName = _uiState.value.myName,
+                            bio = _uiState.value.myBio,
+                            lovyId = _uiState.value.myLovyId,
+                            city = "Jakarta Selatan"
+                        )
+                        userProfileRepo.saveProfile(initialProfile)
+                    }
+                }
+            } catch (e: Throwable) {
+                android.util.Log.w("LovyChatViewModel", "Error observing Room UserProfile: ${e.message}")
+            }
+        }
+    }
+
+    fun saveUserProfile(profile: UserProfile) {
+        recordFeatureClick()
+        _uiState.update {
+            it.copy(
+                userProfile = profile,
+                myName = profile.displayName,
+                myBio = profile.bio,
+                myLovyId = profile.lovyId
+            )
+        }
+        viewModelScope.launch {
+            try {
+                userProfileRepo.saveProfile(profile)
+            } catch (e: Throwable) {
+                android.util.Log.e("LovyChatViewModel", "Error saving UserProfile to Room: ${e.message}")
+            }
+        }
     }
 
     private fun detectAndApplyGeoLanguage() {

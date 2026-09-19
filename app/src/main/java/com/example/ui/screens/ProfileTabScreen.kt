@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Check
@@ -47,10 +48,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.ui.theme.EmeraldGreen
 import com.example.ui.theme.NeutralBorder
 import com.example.ui.theme.NeutralDark
@@ -63,10 +66,12 @@ fun ProfileTabScreen(
     myBio: String,
     myLovyId: String,
     isSupabaseConnected: Boolean,
+    profilePicture: String? = null,
     language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     detectedGeoArea: String = "ID/MY",
     isLocalMode: Boolean = true,
     onLanguageChange: (com.example.util.AppLanguage) -> Unit = {},
+    onNavigateToUserProfile: () -> Unit = {},
     onNavigateToBottle: () -> Unit,
     onNavigateToMoments: () -> Unit,
     onNavigateToSupabaseConfig: () -> Unit,
@@ -80,12 +85,14 @@ fun ProfileTabScreen(
             .background(ScreenBackground)
             .verticalScroll(rememberScrollState())
     ) {
-        // Top Profile Card with Emerald Background
+        // Top Profile Card with Emerald Background (Clickable to open UserProfileScreen)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(EmeraldGreen)
+                .clickable { onNavigateToUserProfile() }
                 .padding(top = 32.dp, bottom = 24.dp, start = 20.dp, end = 20.dp)
+                .testTag("banner_profile_header")
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -99,12 +106,23 @@ fun ProfileTabScreen(
                         .clip(CircleShape)
                         .background(Color.White)
                 ) {
-                    Text(
-                        text = myName.take(1),
-                        color = EmeraldGreen,
-                        fontSize = 30.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    if (!profilePicture.isNullOrBlank()) {
+                        AsyncImage(
+                            model = profilePicture,
+                            contentDescription = myName,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                        )
+                    } else {
+                        Text(
+                            text = myName.take(1).uppercase(),
+                            color = EmeraldGreen,
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.width(16.dp))
@@ -129,6 +147,13 @@ fun ProfileTabScreen(
                         color = Color.White.copy(alpha = 0.75f),
                         maxLines = 1
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Ketuk untuk lihat detail & Room DB →",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFFC8E6C9)
+                    )
                 }
 
                 Icon(
@@ -151,6 +176,14 @@ fun ProfileTabScreen(
                 .padding(horizontal = 16.dp)
         ) {
             Column {
+                ProfileMenuItem(
+                    icon = Icons.Default.Person,
+                    iconTint = EmeraldGreen,
+                    title = "Detail Profil Pengguna",
+                    subtitle = "Nama tampilan, bio, foto & Room Database",
+                    onClick = onNavigateToUserProfile
+                )
+                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
                 ProfileMenuItem(
                     icon = Icons.Default.CameraAlt,
                     iconTint = Color(0xFFFB8C00),
