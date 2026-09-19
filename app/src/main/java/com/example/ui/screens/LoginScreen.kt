@@ -382,7 +382,7 @@ fun LoginScreen(
                             containerColor = Color.White,
                             contentColor = NeutralDark
                         ),
-                        border = ButtonDefaults.outlinedButtonBorder.copy(
+                        border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(
                             brush = Brush.linearGradient(
                                 listOf(Color(0xFF4285F4), Color(0xFF34A853), Color(0xFFFBBC05), Color(0xFFEA4335))
                             ),

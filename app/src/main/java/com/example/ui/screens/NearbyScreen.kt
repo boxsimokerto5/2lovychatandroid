@@ -484,7 +484,7 @@ fun NearbyUserCard(
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = EmeraldGreen
                 ),
-                border = ButtonDefaults.outlinedButtonBorder.copy(
+                border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(
                     brush = androidx.compose.ui.graphics.SolidColor(EmeraldGreen)
                 ),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),

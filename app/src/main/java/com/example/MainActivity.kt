@@ -38,12 +38,20 @@ class MainActivity : ComponentActivity() {
 
   override fun onResume() {
     super.onResume()
-    IronSource.onResume(this)
+    try {
+      IronSource.onResume(this)
+    } catch (e: Throwable) {
+      android.util.Log.w("MainActivity", "IronSource.onResume failed", e)
+    }
   }
 
   override fun onPause() {
     super.onPause()
-    IronSource.onPause(this)
+    try {
+      IronSource.onPause(this)
+    } catch (e: Throwable) {
+      android.util.Log.w("MainActivity", "IronSource.onPause failed", e)
+    }
   }
 }
 

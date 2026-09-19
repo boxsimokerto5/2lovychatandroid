@@ -112,10 +112,10 @@ dependencies {
   implementation(libs.firebase.appcheck.recaptcha)
   implementation(libs.firebase.appcheck.debug)
 
-  // ironSource Mediation SDK & Pangle Adapter
+  // ironSource Mediation SDK
   implementation("com.ironsource.sdk:mediationsdk:8.6.0")
-  implementation("com.ironsource.adapters:pangleadapter:4.3.36")
-  implementation("com.pangle.global:ads-sdk:6.3.0.9")
+  // implementation("com.ironsource.adapters:pangleadapter:4.3.36")
+  // implementation("com.pangle.global:ads-sdk:6.3.0.9")
   implementation("com.google.android.gms:play-services-ads-identifier:18.2.0")
   implementation("com.google.android.gms:play-services-appset:16.1.0")
   implementation(libs.kotlinx.coroutines.android)
