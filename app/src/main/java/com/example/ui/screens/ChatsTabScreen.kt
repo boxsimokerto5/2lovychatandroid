@@ -45,6 +45,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.model.ChatConversation
+import com.example.ui.components.LovyAvatar
 import com.example.ui.theme.EmeraldGreen
 import com.example.ui.theme.NeutralBorder
 import com.example.ui.theme.NeutralDark
@@ -206,33 +207,14 @@ fun ChatConversationItem(
             .testTag("conversation_${conversation.id}")
     ) {
         // Avatar
-        Box(modifier = Modifier.size(50.dp)) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(Color(conversation.partnerAvatarHex))
-            ) {
-                Text(
-                    text = conversation.partnerName.take(1),
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            if (conversation.isOnline) {
-                Box(
-                    modifier = Modifier
-                        .size(12.dp)
-                        .clip(CircleShape)
-                        .background(EmeraldGreen)
-                        .border(2.dp, Color.White, CircleShape)
-                        .align(Alignment.BottomEnd)
-                )
-            }
-        }
+        LovyAvatar(
+            name = conversation.partnerName,
+            avatarColorHex = conversation.partnerAvatarHex,
+            avatarUrl = conversation.partnerAvatarUrl,
+            size = 50.dp,
+            fontSize = 20.sp,
+            isOnline = conversation.isOnline
+        )
 
         Spacer(modifier = Modifier.width(14.dp))
 

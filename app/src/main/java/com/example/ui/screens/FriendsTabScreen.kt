@@ -44,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.model.User
+import com.example.ui.components.LovyAvatar
 import com.example.ui.theme.EmeraldGreen
 import com.example.ui.theme.NeutralBorder
 import com.example.ui.theme.NeutralDark
@@ -165,20 +166,14 @@ fun FriendsTabScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp)
                         .testTag("friend_item_${user.id}")
                 ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(46.dp)
-                            .clip(CircleShape)
-                            .background(Color(user.avatarColorHex))
-                    ) {
-                        Text(
-                            text = user.name.take(1),
-                            color = Color.White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    LovyAvatar(
+                        name = user.name,
+                        avatarColorHex = user.avatarColorHex,
+                        avatarUrl = user.avatarUrl,
+                        size = 46.dp,
+                        fontSize = 18.sp,
+                        isOnline = user.isOnline
+                    )
 
                     Spacer(modifier = Modifier.width(14.dp))
 

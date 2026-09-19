@@ -333,7 +333,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     lastMessage = greetingText,
                     lastTimestamp = System.currentTimeMillis(),
                     unreadCount = 0,
-                    isOnline = user.isOnline
+                    isOnline = user.isOnline,
+                    partnerAvatarUrl = user.avatarUrl
                 )
             ) + _uiState.value.conversations
         }
@@ -411,7 +412,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     lastMessage = greetingText,
                     lastTimestamp = System.currentTimeMillis(),
                     unreadCount = 0,
-                    isOnline = true
+                    isOnline = true,
+                    partnerAvatarUrl = bottle.avatarUrl
                 )
             ) + _uiState.value.conversations
         }
@@ -572,7 +574,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun postMoment(content: String) {
+    fun postMoment(content: String, imageUrl: String? = null, locationTag: String? = null) {
         if (content.isBlank()) return
         recordFeatureClick()
         val newMoment = MomentItem(
@@ -583,7 +585,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             content = content.trim(),
             likesCount = 0,
             isLiked = false,
-            commentsCount = 0
+            commentsCount = 0,
+            imageUrl = imageUrl,
+            authorAvatarUrl = null,
+            locationTag = locationTag ?: "Jakarta Selatan"
         )
         _uiState.update { it.copy(moments = listOf(newMoment) + it.moments) }
 

@@ -13,7 +13,8 @@ data class User(
     val bio: String,
     val avatarColorHex: Long,
     val isOnline: Boolean = true,
-    val city: String = "Jakarta Selatan"
+    val city: String = "Jakarta Selatan",
+    val avatarUrl: String? = null
 ) {
     val formattedDistance: String
         get() = if (distanceMeters < 1000) {
@@ -41,7 +42,8 @@ data class ChatConversation(
     val lastMessage: String,
     val lastTimestamp: Long,
     val unreadCount: Int = 0,
-    val isOnline: Boolean = true
+    val isOnline: Boolean = true,
+    val partnerAvatarUrl: String? = null
 )
 
 data class BottleMessage(
@@ -54,7 +56,8 @@ data class BottleMessage(
     val thrownTimestamp: Long,
     val locationHint: String = "Laut Jawa",
     val isFromMe: Boolean = false,
-    val replyCount: Int = 0
+    val replyCount: Int = 0,
+    val avatarUrl: String? = null
 )
 
 data class MomentItem(
@@ -65,5 +68,8 @@ data class MomentItem(
     val content: String,
     val likesCount: Int,
     val isLiked: Boolean = false,
-    val commentsCount: Int = 0
+    val commentsCount: Int = 0,
+    val imageUrl: String? = null,
+    val authorAvatarUrl: String? = null,
+    val locationTag: String? = null
 )

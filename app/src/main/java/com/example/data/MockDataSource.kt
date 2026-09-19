@@ -18,7 +18,8 @@ object MockDataSource {
             bio = "Suka ngopi dan denger musik santai ☕🎧",
             avatarColorHex = 0xFFEC407A,
             isOnline = true,
-            city = "Tebet, Jaksel"
+            city = "Tebet, Jaksel",
+            avatarUrl = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80"
         ),
         User(
             id = "u2",
@@ -29,7 +30,8 @@ object MockDataSource {
             bio = "Fotografi & touring. Cari temen ngobrol asik 📸",
             avatarColorHex = 0xFF42A5F5,
             isOnline = true,
-            city = "Pancoran, Jaksel"
+            city = "Pancoran, Jaksel",
+            avatarUrl = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80"
         ),
         User(
             id = "u3",
@@ -40,7 +42,8 @@ object MockDataSource {
             bio = "Mahasiswi semester akhir butuh hiburan ✨",
             avatarColorHex = 0xFFAB47BC,
             isOnline = false,
-            city = "Kuningan, Jaksel"
+            city = "Kuningan, Jaksel",
+            avatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80"
         ),
         User(
             id = "u4",
@@ -51,7 +54,8 @@ object MockDataSource {
             bio = "Pecinta kucing dan kuliner pedas 🐱🍜",
             avatarColorHex = 0xFF26A69A,
             isOnline = true,
-            city = "Mampang, Jaksel"
+            city = "Mampang, Jaksel",
+            avatarUrl = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80"
         ),
         User(
             id = "u5",
@@ -62,7 +66,8 @@ object MockDataSource {
             bio = "Halo semuanya! Senang bisa kenalan di Lovy Chat 😊",
             avatarColorHex = 0xFFFF7043,
             isOnline = true,
-            city = "Setiabudi, Jaksel"
+            city = "Setiabudi, Jaksel",
+            avatarUrl = "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80"
         ),
         User(
             id = "u6",
@@ -73,7 +78,8 @@ object MockDataSource {
             bio = "Badminton & traveling enthusiast 🏸✈️",
             avatarColorHex = 0xFF5C6BC0,
             isOnline = false,
-            city = "Kalibata, Jaksel"
+            city = "Kalibata, Jaksel",
+            avatarUrl = "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=300&q=80"
         ),
         User(
             id = "u7",
@@ -84,7 +90,8 @@ object MockDataSource {
             bio = "Design & art lover. Sapa aja jangan ragu 🎨",
             avatarColorHex = 0xFF26C6DA,
             isOnline = true,
-            city = "Cilandak, Jaksel"
+            city = "Cilandak, Jaksel",
+            avatarUrl = "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80"
         ),
         User(
             id = "u8",
@@ -95,7 +102,8 @@ object MockDataSource {
             bio = "Software engineer yang hobi ngopi & fotografi ☕💻",
             avatarColorHex = 0xFF3F51B5,
             isOnline = true,
-            city = "Kebayoran Baru, Jaksel"
+            city = "Kebayoran Baru, Jaksel",
+            avatarUrl = "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80"
         ),
         User(
             id = "u9",
@@ -106,7 +114,8 @@ object MockDataSource {
             bio = "Penyanyi kamar mandi & suka nonton film santai 🎬✨",
             avatarColorHex = 0xFFE91E63,
             isOnline = true,
-            city = "Kemang, Jaksel"
+            city = "Kemang, Jaksel",
+            avatarUrl = "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=300&q=80"
         ),
         User(
             id = "u10",
@@ -117,7 +126,8 @@ object MockDataSource {
             bio = "Fitness & healthy lifestyle enthusiast 🏋️‍♂️🥗",
             avatarColorHex = 0xFF009688,
             isOnline = false,
-            city = "Gandaria, Jaksel"
+            city = "Gandaria, Jaksel",
+            avatarUrl = "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=300&q=80"
         ),
         User(
             id = "u11",
@@ -230,7 +240,8 @@ object MockDataSource {
             lastMessage = "Hai juga! Kamu tinggal daerah mana nih?",
             lastTimestamp = System.currentTimeMillis() - 1000 * 60 * 5,
             unreadCount = 1,
-            isOnline = true
+            isOnline = true,
+            partnerAvatarUrl = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80"
         ),
         ChatConversation(
             id = "conv_u2",
@@ -241,7 +252,8 @@ object MockDataSource {
             lastMessage = "Besok ada rencana hunting foto gak?",
             lastTimestamp = System.currentTimeMillis() - 1000 * 60 * 45,
             unreadCount = 0,
-            isOnline = true
+            isOnline = true,
+            partnerAvatarUrl = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80"
         ),
         ChatConversation(
             id = "conv_u5",
@@ -252,7 +264,8 @@ object MockDataSource {
             lastMessage = "Makasih udah nemu botolku yaa! Seneng banget bisa kenalan.",
             lastTimestamp = System.currentTimeMillis() - 1000 * 60 * 60 * 3,
             unreadCount = 0,
-            isOnline = true
+            isOnline = true,
+            partnerAvatarUrl = "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80"
         )
     )
 
@@ -326,31 +339,66 @@ object MockDataSource {
             id = "mom1",
             authorName = "Siti Rahma",
             authorAvatarHex = 0xFFEC407A,
+            authorAvatarUrl = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80",
             timeAgo = "10 menit yang lalu",
-            content = "Menikmati senja sambil dengar musik favorit. Hari yang cukup melelahkan tapi bersyukur banget ☕🌅",
-            likesCount = 12,
+            content = "Menikmati senja santai sambil ngopi dan dengar playlist favorit di kafe langganan. Hari yang cukup melelahkan tapi bersyukur banget bisa rileks sejenak ☕🌅 Ada yang suka nongkrong di daerah Tebet juga?",
+            likesCount = 24,
             isLiked = false,
-            commentsCount = 3
+            commentsCount = 5,
+            imageUrl = "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1000&q=80",
+            locationTag = "Tebet, Jakarta Selatan"
         ),
         MomentItem(
             id = "mom2",
             authorName = "Rian Pratama",
             authorAvatarHex = 0xFF42A5F5,
+            authorAvatarUrl = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80",
             timeAgo = "2 jam yang lalu",
-            content = "Hasil jepretan sore ini di Bundaran HI. Jakarta selalu punya cerita di balik gemerlap lampunya 📸🌃",
-            likesCount = 28,
+            content = "Hasil jepretan hunting foto sore ini di Bundaran HI. Jakarta selalu punya seribu cerita di balik gemerlap lampu malamnya 📸🌃 Siapa yang hobi street photography juga?",
+            likesCount = 48,
             isLiked = true,
-            commentsCount = 7
+            commentsCount = 12,
+            imageUrl = "https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1000&q=80",
+            locationTag = "Bundaran HI, Jakarta Pusat"
         ),
         MomentItem(
             id = "mom3",
             authorName = "Clara Monica",
             authorAvatarHex = 0xFF26C6DA,
-            timeAgo = "5 jam yang lalu",
-            content = "Baru selesai bikin ilustrasi baru! Jangan lupa tersenyum hari ini kawan Lovy Chat 😊🎨",
-            likesCount = 45,
+            authorAvatarUrl = "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80",
+            timeAgo = "4 jam yang lalu",
+            content = "Ruang kerja dan kanvas baru selesai ditata! Menemukan inspirasi warna-warni ceria untuk project berikutnya 🎨✨ Jangan lupa luangkan waktu untuk hal yang kamu cintai hari ini ya kawan Lovy Chat!",
+            likesCount = 63,
             isLiked = false,
-            commentsCount = 11
+            commentsCount = 18,
+            imageUrl = "https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=1000&q=80",
+            locationTag = "Cilandak, Jakarta Selatan"
+        ),
+        MomentItem(
+            id = "mom4",
+            authorName = "Dimas Anggara",
+            authorAvatarHex = 0xFF26A69A,
+            authorAvatarUrl = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80",
+            timeAgo = "6 jam yang lalu",
+            content = "Mochi lagi asyik tidur pulas di sofa setelah seharian lari-larian keliling rumah 🐱💤 Kucing kalian kalau siang kerjanya tidur juga gak nih?",
+            likesCount = 89,
+            isLiked = true,
+            commentsCount = 27,
+            imageUrl = "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=1000&q=80",
+            locationTag = "Mampang Prapatan, Jakarta"
+        ),
+        MomentItem(
+            id = "mom5",
+            authorName = "Alya Zahra",
+            authorAvatarHex = 0xFFFF7043,
+            authorAvatarUrl = "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80",
+            timeAgo = "8 jam yang lalu",
+            content = "Healing sejenak menghirup udara laut yang segar dan mendengarkan deburan ombak 🌊☀️ Kadang kita butuh berhenti sejenak untuk melangkah lebih jauh.",
+            likesCount = 112,
+            isLiked = false,
+            commentsCount = 34,
+            imageUrl = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1000&q=80",
+            locationTag = "Pantai Ancol, Jakarta Utara"
         )
     )
 }

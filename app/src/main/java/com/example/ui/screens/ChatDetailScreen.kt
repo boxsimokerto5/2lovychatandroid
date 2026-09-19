@@ -50,6 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.model.ChatMessage
+import com.example.ui.components.LovyAvatar
 import com.example.ui.theme.ChatBubbleOther
 import com.example.ui.theme.ChatBubbleSelf
 import com.example.ui.theme.EmeraldGreen
@@ -69,6 +70,7 @@ fun ChatDetailScreen(
     messages: List<ChatMessage>,
     onBack: () -> Unit,
     onSendMessage: (String) -> Unit,
+    partnerAvatarUrl: String? = null,
     modifier: Modifier = Modifier
 ) {
     var inputText by remember { mutableStateOf("") }
@@ -86,20 +88,13 @@ fun ChatDetailScreen(
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(Color(partnerAvatarHex))
-                        ) {
-                            Text(
-                                text = partnerName.take(1),
-                                color = Color.White,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                        LovyAvatar(
+                            name = partnerName,
+                            avatarColorHex = partnerAvatarHex,
+                            avatarUrl = partnerAvatarUrl,
+                            size = 38.dp,
+                            fontSize = 16.sp
+                        )
 
                         Spacer(modifier = Modifier.width(12.dp))
 

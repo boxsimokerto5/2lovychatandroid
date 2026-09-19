@@ -60,6 +60,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import com.example.ui.components.IronSourceBannerView
+import com.example.ui.components.LovyAvatar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -559,33 +560,14 @@ fun NearbyUserCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Avatar
-            Box(modifier = Modifier.size(54.dp)) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(52.dp)
-                        .clip(CircleShape)
-                        .background(Color(user.avatarColorHex))
-                ) {
-                    Text(
-                        text = user.name.take(1),
-                        color = Color.White,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                if (user.isOnline) {
-                    Box(
-                        modifier = Modifier
-                            .size(13.dp)
-                            .clip(CircleShape)
-                            .background(EmeraldGreen)
-                            .border(2.dp, Color.White, CircleShape)
-                            .align(Alignment.BottomEnd)
-                    )
-                }
-            }
+            LovyAvatar(
+                name = user.name,
+                avatarColorHex = user.avatarColorHex,
+                avatarUrl = user.avatarUrl,
+                size = 54.dp,
+                fontSize = 22.sp,
+                isOnline = user.isOnline
+            )
 
             Spacer(modifier = Modifier.width(14.dp))
 

@@ -109,7 +109,10 @@ fun MainAppScreen(
                 moments = uiState.moments,
                 onBack = { viewModel.navigateBack() },
                 onToggleLike = { viewModel.toggleLikeMoment(it) },
-                onPostMoment = { viewModel.postMoment(it) }
+                onPostMoment = { viewModel.postMoment(it) },
+                onPostMomentWithDetails = { content, img, loc ->
+                    viewModel.postMoment(content, img, loc)
+                }
             )
         }
         is CurrentScreen.SupabaseConfig -> {
@@ -127,10 +130,12 @@ fun MainAppScreen(
         }
         is CurrentScreen.ChatDetail -> {
             val messages = uiState.messagesMap[screen.conversationId] ?: emptyList()
+            val conv = uiState.conversations.find { it.id == screen.conversationId }
             ChatDetailScreen(
                 conversationId = screen.conversationId,
                 partnerName = screen.partnerName,
                 partnerAvatarHex = screen.partnerAvatarHex,
+                partnerAvatarUrl = conv?.partnerAvatarUrl,
                 messages = messages,
                 onBack = { viewModel.navigateBack() },
                 onSendMessage = { text ->
