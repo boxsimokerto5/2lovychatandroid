@@ -1,0 +1,6 @@
+{
+  "name": "Lovy Chat",
+  "description": "Aplikasi obrolan santai dengan fitur Pengguna di Sekitar dan Pesan dalam Botol",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

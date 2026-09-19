@@ -1,0 +1,298 @@
+package com.example.ui.screens
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddComment
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Badge
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.model.ChatConversation
+import com.example.ui.theme.EmeraldGreen
+import com.example.ui.theme.NeutralBorder
+import com.example.ui.theme.NeutralDark
+import com.example.ui.theme.NeutralMedium
+import com.example.ui.theme.ScreenBackground
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+@Composable
+fun ChatsTabScreen(
+    conversations: List<ChatConversation>,
+    onOpenChat: (ChatConversation) -> Unit,
+    onStartNewChat: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var searchQuery by remember { mutableStateOf("") }
+
+    val filtered = remember(conversations, searchQuery) {
+        if (searchQuery.isBlank()) conversations
+        else conversations.filter {
+            it.partnerName.contains(searchQuery, ignoreCase = true) ||
+            it.lastMessage.contains(searchQuery, ignoreCase = true)
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(EmeraldGreen)
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Obrolan",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Search Bar
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Cari percakapan...", fontSize = 13.sp, color = Color.White.copy(alpha = 0.7f)) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.8f),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color.White.copy(alpha = 0.2f),
+                        unfocusedContainerColor = Color.White.copy(alpha = 0.15f),
+                        focusedBorderColor = Color.White.copy(alpha = 0.4f),
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .testTag("chats_search_input")
+                )
+            }
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onStartNewChat,
+                containerColor = EmeraldGreen,
+                contentColor = Color.White,
+                shape = CircleShape,
+                modifier = Modifier.testTag("fab_new_chat")
+            ) {
+                Icon(imageVector = Icons.Default.AddComment, contentDescription = "Mulai Chat")
+            }
+        },
+        containerColor = ScreenBackground,
+        modifier = modifier.fillMaxSize()
+    ) { paddingValues ->
+        if (filtered.isEmpty()) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = "💬", fontSize = 42.sp)
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = "Belum ada obrolan",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = NeutralDark
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Sapa teman di sekitar atau pancing botol untuk mulai mengobrol!",
+                        fontSize = 12.5.sp,
+                        color = NeutralMedium
+                    )
+                }
+            }
+        } else {
+            LazyColumn(
+                contentPadding = PaddingValues(vertical = 4.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                items(filtered, key = { it.id }) { conv ->
+                    ChatConversationItem(
+                        conversation = conv,
+                        onClick = { onOpenChat(conv) }
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.padding(start = 78.dp, end = 16.dp),
+                        thickness = 0.6.dp,
+                        color = NeutralBorder
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ChatConversationItem(
+    conversation: ChatConversation,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val timeFormat = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
+    val formattedTime = remember(conversation.lastTimestamp) {
+        timeFormat.format(Date(conversation.lastTimestamp))
+    }
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .background(Color.White)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .testTag("conversation_${conversation.id}")
+    ) {
+        // Avatar
+        Box(modifier = Modifier.size(50.dp)) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(Color(conversation.partnerAvatarHex))
+            ) {
+                Text(
+                    text = conversation.partnerName.take(1),
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            if (conversation.isOnline) {
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .clip(CircleShape)
+                        .background(EmeraldGreen)
+                        .border(2.dp, Color.White, CircleShape)
+                        .align(Alignment.BottomEnd)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.width(14.dp))
+
+        // Content
+        Column(modifier = Modifier.weight(1f)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = conversation.partnerName,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = NeutralDark,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = formattedTime,
+                    fontSize = 11.sp,
+                    color = NeutralMedium
+                )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = conversation.lastMessage,
+                    fontSize = 13.sp,
+                    color = if (conversation.unreadCount > 0) NeutralDark else NeutralMedium,
+                    fontWeight = if (conversation.unreadCount > 0) FontWeight.Medium else FontWeight.Normal,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+
+                if (conversation.unreadCount > 0) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(20.dp)
+                            .clip(CircleShape)
+                            .background(EmeraldGreen)
+                    ) {
+                        Text(
+                            text = "${conversation.unreadCount}",
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+    }
+}

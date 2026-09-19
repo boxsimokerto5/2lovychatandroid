@@ -1,0 +1,326 @@
+package com.example.ui.screens
+
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChatBubbleOutline
+import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.PeopleOutline
+import androidx.compose.material.icons.filled.PersonOutline
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.R
+import com.example.ui.CurrentScreen
+import com.example.ui.LovyChatViewModel
+import com.example.ui.components.IronSourceBannerView
+import com.example.ui.theme.EmeraldGreen
+import com.example.ui.theme.NeutralBorder
+import com.example.ui.theme.NeutralMedium
+
+@Composable
+fun MainAppScreen(
+    viewModel: LovyChatViewModel,
+    modifier: Modifier = Modifier
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // Handle back button when on child screens
+    BackHandler(enabled = uiState.currentScreen !is CurrentScreen.Main && uiState.currentScreen !is CurrentScreen.Login && uiState.currentScreen !is CurrentScreen.Splash) {
+        viewModel.navigateBack()
+    }
+
+    when (val screen = uiState.currentScreen) {
+        is CurrentScreen.Splash -> {
+            SplashScreen(
+                language = uiState.language,
+                onSplashFinished = { viewModel.onSplashFinished() }
+            )
+        }
+        is CurrentScreen.Login -> {
+            LoginScreen(
+                language = uiState.language,
+                detectedGeoArea = uiState.detectedGeoArea,
+                onLanguageChange = { viewModel.setLanguage(it) },
+                onLoginSuccess = { name -> viewModel.loginUser(name) },
+                onGuestLogin = { viewModel.loginAsGuest() }
+            )
+        }
+        is CurrentScreen.Nearby -> {
+            NearbyScreen(
+                users = uiState.nearbyUsers,
+                selectedGenderFilter = uiState.nearbyGenderFilter,
+                isScanning = uiState.isScanningNearby,
+                currentGpsLocation = uiState.currentGpsLocation,
+                hasLocationPermission = uiState.hasLocationPermission,
+                isGpsEnabled = uiState.isGpsEnabled,
+                language = uiState.language,
+                onPermissionResult = { granted -> viewModel.updateLocationPermission(granted) },
+                onBack = { viewModel.navigateBack() },
+                onFilterChange = { viewModel.setNearbyGenderFilter(it) },
+                onRefreshScan = { viewModel.refreshNearbyScan() },
+                onSayHi = { viewModel.sayHiToUser(it) }
+            )
+        }
+        is CurrentScreen.Bottle -> {
+            BottleScreen(
+                oceanBottles = uiState.oceanBottles,
+                myBottles = uiState.myBottles,
+                fishedBottle = uiState.fishedBottle,
+                isFishing = uiState.isFishing,
+                onBack = { viewModel.navigateBack() },
+                onThrowBottle = { viewModel.throwBottle(it) },
+                onFishBottle = { viewModel.fishBottle() },
+                onDismissFishedBottle = { viewModel.dismissFishedBottle() },
+                onReplyBottle = { viewModel.openChatWithBottleSender(it) }
+            )
+        }
+        is CurrentScreen.Moments -> {
+            MomentsScreen(
+                moments = uiState.moments,
+                onBack = { viewModel.navigateBack() },
+                onToggleLike = { viewModel.toggleLikeMoment(it) },
+                onPostMoment = { viewModel.postMoment(it) }
+            )
+        }
+        is CurrentScreen.SupabaseConfig -> {
+            SupabaseConfigScreen(
+                currentUrl = uiState.supabaseUrl,
+                currentAnonKey = uiState.supabaseAnonKey,
+                isConnected = uiState.isSupabaseConnected,
+                connectionStatusMessage = uiState.connectionStatusMessage,
+                isTestingConnection = uiState.isTestingConnection,
+                onBack = { viewModel.navigateBack() },
+                onSaveCredentials = { url, key -> viewModel.saveSupabaseCredentials(url, key) },
+                onTestConnection = { viewModel.testSupabaseConnection() },
+                onClearCredentials = { viewModel.clearSupabaseCredentials() }
+            )
+        }
+        is CurrentScreen.ChatDetail -> {
+            val messages = uiState.messagesMap[screen.conversationId] ?: emptyList()
+            ChatDetailScreen(
+                conversationId = screen.conversationId,
+                partnerName = screen.partnerName,
+                partnerAvatarHex = screen.partnerAvatarHex,
+                messages = messages,
+                onBack = { viewModel.navigateBack() },
+                onSendMessage = { text ->
+                    viewModel.sendMessage(screen.conversationId, text, screen.partnerName)
+                }
+            )
+        }
+        is CurrentScreen.Main -> {
+            Scaffold(
+                bottomBar = {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        // ironSource Banner Ad location
+                        IronSourceBannerView()
+                        LovyBottomNavigationBar(
+                            selectedTab = uiState.currentTab,
+                            language = uiState.language,
+                            onSelectTab = { viewModel.selectTab(it) }
+                        )
+                    }
+                },
+                modifier = modifier.fillMaxSize()
+            ) { paddingValues ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                ) {
+                    when (uiState.currentTab) {
+                        0 -> ChatsTabScreen(
+                            conversations = uiState.conversations,
+                            onOpenChat = { conv ->
+                                viewModel.openChat(conv.id, conv.partnerName, conv.partnerAvatarHex)
+                            },
+                            onStartNewChat = {
+                                viewModel.navigateTo(CurrentScreen.Nearby)
+                            }
+                        )
+                        1 -> FriendsTabScreen(
+                            friends = uiState.nearbyUsers,
+                            onSelectFriend = { user ->
+                                viewModel.sayHiToUser(user)
+                            },
+                            onNavigateToNearby = {
+                                viewModel.navigateTo(CurrentScreen.Nearby)
+                            }
+                        )
+                        2 -> DiscoverTabScreen(
+                            onNavigateToNearby = {
+                                viewModel.navigateTo(CurrentScreen.Nearby)
+                            },
+                            onNavigateToBottle = {
+                                viewModel.navigateTo(CurrentScreen.Bottle)
+                            },
+                            onNavigateToMoments = {
+                                viewModel.navigateTo(CurrentScreen.Moments)
+                            }
+                        )
+                        3 -> ProfileTabScreen(
+                            myName = uiState.myName,
+                            myBio = uiState.myBio,
+                            myLovyId = uiState.myLovyId,
+                            isSupabaseConnected = uiState.isSupabaseConnected,
+                            language = uiState.language,
+                            detectedGeoArea = uiState.detectedGeoArea,
+                            onLanguageChange = { viewModel.setLanguage(it) },
+                            onNavigateToBottle = {
+                                viewModel.navigateTo(CurrentScreen.Bottle)
+                            },
+                            onNavigateToMoments = {
+                                viewModel.navigateTo(CurrentScreen.Moments)
+                            },
+                            onNavigateToSupabaseConfig = {
+                                viewModel.navigateTo(CurrentScreen.SupabaseConfig)
+                            },
+                            onLogout = {
+                                viewModel.logout()
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun LovyBottomNavigationBar(
+    selectedTab: Int,
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
+    onSelectTab: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(Color.White)
+            .navigationBarsPadding()
+    ) {
+        HorizontalDivider(color = NeutralBorder, thickness = 0.6.dp)
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceAround,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            LovyBottomNavItem(
+                index = 0,
+                label = com.example.util.AppStrings.tabChat(language),
+                icon = Icons.Default.ChatBubbleOutline,
+                isSelected = selectedTab == 0,
+                onClick = { onSelectTab(0) },
+                testTag = "nav_tab_chats"
+            )
+
+            LovyBottomNavItem(
+                index = 1,
+                label = if (language == com.example.util.AppLanguage.INDONESIAN) "Teman" else "Friends",
+                icon = Icons.Default.PeopleOutline,
+                isSelected = selectedTab == 1,
+                onClick = { onSelectTab(1) },
+                testTag = "nav_tab_friends"
+            )
+
+            LovyBottomNavItem(
+                index = 2,
+                label = com.example.util.AppStrings.tabDiscover(language),
+                icon = Icons.Default.Explore,
+                isSelected = selectedTab == 2,
+                hasAccentDot = true,
+                onClick = { onSelectTab(2) },
+                testTag = "nav_tab_discover"
+            )
+
+            LovyBottomNavItem(
+                index = 3,
+                label = com.example.util.AppStrings.tabProfile(language),
+                icon = Icons.Default.PersonOutline,
+                isSelected = selectedTab == 3,
+                onClick = { onSelectTab(3) },
+                testTag = "nav_tab_me"
+            )
+        }
+    }
+}
+
+@Composable
+fun LovyBottomNavItem(
+    index: Int,
+    label: String,
+    icon: ImageVector,
+    isSelected: Boolean,
+    hasAccentDot: Boolean = false,
+    onClick: () -> Unit,
+    testTag: String
+) {
+    val activeColor = EmeraldGreen
+    val inactiveColor = Color(0xFF8F9CA8)
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 2.dp)
+            .testTag(testTag)
+    ) {
+        Box(contentAlignment = Alignment.TopEnd) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = if (isSelected) activeColor else inactiveColor,
+                modifier = Modifier.size(24.dp)
+            )
+
+            if (hasAccentDot && isSelected) {
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .clip(CircleShape)
+                        .background(activeColor)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(3.dp))
+
+        Text(
+            text = label,
+            fontSize = 11.5.sp,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+            color = if (isSelected) activeColor else inactiveColor
+        )
+    }
+}

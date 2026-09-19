@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">Lovy Chat</string>
+    <string name="tab_chats">Obrolan</string>
+    <string name="tab_friends">Teman</string>
+    <string name="tab_discover">Temukan</string>
+    <string name="tab_me">Saya</string>
+    <string name="nearby_people">Pengguna di Sekitar (People Nearby)</string>
+    <string name="nearby_people_desc">Lihat orang-orang terdekat dan sapa langsung</string>
+    <string name="bottle_message">Pesan dalam Botol (Message in a Bottle)</string>
+    <string name="bottle_message_desc">Lempar atau pancing pesan misterius di lautan</string>
+    <string name="moments">Momen (Feed Status)</string>
+    <string name="moments_desc">Bagikan cerita, foto harian, dan berikan suka</string>
+    <string name="banner_tag">JELAJAHI DUNIA LOVYCHAT</string>
+    <string name="banner_title">Temukan Teman Sekitar &amp; Pesan Botol</string>
+    <string name="banner_desc">Kenalan dengan pengguna di sekitarmu atau tangkap cerita tak terduga lewat pesan botol lautan.</string>
+</resources>
