@@ -30,6 +30,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Female
@@ -40,6 +41,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Male
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SmartDisplay
 import androidx.compose.material.icons.filled.WavingHand
@@ -61,9 +63,13 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import com.example.ui.components.IronSourceBannerView
 import com.example.ui.components.LovyAvatar
+import com.example.ui.components.NearbyRadarView
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -144,6 +150,7 @@ fun NearbyScreen(
 
     val hasHiddenUsers = !isExpanded && filteredUsers.size > 6
     val hiddenCount = if (hasHiddenUsers) filteredUsers.size - 6 else 0
+    var isRadarView by remember { mutableStateOf(true) }
 
     Scaffold(
         topBar = {
@@ -169,6 +176,16 @@ fun NearbyScreen(
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = { isRadarView = !isRadarView },
+                        modifier = Modifier.testTag("nearby_btn_toggle_view")
+                    ) {
+                        Icon(
+                            imageVector = if (isRadarView) Icons.AutoMirrored.Filled.FormatListBulleted else Icons.Default.Radar,
+                            contentDescription = if (isRadarView) "Tampilan Daftar" else "Tampilan Radar",
+                            tint = Color.White
+                        )
+                    }
                     IconButton(
                         onClick = onRefreshScan,
                         modifier = Modifier.testTag("nearby_btn_refresh")
@@ -287,12 +304,80 @@ fun NearbyScreen(
                 }
             }
 
+            // Toggle Tab (Radar vs. Daftar)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color(0xFFE8F5E9))
+                        .padding(3.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(if (isRadarView) EmeraldGreen else Color.Transparent)
+                            .clickable { isRadarView = true }
+                            .padding(horizontal = 16.dp, vertical = 6.dp)
+                            .testTag("tab_mode_radar"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Radar,
+                                contentDescription = null,
+                                tint = if (isRadarView) Color.White else EmeraldGreen,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Radar Interaktif",
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isRadarView) Color.White else EmeraldGreen
+                            )
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(if (!isRadarView) EmeraldGreen else Color.Transparent)
+                            .clickable { isRadarView = false }
+                            .padding(horizontal = 16.dp, vertical = 6.dp)
+                            .testTag("tab_mode_list"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.FormatListBulleted,
+                                contentDescription = null,
+                                tint = if (!isRadarView) Color.White else EmeraldGreen,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Daftar Pengguna",
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (!isRadarView) Color.White else EmeraldGreen
+                            )
+                        }
+                    }
+                }
+            }
+
             // Filter Chips Bar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color.White)
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -351,38 +436,50 @@ fun NearbyScreen(
                 )
             }
 
-            // Hint radar text
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            ) {
-                val radarInfo = if (hasHiddenUsers) {
-                    if (language == com.example.util.AppLanguage.INDONESIAN) {
-                        "Menampilkan 6 dari ${filteredUsers.size} orang dalam radar sekitarmu"
-                    } else {
-                        "Showing 6 of ${filteredUsers.size} people in your nearby radar"
-                    }
-                } else {
-                    if (language == com.example.util.AppLanguage.INDONESIAN) {
-                        "Ditemukan ${filteredUsers.size} orang dalam radius sekitarmu (Semua Terbuka ✨)"
-                    } else {
-                        "Found ${filteredUsers.size} people in your area (All Unlocked ✨)"
-                    }
-                }
-                Text(
-                    text = radarInfo,
-                    fontSize = 12.sp,
-                    color = NeutralMedium
+            if (isRadarView) {
+                // Tampilan Radar Interaktif
+                NearbyRadarView(
+                    users = displayedUsers,
+                    onSayHi = onSayHi,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
                 )
-            }
+            } else {
+                // Hint radar text
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    val radarInfo = if (hasHiddenUsers) {
+                        if (language == com.example.util.AppLanguage.INDONESIAN) {
+                            "Menampilkan 6 dari ${filteredUsers.size} orang dalam radar sekitarmu"
+                        } else {
+                            "Showing 6 of ${filteredUsers.size} people in your nearby radar"
+                        }
+                    } else {
+                        if (language == com.example.util.AppLanguage.INDONESIAN) {
+                            "Ditemukan ${filteredUsers.size} orang dalam radius sekitarmu (Semua Terbuka ✨)"
+                        } else {
+                            "Found ${filteredUsers.size} people in your area (All Unlocked ✨)"
+                        }
+                    }
+                    Text(
+                        text = radarInfo,
+                        fontSize = 12.sp,
+                        color = NeutralMedium
+                    )
+                }
 
-            // User list
-            LazyColumn(
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
+                // User list
+                LazyColumn(
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) {
                 items(displayedUsers, key = { it.id }) { user ->
                     NearbyUserCard(
                         user = user,
@@ -537,6 +634,7 @@ fun NearbyScreen(
             }
         }
     }
+}
 }
 
 @Composable

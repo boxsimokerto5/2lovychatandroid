@@ -76,6 +76,7 @@ import kotlinx.coroutines.launch
 fun LoginScreen(
     language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     detectedGeoArea: String = "ID/MY",
+    isLocalMode: Boolean = true,
     onLanguageChange: (com.example.util.AppLanguage) -> Unit = {},
     onLoginSuccess: (name: String) -> Unit,
     onGuestLogin: () -> Unit,
@@ -159,44 +160,64 @@ fun LoginScreen(
                     )
                     .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 12.dp)
             ) {
-                // Top-right compact language toggle pill
+                // Top-right compact language toggle pill (LO vs EN)
                 Row(
-                    modifier = Modifier.align(Alignment.TopEnd),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.Black.copy(alpha = 0.22f))
+                        .padding(2.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    val isLoActive = isLocalMode && language != com.example.util.AppLanguage.ENGLISH
+                    val loDisplayLabel = when (language) {
+                        com.example.util.AppLanguage.CHINESE -> "LO (中文)"
+                        com.example.util.AppLanguage.JAPANESE -> "LO (日)"
+                        com.example.util.AppLanguage.ARABIC -> "LO (ع)"
+                        com.example.util.AppLanguage.INDONESIAN -> "LO (ID)"
+                        com.example.util.AppLanguage.SPANISH -> "LO (ES)"
+                        com.example.util.AppLanguage.KOREAN -> "LO (한)"
+                        com.example.util.AppLanguage.FRENCH -> "LO (FR)"
+                        com.example.util.AppLanguage.GERMAN -> "LO (DE)"
+                        com.example.util.AppLanguage.RUSSIAN -> "LO (RU)"
+                        com.example.util.AppLanguage.PORTUGUESE -> "LO (PT)"
+                        else -> "LO"
+                    }
+
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
                             .background(
-                                if (language == com.example.util.AppLanguage.INDONESIAN) Color.White.copy(alpha = 0.95f) 
-                                else Color.White.copy(alpha = 0.25f)
+                                if (isLoActive) Color.White.copy(alpha = 0.95f) 
+                                else Color.Transparent
                             )
-                            .clickable { onLanguageChange(com.example.util.AppLanguage.INDONESIAN) }
+                            .clickable { onLanguageChange(com.example.util.AppLanguage.LOCAL) }
                             .padding(horizontal = 8.dp, vertical = 3.dp)
+                            .testTag("btn_lang_local")
                     ) {
                         Text(
-                            text = "ID",
+                            text = loDisplayLabel,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (language == com.example.util.AppLanguage.INDONESIAN) Color(0xFF004D40) else Color.White
+                            color = if (isLoActive) Color(0xFF004D40) else Color.White
                         )
                     }
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
                             .background(
-                                if (language == com.example.util.AppLanguage.ENGLISH) Color.White.copy(alpha = 0.95f) 
-                                else Color.White.copy(alpha = 0.25f)
+                                if (!isLoActive) Color.White.copy(alpha = 0.95f) 
+                                else Color.Transparent
                             )
                             .clickable { onLanguageChange(com.example.util.AppLanguage.ENGLISH) }
                             .padding(horizontal = 8.dp, vertical = 3.dp)
+                            .testTag("btn_lang_en")
                     ) {
                         Text(
                             text = "EN",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (language == com.example.util.AppLanguage.ENGLISH) Color(0xFF004D40) else Color.White
+                            color = if (!isLoActive) Color(0xFF004D40) else Color.White
                         )
                     }
                 }

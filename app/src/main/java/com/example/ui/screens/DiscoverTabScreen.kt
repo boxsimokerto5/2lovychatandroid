@@ -50,6 +50,7 @@ import com.example.ui.theme.ScreenBackground
 
 @Composable
 fun DiscoverTabScreen(
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     onNavigateToNearby: () -> Unit,
     onNavigateToBottle: () -> Unit,
     onNavigateToMoments: () -> Unit,
@@ -69,7 +70,7 @@ fun DiscoverTabScreen(
                 .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
             Text(
-                text = stringResource(R.string.tab_discover),
+                text = com.example.util.AppStrings.tabDiscover(language),
                 color = Color.White,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
@@ -172,8 +173,8 @@ fun DiscoverTabScreen(
                         icon = Icons.Default.LocationOn,
                         iconTint = Color(0xFF00A86B),
                         iconBgColor = Color(0xFFE8F5E9),
-                        title = stringResource(R.string.nearby_people),
-                        description = stringResource(R.string.nearby_people_desc),
+                        title = com.example.util.AppStrings.menuNearby(language),
+                        description = com.example.util.AppStrings.menuNearbySub(language),
                         testTag = "menu_nearby_people",
                         onClick = onNavigateToNearby
                     )
@@ -189,8 +190,8 @@ fun DiscoverTabScreen(
                         icon = Icons.Default.Waves,
                         iconTint = Color(0xFF00ACC1),
                         iconBgColor = Color(0xFFE0F7FA),
-                        title = stringResource(R.string.bottle_message),
-                        description = stringResource(R.string.bottle_message_desc),
+                        title = com.example.util.AppStrings.menuBottle(language),
+                        description = com.example.util.AppStrings.menuBottleSub(language),
                         testTag = "menu_bottle_message",
                         onClick = onNavigateToBottle
                     )
@@ -206,8 +207,8 @@ fun DiscoverTabScreen(
                         icon = Icons.Default.CameraAlt,
                         iconTint = Color(0xFFFB8C00),
                         iconBgColor = Color(0xFFFFF3E0),
-                        title = stringResource(R.string.moments),
-                        description = stringResource(R.string.moments_desc),
+                        title = com.example.util.AppStrings.menuMoments(language),
+                        description = com.example.util.AppStrings.menuMomentsSub(language),
                         testTag = "menu_moments",
                         onClick = onNavigateToMoments
                     )

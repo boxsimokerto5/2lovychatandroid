@@ -68,6 +68,7 @@ fun MainAppScreen(
             LoginScreen(
                 language = uiState.language,
                 detectedGeoArea = uiState.detectedGeoArea,
+                isLocalMode = uiState.isLocalLanguageMode,
                 onLanguageChange = { viewModel.setLanguage(it) },
                 onLoginSuccess = { name -> viewModel.loginUser(name) },
                 onGuestLogin = { viewModel.loginAsGuest() }
@@ -183,6 +184,7 @@ fun MainAppScreen(
                             }
                         )
                         2 -> DiscoverTabScreen(
+                            language = uiState.language,
                             onNavigateToNearby = {
                                 viewModel.navigateTo(CurrentScreen.Nearby)
                             },
@@ -200,6 +202,7 @@ fun MainAppScreen(
                             isSupabaseConnected = uiState.isSupabaseConnected,
                             language = uiState.language,
                             detectedGeoArea = uiState.detectedGeoArea,
+                            isLocalMode = uiState.isLocalLanguageMode,
                             onLanguageChange = { viewModel.setLanguage(it) },
                             onNavigateToBottle = {
                                 viewModel.navigateTo(CurrentScreen.Bottle)
@@ -254,7 +257,7 @@ fun LovyBottomNavigationBar(
 
             LovyBottomNavItem(
                 index = 1,
-                label = if (language == com.example.util.AppLanguage.INDONESIAN) "Teman" else "Friends",
+                label = com.example.util.AppStrings.tabFriends(language),
                 icon = Icons.Default.PeopleOutline,
                 isSelected = selectedTab == 1,
                 onClick = { onSelectTab(1) },

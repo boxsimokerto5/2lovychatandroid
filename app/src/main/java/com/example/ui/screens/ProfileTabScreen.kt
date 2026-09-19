@@ -26,14 +26,22 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Waves
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,6 +65,7 @@ fun ProfileTabScreen(
     isSupabaseConnected: Boolean,
     language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     detectedGeoArea: String = "ID/MY",
+    isLocalMode: Boolean = true,
     onLanguageChange: (com.example.util.AppLanguage) -> Unit = {},
     onNavigateToBottle: () -> Unit,
     onNavigateToMoments: () -> Unit,
@@ -64,6 +73,7 @@ fun ProfileTabScreen(
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showLanguagePicker by remember { mutableStateOf(false) }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -187,14 +197,11 @@ fun ProfileTabScreen(
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
                 ProfileMenuItem(
-                    icon = Icons.Default.Settings,
+                    icon = Icons.Default.Language,
                     iconTint = Color(0xFF5C6BC0),
                     title = com.example.util.AppStrings.languageSetting(language),
-                    subtitle = if (language == com.example.util.AppLanguage.INDONESIAN) "Bahasa Indonesia • Wilayah ID/MY" else "English • Region Global",
-                    onClick = {
-                        val nextLang = if (language == com.example.util.AppLanguage.INDONESIAN) com.example.util.AppLanguage.ENGLISH else com.example.util.AppLanguage.INDONESIAN
-                        onLanguageChange(nextLang)
-                    }
+                    subtitle = if (isLocalMode) "LO (Lokal: ${language.displayName}) • $detectedGeoArea" else "EN (English Global)",
+                    onClick = { showLanguagePicker = true }
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
                 ProfileMenuItem(
@@ -216,6 +223,179 @@ fun ProfileTabScreen(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+    }
+
+    if (showLanguagePicker) {
+        AlertDialog(
+            onDismissRequest = { showLanguagePicker = false },
+            title = {
+                Text(
+                    text = "Pilih Bahasa / Language (LO - EN)",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp,
+                    color = NeutralDark
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Sistem LO - EN otomatis mendeteksi bahasa lokal negara manapun di seluruh dunia (Cina, Jepang, Arab, Indonesia, dll).",
+                        fontSize = 12.sp,
+                        color = NeutralMedium
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // 1. LO - Local Auto
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isLocalMode) EmeraldGreen.copy(alpha = 0.12f) else Color.White
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onLanguageChange(com.example.util.AppLanguage.LOCAL)
+                                showLanguagePicker = false
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "🌐 LO (Lokal Otomatis Negara)",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.5.sp,
+                                    color = if (isLocalMode) EmeraldGreen else NeutralDark
+                                )
+                                Text(
+                                    text = "Bahasa terdeteksi: ${language.displayName} (${language.nativeName})",
+                                    fontSize = 11.5.sp,
+                                    color = NeutralMedium
+                                )
+                                Text(
+                                    text = "Lokasi: $detectedGeoArea",
+                                    fontSize = 11.sp,
+                                    color = EmeraldGreen
+                                )
+                            }
+                            if (isLocalMode) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = EmeraldGreen,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // 2. EN - English
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (!isLocalMode && language == com.example.util.AppLanguage.ENGLISH) EmeraldGreen.copy(alpha = 0.12f) else Color.White
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onLanguageChange(com.example.util.AppLanguage.ENGLISH)
+                                showLanguagePicker = false
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "🇬🇧 EN (English Global)",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.5.sp,
+                                    color = if (!isLocalMode && language == com.example.util.AppLanguage.ENGLISH) EmeraldGreen else NeutralDark
+                                )
+                                Text(
+                                    text = "International language mode",
+                                    fontSize = 11.5.sp,
+                                    color = NeutralMedium
+                                )
+                            }
+                            if (!isLocalMode && language == com.example.util.AppLanguage.ENGLISH) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = EmeraldGreen,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Uji Coba Langsung Bahasa Negara Lain:",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 12.sp,
+                        color = NeutralDark
+                    )
+
+                    // Daftar cepat uji negara lain
+                    val testLanguages = listOf(
+                        com.example.util.AppLanguage.CHINESE to "🇨🇳 Cina / Chinese (中文)",
+                        com.example.util.AppLanguage.JAPANESE to "🇯🇵 Jepang / Japanese (日本語)",
+                        com.example.util.AppLanguage.ARABIC to "🇸🇦 Arab / Arabic (العربية)",
+                        com.example.util.AppLanguage.KOREAN to "🇰🇷 Korea / Korean (한국어)",
+                        com.example.util.AppLanguage.INDONESIAN to "🇮🇩 Indonesia (Bahasa Indonesia)",
+                        com.example.util.AppLanguage.SPANISH to "🇪🇸 Spanyol / Spanish (Español)",
+                        com.example.util.AppLanguage.FRENCH to "🇫🇷 Prancis / French (Français)",
+                        com.example.util.AppLanguage.GERMAN to "🇩🇪 Jerman / German (Deutsch)",
+                        com.example.util.AppLanguage.RUSSIAN to "🇷🇺 Rusia / Russian (Русский)"
+                    )
+
+                    testLanguages.forEach { (lang, label) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (language == lang && !isLocalMode) Color(0xFFE0F2F1) else Color.Transparent)
+                                .clickable {
+                                    onLanguageChange(lang)
+                                    showLanguagePicker = false
+                                }
+                                .padding(horizontal = 10.dp, vertical = 7.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = label,
+                                fontSize = 13.sp,
+                                color = if (language == lang && !isLocalMode) EmeraldGreen else NeutralDark,
+                                modifier = Modifier.weight(1f)
+                            )
+                            if (language == lang && !isLocalMode) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = EmeraldGreen,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showLanguagePicker = false }) {
+                    Text("Tutup", color = EmeraldGreen, fontWeight = FontWeight.Bold)
+                }
+            }
+        )
     }
 }
 

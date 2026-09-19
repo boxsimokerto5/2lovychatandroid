@@ -56,8 +56,10 @@ data class LovyChatUiState(
     val isTestingConnection: Boolean = false,
     val connectionStatusMessage: String? = null,
     // Language and Geographic Settings
+    val isLocalLanguageMode: Boolean = true,
     val language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
-    val detectedGeoArea: String = "ID/MY",
+    val detectedLocalLanguage: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
+    val detectedGeoArea: String = "Indonesia / Malaysia (ID/MY)",
     // Android Native GPS State
     val currentGpsLocation: com.example.util.UserGpsLocation? = null,
     val hasLocationPermission: Boolean = false,
@@ -86,18 +88,50 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     private fun detectAndApplyGeoLanguage() {
         val app = try { getApplication<Application>() } catch (_: Throwable) { null }
         val ctx = try { app?.applicationContext } catch (_: Throwable) { null } ?: app
-        val detected = com.example.util.GeoLanguageDetector.detectLanguage(ctx)
+        val detected = com.example.util.GeoLanguageDetector.detectLocalLanguage(ctx)
+        val areaName = com.example.util.GeoLanguageDetector.getCountryOrRegionName(ctx)
         _uiState.update {
             it.copy(
+                isLocalLanguageMode = true,
+                detectedLocalLanguage = detected,
                 language = detected,
-                detectedGeoArea = if (detected == com.example.util.AppLanguage.INDONESIAN) "Indonesia / Malaysia (ID/MY)" else "Global / Other Area"
+                detectedGeoArea = areaName
             )
         }
     }
 
     fun setLanguage(language: com.example.util.AppLanguage) {
         recordFeatureClick()
-        _uiState.update { it.copy(language = language) }
+        val app = try { getApplication<Application>() } catch (_: Throwable) { null }
+        val ctx = try { app?.applicationContext } catch (_: Throwable) { null } ?: app
+
+        if (language == com.example.util.AppLanguage.LOCAL) {
+            val detected = com.example.util.GeoLanguageDetector.detectLocalLanguage(ctx)
+            _uiState.update {
+                it.copy(
+                    isLocalLanguageMode = true,
+                    language = detected,
+                    detectedLocalLanguage = detected
+                )
+            }
+        } else {
+            _uiState.update {
+                it.copy(
+                    language = language,
+                    isLocalLanguageMode = (language != com.example.util.AppLanguage.ENGLISH)
+                )
+            }
+        }
+    }
+
+    fun toggleLanguageMode() {
+        recordFeatureClick()
+        val current = _uiState.value
+        if (current.isLocalLanguageMode) {
+            setLanguage(com.example.util.AppLanguage.ENGLISH)
+        } else {
+            setLanguage(com.example.util.AppLanguage.LOCAL)
+        }
     }
 
     fun recordFeatureClick() {

@@ -5,42 +5,148 @@ import android.telephony.TelephonyManager
 import java.util.Locale
 import java.util.TimeZone
 
-enum class AppLanguage(val code: String, val displayName: String) {
-    INDONESIAN("in", "Bahasa Indonesia"),
-    ENGLISH("en", "English")
+enum class AppLanguage(
+    val code: String,
+    val displayName: String,
+    val nativeName: String,
+    val isLocalAuto: Boolean = false
+) {
+    LOCAL("lo", "Local (Auto)", "Lokal", true),
+    INDONESIAN("id", "Bahasa Indonesia", "Indonesia"),
+    ENGLISH("en", "English", "English"),
+    CHINESE("zh", "Chinese", "中文"),
+    JAPANESE("ja", "Japanese", "日本語"),
+    KOREAN("ko", "Korean", "한국어"),
+    ARABIC("ar", "Arabic", "العربية"),
+    SPANISH("es", "Spanish", "Español"),
+    FRENCH("fr", "French", "Français"),
+    GERMAN("de", "German", "Deutsch"),
+    RUSSIAN("ru", "Russian", "Русский"),
+    PORTUGUESE("pt", "Portuguese", "Português");
+
+    companion object {
+        fun fromCode(code: String): AppLanguage {
+            return entries.find { 
+                it.code.equals(code, ignoreCase = true) || 
+                (code.equals("in", ignoreCase = true) && it == INDONESIAN) 
+            } ?: ENGLISH
+        }
+    }
 }
 
 object GeoLanguageDetector {
 
     /**
-     * Mendeteksi otomatis bahasa berdasarkan area geografis pengguna.
-     * Jika terdeteksi di Indonesia (ID) atau Malaysia (MY), otomatis Bahasa Indonesia.
-     * Selain itu, otomatis Bahasa Inggris (EN).
+     * Mendeteksi otomatis bahasa lokal berdasarkan perangkat dan negara pengguna.
+     * Mendukung deteksi bahasa dari seluruh dunia: Cina (zh), Jepang (ja), Arab (ar),
+     * Korea (ko), Spanyol (es), Prancis (fr), Jerman (de), Rusia (ru), Portugal/Brasil (pt),
+     * Indonesia/Malaysia (id/in/ms), dll.
+     */
+    fun detectLocalLanguage(context: Context? = null): AppLanguage {
+        val defaultLocale = Locale.getDefault()
+        val langCode = defaultLocale.language.lowercase(Locale.ROOT)
+        val countryCode = (getCountryCode(context).ifBlank { defaultLocale.country }).uppercase(Locale.ROOT)
+        val tzId = TimeZone.getDefault().id.lowercase(Locale.ROOT)
+
+        // 1. Deteksi Cina / Mandarin (zh, CN, TW, HK)
+        if (langCode.startsWith("zh") || countryCode in listOf("CN", "TW", "HK") ||
+            tzId.contains("shanghai") || tzId.contains("beijing") || tzId.contains("taipei") || tzId.contains("hong_kong")
+        ) {
+            return AppLanguage.CHINESE
+        }
+
+        // 2. Deteksi Jepang (ja, JP)
+        if (langCode.startsWith("ja") || countryCode == "JP" || tzId.contains("tokyo")) {
+            return AppLanguage.JAPANESE
+        }
+
+        // 3. Deteksi Korea (ko, KR)
+        if (langCode.startsWith("ko") || countryCode == "KR" || tzId.contains("seoul")) {
+            return AppLanguage.KOREAN
+        }
+
+        // 4. Deteksi Arab (ar, SA, AE, EG, dll)
+        if (langCode.startsWith("ar") || countryCode in listOf("SA", "AE", "EG", "QA", "KW", "OM", "BH", "JO", "LB", "IQ") ||
+            tzId.contains("riyadh") || tzId.contains("dubai") || tzId.contains("cairo")
+        ) {
+            return AppLanguage.ARABIC
+        }
+
+        // 5. Deteksi Spanyol (es, ES, MX, AR, dll)
+        if (langCode.startsWith("es") || countryCode in listOf("ES", "MX", "AR", "CO", "CL", "PE", "VE", "EC", "GT")) {
+            return AppLanguage.SPANISH
+        }
+
+        // 6. Deteksi Prancis (fr, FR, BE, CA)
+        if (langCode.startsWith("fr") || countryCode in listOf("FR", "BE", "MC") || tzId.contains("paris")) {
+            return AppLanguage.FRENCH
+        }
+
+        // 7. Deteksi Jerman (de, DE, AT, CH)
+        if (langCode.startsWith("de") || countryCode in listOf("DE", "AT") || tzId.contains("berlin")) {
+            return AppLanguage.GERMAN
+        }
+
+        // 8. Deteksi Rusia (ru, RU, BY, KZ)
+        if (langCode.startsWith("ru") || countryCode in listOf("RU", "BY", "KZ") || tzId.contains("moscow")) {
+            return AppLanguage.RUSSIAN
+        }
+
+        // 9. Deteksi Portugis (pt, BR, PT)
+        if (langCode.startsWith("pt") || countryCode in listOf("BR", "PT") || tzId.contains("sao_paulo") || tzId.contains("lisbon")) {
+            return AppLanguage.PORTUGUESE
+        }
+
+        // 10. Deteksi Indonesia / Melayu (id, in, ms, ID, MY)
+        if (langCode in listOf("id", "in", "ms") || countryCode in listOf("ID", "MY") || isIndonesianOrMalaysianTimeZone(tzId)) {
+            return AppLanguage.INDONESIAN
+        }
+
+        // 11. Bahasa Inggris jika perangkat berbahasa Inggris
+        if (langCode.startsWith("en")) {
+            return AppLanguage.ENGLISH
+        }
+
+        // Fallback jika tidak terdaftar: periksa kecocokan kode bahasa ISO
+        return when (langCode) {
+            "zh" -> AppLanguage.CHINESE
+            "ja" -> AppLanguage.JAPANESE
+            "ko" -> AppLanguage.KOREAN
+            "ar" -> AppLanguage.ARABIC
+            "es" -> AppLanguage.SPANISH
+            "fr" -> AppLanguage.FRENCH
+            "de" -> AppLanguage.GERMAN
+            "ru" -> AppLanguage.RUSSIAN
+            "pt" -> AppLanguage.PORTUGUESE
+            else -> AppLanguage.INDONESIAN // Default fallback
+        }
+    }
+
+    /**
+     * Backward compatibility untuk kode lama
      */
     fun detectLanguage(context: Context?): AppLanguage {
-        if (context == null) return AppLanguage.INDONESIAN
-        val detectedCountry = getCountryCode(context).uppercase(Locale.ROOT)
-        
-        // Cek kode negara: ID (Indonesia), MY (Malaysia)
-        if (detectedCountry == "ID" || detectedCountry == "MY") {
-            return AppLanguage.INDONESIAN
-        }
+        return detectLocalLanguage(context)
+    }
 
-        // Cek TimeZone sebagai deteksi geografis pendukung yang sangat akurat
-        val tzId = TimeZone.getDefault().id.lowercase(Locale.ROOT)
-        if (isIndonesianOrMalaysianTimeZone(tzId)) {
-            return AppLanguage.INDONESIAN
+    fun getCountryOrRegionName(context: Context? = null): String {
+        val defaultLocale = Locale.getDefault()
+        val lang = detectLocalLanguage(context)
+        val country = (getCountryCode(context).ifBlank { defaultLocale.country }).uppercase(Locale.ROOT)
+        return when (lang) {
+            AppLanguage.CHINESE -> "Cina / China (CN)"
+            AppLanguage.JAPANESE -> "Jepang / Japan (JP)"
+            AppLanguage.KOREAN -> "Korea Selatan (KR)"
+            AppLanguage.ARABIC -> "Timur Tengah / Arab (${country.ifBlank { "AR" }})"
+            AppLanguage.SPANISH -> "Spanyol / Amerika Latin (${country.ifBlank { "ES" }})"
+            AppLanguage.FRENCH -> "Prancis / France (FR)"
+            AppLanguage.GERMAN -> "Jerman / Germany (DE)"
+            AppLanguage.RUSSIAN -> "Rusia / Russia (RU)"
+            AppLanguage.PORTUGUESE -> "Brasil / Portugal (${country.ifBlank { "BR" }})"
+            AppLanguage.INDONESIAN -> "Indonesia / Malaysia (ID/MY)"
+            AppLanguage.ENGLISH -> "Internasional / Global (EN)"
+            AppLanguage.LOCAL -> "Otomatis Lokal (LO)"
         }
-
-        // Cek locale bawaan perangkat
-        val defaultLocale = Locale.getDefault().country.uppercase(Locale.ROOT)
-        val defaultLang = Locale.getDefault().language.lowercase(Locale.ROOT)
-        if (defaultLocale == "ID" || defaultLocale == "MY" || defaultLang == "in" || defaultLang == "id" || defaultLang == "ms") {
-            return AppLanguage.INDONESIAN
-        }
-
-        // Selain Indonesia dan Malaysia -> Bahasa Inggris
-        return AppLanguage.ENGLISH
     }
 
     private fun getCountryCode(context: Context?): String {
