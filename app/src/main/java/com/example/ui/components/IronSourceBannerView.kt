@@ -8,10 +8,16 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -21,18 +27,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.ui.theme.NeutralBorder
+import com.example.ui.theme.NeutralMedium
 import com.example.util.AdManager
 import com.ironsource.mediationsdk.IronSourceBannerLayout
 
 /**
  * Clean, responsive Banner Ad Composable powered by ironSource LevelPlay.
- * Safely creates, renders, and disposes of the ironSource Banner.
+ * Neatly styled with a subtle divider, standard 50dp ad slot, and discreet sponsored tag.
+ * Safely creates, attaches, and disposes of the ironSource Banner.
  */
 @Composable
 fun IronSourceBannerView(
@@ -62,52 +73,85 @@ fun IronSourceBannerView(
         }
     }
 
-    if (isLoaded && bannerLayout != null) {
-        val banner = bannerLayout!!
-        androidx.compose.foundation.layout.Column(
-            modifier = modifier
-                .fillMaxWidth()
-                .background(Color.White),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            HorizontalDivider(color = NeutralBorder, thickness = 0.6.dp)
-            Box(
-                modifier = Modifier
+    AnimatedVisibility(
+        visible = isLoaded && bannerLayout != null,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        bannerLayout?.let { banner ->
+            Column(
+                modifier = modifier
                     .fillMaxWidth()
-                    .height(50.dp)
-                    .background(Color(0xFFF9FAFB)),
-                contentAlignment = Alignment.Center
+                    .background(Color.White)
+                    .testTag("iron_source_banner_container"),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                AndroidView(
+                HorizontalDivider(color = NeutralBorder, thickness = 0.5.dp)
+
+                // Subtle sponsored indicator badge
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp),
-                    factory = { ctx ->
-                        FrameLayout(ctx).apply {
-                            layoutParams = ViewGroup.LayoutParams(
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                ViewGroup.LayoutParams.WRAP_CONTENT
-                            )
-                            try {
-                                (banner.parent as? ViewGroup)?.removeView(banner)
-                                addView(banner)
-                            } catch (e: Throwable) {
-                                android.util.Log.w("IronSourceBannerView", "Error attaching banner view", e)
-                            }
-                        }
-                    },
-                    update = { container ->
-                        try {
-                            if (banner.parent != container) {
-                                (banner.parent as? ViewGroup)?.removeView(banner)
-                                container.removeAllViews()
-                                container.addView(banner)
-                            }
-                        } catch (e: Throwable) {
-                            android.util.Log.w("IronSourceBannerView", "Error updating banner view", e)
-                        }
+                        .padding(horizontal = 8.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(Color(0xFFEEEEEE))
+                            .padding(horizontal = 5.dp, vertical = 1.dp)
+                    ) {
+                        Text(
+                            text = "IKLAN",
+                            fontSize = 8.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = NeutralMedium,
+                            letterSpacing = 0.5.sp
+                        )
                     }
-                )
+                }
+
+                // Banner ad content area (standard 320x50 banner)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .background(Color(0xFFFAFAFA)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AndroidView(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        factory = { ctx ->
+                            FrameLayout(ctx).apply {
+                                layoutParams = ViewGroup.LayoutParams(
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                    ViewGroup.LayoutParams.WRAP_CONTENT
+                                )
+                                try {
+                                    (banner.parent as? ViewGroup)?.removeView(banner)
+                                    addView(banner)
+                                } catch (e: Throwable) {
+                                    android.util.Log.w("IronSourceBannerView", "Error attaching banner view", e)
+                                }
+                            }
+                        },
+                        update = { container ->
+                            try {
+                                if (banner.parent != container) {
+                                    (banner.parent as? ViewGroup)?.removeView(banner)
+                                    container.removeAllViews()
+                                    container.addView(banner)
+                                }
+                            } catch (e: Throwable) {
+                                android.util.Log.w("IronSourceBannerView", "Error updating banner view", e)
+                            }
+                        }
+                    )
+                }
+
+                HorizontalDivider(color = NeutralBorder, thickness = 0.5.dp)
             }
         }
     }

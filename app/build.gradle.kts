@@ -25,11 +25,16 @@ android {
 
   signingConfigs {
     create("release") {
-      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
+      val defaultKeystore = if (file("${rootDir}/release.jks").exists()) {
+        "${rootDir}/release.jks"
+      } else {
+        "${rootDir}/my-upload-key.jks"
+      }
+      val keystorePath = System.getenv("KEYSTORE_PATH") ?: defaultKeystore
       storeFile = file(keystorePath)
-      storePassword = System.getenv("STORE_PASSWORD")
-      keyAlias = "upload"
-      keyPassword = System.getenv("KEY_PASSWORD")
+      storePassword = System.getenv("STORE_PASSWORD") ?: "LovyChatRelease2026"
+      keyAlias = System.getenv("KEY_ALIAS") ?: "upload"
+      keyPassword = System.getenv("KEY_PASSWORD") ?: "LovyChatRelease2026"
     }
     create("debugConfig") {
       storeFile = file("${rootDir}/debug.keystore")
@@ -112,10 +117,10 @@ dependencies {
   implementation(libs.firebase.appcheck.recaptcha)
   implementation(libs.firebase.appcheck.debug)
 
-  // ironSource Mediation SDK
+  // ironSource Mediation SDK & Pangle Adapter
   implementation("com.ironsource.sdk:mediationsdk:8.6.0")
-  // implementation("com.ironsource.adapters:pangleadapter:4.3.36")
-  // implementation("com.pangle.global:ads-sdk:6.3.0.9")
+  implementation("com.ironsource.adapters:pangleadapter:4.3.36")
+  implementation("com.pangle.global:ads-sdk:6.3.0.9")
   implementation("com.google.android.gms:play-services-ads-identifier:18.2.0")
   implementation("com.google.android.gms:play-services-appset:16.1.0")
   implementation(libs.kotlinx.coroutines.android)

@@ -54,6 +54,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import com.example.ui.components.IronSourceBannerView
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -135,6 +136,9 @@ fun BottleScreen(
                     containerColor = Color(0xFF00838F) // Deep ocean cyan
                 )
             )
+        },
+        bottomBar = {
+            IronSourceBannerView()
         },
         containerColor = ScreenBackground,
         modifier = modifier.fillMaxSize()

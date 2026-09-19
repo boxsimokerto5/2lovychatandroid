@@ -1,0 +1,64 @@
+name: Build & Release Android App (APK & AAB)
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Signed APK & AAB (Bundle)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Decode Release Keystore
+        run: |
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.jks
+            echo "Keystore decoded from repository secret."
+          elif [ -f "release.keystore.base64" ]; then
+            base64 -d release.keystore.base64 > release.jks
+            echo "Keystore decoded from bundled release.keystore.base64."
+          else
+            echo "Using existing release.jks"
+          fi
+
+      - name: Build Release Bundle (AAB for Play Store)
+        run: gradle :app:bundleRelease
+        env:
+          KEYSTORE_PATH: ${{ github.workspace }}/release.jks
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD || 'LovyChatRelease2026' }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS || 'upload' }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'LovyChatRelease2026' }}
+
+      - name: Build Release APK
+        run: gradle :app:assembleRelease
+        env:
+          KEYSTORE_PATH: ${{ github.workspace }}/release.jks
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD || 'LovyChatRelease2026' }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS || 'upload' }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'LovyChatRelease2026' }}
+
+      - name: Upload AAB (Google Play Store)
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-aab
+          path: app/build/outputs/bundle/release/*.aab
+
+      - name: Upload APK (Direct Install)
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: app/build/outputs/apk/release/*.apk
