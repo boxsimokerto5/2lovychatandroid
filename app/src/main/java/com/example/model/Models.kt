@@ -71,5 +71,6 @@ data class MomentItem(
     val commentsCount: Int = 0,
     val imageUrl: String? = null,
     val authorAvatarUrl: String? = null,
-    val locationTag: String? = null
+    val locationTag: String? = null,
+    val isDeleted: Boolean = false
 )

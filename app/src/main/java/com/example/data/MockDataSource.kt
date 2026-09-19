@@ -349,6 +349,19 @@ object MockDataSource {
             locationTag = "Tebet, Jakarta Selatan"
         ),
         MomentItem(
+            id = "mom1b",
+            authorName = "Siti Rahma",
+            authorAvatarHex = 0xFFEC407A,
+            authorAvatarUrl = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80",
+            timeAgo = "Kemarin",
+            content = "Piknik akhir pekan di taman kota bersama sahabat 🌿🌸 Udara segar dan pemandangan hijau bikin pikiran tenang kembali.",
+            likesCount = 56,
+            isLiked = true,
+            commentsCount = 8,
+            imageUrl = "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1000&q=80",
+            locationTag = "Hutan Kota GBK, Jakarta"
+        ),
+        MomentItem(
             id = "mom2",
             authorName = "Rian Pratama",
             authorAvatarHex = 0xFF42A5F5,
@@ -360,6 +373,19 @@ object MockDataSource {
             commentsCount = 12,
             imageUrl = "https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1000&q=80",
             locationTag = "Bundaran HI, Jakarta Pusat"
+        ),
+        MomentItem(
+            id = "mom2b",
+            authorName = "Rian Pratama",
+            authorAvatarHex = 0xFF42A5F5,
+            authorAvatarUrl = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80",
+            timeAgo = "1 hari yang lalu",
+            content = "Secangkir kopi manual brew mengawali pagi yang produktif ☕📷 Kopi enak selalu berhasil memantik ide-ide baru.",
+            likesCount = 37,
+            isLiked = false,
+            commentsCount = 4,
+            imageUrl = "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1000&q=80",
+            locationTag = "Kopi Toko Djawa, Melawai"
         ),
         MomentItem(
             id = "mom3",
@@ -399,6 +425,19 @@ object MockDataSource {
             commentsCount = 34,
             imageUrl = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1000&q=80",
             locationTag = "Pantai Ancol, Jakarta Utara"
+        ),
+        MomentItem(
+            id = "mom5b",
+            authorName = "Alya Zahra",
+            authorAvatarHex = 0xFFFF7043,
+            authorAvatarUrl = "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80",
+            timeAgo = "2 hari yang lalu",
+            content = "Graduation day! Alhamdulillah selesai juga perjuangan skripsi ini 🎓🎉 Terima kasih untuk semua doa dan support teman-teman!",
+            likesCount = 145,
+            isLiked = true,
+            commentsCount = 42,
+            imageUrl = "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1000&q=80",
+            locationTag = "Universitas Indonesia, Depok"
         )
     )
 }

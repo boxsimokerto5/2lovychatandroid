@@ -113,6 +113,10 @@ fun NearbyScreen(
     hasLocationPermission: Boolean = false,
     isGpsEnabled: Boolean = true,
     language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
+    isUserBlocked: (String, String) -> Boolean = { _, _ -> false },
+    onBlockUser: (User) -> Unit = {},
+    onUnblockUser: (User) -> Unit = {},
+    moments: List<com.example.model.MomentItem> = emptyList(),
     onPermissionResult: (Boolean) -> Unit = {},
     onBack: () -> Unit,
     onFilterChange: (Gender?) -> Unit,
@@ -122,6 +126,7 @@ fun NearbyScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    var selectedUserForProfile by remember { mutableStateOf<User?>(null) }
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -138,9 +143,10 @@ fun NearbyScreen(
         }
     }
 
-    val filteredUsers = remember(users, selectedGenderFilter) {
-        if (selectedGenderFilter == null) users
-        else users.filter { it.gender == selectedGenderFilter }
+    val filteredUsers = remember(users, selectedGenderFilter, isUserBlocked) {
+        val unblocked = users.filterNot { isUserBlocked(it.id, it.name) }
+        if (selectedGenderFilter == null) unblocked
+        else unblocked.filter { it.gender == selectedGenderFilter }
     }
 
     val displayedUsers = remember(filteredUsers, isExpanded) {
@@ -441,6 +447,7 @@ fun NearbyScreen(
                 NearbyRadarView(
                     users = displayedUsers,
                     onSayHi = onSayHi,
+                    onUserClick = { user -> selectedUserForProfile = user },
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
@@ -483,6 +490,7 @@ fun NearbyScreen(
                 items(displayedUsers, key = { it.id }) { user ->
                     NearbyUserCard(
                         user = user,
+                        onClick = { selectedUserForProfile = user },
                         onSayHi = { onSayHi(user) }
                     )
                 }

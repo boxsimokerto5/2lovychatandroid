@@ -71,10 +71,16 @@ data class LovyChatUiState(
     val hasLocationPermission: Boolean = false,
     val isGpsEnabled: Boolean = true,
     // Nearby Search Expansion (Rewarded Ad trigger)
-    val isNearbyExpanded: Boolean = false
+    val isNearbyExpanded: Boolean = false,
+    // Blocked Users State (Prevents chats & hides from Around Me)
+    val blockedUserIds: Set<String> = emptySet(),
+    val blockedUserNames: Set<String> = emptySet()
 )
 
 class LovyChatViewModel(application: Application) : AndroidViewModel(application) {
+    private val prefs by lazy {
+        getApplication<Application>().getSharedPreferences("lovy_chat_prefs", android.content.Context.MODE_PRIVATE)
+    }
     private val supabaseRepo = SupabaseRepository()
     private val userProfileRepo by lazy {
         val app = getApplication<Application>()
@@ -90,11 +96,85 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             SupabaseClient.init(ctx)
         } catch (_: Throwable) {
         }
+        loadBlockedUsers()
         refreshSupabaseState()
         detectAndApplyGeoLanguage()
         observeUserProfile()
         // Coba sinkronisasi data awal jika Supabase sudah terkonfigurasi
         syncFromSupabase()
+    }
+
+    private fun loadBlockedUsers() {
+        try {
+            val savedIds = prefs.getStringSet("blocked_user_ids", emptySet()) ?: emptySet()
+            val savedNames = prefs.getStringSet("blocked_user_names", emptySet()) ?: emptySet()
+            _uiState.update { current ->
+                val filteredNearby = current.nearbyUsers.filterNot { u ->
+                    savedIds.contains(u.id) || savedNames.any { n -> n.equals(u.name, ignoreCase = true) }
+                }
+                current.copy(
+                    blockedUserIds = savedIds,
+                    blockedUserNames = savedNames,
+                    nearbyUsers = filteredNearby
+                )
+            }
+        } catch (_: Throwable) {
+        }
+    }
+
+    fun isUserBlocked(userId: String = "", userName: String = ""): Boolean {
+        val state = _uiState.value
+        if (userId.isNotBlank() && state.blockedUserIds.contains(userId)) return true
+        if (userName.isNotBlank() && state.blockedUserNames.any { it.equals(userName, ignoreCase = true) }) return true
+        return false
+    }
+
+    fun blockUser(userId: String, userName: String) {
+        val currentIds = _uiState.value.blockedUserIds
+        val currentNames = _uiState.value.blockedUserNames
+        val newIds = if (userId.isNotBlank()) currentIds + userId else currentIds
+        val newNames = if (userName.isNotBlank()) currentNames + userName else currentNames
+
+        try {
+            prefs.edit()
+                .putStringSet("blocked_user_ids", newIds)
+                .putStringSet("blocked_user_names", newNames)
+                .apply()
+        } catch (_: Throwable) {
+        }
+
+        _uiState.update { current ->
+            val filteredNearby = current.nearbyUsers.filterNot { u ->
+                (userId.isNotBlank() && u.id == userId) ||
+                (userName.isNotBlank() && u.name.equals(userName, ignoreCase = true))
+            }
+            current.copy(
+                blockedUserIds = newIds,
+                blockedUserNames = newNames,
+                nearbyUsers = filteredNearby
+            )
+        }
+    }
+
+    fun unblockUser(userId: String, userName: String) {
+        val newIds = _uiState.value.blockedUserIds.filterNot { it == userId || (userId.isNotBlank() && it == userId) }.toSet()
+        val newNames = _uiState.value.blockedUserNames.filterNot { it.equals(userName, ignoreCase = true) }.toSet()
+
+        try {
+            prefs.edit()
+                .putStringSet("blocked_user_ids", newIds)
+                .putStringSet("blocked_user_names", newNames)
+                .apply()
+        } catch (_: Throwable) {
+        }
+
+        _uiState.update { current ->
+            current.copy(
+                blockedUserIds = newIds,
+                blockedUserNames = newNames
+            )
+        }
+        refreshNearbyScan()
     }
 
     private fun observeUserProfile() {
@@ -374,10 +454,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             // Coba ambil dari Supabase jika ada
             val remoteUsers = supabaseRepo.fetchNearbyUsers()
             if (!remoteUsers.isNullOrEmpty()) {
-                _uiState.update { it.copy(isScanningNearby = false, nearbyUsers = remoteUsers) }
+                val filtered = remoteUsers.filterNot { isUserBlocked(it.id, it.name) }
+                _uiState.update { it.copy(isScanningNearby = false, nearbyUsers = filtered) }
             } else {
                 val currentLoc = _uiState.value.currentGpsLocation
-                val updated = MockDataSource.initialNearbyUsers.mapIndexed { index, user ->
+                val updated = MockDataSource.initialNearbyUsers
+                    .filterNot { isUserBlocked(it.id, it.name) }
+                    .mapIndexed { index, user ->
                     val calculatedDistance = if (currentLoc != null) {
                         // Hitung jarak dinamis berbasis koordinat GPS nyata pengguna (offset simulasi bertahap)
                         val targetLat = currentLoc.latitude + (index * 0.0018) + ((-5..5).random() * 0.0002)
@@ -400,6 +483,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun sayHiToUser(user: User) {
+        if (isUserBlocked(user.id, user.name)) return
         recordFeatureClick()
         val convId = "conv_${user.id}"
         val existing = _uiState.value.conversations.find { it.partnerId == user.id }
@@ -481,6 +565,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun openChatWithBottleSender(bottle: BottleMessage) {
+        if (isUserBlocked(bottle.senderId, bottle.senderName)) return
         recordFeatureClick()
         val convId = "conv_${bottle.senderId}"
         val existing = _uiState.value.conversations.find { it.partnerId == bottle.senderId }
@@ -532,6 +617,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
     fun sendMessage(conversationId: String, text: String, partnerName: String) {
         if (text.isBlank()) return
+        if (isUserBlocked(userName = partnerName)) return
         val newMsg = ChatMessage(
             id = UUID.randomUUID().toString(),
             conversationId = conversationId,
@@ -565,6 +651,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     private fun scheduleAutoReply(conversationId: String, partnerName: String) {
         viewModelScope.launch {
             delay(2000)
+            if (isUserBlocked(userName = partnerName)) return@launch
             val replyTexts = listOf(
                 "Halo! Senang bisa terhubung denganmu di Lovy Chat 😊",
                 "Salam kenal juga ya! Kamu lagi ada kegiatan apa hari ini?",
@@ -691,6 +778,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         // Simpan ke Supabase
         viewModelScope.launch {
             supabaseRepo.sendMoment(newMoment, "me")
+        }
+    }
+
+    fun deleteMoment(momentId: String) {
+        recordFeatureClick()
+        _uiState.update { state ->
+            state.copy(moments = state.moments.filter { it.id != momentId })
         }
     }
 }

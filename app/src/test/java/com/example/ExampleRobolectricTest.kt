@@ -280,5 +280,27 @@ class ExampleRobolectricTest {
     assertEquals(conv.id, chatDetail.conversationId)
     assertEquals(conv.partnerName, chatDetail.partnerName)
   }
+
+  @Test
+  fun `test partner moments filtered and not deleted`() {
+    val app = ApplicationProvider.getApplicationContext<android.app.Application>()
+    val viewModel = LovyChatViewModel(app)
+
+    val partnerName = "Siti Rahma"
+    val momentsForPartner = viewModel.uiState.value.moments.filter {
+        it.authorName.equals(partnerName, ignoreCase = true) && !it.isDeleted
+    }
+    assertTrue("Partner $partnerName should have moments", momentsForPartner.isNotEmpty())
+    assertTrue("Moments should have photos", momentsForPartner.any { it.imageUrl != null })
+
+    // Test delete moment
+    val momentToDelete = momentsForPartner.first()
+    viewModel.deleteMoment(momentToDelete.id)
+
+    val updatedMoments = viewModel.uiState.value.moments.filter {
+        it.authorName.equals(partnerName, ignoreCase = true) && !it.isDeleted
+    }
+    assertTrue("Deleted moment should not be in active partner moments", updatedMoments.none { it.id == momentToDelete.id })
+  }
 }
 

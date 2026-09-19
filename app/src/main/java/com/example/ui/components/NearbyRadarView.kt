@@ -81,6 +81,7 @@ import kotlin.math.sin
 fun NearbyRadarView(
     users: List<User>,
     onSayHi: (User) -> Unit,
+    onUserClick: ((User) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var selectedUser by remember { mutableStateOf<User?>(null) }
@@ -408,71 +409,80 @@ fun NearbyRadarView(
                                 .padding(14.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            LovyAvatar(
-                                name = user.name,
-                                avatarColorHex = user.avatarColorHex,
-                                avatarUrl = user.avatarUrl,
-                                size = 52.dp,
-                                fontSize = 20.sp,
-                                isOnline = user.isOnline
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable(enabled = onUserClick != null) {
+                                        onUserClick?.invoke(user)
+                                    },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                LovyAvatar(
+                                    name = user.name,
+                                    avatarColorHex = user.avatarColorHex,
+                                    avatarUrl = user.avatarUrl,
+                                    size = 52.dp,
+                                    fontSize = 20.sp,
+                                    isOnline = user.isOnline
+                                )
 
-                            Spacer(modifier = Modifier.width(12.dp))
+                                Spacer(modifier = Modifier.width(12.dp))
 
-                            Column(modifier = Modifier.weight(1f)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = user.name,
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = NeutralDark,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    val badgeColor = if (user.gender == Gender.FEMALE) Color(0xFFFF4081) else Color(0xFF2196F3)
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(4.dp))
-                                            .background(badgeColor)
-                                            .padding(horizontal = 4.dp, vertical = 1.dp)
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = user.name,
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = NeutralDark,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        val badgeColor = if (user.gender == Gender.FEMALE) Color(0xFFFF4081) else Color(0xFF2196F3)
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(4.dp))
+                                                .background(badgeColor)
+                                                .padding(horizontal = 4.dp, vertical = 1.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = if (user.gender == Gender.FEMALE) Icons.Default.Female else Icons.Default.Male,
+                                                contentDescription = null,
+                                                tint = Color.White,
+                                                modifier = Modifier.size(11.dp)
+                                            )
+                                        }
+                                    }
+
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(top = 2.dp)
                                     ) {
                                         Icon(
-                                            imageVector = if (user.gender == Gender.FEMALE) Icons.Default.Female else Icons.Default.Male,
+                                            imageVector = Icons.Default.LocationOn,
                                             contentDescription = null,
-                                            tint = Color.White,
-                                            modifier = Modifier.size(11.dp)
+                                            tint = EmeraldGreen,
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(2.dp))
+                                        Text(
+                                            text = "${user.distanceMeters} m • ${user.city}",
+                                            fontSize = 11.5.sp,
+                                            color = NeutralMedium,
+                                            fontWeight = FontWeight.Medium
                                         )
                                     }
-                                }
 
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(top = 2.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.LocationOn,
-                                        contentDescription = null,
-                                        tint = EmeraldGreen,
-                                        modifier = Modifier.size(13.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(2.dp))
                                     Text(
-                                        text = "${user.distanceMeters} m • ${user.city}",
-                                        fontSize = 11.5.sp,
-                                        color = NeutralMedium,
-                                        fontWeight = FontWeight.Medium
+                                        text = user.bio,
+                                        fontSize = 12.sp,
+                                        color = NeutralDark.copy(alpha = 0.85f),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.padding(top = 2.dp)
                                     )
                                 }
-
-                                Text(
-                                    text = user.bio,
-                                    fontSize = 12.sp,
-                                    color = NeutralDark.copy(alpha = 0.85f),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.padding(top = 2.dp)
-                                )
                             }
 
                             Spacer(modifier = Modifier.width(8.dp))

@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -24,14 +26,23 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.DoneAll
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.FormatQuote
+import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Wc
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -50,6 +61,7 @@ import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -62,13 +74,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import coil.compose.AsyncImage
 import com.example.model.ChatMessage
 import com.example.model.Gender
+import com.example.model.MomentItem
 import com.example.ui.components.LovyAvatar
 import com.example.ui.theme.ChatBubbleOther
 import com.example.ui.theme.ChatBubbleSelf
@@ -97,6 +117,11 @@ fun ChatDetailScreen(
     partnerDistance: String = "500m",
     partnerGender: Gender? = Gender.FEMALE,
     partnerAge: Int = 22,
+    partnerMoments: List<MomentItem> = emptyList(),
+    isPartnerBlocked: Boolean = false,
+    onBlockPartner: (() -> Unit)? = null,
+    onUnblockPartner: (() -> Unit)? = null,
+    onToggleLikeMoment: ((String) -> Unit)? = null,
     onPartnerProfileClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -145,6 +170,22 @@ fun ChatDetailScreen(
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White
                                 )
+                                if (isPartnerBlocked) {
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(Color(0xFFD32F2F))
+                                            .padding(horizontal = 5.dp, vertical = 1.dp)
+                                    ) {
+                                        Text(
+                                            text = "Diblokir",
+                                            color = Color.White,
+                                            fontSize = 9.5.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Icon(
                                     imageVector = Icons.Default.Info,
@@ -154,9 +195,9 @@ fun ChatDetailScreen(
                                 )
                             }
                             Text(
-                                text = "Online • Ketuk lihat profil",
+                                text = if (isPartnerBlocked) "Kontak Diblokir • Ketuk lihat profil" else "Online • Ketuk lihat profil",
                                 fontSize = 11.sp,
-                                color = Color.White.copy(alpha = 0.88f)
+                                color = if (isPartnerBlocked) Color(0xFFFFCDD2) else Color.White.copy(alpha = 0.88f)
                             )
                         }
                     }
@@ -235,54 +276,101 @@ fun ChatDetailScreen(
                 }
             }
 
-            // Bottom Input Bar
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
-            ) {
-                OutlinedTextField(
-                    value = inputText,
-                    onValueChange = { inputText = it },
-                    placeholder = { Text("Ketik pesan...", fontSize = 14.sp) },
-                    maxLines = 4,
-                    shape = RoundedCornerShape(24.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = EmeraldGreen,
-                        unfocusedBorderColor = Color(0xFFE0E0E0),
-                        focusedContainerColor = ScreenBackground,
-                        unfocusedContainerColor = ScreenBackground
-                    ),
+            // Bottom Chat Area
+            if (isPartnerBlocked) {
+                // Blocked User Info Banner instead of input
+                Surface(
+                    color = Color(0xFFFFEBEE),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, Color(0xFFFFCDD2)),
                     modifier = Modifier
-                        .weight(1f)
-                        .testTag("chat_input_field")
-                )
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                IconButton(
-                    onClick = {
-                        if (inputText.isNotBlank()) {
-                            onSendMessage(inputText)
-                            inputText = ""
-                        }
-                    },
-                    colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = EmeraldGreen,
-                        contentColor = Color.White
-                    ),
-                    modifier = Modifier
-                        .size(46.dp)
-                        .clip(CircleShape)
-                        .testTag("chat_send_button")
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                        .testTag("banner_chat_blocked")
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Send,
-                        contentDescription = "Kirim",
-                        modifier = Modifier.size(20.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                            Icon(
+                                imageVector = Icons.Default.Block,
+                                contentDescription = null,
+                                tint = Color(0xFFD32F2F),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Pengguna diblokir. Tidak dapat mengirim pesan.",
+                                fontSize = 12.sp,
+                                color = Color(0xFFC62828)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                        TextButton(
+                            onClick = { onUnblockPartner?.invoke() },
+                            modifier = Modifier.testTag("btn_unblock_partner_chat")
+                        ) {
+                            Text(
+                                text = "Buka Blokir",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFD32F2F)
+                            )
+                        }
+                    }
+                }
+            } else {
+                // Bottom Input Bar
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.White)
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = inputText,
+                        onValueChange = { inputText = it },
+                        placeholder = { Text("Ketik pesan...", fontSize = 14.sp) },
+                        maxLines = 4,
+                        shape = RoundedCornerShape(24.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = EmeraldGreen,
+                            unfocusedBorderColor = Color(0xFFE0E0E0),
+                            focusedContainerColor = ScreenBackground,
+                            unfocusedContainerColor = ScreenBackground
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("chat_input_field")
                     )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    IconButton(
+                        onClick = {
+                            if (inputText.isNotBlank()) {
+                                onSendMessage(inputText)
+                                inputText = ""
+                            }
+                        },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = EmeraldGreen,
+                            contentColor = Color.White
+                        ),
+                        modifier = Modifier
+                            .size(46.dp)
+                            .clip(CircleShape)
+                            .testTag("chat_send_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Send,
+                            contentDescription = "Kirim",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
         }
@@ -299,6 +387,11 @@ fun ChatDetailScreen(
             partnerDistance = partnerDistance,
             partnerGender = partnerGender,
             partnerAge = partnerAge,
+            partnerMoments = partnerMoments,
+            isBlocked = isPartnerBlocked,
+            onBlockUser = onBlockPartner,
+            onUnblockUser = onUnblockPartner,
+            onToggleLikeMoment = onToggleLikeMoment,
             onDismiss = { showPartnerProfileSheet = false },
             onSendGreeting = { greeting ->
                 onSendMessage(greeting)
@@ -319,10 +412,17 @@ fun PartnerProfileBottomSheet(
     partnerDistance: String,
     partnerGender: Gender?,
     partnerAge: Int,
+    partnerMoments: List<MomentItem> = emptyList(),
+    isBlocked: Boolean = false,
+    onBlockUser: (() -> Unit)? = null,
+    onUnblockUser: (() -> Unit)? = null,
+    onToggleLikeMoment: ((String) -> Unit)? = null,
     onDismiss: () -> Unit,
     onSendGreeting: (String) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var previewMoment by remember { mutableStateOf<MomentItem?>(null) }
+    var showBlockConfirmDialog by remember { mutableStateOf(false) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -361,6 +461,37 @@ fun PartnerProfileBottomSheet(
                         tint = NeutralMedium,
                         modifier = Modifier.size(20.dp)
                     )
+                }
+            }
+
+            if (isBlocked) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Surface(
+                    color = Color(0xFFFFEBEE),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, Color(0xFFFFCDD2)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("banner_sheet_blocked")
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Block,
+                            contentDescription = null,
+                            tint = Color(0xFFD32F2F),
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Pengguna ini berada dalam daftar blokir Anda. Tidak dapat mengirim pesan dan tidak muncul di Orang di Sekitar.",
+                            fontSize = 11.5.sp,
+                            color = Color(0xFFC62828),
+                            lineHeight = 15.sp
+                        )
+                    }
                 }
             }
 
@@ -475,7 +606,110 @@ fun PartnerProfileBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // Section: Momen & Foto yang diunggah dan belum dihapus
+            val activeMoments = remember(partnerMoments) {
+                partnerMoments.filter { !it.isDeleted }
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.PhotoLibrary,
+                        contentDescription = null,
+                        tint = EmeraldGreen,
+                        modifier = Modifier.size(19.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Momen & Foto Terbaru",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = NeutralDark
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = EmeraldGreen.copy(alpha = 0.12f)
+                ) {
+                    Text(
+                        text = "${activeMoments.size} Momen",
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = EmeraldGreen,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            if (activeMoments.isEmpty()) {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = ScreenBackground),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 24.dp, horizontal = 16.dp)
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(46.dp)
+                                .clip(CircleShape)
+                                .background(Color.White)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CameraAlt,
+                                contentDescription = null,
+                                tint = NeutralMedium,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Belum Ada Momen",
+                            fontSize = 13.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = NeutralDark
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "$partnerName belum membagikan foto atau momen yang aktif.",
+                            fontSize = 12.sp,
+                            color = NeutralMedium,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            } else {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    activeMoments.forEach { moment ->
+                        PartnerMomentItemCard(
+                            moment = moment,
+                            onPhotoClick = { previewMoment = moment },
+                            onToggleLike = {
+                                onToggleLikeMoment?.invoke(moment.id)
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(22.dp))
 
             // Quick Actions: Sapa Balik & Lanjutkan Chat
             Row(
@@ -505,6 +739,507 @@ fun PartnerProfileBottomSheet(
                         .testTag("btn_send_greeting_partner")
                 ) {
                     Text("Sapa Balik 👋", fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Block / Unblock User Action
+            if (isBlocked) {
+                OutlinedButton(
+                    onClick = {
+                        onUnblockUser?.invoke()
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = EmeraldGreen
+                    ),
+                    border = BorderStroke(1.dp, EmeraldGreen),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp)
+                        .testTag("btn_unblock_user_action")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.LockOpen,
+                        contentDescription = null,
+                        tint = EmeraldGreen,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Buka Blokir Pengguna",
+                        fontSize = 13.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = EmeraldGreen
+                    )
+                }
+            } else {
+                OutlinedButton(
+                    onClick = {
+                        showBlockConfirmDialog = true
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color(0xFFD32F2F)
+                    ),
+                    border = BorderStroke(1.dp, Color(0xFFFFCDD2)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp)
+                        .testTag("btn_block_user_action")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Block,
+                        contentDescription = null,
+                        tint = Color(0xFFD32F2F),
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Blokir Pengguna Ini",
+                        fontSize = 13.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFFD32F2F)
+                    )
+                }
+            }
+        }
+    }
+
+    // Block User Confirmation Dialog
+    if (showBlockConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showBlockConfirmDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Block,
+                    contentDescription = null,
+                    tint = Color(0xFFD32F2F),
+                    modifier = Modifier.size(32.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Blokir $partnerName?",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp,
+                    textAlign = TextAlign.Center
+                )
+            },
+            text = {
+                Text(
+                    text = "Pengguna ini tidak akan dapat mengirim pesan lagi kepadamu dan tidak akan muncul di daftar Orang di Sekitar.",
+                    fontSize = 13.5.sp,
+                    color = NeutralMedium,
+                    textAlign = TextAlign.Center
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showBlockConfirmDialog = false
+                        onBlockUser?.invoke()
+                        onDismiss()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.testTag("btn_confirm_block_user")
+                ) {
+                    Text("Blokir", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showBlockConfirmDialog = false },
+                    modifier = Modifier.testTag("btn_cancel_block_user")
+                ) {
+                    Text("Batal", color = NeutralDark)
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(18.dp)
+        )
+    }
+
+    // Photo Preview Lightbox Dialog
+    previewMoment?.let { moment ->
+        PartnerPhotoPreviewDialog(
+            moment = moment,
+            partnerAvatarHex = partnerAvatarHex,
+            onDismiss = { previewMoment = null },
+            onToggleLike = {
+                onToggleLikeMoment?.invoke(moment.id)
+            }
+        )
+    }
+}
+
+@Composable
+fun PartnerMomentItemCard(
+    moment: MomentItem,
+    onPhotoClick: () -> Unit,
+    onToggleLike: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color(0xFFEEEEEE)),
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("partner_moment_${moment.id}")
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Photo if available
+            if (!moment.imageUrl.isNullOrBlank()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                        .clickable { onPhotoClick() }
+                ) {
+                    AsyncImage(
+                        model = moment.imageUrl,
+                        contentDescription = "Foto momen dari ${moment.authorName}",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+
+                    // Zoom / Fullscreen overlay indicator
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color.Black.copy(alpha = 0.55f),
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(8.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Fullscreen,
+                                contentDescription = "Perbesar Foto",
+                                tint = Color.White,
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = "Foto",
+                                fontSize = 11.sp,
+                                color = Color.White,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+
+                    // Bottom location tag over image if present
+                    if (!moment.locationTag.isNullOrBlank()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.BottomCenter)
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(Color.Transparent, Color.Black.copy(alpha = 0.65f))
+                                    )
+                                )
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.LocationOn,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = moment.locationTag,
+                                    fontSize = 11.sp,
+                                    color = Color.White,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Caption & Metadata
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp)
+            ) {
+                // Time ago and location if no image
+                if (moment.imageUrl.isNullOrBlank() && !moment.locationTag.isNullOrBlank()) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(bottom = 6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = EmeraldGreen,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = moment.locationTag,
+                            fontSize = 11.5.sp,
+                            color = NeutralMedium
+                        )
+                    }
+                }
+
+                Text(
+                    text = moment.content,
+                    fontSize = 13.5.sp,
+                    lineHeight = 19.sp,
+                    color = NeutralDark,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Footer Row: Time Ago & Social Interactions
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = moment.timeAgo,
+                        fontSize = 11.5.sp,
+                        color = NeutralMedium
+                    )
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        // Like Button with heart
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { onToggleLike() }
+                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (moment.isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = "Suka",
+                                tint = if (moment.isLiked) Color(0xFFE91E63) else NeutralMedium,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "${moment.likesCount}",
+                                fontSize = 12.sp,
+                                fontWeight = if (moment.isLiked) FontWeight.Bold else FontWeight.Normal,
+                                color = if (moment.isLiked) Color(0xFFE91E63) else NeutralMedium
+                            )
+                        }
+
+                        // Comments count indicator
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.ChatBubbleOutline,
+                                contentDescription = "Komentar",
+                                tint = NeutralMedium,
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "${moment.commentsCount}",
+                                fontSize = 12.sp,
+                                color = NeutralMedium
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PartnerPhotoPreviewDialog(
+    moment: MomentItem,
+    partnerAvatarHex: Long,
+    onDismiss: () -> Unit,
+    onToggleLike: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.92f))
+                .clickable { onDismiss() }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Top Header Bar
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        LovyAvatar(
+                            name = moment.authorName,
+                            avatarColorHex = partnerAvatarHex,
+                            avatarUrl = moment.authorAvatarUrl,
+                            size = 36.dp,
+                            fontSize = 15.sp
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
+                            Text(
+                                text = moment.authorName,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Text(
+                                text = moment.timeAgo,
+                                fontSize = 11.5.sp,
+                                color = Color.White.copy(alpha = 0.75f)
+                            )
+                        }
+                    }
+
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.2f))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Tutup",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                // Center: High-res photo
+                if (!moment.imageUrl.isNullOrBlank()) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .padding(vertical = 12.dp)
+                    ) {
+                        AsyncImage(
+                            model = moment.imageUrl,
+                            contentDescription = "Foto momen penuh",
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                        )
+                    }
+                } else {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+
+                // Bottom: Caption, Location, and Likes Card
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color(0xFF1E1E1E),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp)
+                        .clickable(enabled = false) {}
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp)
+                    ) {
+                        if (!moment.locationTag.isNullOrBlank()) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(bottom = 6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.LocationOn,
+                                    contentDescription = null,
+                                    tint = EmeraldGreen,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = moment.locationTag,
+                                    fontSize = 12.sp,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                            }
+                        }
+
+                        Text(
+                            text = moment.content,
+                            fontSize = 14.sp,
+                            lineHeight = 20.sp,
+                            color = Color.White
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            // Like toggle in dialog
+                            Button(
+                                onClick = onToggleLike,
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (moment.isLiked) Color(0xFFE91E63) else Color.White.copy(alpha = 0.15f)
+                                ),
+                                modifier = Modifier.height(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (moment.isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(15.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "${moment.likesCount} Suka",
+                                    fontSize = 12.5.sp,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+
+                            Text(
+                                text = "${moment.commentsCount} Komentar",
+                                fontSize = 12.sp,
+                                color = Color.White.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
                 }
             }
         }

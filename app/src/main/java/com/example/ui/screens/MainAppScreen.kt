@@ -135,6 +135,9 @@ fun MainAppScreen(
             val partnerUser = uiState.nearbyUsers.find {
                 it.name.equals(screen.partnerName, ignoreCase = true) || it.id == conv?.partnerId
             }
+            val partnerMoments = uiState.moments.filter {
+                it.authorName.equals(screen.partnerName, ignoreCase = true) && !it.isDeleted
+            }
             ChatDetailScreen(
                 conversationId = screen.conversationId,
                 partnerName = screen.partnerName,
@@ -145,6 +148,8 @@ fun MainAppScreen(
                 partnerDistance = partnerUser?.formattedDistance ?: "500m",
                 partnerGender = partnerUser?.gender ?: conv?.partnerGender ?: com.example.model.Gender.FEMALE,
                 partnerAge = partnerUser?.age ?: 22,
+                partnerMoments = partnerMoments,
+                onToggleLikeMoment = { momentId -> viewModel.toggleLikeMoment(momentId) },
                 messages = messages,
                 onBack = { viewModel.navigateBack() },
                 onSendMessage = { text ->
