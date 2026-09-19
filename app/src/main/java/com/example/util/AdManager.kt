@@ -29,6 +29,7 @@ object AdManager {
     const val IRONSOURCE_APP_KEY = "283361415"
 
     private var isInitialized = false
+    private var currentActivityRef: java.lang.ref.WeakReference<Activity>? = null
 
     private val _isInterstitialReady = MutableStateFlow(false)
     val isInterstitialReady: StateFlow<Boolean> = _isInterstitialReady.asStateFlow()
@@ -39,10 +40,18 @@ object AdManager {
     private var onUserRewardedCallback: (() -> Unit)? = null
 
     /**
+     * Update or refresh current active Activity reference.
+     */
+    fun updateCurrentActivity(activity: Activity?) {
+        currentActivityRef = if (activity != null) java.lang.ref.WeakReference(activity) else null
+    }
+
+    /**
      * Initialize ironSource SDK with Lovy Chat App Key.
      * Must be called in Activity onCreate.
      */
     fun init(activity: Activity) {
+        updateCurrentActivity(activity)
         if (isInitialized) return
 
         try {
@@ -127,6 +136,35 @@ object AdManager {
         }
     }
 
+    const val CLICKS_THRESHOLD_FOR_INTERSTITIAL = 20
+    private var _featureClickCount = 0
+    val featureClickCount: Int get() = _featureClickCount
+
+    /**
+     * Records a user feature click (navigation, buttons, filters, fishing, throwing, etc.).
+     * EXCLUDES typing or chatting to ensure smooth messaging experience.
+     * When count reaches 20, attempts to show an Interstitial ad and resets counter.
+     */
+    fun recordFeatureClick(activity: Activity? = null): Boolean {
+        _featureClickCount++
+        Log.d(TAG, "Feature click recorded: $_featureClickCount / $CLICKS_THRESHOLD_FOR_INTERSTITIAL")
+        if (_featureClickCount >= CLICKS_THRESHOLD_FOR_INTERSTITIAL) {
+            _featureClickCount = 0
+            val act = activity ?: currentActivityRef?.get()
+            val shown = showInterstitial(activity = act)
+            if (!shown) {
+                // Ensure interstitial is preloaded for next time
+                loadInterstitial()
+            }
+            return shown
+        }
+        return false
+    }
+
+    fun resetFeatureClickCount() {
+        _featureClickCount = 0
+    }
+
     /**
      * Preload an Interstitial ad.
      */
@@ -142,13 +180,22 @@ object AdManager {
     /**
      * Show an Interstitial ad if ready.
      */
-    fun showInterstitial(placementName: String? = null): Boolean {
+    fun showInterstitial(activity: Activity? = null, placementName: String? = null): Boolean {
         return try {
+            val act = activity ?: currentActivityRef?.get()
             if (IronSource.isInterstitialReady()) {
-                if (placementName != null) {
-                    IronSource.showInterstitial(placementName)
+                if (act != null) {
+                    if (placementName != null) {
+                        IronSource.showInterstitial(act, placementName)
+                    } else {
+                        IronSource.showInterstitial(act)
+                    }
                 } else {
-                    IronSource.showInterstitial()
+                    if (placementName != null) {
+                        IronSource.showInterstitial(placementName)
+                    } else {
+                        IronSource.showInterstitial()
+                    }
                 }
                 true
             } else {
@@ -162,27 +209,47 @@ object AdManager {
         }
     }
 
+    fun showInterstitial(placementName: String? = null): Boolean {
+        return showInterstitial(activity = null, placementName = placementName)
+    }
+
     /**
      * Show a Rewarded Video ad and trigger callback when completed.
      */
-    fun showRewardedVideo(onRewarded: () -> Unit, placementName: String? = null): Boolean {
+    fun showRewardedVideo(
+        activity: Activity? = null,
+        placementName: String? = null,
+        onRewarded: () -> Unit
+    ): Boolean {
         return try {
             if (IronSource.isRewardedVideoAvailable()) {
                 onUserRewardedCallback = onRewarded
-                if (placementName != null) {
-                    IronSource.showRewardedVideo(placementName)
+                if (activity != null) {
+                    if (placementName != null) {
+                        IronSource.showRewardedVideo(activity, placementName)
+                    } else {
+                        IronSource.showRewardedVideo(activity)
+                    }
                 } else {
-                    IronSource.showRewardedVideo()
+                    if (placementName != null) {
+                        IronSource.showRewardedVideo(placementName)
+                    } else {
+                        IronSource.showRewardedVideo()
+                    }
                 }
                 true
             } else {
-                Log.d(TAG, "Rewarded video not available")
+                Log.d(TAG, "Rewarded video not available yet")
                 false
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error showing Rewarded Video: ${e.message}", e)
             false
         }
+    }
+
+    fun showRewardedVideo(onRewarded: () -> Unit, placementName: String? = null): Boolean {
+        return showRewardedVideo(activity = null, placementName = placementName, onRewarded = onRewarded)
     }
 
     private fun setupInterstitialListener() {

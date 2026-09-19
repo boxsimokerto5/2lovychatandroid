@@ -78,6 +78,7 @@ fun MainAppScreen(
                 users = uiState.nearbyUsers,
                 selectedGenderFilter = uiState.nearbyGenderFilter,
                 isScanning = uiState.isScanningNearby,
+                isExpanded = uiState.isNearbyExpanded,
                 currentGpsLocation = uiState.currentGpsLocation,
                 hasLocationPermission = uiState.hasLocationPermission,
                 isGpsEnabled = uiState.isGpsEnabled,
@@ -86,7 +87,8 @@ fun MainAppScreen(
                 onBack = { viewModel.navigateBack() },
                 onFilterChange = { viewModel.setNearbyGenderFilter(it) },
                 onRefreshScan = { viewModel.refreshNearbyScan() },
-                onSayHi = { viewModel.sayHiToUser(it) }
+                onSayHi = { viewModel.sayHiToUser(it) },
+                onExpandNearby = { viewModel.expandNearbyUsers() }
             )
         }
         is CurrentScreen.Bottle -> {

@@ -1,7 +1,11 @@
 package com.example.ui.screens
 
 import android.Manifest
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.pm.PackageManager
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -27,6 +31,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Female
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GpsFixed
@@ -34,7 +39,9 @@ import androidx.compose.material.icons.filled.LocationOff
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Male
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.SmartDisplay
 import androidx.compose.material.icons.filled.WavingHand
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -63,6 +70,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -75,6 +83,17 @@ import com.example.ui.theme.NeutralBorder
 import com.example.ui.theme.NeutralDark
 import com.example.ui.theme.NeutralMedium
 import com.example.ui.theme.ScreenBackground
+import com.example.util.AdManager
+import com.example.util.AppStrings
+
+private fun Context.findActivity(): Activity? {
+    var ctx = this
+    while (ctx is ContextWrapper) {
+        if (ctx is Activity) return ctx
+        ctx = ctx.baseContext
+    }
+    return null
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,6 +101,7 @@ fun NearbyScreen(
     users: List<User>,
     selectedGenderFilter: Gender?,
     isScanning: Boolean,
+    isExpanded: Boolean = false,
     currentGpsLocation: com.example.util.UserGpsLocation? = null,
     hasLocationPermission: Boolean = false,
     isGpsEnabled: Boolean = true,
@@ -91,6 +111,7 @@ fun NearbyScreen(
     onFilterChange: (Gender?) -> Unit,
     onRefreshScan: () -> Unit,
     onSayHi: (User) -> Unit,
+    onExpandNearby: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -114,6 +135,14 @@ fun NearbyScreen(
         if (selectedGenderFilter == null) users
         else users.filter { it.gender == selectedGenderFilter }
     }
+
+    val displayedUsers = remember(filteredUsers, isExpanded) {
+        if (isExpanded) filteredUsers
+        else filteredUsers.take(6)
+    }
+
+    val hasHiddenUsers = !isExpanded && filteredUsers.size > 6
+    val hiddenCount = if (hasHiddenUsers) filteredUsers.size - 6 else 0
 
     Scaffold(
         topBar = {
@@ -327,8 +356,21 @@ fun NearbyScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
+                val radarInfo = if (hasHiddenUsers) {
+                    if (language == com.example.util.AppLanguage.INDONESIAN) {
+                        "Menampilkan 6 dari ${filteredUsers.size} orang dalam radar sekitarmu"
+                    } else {
+                        "Showing 6 of ${filteredUsers.size} people in your nearby radar"
+                    }
+                } else {
+                    if (language == com.example.util.AppLanguage.INDONESIAN) {
+                        "Ditemukan ${filteredUsers.size} orang dalam radius sekitarmu (Semua Terbuka ✨)"
+                    } else {
+                        "Found ${filteredUsers.size} people in your area (All Unlocked ✨)"
+                    }
+                }
                 Text(
-                    text = "Ditemukan ${filteredUsers.size} orang dalam radius 2 km",
+                    text = radarInfo,
                     fontSize = 12.sp,
                     color = NeutralMedium
                 )
@@ -340,14 +382,156 @@ fun NearbyScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
-                items(filteredUsers, key = { it.id }) { user ->
+                items(displayedUsers, key = { it.id }) { user ->
                     NearbyUserCard(
                         user = user,
                         onSayHi = { onSayHi(user) }
                     )
                 }
+
+                // Tombol "Cari Lebih Banyak" yang memicu Iklan Reward
+                if (hasHiddenUsers) {
+                    item {
+                        Card(
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 6.dp)
+                                .testTag("card_load_more_nearby")
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(18.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFFFF3E0))
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.SmartDisplay,
+                                        contentDescription = null,
+                                        tint = Color(0xFFE65100),
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Text(
+                                    text = AppStrings.btnLoadMoreNearbyTitle(language, hiddenCount),
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = NeutralDark,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = AppStrings.btnLoadMoreNearbyDesc(language),
+                                    fontSize = 12.sp,
+                                    color = NeutralMedium,
+                                    textAlign = TextAlign.Center,
+                                    lineHeight = 16.sp
+                                )
+                                Spacer(modifier = Modifier.height(14.dp))
+                                Button(
+                                    onClick = {
+                                        val activity = context.findActivity()
+                                        val adLaunched = AdManager.showRewardedVideo(activity = activity) {
+                                            onExpandNearby()
+                                            Toast.makeText(
+                                                context,
+                                                if (language == com.example.util.AppLanguage.INDONESIAN) {
+                                                    "Selamat! Semua pengguna di sekitar telah dibuka 🎉"
+                                                } else {
+                                                    "Success! All nearby users are now unlocked 🎉"
+                                                },
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                        if (!adLaunched) {
+                                            // Jika iklan sedang dipersiapkan atau belum tersedia, berikan info dan tetap buka
+                                            Toast.makeText(
+                                                context,
+                                                if (language == com.example.util.AppLanguage.INDONESIAN) {
+                                                    "Iklan reward sedang dipersiapkan. Membuka semua pengguna sekitar untuk Anda..."
+                                                } else {
+                                                    "Reward ad is preparing. Unlocking nearby users for you..."
+                                                },
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                            onExpandNearby()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE65100)),
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(46.dp)
+                                        .testTag("btn_load_more_nearby")
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.PlayCircle,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = AppStrings.btnLoadMoreNearby(language),
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else if (isExpanded && filteredUsers.size > 6) {
+                    item {
+                        Card(
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 6.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = EmeraldGreen,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = AppStrings.allNearbyLoaded(language, filteredUsers.size),
+                                    fontSize = 12.5.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = EmeraldGreen
+                                )
+                            }
+                        }
+                    }
+                }
+
                 item {
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
             }
         }

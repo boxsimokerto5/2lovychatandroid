@@ -145,11 +145,10 @@ fun LoginScreen(
                 .imePadding()
                 .verticalScroll(rememberScrollState())
         ) {
-            // Clean Emerald Header Hero
+            // Compact Emerald Header with Integrated Language Switcher
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(230.dp)
                     .background(
                         brush = Brush.verticalGradient(
                             colors = listOf(
@@ -157,18 +156,62 @@ fun LoginScreen(
                                 EmeraldGreen
                             )
                         )
-                    ),
-                contentAlignment = Alignment.Center
+                    )
+                    .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 12.dp)
             ) {
+                // Top-right compact language toggle pill
+                Row(
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(
+                                if (language == com.example.util.AppLanguage.INDONESIAN) Color.White.copy(alpha = 0.95f) 
+                                else Color.White.copy(alpha = 0.25f)
+                            )
+                            .clickable { onLanguageChange(com.example.util.AppLanguage.INDONESIAN) }
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = "ID",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (language == com.example.util.AppLanguage.INDONESIAN) Color(0xFF004D40) else Color.White
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(
+                                if (language == com.example.util.AppLanguage.ENGLISH) Color.White.copy(alpha = 0.95f) 
+                                else Color.White.copy(alpha = 0.25f)
+                            )
+                            .clickable { onLanguageChange(com.example.util.AppLanguage.ENGLISH) }
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = "EN",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (language == com.example.util.AppLanguage.ENGLISH) Color(0xFF004D40) else Color.White
+                        )
+                    }
+                }
+
+                // Centered App Branding
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(horizontal = 24.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 2.dp)
                 ) {
-                    // Logo Icon
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
-                            .size(64.dp)
+                            .size(46.dp)
                             .clip(CircleShape)
                             .background(Color.White)
                     ) {
@@ -176,82 +219,76 @@ fun LoginScreen(
                             imageVector = Icons.Default.Favorite,
                             contentDescription = "Lovy Chat Icon",
                             tint = EmeraldGreen,
-                            modifier = Modifier.size(34.dp)
+                            modifier = Modifier.size(26.dp)
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
                         text = "Lovy Chat",
-                        fontSize = 28.sp,
+                        fontSize = 21.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color.White,
                         letterSpacing = 0.5.sp
                     )
 
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    // User Requested Motto
                     Text(
                         text = "New friends, fun friends",
-                        fontSize = 14.sp,
+                        fontSize = 11.5.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFFB2DFDB),
-                        letterSpacing = 0.3.sp
+                        letterSpacing = 0.2.sp
                     )
                 }
             }
 
-            // Clean Form Card
+            // Clean Form Card Fitting 1 Screen
             Card(
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 28.dp)
+                        .padding(horizontal = 22.dp, vertical = 14.dp)
                 ) {
-                    // Mode Title
+                    // Mode Title & Subtitle
                     Text(
                         text = if (isSignUpMode) com.example.util.AppStrings.createAccount(language) else com.example.util.AppStrings.welcomeBack(language),
-                        fontSize = 20.sp,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeutralDark
                     )
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
                     Text(
                         text = if (isSignUpMode) com.example.util.AppStrings.signUpSubtitle(language) else com.example.util.AppStrings.loginSubtitle(language),
-                        fontSize = 13.sp,
+                        fontSize = 12.sp,
                         color = NeutralMedium
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     // Username / Name Field
                     Text(
                         text = com.example.util.AppStrings.usernameLabel(language, isSignUpMode),
-                        fontSize = 12.5.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = NeutralDark
                     )
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                     OutlinedTextField(
                         value = usernameInput,
                         onValueChange = { usernameInput = it },
-                        placeholder = { Text(com.example.util.AppStrings.usernamePlaceholder(language), fontSize = 13.5.sp) },
+                        placeholder = { Text(com.example.util.AppStrings.usernamePlaceholder(language), fontSize = 13.sp) },
                         singleLine = true,
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Person,
                                 contentDescription = null,
-                                tint = EmeraldGreen
+                                tint = EmeraldGreen,
+                                modifier = Modifier.size(20.dp)
                             )
                         },
                         keyboardOptions = KeyboardOptions(
@@ -265,41 +302,46 @@ fun LoginScreen(
                             focusedBorderColor = EmeraldGreen,
                             focusedLabelColor = EmeraldGreen
                         ),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(10.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("input_username")
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     // Password Field
                     Text(
                         text = com.example.util.AppStrings.passwordLabel(language),
-                        fontSize = 12.5.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = NeutralDark
                     )
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                     OutlinedTextField(
                         value = passwordInput,
                         onValueChange = { passwordInput = it },
-                        placeholder = { Text(com.example.util.AppStrings.passwordPlaceholder(language), fontSize = 13.5.sp) },
+                        placeholder = { Text(com.example.util.AppStrings.passwordPlaceholder(language), fontSize = 13.sp) },
                         singleLine = true,
                         visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Lock,
                                 contentDescription = null,
-                                tint = EmeraldGreen
+                                tint = EmeraldGreen,
+                                modifier = Modifier.size(20.dp)
                             )
                         },
                         trailingIcon = {
-                            IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                            IconButton(
+                                onClick = { isPasswordVisible = !isPasswordVisible },
+                                modifier = Modifier.size(36.dp)
+                            ) {
                                 Icon(
                                     imageVector = if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                                     contentDescription = if (isPasswordVisible) "Sembunyikan sandi" else "Tampilkan sandi",
-                                    tint = NeutralMedium
+                                    tint = NeutralMedium,
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
                         },
@@ -317,13 +359,13 @@ fun LoginScreen(
                             focusedBorderColor = EmeraldGreen,
                             focusedLabelColor = EmeraldGreen
                         ),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(10.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("input_password")
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     // Primary Button (Login / Register)
                     Button(
@@ -333,51 +375,51 @@ fun LoginScreen(
                         },
                         enabled = !isSubmitting && !isGoogleLoading,
                         colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp)
+                            .height(44.dp)
                             .testTag("btn_login_submit")
                     ) {
                         if (isSubmitting) {
                             CircularProgressIndicator(
                                 color = Color.White,
                                 strokeWidth = 2.dp,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         } else {
                             Text(
                                 text = com.example.util.AppStrings.btnLogin(language, isSignUpMode),
-                                fontSize = 15.sp,
+                                fontSize = 14.5.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     // Separator "atau" / "or"
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        HorizontalDivider(modifier = Modifier.weight(1f), color = NeutralBorder, thickness = 0.7.dp)
+                        HorizontalDivider(modifier = Modifier.weight(1f), color = NeutralBorder, thickness = 0.6.dp)
                         Text(
                             text = if (language == com.example.util.AppLanguage.INDONESIAN) "atau" else "or",
-                            fontSize = 12.sp,
+                            fontSize = 11.5.sp,
                             color = NeutralMedium,
-                            modifier = Modifier.padding(horizontal = 12.dp)
+                            modifier = Modifier.padding(horizontal = 10.dp)
                         )
-                        HorizontalDivider(modifier = Modifier.weight(1f), color = NeutralBorder, thickness = 0.7.dp)
+                        HorizontalDivider(modifier = Modifier.weight(1f), color = NeutralBorder, thickness = 0.6.dp)
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     // Google One-Click Login Button
                     OutlinedButton(
                         onClick = { performGoogleSignIn() },
                         enabled = !isGoogleLoading && !isSubmitting,
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
                             containerColor = Color.White,
                             contentColor = NeutralDark
@@ -386,43 +428,42 @@ fun LoginScreen(
                             brush = Brush.linearGradient(
                                 listOf(Color(0xFF4285F4), Color(0xFF34A853), Color(0xFFFBBC05), Color(0xFFEA4335))
                             ),
-                            width = 1.2.dp
+                            width = 1.1.dp
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp)
+                            .height(42.dp)
                             .testTag("btn_google_login")
                     ) {
                         if (isGoogleLoading) {
                             CircularProgressIndicator(
                                 color = Color(0xFF4285F4),
                                 strokeWidth = 2.dp,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         } else {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center
                             ) {
-                                // Google Colorful Icon Graphic
                                 Box(
                                     contentAlignment = Alignment.Center,
                                     modifier = Modifier
-                                        .size(24.dp)
+                                        .size(20.dp)
                                         .clip(CircleShape)
                                         .background(Color(0xFFF1F3F4))
                                 ) {
                                     Text(
                                         text = "G",
                                         fontWeight = FontWeight.Black,
-                                        fontSize = 15.sp,
+                                        fontSize = 13.sp,
                                         color = Color(0xFF4285F4)
                                     )
                                 }
-                                Spacer(modifier = Modifier.width(10.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = if (language == com.example.util.AppLanguage.INDONESIAN) "Lanjutkan dengan Akun Google" else "Continue with Google Account",
-                                    fontSize = 14.sp,
+                                    fontSize = 13.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = NeutralDark
                                 )
@@ -430,26 +471,26 @@ fun LoginScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
                     // Quick Guest / Explore Button
                     OutlinedButton(
                         onClick = onGuestLogin,
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = EmeraldGreen),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp)
+                            .height(38.dp)
                             .testTag("btn_guest_login")
                     ) {
                         Text(
                             text = com.example.util.AppStrings.btnGuest(language),
-                            fontSize = 13.5.sp,
+                            fontSize = 12.5.sp,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     // Toggle Login / Sign Up
                     Row(
@@ -459,95 +500,27 @@ fun LoginScreen(
                     ) {
                         Text(
                             text = if (isSignUpMode) com.example.util.AppStrings.alreadyHaveAccount(language) else com.example.util.AppStrings.dontHaveAccount(language),
-                            fontSize = 13.sp,
+                            fontSize = 12.5.sp,
                             color = NeutralMedium
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(5.dp))
                         Text(
                             text = if (isSignUpMode) com.example.util.AppStrings.signInAction(language) else com.example.util.AppStrings.signUpAction(language),
-                            fontSize = 13.sp,
+                            fontSize = 12.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = EmeraldGreen,
                             modifier = Modifier
-                                .clickable {
-                                    isSignUpMode = !isSignUpMode
-                                }
+                                .clickable { isSignUpMode = !isSignUpMode }
                                 .testTag("btn_toggle_auth_mode")
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                    // Geo Language Badge & Selector
-                    Card(
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = ScreenBackground),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 10.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(
-                                    text = if (language == com.example.util.AppLanguage.INDONESIAN) "Deteksi Otomatis: ID/MY" else "Auto Detected: Global",
-                                    fontSize = 11.5.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = NeutralDark
-                                )
-                                Text(
-                                    text = if (language == com.example.util.AppLanguage.INDONESIAN) "Bahasa: Indonesia (en-in)" else "Language: English (en-in)",
-                                    fontSize = 10.5.sp,
-                                    color = NeutralMedium
-                                )
-                            }
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(if (language == com.example.util.AppLanguage.INDONESIAN) EmeraldGreen else Color.LightGray.copy(alpha = 0.5f))
-                                        .clickable { onLanguageChange(com.example.util.AppLanguage.INDONESIAN) }
-                                        .padding(horizontal = 10.dp, vertical = 5.dp)
-                                ) {
-                                    Text(
-                                        text = "ID",
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (language == com.example.util.AppLanguage.INDONESIAN) Color.White else NeutralDark
-                                    )
-                                }
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(if (language == com.example.util.AppLanguage.ENGLISH) EmeraldGreen else Color.LightGray.copy(alpha = 0.5f))
-                                        .clickable { onLanguageChange(com.example.util.AppLanguage.ENGLISH) }
-                                        .padding(horizontal = 10.dp, vertical = 5.dp)
-                                ) {
-                                    Text(
-                                        text = "EN",
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (language == com.example.util.AppLanguage.ENGLISH) Color.White else NeutralDark
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(20.dp))
-                    HorizontalDivider(color = NeutralBorder, thickness = 0.6.dp)
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    // Clean Footer Motto Reminder
+                    // Subtle Footer Motto Reminder
                     Text(
                         text = "✨ Lovy Chat — ${com.example.util.AppStrings.motto(language)} ✨",
-                        fontSize = 11.5.sp,
+                        fontSize = 11.sp,
                         color = NeutralMedium,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()

@@ -61,7 +61,9 @@ data class LovyChatUiState(
     // Android Native GPS State
     val currentGpsLocation: com.example.util.UserGpsLocation? = null,
     val hasLocationPermission: Boolean = false,
-    val isGpsEnabled: Boolean = true
+    val isGpsEnabled: Boolean = true,
+    // Nearby Search Expansion (Rewarded Ad trigger)
+    val isNearbyExpanded: Boolean = false
 )
 
 class LovyChatViewModel(application: Application) : AndroidViewModel(application) {
@@ -94,7 +96,12 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun setLanguage(language: com.example.util.AppLanguage) {
+        recordFeatureClick()
         _uiState.update { it.copy(language = language) }
+    }
+
+    fun recordFeatureClick() {
+        com.example.util.AdManager.recordFeatureClick()
     }
 
     private fun refreshSupabaseState() {
@@ -207,18 +214,22 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun selectTab(tabIndex: Int) {
+        recordFeatureClick()
         _uiState.update { it.copy(currentTab = tabIndex, currentScreen = CurrentScreen.Main) }
     }
 
     fun navigateTo(screen: CurrentScreen) {
+        recordFeatureClick()
         _uiState.update { it.copy(currentScreen = screen) }
     }
 
     fun navigateBack() {
+        recordFeatureClick()
         _uiState.update { it.copy(currentScreen = CurrentScreen.Main) }
     }
 
     fun setNearbyGenderFilter(gender: Gender?) {
+        recordFeatureClick()
         _uiState.update { it.copy(nearbyGenderFilter = gender) }
     }
 
@@ -242,7 +253,17 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         _uiState.update { it.copy(currentGpsLocation = location) }
     }
 
+    fun expandNearbyUsers() {
+        recordFeatureClick()
+        _uiState.update { it.copy(isNearbyExpanded = true) }
+    }
+
+    fun resetNearbyExpansion() {
+        _uiState.update { it.copy(isNearbyExpanded = false) }
+    }
+
     fun refreshNearbyScan() {
+        recordFeatureClick()
         viewModelScope.launch {
             _uiState.update { it.copy(isScanningNearby = true) }
             
@@ -283,6 +304,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun sayHiToUser(user: User) {
+        recordFeatureClick()
         val convId = "conv_${user.id}"
         val existing = _uiState.value.conversations.find { it.partnerId == user.id }
         
@@ -336,6 +358,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun openChat(conversationId: String, partnerName: String, partnerAvatarHex: Long) {
+        recordFeatureClick()
         _uiState.update {
             val updatedConvs = it.conversations.map { conv ->
                 if (conv.id == conversationId) conv.copy(unreadCount = 0) else conv
@@ -361,6 +384,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun openChatWithBottleSender(bottle: BottleMessage) {
+        recordFeatureClick()
         val convId = "conv_${bottle.senderId}"
         val existing = _uiState.value.conversations.find { it.partnerId == bottle.senderId }
         val greetingText = "Halo ${bottle.senderName}! Aku menemukan pesan botolmu: \"${bottle.content.take(30)}...\" 🍾🌊"
@@ -483,6 +507,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
     fun throwBottle(content: String): Boolean {
         if (content.isBlank()) return false
+        recordFeatureClick()
         val newBottle = BottleMessage(
             id = UUID.randomUUID().toString(),
             senderId = "me",
@@ -511,6 +536,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun fishBottle() {
+        recordFeatureClick()
         viewModelScope.launch {
             _uiState.update { it.copy(isFishing = true, fishedBottle = null) }
             
@@ -528,10 +554,12 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun dismissFishedBottle() {
+        recordFeatureClick()
         _uiState.update { it.copy(fishedBottle = null) }
     }
 
     fun toggleLikeMoment(momentId: String) {
+        recordFeatureClick()
         _uiState.update { state ->
             val updated = state.moments.map { item ->
                 if (item.id == momentId) {
@@ -546,6 +574,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
     fun postMoment(content: String) {
         if (content.isBlank()) return
+        recordFeatureClick()
         val newMoment = MomentItem(
             id = UUID.randomUUID().toString(),
             authorName = _uiState.value.myName,

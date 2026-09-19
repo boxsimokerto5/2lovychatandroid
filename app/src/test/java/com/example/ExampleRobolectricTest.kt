@@ -146,4 +146,47 @@ class ExampleRobolectricTest {
     assertTrue(viewModel.uiState.value.isLoggedIn)
     assertEquals("Fauzan Google", viewModel.uiState.value.myName)
   }
+
+  @Test
+  fun `test nearby users list and expansion on rewarded ad trigger`() {
+    val app = ApplicationProvider.getApplicationContext<android.app.Application>()
+    val viewModel = LovyChatViewModel(app)
+
+    val state = viewModel.uiState.value
+    // Default initial state: isNearbyExpanded should be false
+    org.junit.Assert.assertFalse(state.isNearbyExpanded)
+    // Nearby users list has plenty of users (more than 6)
+    assertTrue(state.nearbyUsers.size > 6)
+
+    // Expand nearby users
+    viewModel.expandNearbyUsers()
+    assertTrue(viewModel.uiState.value.isNearbyExpanded)
+
+    // Reset nearby expansion
+    viewModel.resetNearbyExpansion()
+    org.junit.Assert.assertFalse(viewModel.uiState.value.isNearbyExpanded)
+  }
+
+  @Test
+  fun `test interstitial ad triggers after 20 feature clicks and excludes chat`() {
+    val app = ApplicationProvider.getApplicationContext<android.app.Application>()
+    val viewModel = LovyChatViewModel(app)
+
+    com.example.util.AdManager.resetFeatureClickCount()
+    assertEquals(0, com.example.util.AdManager.featureClickCount)
+
+    // Simulate 19 feature clicks (e.g. switching tabs, navigating, filtering)
+    repeat(19) {
+      viewModel.recordFeatureClick()
+    }
+    assertEquals(19, com.example.util.AdManager.featureClickCount)
+
+    // Sending chat message should NOT increment the click count
+    viewModel.sendMessage("conv_test", "Halo ini pesan obrolan", "User Test")
+    assertEquals(19, com.example.util.AdManager.featureClickCount)
+
+    // 20th feature click should trigger the interstitial threshold and reset count to 0
+    viewModel.recordFeatureClick()
+    assertEquals(0, com.example.util.AdManager.featureClickCount)
+  }
 }

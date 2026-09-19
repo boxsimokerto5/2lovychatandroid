@@ -85,6 +85,138 @@ object MockDataSource {
             avatarColorHex = 0xFF26C6DA,
             isOnline = true,
             city = "Cilandak, Jaksel"
+        ),
+        User(
+            id = "u8",
+            name = "Fajar Nugraha",
+            gender = Gender.MALE,
+            age = 24,
+            distanceMeters = 2100,
+            bio = "Software engineer yang hobi ngopi & fotografi ☕💻",
+            avatarColorHex = 0xFF3F51B5,
+            isOnline = true,
+            city = "Kebayoran Baru, Jaksel"
+        ),
+        User(
+            id = "u9",
+            name = "Tiara Andini",
+            gender = Gender.FEMALE,
+            age = 20,
+            distanceMeters = 2450,
+            bio = "Penyanyi kamar mandi & suka nonton film santai 🎬✨",
+            avatarColorHex = 0xFFE91E63,
+            isOnline = true,
+            city = "Kemang, Jaksel"
+        ),
+        User(
+            id = "u10",
+            name = "Reza Rahardian",
+            gender = Gender.MALE,
+            age = 28,
+            distanceMeters = 2800,
+            bio = "Fitness & healthy lifestyle enthusiast 🏋️‍♂️🥗",
+            avatarColorHex = 0xFF009688,
+            isOnline = false,
+            city = "Gandaria, Jaksel"
+        ),
+        User(
+            id = "u11",
+            name = "Maya Safitri",
+            gender = Gender.FEMALE,
+            age = 22,
+            distanceMeters = 3100,
+            bio = "Pecinta kucing dan matcha latte 🍵🐈",
+            avatarColorHex = 0xFF8BC34A,
+            isOnline = true,
+            city = "Pejaten, Jaksel"
+        ),
+        User(
+            id = "u12",
+            name = "Kevin Sanjaya",
+            gender = Gender.MALE,
+            age = 25,
+            distanceMeters = 3400,
+            bio = "Weekend gamer & suka kulineran malam 🎮🍔",
+            avatarColorHex = 0xFFFF9800,
+            isOnline = true,
+            city = "Fatmawati, Jaksel"
+        ),
+        User(
+            id = "u13",
+            name = "Dinda Kirana",
+            gender = Gender.FEMALE,
+            age = 23,
+            distanceMeters = 3750,
+            bio = "Suka travelling & fotografi alam terbuka 📷🌿",
+            avatarColorHex = 0xFF9C27B0,
+            isOnline = false,
+            city = "Pondok Indah, Jaksel"
+        ),
+        User(
+            id = "u14",
+            name = "Aris Wijaya",
+            gender = Gender.MALE,
+            age = 29,
+            distanceMeters = 4100,
+            bio = "Startup enthusiast, diskusi santai & sharing ide 📈🚀",
+            avatarColorHex = 0xFF607D8B,
+            isOnline = true,
+            city = "Senayan, Jakpus"
+        ),
+        User(
+            id = "u15",
+            name = "Bella Cantika",
+            gender = Gender.FEMALE,
+            age = 21,
+            distanceMeters = 4500,
+            bio = "Content creator & pencinta fashion lokal 👗💄",
+            avatarColorHex = 0xFFFF4081,
+            isOnline = true,
+            city = "Sudirman, Jaksel"
+        ),
+        User(
+            id = "u16",
+            name = "Galih Prakoso",
+            gender = Gender.MALE,
+            age = 26,
+            distanceMeters = 4900,
+            bio = "Gitaris akustik & suka dengerin musik indie 🎸🎶",
+            avatarColorHex = 0xFF795548,
+            isOnline = false,
+            city = "Blok M, Jaksel"
+        ),
+        User(
+            id = "u17",
+            name = "Zahra Amalia",
+            gender = Gender.FEMALE,
+            age = 24,
+            distanceMeters = 5300,
+            bio = "Pecinta buku & jalan sore di taman kota 📚🌤️",
+            avatarColorHex = 0xFF00BCD4,
+            isOnline = true,
+            city = "Ragunan, Jaksel"
+        ),
+        User(
+            id = "u18",
+            name = "Hendra Setiawan",
+            gender = Gender.MALE,
+            age = 27,
+            distanceMeters = 5800,
+            bio = "Jogging pagi & suka ngobrol santai seputar hobi 🏃‍♂️☕",
+            avatarColorHex = 0xFF4CAF50,
+            isOnline = true,
+            city = "Pasar Minggu, Jaksel"
+        ),
+        User(
+            id = "u19",
+            name = "Nabila Laila",
+            gender = Gender.FEMALE,
+            age = 22,
+            distanceMeters = 6200,
+            bio = "Suka masak & mencoba resep kuliner baru 🍳🍰",
+            avatarColorHex = 0xFFFF5722,
+            isOnline = true,
+            city = "Tanjung Barat, Jaksel"
         )
     )
 

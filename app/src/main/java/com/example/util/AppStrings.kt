@@ -86,6 +86,22 @@ object AppStrings {
     fun filterAll(lang: AppLanguage): String = if (lang == AppLanguage.INDONESIAN) "Semua" else "All"
     fun filterMale(lang: AppLanguage): String = if (lang == AppLanguage.INDONESIAN) "Pria" else "Male"
     fun filterFemale(lang: AppLanguage): String = if (lang == AppLanguage.INDONESIAN) "Wanita" else "Female"
+    fun btnLoadMoreNearby(lang: AppLanguage): String = if (lang == AppLanguage.INDONESIAN) 
+        "Cari Lebih Banyak (Tonton Iklan)" 
+    else 
+        "Find More People (Watch Ad)"
+    fun btnLoadMoreNearbyTitle(lang: AppLanguage, hiddenCount: Int): String = if (lang == AppLanguage.INDONESIAN) 
+        "Masih Ada $hiddenCount+ Orang di Sekitarmu!" 
+    else 
+        "There are $hiddenCount+ More People Nearby!"
+    fun btnLoadMoreNearbyDesc(lang: AppLanguage): String = if (lang == AppLanguage.INDONESIAN) 
+        "Tonton iklan video singkat untuk membuka dan melihat semua teman yang ada di sekitarmu." 
+    else 
+        "Watch a short video ad to unlock and view all friends in your area."
+    fun allNearbyLoaded(lang: AppLanguage, totalCount: Int): String = if (lang == AppLanguage.INDONESIAN)
+        "Semua $totalCount pengguna di sekitarmu telah ditampilkan ✨"
+    else
+        "All $totalCount nearby users are now displayed ✨"
 
     // Bottle Screen
     fun bottleTitle(lang: AppLanguage): String = if (lang == AppLanguage.INDONESIAN) "Pesan dalam Botol" else "Message in a Bottle"
