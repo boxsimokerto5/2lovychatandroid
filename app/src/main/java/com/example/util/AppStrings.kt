@@ -399,17 +399,17 @@ object AppStrings {
     }
 
     fun menuSupabase(lang: AppLanguage): String = when (resolveLang(lang)) {
-        AppLanguage.CHINESE -> "Supabase 数据库"
-        AppLanguage.JAPANESE -> "Supabase データベース"
-        AppLanguage.INDONESIAN -> "Database Supabase"
-        else -> "Supabase Database"
+        AppLanguage.CHINESE -> "云端同步"
+        AppLanguage.JAPANESE -> "クラウド同期"
+        AppLanguage.INDONESIAN -> "Sinkronisasi Cloud"
+        else -> "Cloud Sync"
     }
 
     fun menuSupabaseSub(lang: AppLanguage): String = when (resolveLang(lang)) {
-        AppLanguage.CHINESE -> "后端配置与云端同步设置"
-        AppLanguage.JAPANESE -> "バックエンド設定とクラウド同期"
-        AppLanguage.INDONESIAN -> "Konfigurasi backend & sinkronisasi cloud"
-        else -> "Backend & cloud synchronization settings"
+        AppLanguage.CHINESE -> "同步消息与动态设置"
+        AppLanguage.JAPANESE -> "メッセージとストーリーの同期設定"
+        AppLanguage.INDONESIAN -> "Sinkronisasi pesan & status"
+        else -> "Sync messages & stories"
     }
 
     fun menuAbout(lang: AppLanguage): String = when (resolveLang(lang)) {

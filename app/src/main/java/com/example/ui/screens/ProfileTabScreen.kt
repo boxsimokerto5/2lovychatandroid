@@ -149,7 +149,7 @@ fun ProfileTabScreen(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Ketuk untuk lihat detail & Room DB →",
+                        text = "Ketuk untuk lihat detail profil →",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFFC8E6C9)
@@ -180,7 +180,7 @@ fun ProfileTabScreen(
                     icon = Icons.Default.Person,
                     iconTint = EmeraldGreen,
                     title = "Detail Profil Pengguna",
-                    subtitle = "Nama tampilan, bio, foto & Room Database",
+                    subtitle = "Nama tampilan, bio, foto & info akun",
                     onClick = onNavigateToUserProfile
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
@@ -213,14 +213,6 @@ fun ProfileTabScreen(
                 .padding(horizontal = 16.dp)
         ) {
             Column {
-                ProfileMenuItem(
-                    icon = if (isSupabaseConnected) Icons.Default.CloudDone else Icons.Default.Storage,
-                    iconTint = if (isSupabaseConnected) EmeraldGreen else Color(0xFF00897B),
-                    title = "Database Supabase",
-                    subtitle = if (isSupabaseConnected) "Tersambung ke Cloud • Data sinkron" else "Konfigurasi URL & API Key Cloud",
-                    onClick = onNavigateToSupabaseConfig
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
                 ProfileMenuItem(
                     icon = Icons.Default.Lock,
                     iconTint = EmeraldGreen,

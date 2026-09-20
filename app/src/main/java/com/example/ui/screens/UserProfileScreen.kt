@@ -358,57 +358,6 @@ fun UserProfileScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Room Database Local Storage Indicator Card
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFE8F5E9)
-                ),
-                border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldGreen.copy(alpha = 0.3f)),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("card_room_database_status")
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(EmeraldGreen.copy(alpha = 0.15f))
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Storage,
-                            contentDescription = "Room Storage",
-                            tint = EmeraldGreen,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(14.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Room Local Database",
-                            fontSize = 14.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1B5E20)
-                        )
-                        Text(
-                            text = "Tersimpan secara lokal di tabel user_profiles (SQLite Room) dengan Flow reaktif.",
-                            fontSize = 11.5.sp,
-                            color = Color(0xFF2E7D32),
-                            lineHeight = 16.sp
-                        )
-                    }
-                }
-            }
-
             Spacer(modifier = Modifier.height(20.dp))
 
             // Primary Action: Edit Profile Button
@@ -514,7 +463,7 @@ fun EditProfileDialog(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Edit Profil (Room DB)",
+                    text = "Edit Profil",
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
                     color = NeutralDark
@@ -622,7 +571,7 @@ fun EditProfileDialog(
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("Simpan ke Room")
+                Text("Simpan")
             }
         },
         dismissButton = {
