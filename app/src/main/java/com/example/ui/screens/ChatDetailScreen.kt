@@ -4,6 +4,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -246,7 +247,7 @@ fun ChatDetailScreen(
             // Messages List
             LazyColumn(
                 state = listState,
-                contentPadding = PaddingValues(16.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier
                     .weight(1f)
@@ -318,122 +319,138 @@ fun ChatDetailScreen(
                 )
             }
 
-            // Quick Greeting Chips
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            // Bottom Input & Quick Greeting Section (Compact frame attached together)
+            Surface(
+                color = Color.White,
+                shadowElevation = 4.dp,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                val suggestions = listOf("Halo! 👋", "Lagi di mana?", "Kenalan dong 😊", "Asik nih!")
-                suggestions.forEach { suggestion ->
-                    SuggestionChip(
-                        onClick = {
-                            onSendMessage(suggestion)
-                        },
-                        label = { Text(suggestion, fontSize = 11.5.sp) },
-                        colors = SuggestionChipDefaults.suggestionChipColors(
-                            containerColor = ScreenBackground
-                        )
-                    )
-                }
-            }
-
-            // Bottom Chat Area
-            if (isPartnerBlocked) {
-                // Blocked User Info Banner instead of input
-                Surface(
-                    color = Color(0xFFFFEBEE),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, Color(0xFFFFCDD2)),
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
-                        .testTag("banner_chat_blocked")
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
+                    // Quick Greeting Chips (compact & scrollable horizontally, directly above input)
                     Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                            .padding(bottom = 4.dp)
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                            Icon(
-                                imageVector = Icons.Default.Block,
-                                contentDescription = null,
-                                tint = Color(0xFFD32F2F),
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Pengguna diblokir. Tidak dapat mengirim pesan.",
-                                fontSize = 12.sp,
-                                color = Color(0xFFC62828)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(6.dp))
-                        TextButton(
-                            onClick = { onUnblockPartner?.invoke() },
-                            modifier = Modifier.testTag("btn_unblock_partner_chat")
-                        ) {
-                            Text(
-                                text = "Buka Blokir",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFD32F2F)
+                        val suggestions = listOf("Halo! 👋", "Lagi di mana?", "Kenalan dong 😊", "Asik nih!")
+                        suggestions.forEach { suggestion ->
+                            SuggestionChip(
+                                onClick = {
+                                    onSendMessage(suggestion)
+                                },
+                                label = { Text(suggestion, fontSize = 11.5.sp) },
+                                colors = SuggestionChipDefaults.suggestionChipColors(
+                                    containerColor = ScreenBackground
+                                ),
+                                border = BorderStroke(0.8.dp, NeutralBorder.copy(alpha = 0.7f)),
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.height(30.dp)
                             )
                         }
                     }
-                }
-            } else {
-                // Bottom Input Bar
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color.White)
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = inputText,
-                        onValueChange = { inputText = it },
-                        placeholder = { Text("Ketik pesan...", fontSize = 14.sp) },
-                        maxLines = 4,
-                        shape = RoundedCornerShape(24.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = EmeraldGreen,
-                            unfocusedBorderColor = Color(0xFFE0E0E0),
-                            focusedContainerColor = ScreenBackground,
-                            unfocusedContainerColor = ScreenBackground
-                        ),
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("chat_input_field")
-                    )
 
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    IconButton(
-                        onClick = {
-                            if (inputText.isNotBlank()) {
-                                onSendMessage(inputText)
-                                inputText = ""
+                    // Bottom Chat Area
+                    if (isPartnerBlocked) {
+                        // Blocked User Info Banner instead of input
+                        Surface(
+                            color = Color(0xFFFFEBEE),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.dp, Color(0xFFFFCDD2)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                                .testTag("banner_chat_blocked")
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                    Icon(
+                                        imageVector = Icons.Default.Block,
+                                        contentDescription = null,
+                                        tint = Color(0xFFD32F2F),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Pengguna diblokir. Tidak dapat mengirim pesan.",
+                                        fontSize = 12.sp,
+                                        color = Color(0xFFC62828)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(6.dp))
+                                TextButton(
+                                    onClick = { onUnblockPartner?.invoke() },
+                                    modifier = Modifier.testTag("btn_unblock_partner_chat")
+                                ) {
+                                    Text(
+                                        text = "Buka Blokir",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFD32F2F)
+                                    )
+                                }
                             }
-                        },
-                        colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = EmeraldGreen,
-                            contentColor = Color.White
-                        ),
-                        modifier = Modifier
-                            .size(46.dp)
-                            .clip(CircleShape)
-                            .testTag("chat_send_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Kirim",
-                            modifier = Modifier.size(20.dp)
-                        )
+                        }
+                    } else {
+                        // Bottom Input Bar
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 2.dp, bottom = 2.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = inputText,
+                                onValueChange = { inputText = it },
+                                placeholder = { Text("Ketik pesan...", fontSize = 14.sp) },
+                                maxLines = 4,
+                                shape = RoundedCornerShape(24.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = EmeraldGreen,
+                                    unfocusedBorderColor = Color(0xFFE0E0E0),
+                                    focusedContainerColor = ScreenBackground,
+                                    unfocusedContainerColor = ScreenBackground
+                                ),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("chat_input_field")
+                            )
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            IconButton(
+                                onClick = {
+                                    if (inputText.isNotBlank()) {
+                                        onSendMessage(inputText)
+                                        inputText = ""
+                                    }
+                                },
+                                colors = IconButtonDefaults.iconButtonColors(
+                                    containerColor = EmeraldGreen,
+                                    contentColor = Color.White
+                                ),
+                                modifier = Modifier
+                                    .size(46.dp)
+                                    .clip(CircleShape)
+                                    .testTag("chat_send_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.Send,
+                                    contentDescription = "Kirim",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }
