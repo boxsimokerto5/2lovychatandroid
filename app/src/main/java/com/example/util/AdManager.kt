@@ -147,39 +147,44 @@ object AdManager {
 
     /**
      * Create and load a LevelPlay Native Ad for the given Activity.
-     * Placement Name defaults to AD_UNIT_NATIVE_ID or "DefaultNative".
+     * If placementName is null or not set, LevelPlay loads the default Native ad placement.
      */
     fun createNativeAd(
         activity: Activity,
-        placementName: String = AD_UNIT_NATIVE_ID,
+        placementName: String? = null,
         onAdLoaded: (LevelPlayNativeAd) -> Unit = {},
         onAdFailed: (String) -> Unit = {}
     ): LevelPlayNativeAd? {
         return try {
             val builder = LevelPlayNativeAd.Builder()
                 .withActivity(activity)
-                .withPlacementName(placementName)
-                .withListener(object : LevelPlayNativeAdListener {
-                    override fun onAdLoaded(nativeAd: LevelPlayNativeAd?, adInfo: AdInfo?) {
-                        Log.d(TAG, "Native ad loaded successfully: ${adInfo?.adNetwork}")
-                        if (nativeAd != null) {
-                            onAdLoaded(nativeAd)
-                        }
-                    }
 
-                    override fun onAdLoadFailed(nativeAd: LevelPlayNativeAd?, error: IronSourceError?) {
-                        Log.w(TAG, "Native ad load failed: ${error?.errorMessage} (code: ${error?.errorCode})")
-                        onAdFailed(error?.errorMessage ?: "Native ad load failed")
-                    }
+            // Only set placement name if it's explicitly provided and not the ad unit ID string
+            if (!placementName.isNullOrBlank() && placementName != AD_UNIT_NATIVE_ID) {
+                builder.withPlacementName(placementName)
+            }
 
-                    override fun onAdClicked(nativeAd: LevelPlayNativeAd?, adInfo: AdInfo?) {
-                        Log.d(TAG, "Native ad clicked")
+            builder.withListener(object : LevelPlayNativeAdListener {
+                override fun onAdLoaded(nativeAd: LevelPlayNativeAd?, adInfo: AdInfo?) {
+                    Log.d(TAG, "Native ad loaded successfully: ${adInfo?.adNetwork}")
+                    if (nativeAd != null) {
+                        onAdLoaded(nativeAd)
                     }
+                }
 
-                    override fun onAdImpression(nativeAd: LevelPlayNativeAd?, adInfo: AdInfo?) {
-                        Log.d(TAG, "Native ad impression recorded")
-                    }
-                })
+                override fun onAdLoadFailed(nativeAd: LevelPlayNativeAd?, error: IronSourceError?) {
+                    Log.w(TAG, "Native ad load failed: ${error?.errorMessage} (code: ${error?.errorCode})")
+                    onAdFailed(error?.errorMessage ?: "Native ad load failed")
+                }
+
+                override fun onAdClicked(nativeAd: LevelPlayNativeAd?, adInfo: AdInfo?) {
+                    Log.d(TAG, "Native ad clicked")
+                }
+
+                override fun onAdImpression(nativeAd: LevelPlayNativeAd?, adInfo: AdInfo?) {
+                    Log.d(TAG, "Native ad impression recorded")
+                }
+            })
 
             val nativeAd = builder.build()
             nativeAd.loadAd()

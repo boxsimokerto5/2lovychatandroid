@@ -57,7 +57,7 @@ private fun Context.findActivity(): Activity? {
 @Composable
 fun LevelPlayNativeAdCard(
     modifier: Modifier = Modifier,
-    placementName: String = AdManager.AD_UNIT_NATIVE_ID,
+    placementName: String? = null,
     testTag: String = "iron_source_native_ad_card"
 ) {
     val context = LocalContext.current

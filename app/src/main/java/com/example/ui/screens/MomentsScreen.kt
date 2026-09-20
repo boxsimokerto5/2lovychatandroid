@@ -177,24 +177,16 @@ fun MomentsScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                            .padding(horizontal = 14.dp, vertical = 11.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "✨", fontSize = 16.sp)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Melihat ${moments.size} momen terbaru di sekitar",
-                                fontSize = 12.5.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF2E7D32)
-                            )
-                        }
+                        Text(text = "✨", fontSize = 16.sp)
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Ketuk foto untuk perbesar",
-                            fontSize = 11.sp,
-                            color = Color(0xFF388E3C)
+                            text = "Melihat ${moments.size} momen terbaru di sekitar",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF2E7D32)
                         )
                     }
                 }
@@ -212,8 +204,8 @@ fun MomentsScreen(
                     )
                 }
 
-                // Sisipkan Iklan Native secara natural dan teratur setiap 4 postingan momen
-                if ((index + 1) % 4 == 0) {
+                // Sisipkan Iklan Native langsung setelah postingan ke-1 (index == 0) dan berkala setiap 4 postingan
+                if (index == 0 || (index > 0 && (index + 1) % 4 == 0)) {
                     item(key = "native_ad_moments_$index") {
                         LevelPlayNativeAdCard(
                             testTag = "native_ad_moments_$index"
