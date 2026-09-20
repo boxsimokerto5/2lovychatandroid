@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Favorite
@@ -123,10 +124,12 @@ fun ChatDetailScreen(
     onUnblockPartner: (() -> Unit)? = null,
     onToggleLikeMoment: ((String) -> Unit)? = null,
     onPartnerProfileClick: (() -> Unit)? = null,
+    onDeleteMessageForSender: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var inputText by remember { mutableStateOf("") }
     var showPartnerProfileSheet by remember { mutableStateOf(false) }
+    var messageToDelete by remember { mutableStateOf<ChatMessage?>(null) }
     val listState = rememberLazyListState()
 
     // Scroll to bottom when new messages arrive
@@ -249,9 +252,70 @@ fun ChatDetailScreen(
                     .weight(1f)
                     .fillMaxWidth()
             ) {
-                items(messages, key = { it.id }) { msg ->
-                    ChatBubble(message = msg)
+                items(messages.filterNot { it.deletedForSender && it.isFromMe }, key = { it.id }) { msg ->
+                    ChatBubble(
+                        message = msg,
+                        onClick = {
+                            if (msg.isFromMe) {
+                                messageToDelete = msg
+                            }
+                        }
+                    )
                 }
+            }
+
+            // Dialog Hapus Pesan untuk Saya (deleted_for_sender)
+            if (messageToDelete != null) {
+                val msg = messageToDelete!!
+                AlertDialog(
+                    onDismissRequest = { messageToDelete = null },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.DeleteOutline,
+                            contentDescription = null,
+                            tint = Color(0xFFD32F2F)
+                        )
+                    },
+                    title = {
+                        Text(
+                            text = "Hapus Pesan untuk Saya?",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 17.sp
+                        )
+                    },
+                    text = {
+                        Column {
+                            Text(
+                                text = "\"${msg.text}\"",
+                                fontSize = 13.5.sp,
+                                color = NeutralDark,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Pesan ini akan dihapus dari obrolan Anda (deleted_for_sender) dan tidak akan terlihat lagi oleh Anda.",
+                                fontSize = 12.5.sp,
+                                color = NeutralMedium
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                onDeleteMessageForSender?.invoke(msg.id)
+                                messageToDelete = null
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
+                        ) {
+                            Text("Hapus untuk Saya", color = Color.White)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { messageToDelete = null }) {
+                            Text("Batal", color = NeutralMedium)
+                        }
+                    }
+                )
             }
 
             // Quick Greeting Chips
@@ -1249,7 +1313,8 @@ fun PartnerPhotoPreviewDialog(
 @Composable
 fun ChatBubble(
     message: ChatMessage,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
 ) {
     val timeFormat = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
     val formattedTime = remember(message.timestamp) {
@@ -1271,6 +1336,10 @@ fun ChatBubble(
                     )
                 )
                 .background(if (message.isFromMe) ChatBubbleSelf else ChatBubbleOther)
+                .then(
+                    if (onClick != null) Modifier.clickable { onClick() }
+                    else Modifier
+                )
                 .padding(horizontal = 14.dp, vertical = 9.dp)
         ) {
             Column(horizontalAlignment = if (message.isFromMe) Alignment.End else Alignment.Start) {

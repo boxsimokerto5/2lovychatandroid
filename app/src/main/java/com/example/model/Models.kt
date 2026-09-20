@@ -30,7 +30,9 @@ data class ChatMessage(
     val text: String,
     val timestamp: Long,
     val isFromMe: Boolean,
-    val isRead: Boolean = true
+    val isRead: Boolean = true,
+    val deletedForSender: Boolean = false,
+    val deletedForReceiver: Boolean = false
 )
 
 data class ChatConversation(

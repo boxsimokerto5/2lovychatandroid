@@ -182,13 +182,18 @@ class SupabaseRepository {
             val response = api.getChatMessages(apiKey, auth, "eq.$conversationId")
             if (response.isSuccessful) {
                 val list = response.body() ?: return@withContext null
-                list.map { dto ->
+                list.filter { dto ->
+                    // Jangan tampilkan jika pesan sudah dihapus untuk pengirim (me)
+                    !(dto.senderId == "me" && dto.deletedForSender)
+                }.map { dto ->
                     ChatMessage(
                         id = dto.id,
                         conversationId = dto.conversationId,
                         text = dto.text,
                         timestamp = dto.createdAt,
-                        isFromMe = dto.senderId == "me"
+                        isFromMe = dto.senderId == "me",
+                        deletedForSender = dto.deletedForSender,
+                        deletedForReceiver = dto.deletedForReceiver
                     )
                 }
             } else {
@@ -211,12 +216,56 @@ class SupabaseRepository {
                 conversationId = message.conversationId,
                 senderId = if (message.isFromMe) "me" else "partner",
                 text = message.text,
-                createdAt = message.timestamp
+                createdAt = message.timestamp,
+                deletedForSender = message.deletedForSender,
+                deletedForReceiver = message.deletedForReceiver
             )
             val response = api.insertChatMessage(apiKey, auth, dto)
             response.isSuccessful
         } catch (e: Exception) {
             Log.w(TAG, "Gagal menyimpan message ke Supabase", e)
+            false
+        }
+    }
+
+    suspend fun markMessageDeletedForSender(messageId: String): Boolean = withContext(Dispatchers.IO) {
+        val api = SupabaseClient.getApi() ?: return@withContext false
+        val apiKey = SupabaseClient.getSupabaseAnonKey()
+        val auth = SupabaseClient.getAuthHeader()
+
+        try {
+            val response = api.markChatMessageDeleted(apiKey, auth, "eq.$messageId", mapOf("deleted_for_sender" to true))
+            response.isSuccessful
+        } catch (e: Exception) {
+            Log.w(TAG, "Gagal menandai pesan terhapus di Supabase", e)
+            false
+        }
+    }
+
+    suspend fun markAllSenderMessagesDeleted(senderId: String = "me"): Boolean = withContext(Dispatchers.IO) {
+        val api = SupabaseClient.getApi() ?: return@withContext false
+        val apiKey = SupabaseClient.getSupabaseAnonKey()
+        val auth = SupabaseClient.getAuthHeader()
+
+        try {
+            val response = api.markAllSenderMessagesDeleted(apiKey, auth, "eq.$senderId", mapOf("deleted_for_sender" to true))
+            response.isSuccessful
+        } catch (e: Exception) {
+            Log.w(TAG, "Gagal menandai seluruh pesan terhapus di Supabase saat logout", e)
+            false
+        }
+    }
+
+    suspend fun updateUserLastActive(userId: String): Boolean = withContext(Dispatchers.IO) {
+        val api = SupabaseClient.getApi() ?: return@withContext false
+        val apiKey = SupabaseClient.getSupabaseAnonKey()
+        val auth = SupabaseClient.getAuthHeader()
+
+        try {
+            val response = api.updateUserActive(apiKey, auth, "eq.$userId", mapOf("last_active_at" to System.currentTimeMillis()))
+            response.isSuccessful
+        } catch (e: Exception) {
+            Log.w(TAG, "Gagal memperbarui last_active_at pengguna", e)
             false
         }
     }

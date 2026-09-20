@@ -70,8 +70,6 @@ fun MainAppScreen(
                 detectedGeoArea = uiState.detectedGeoArea,
                 isLocalMode = uiState.isLocalLanguageMode,
                 onLanguageChange = { viewModel.setLanguage(it) },
-                onRegister = { username, password -> viewModel.registerAccount(username, password) },
-                onLoginWithCredentials = { username, password -> viewModel.loginWithCredentials(username, password) },
                 onLoginSuccess = { name -> viewModel.loginUser(name) },
                 onGuestLogin = { viewModel.loginAsGuest() }
             )
@@ -156,6 +154,9 @@ fun MainAppScreen(
                 onBack = { viewModel.navigateBack() },
                 onSendMessage = { text ->
                     viewModel.sendMessage(screen.conversationId, text, screen.partnerName)
+                },
+                onDeleteMessageForSender = { messageId ->
+                    viewModel.deleteMessageForSender(screen.conversationId, messageId)
                 }
             )
         }
@@ -199,7 +200,7 @@ fun MainAppScreen(
                             }
                         )
                         1 -> FriendsTabScreen(
-                            friends = uiState.nearbyUsers,
+                            friends = if (uiState.chattedFriends.isNotEmpty()) uiState.chattedFriends else uiState.nearbyUsers,
                             onSelectFriend = { user ->
                                 viewModel.sayHiToUser(user)
                             },

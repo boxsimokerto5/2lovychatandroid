@@ -5,6 +5,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Headers
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Query
 
@@ -16,6 +17,14 @@ interface SupabaseRestApi {
         @Header("Authorization") authHeader: String,
         @Query("limit") limit: Int = 30
     ): Response<List<SupabaseUserDto>>
+
+    @PATCH("rest/v1/nearby_users")
+    suspend fun updateUserActive(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("id") idFilter: String,
+        @Body updates: Map<String, Long>
+    ): Response<Unit>
 
     @GET("rest/v1/ocean_bottles?select=*&order=created_at.desc")
     suspend fun getOceanBottles(
@@ -46,6 +55,22 @@ interface SupabaseRestApi {
         @Header("Authorization") authHeader: String,
         @Body message: SupabaseMessageDto
     ): Response<List<SupabaseMessageDto>>
+
+    @PATCH("rest/v1/chat_messages")
+    suspend fun markChatMessageDeleted(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("id") idFilter: String,
+        @Body updates: Map<String, Boolean>
+    ): Response<Unit>
+
+    @PATCH("rest/v1/chat_messages")
+    suspend fun markAllSenderMessagesDeleted(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("sender_id") senderFilter: String,
+        @Body updates: Map<String, Boolean>
+    ): Response<Unit>
 
     @GET("rest/v1/moments?select=*&order=created_at.desc")
     suspend fun getMoments(

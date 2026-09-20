@@ -9,10 +9,11 @@ import com.example.model.UserProfile
 /**
  * Room Database for Lovy Chat local persistence.
  */
-@Database(entities = [UserProfile::class], version = 1, exportSchema = false)
+@Database(entities = [UserProfile::class, ChatFriendEntity::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun userProfileDao(): UserProfileDao
+    abstract fun chatFriendDao(): ChatFriendDao
 
     companion object {
         @Volatile

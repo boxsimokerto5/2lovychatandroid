@@ -19,5 +19,6 @@ data class UserProfile(
     val city: String = "Jakarta Selatan",
     val gender: String = "FEMALE",
     val age: Int = 22,
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+    val lastActiveAt: Long = System.currentTimeMillis()
 )

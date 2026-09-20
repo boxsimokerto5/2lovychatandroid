@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.MockDataSource
 import com.example.data.local.AppDatabase
+import com.example.data.local.ChatFriendEntity
 import com.example.data.local.UserProfileRepository
 import com.example.data.supabase.SupabaseClient
 import com.example.data.supabase.SupabaseRepository
@@ -15,12 +16,14 @@ import com.example.model.Gender
 import com.example.model.MomentItem
 import com.example.model.User
 import com.example.model.UserProfile
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import android.util.Log
 import java.util.UUID
 
 sealed interface CurrentScreen {
@@ -41,6 +44,7 @@ data class LovyChatUiState(
     val isLoggedIn: Boolean = false,
     val userProfile: UserProfile = UserProfile(),
     val nearbyUsers: List<User> = MockDataSource.initialNearbyUsers,
+    val chattedFriends: List<User> = emptyList(),
 
     val nearbyGenderFilter: Gender? = null,
     val isScanningNearby: Boolean = false,
@@ -87,6 +91,11 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         val db = AppDatabase.getInstance(app)
         UserProfileRepository(db.userProfileDao())
     }
+    private val chatFriendDao by lazy {
+        val app = getApplication<Application>()
+        val db = AppDatabase.getInstance(app)
+        db.chatFriendDao()
+    }
     private val _uiState = MutableStateFlow(LovyChatUiState())
     val uiState: StateFlow<LovyChatUiState> = _uiState.asStateFlow()
 
@@ -100,8 +109,43 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         refreshSupabaseState()
         detectAndApplyGeoLanguage()
         observeUserProfile()
+        observeChatFriends()
+        updateUserActivity()
         // Coba sinkronisasi data awal jika Supabase sudah terkonfigurasi
         syncFromSupabase()
+    }
+
+    private fun observeChatFriends() {
+        viewModelScope.launch {
+            try {
+                chatFriendDao.getAllFriendsFlow().collect { friendEntities ->
+                    val friends = friendEntities.map { it.toUser() }
+                    _uiState.update { it.copy(chattedFriends = friends) }
+                }
+            } catch (e: Exception) {
+                Log.w("LovyChatViewModel", "Gagal memuat teman mengobrol", e)
+            }
+        }
+    }
+
+    fun saveChatFriend(user: User) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                chatFriendDao.insertOrUpdateFriend(ChatFriendEntity.fromUser(user))
+            } catch (e: Exception) {
+                Log.w("LovyChatViewModel", "Gagal menyimpan teman mengobrol", e)
+            }
+        }
+    }
+
+    fun updateUserActivity() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                supabaseRepo.updateUserLastActive(_uiState.value.myLovyId)
+            } catch (e: Exception) {
+                Log.w("LovyChatViewModel", "Gagal update last_active_at", e)
+            }
+        }
     }
 
     private fun loadBlockedUsers() {
@@ -361,13 +405,15 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun loginUser(name: String) {
+        val finalName = if (name.isNotBlank()) name else _uiState.value.myName
         _uiState.update {
             it.copy(
                 isLoggedIn = true,
-                myName = if (name.isNotBlank()) name else it.myName,
+                myName = finalName,
                 currentScreen = CurrentScreen.Main
             )
         }
+        updateUserActivity()
     }
 
     fun loginAsGuest() {
@@ -378,13 +424,33 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 currentScreen = CurrentScreen.Main
             )
         }
+        updateUserActivity()
     }
 
     fun logout() {
+        // Tandai dan hapus semua pesan di Supabase untuk pengirim saat logout
+        viewModelScope.launch {
+            try {
+                supabaseRepo.markAllSenderMessagesDeleted("me")
+            } catch (e: Exception) {
+                Log.w("LovyChatViewModel", "Gagal membersihkan pesan di Supabase saat logout", e)
+            }
+        }
+
         _uiState.update {
             it.copy(
                 isLoggedIn = false,
-                currentScreen = CurrentScreen.Login
+                currentScreen = CurrentScreen.Login,
+                // Semua pesan dihapus saat logout sesuai instruksi
+                messagesMap = emptyMap(),
+                activeChatId = null,
+                // Reset cuplikan pesan di daftar percakapan, tetapi kontak teman tetap utuh
+                conversations = it.conversations.map { conv ->
+                    conv.copy(
+                        lastMessage = "Pesan telah dibersihkan saat logout",
+                        unreadCount = 0
+                    )
+                }
             )
         }
     }
@@ -485,6 +551,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     fun sayHiToUser(user: User) {
         if (isUserBlocked(user.id, user.name)) return
         recordFeatureClick()
+        saveChatFriend(user)
+        updateUserActivity()
         val convId = "conv_${user.id}"
         val existing = _uiState.value.conversations.find { it.partnerId == user.id }
         
@@ -540,9 +608,26 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
     fun openChat(conversationId: String, partnerName: String, partnerAvatarHex: Long) {
         recordFeatureClick()
+        val conv = _uiState.value.conversations.find { it.id == conversationId }
+        if (conv != null) {
+            saveChatFriend(
+                User(
+                    id = conv.partnerId,
+                    name = conv.partnerName,
+                    gender = conv.partnerGender,
+                    age = 22,
+                    distanceMeters = 100,
+                    bio = "Teman obrolan di Lovy Chat",
+                    avatarColorHex = conv.partnerAvatarHex,
+                    isOnline = conv.isOnline,
+                    avatarUrl = conv.partnerAvatarUrl
+                )
+            )
+        }
+
         _uiState.update {
-            val updatedConvs = it.conversations.map { conv ->
-                if (conv.id == conversationId) conv.copy(unreadCount = 0) else conv
+            val updatedConvs = it.conversations.map { c ->
+                if (c.id == conversationId) c.copy(unreadCount = 0) else c
             }
             it.copy(
                 conversations = updatedConvs,
@@ -556,7 +641,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             val remoteMsgs = supabaseRepo.fetchChatMessages(conversationId)
             if (!remoteMsgs.isNullOrEmpty()) {
                 val current = _uiState.value.messagesMap[conversationId] ?: emptyList()
-                val merged = (current + remoteMsgs).distinctBy { it.id }.sortedBy { it.timestamp }
+                val merged = (current + remoteMsgs)
+                    .filterNot { it.deletedForSender && it.isFromMe }
+                    .distinctBy { it.id }
+                    .sortedBy { it.timestamp }
                 _uiState.update {
                     it.copy(messagesMap = it.messagesMap + (conversationId to merged))
                 }
@@ -567,6 +655,19 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     fun openChatWithBottleSender(bottle: BottleMessage) {
         if (isUserBlocked(bottle.senderId, bottle.senderName)) return
         recordFeatureClick()
+        val friendUser = User(
+            id = bottle.senderId,
+            name = bottle.senderName,
+            gender = bottle.senderGender,
+            age = 22,
+            distanceMeters = 500,
+            bio = "Penulis pesan botol",
+            avatarColorHex = bottle.avatarHex,
+            avatarUrl = bottle.avatarUrl
+        )
+        saveChatFriend(friendUser)
+        updateUserActivity()
+
         val convId = "conv_${bottle.senderId}"
         val existing = _uiState.value.conversations.find { it.partnerId == bottle.senderId }
         val greetingText = "Halo ${bottle.senderName}! Aku menemukan pesan botolmu: \"${bottle.content.take(30)}...\" 🍾🌊"
@@ -615,9 +716,38 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         scheduleAutoReply(convId, bottle.senderName)
     }
 
+    fun deleteMessageForSender(conversationId: String, messageId: String) {
+        val currentMsgs = _uiState.value.messagesMap[conversationId] ?: emptyList()
+        val updatedMsgs = currentMsgs.map { msg ->
+            if (msg.id == messageId) {
+                msg.copy(deletedForSender = true)
+            } else msg
+        }.filterNot { it.deletedForSender && it.isFromMe }
+
+        val lastRemainingText = updatedMsgs.lastOrNull()?.text ?: "Tidak ada pesan"
+
+        val updatedConvs = _uiState.value.conversations.map {
+            if (it.id == conversationId) {
+                it.copy(lastMessage = lastRemainingText)
+            } else it
+        }
+
+        _uiState.update {
+            it.copy(
+                messagesMap = it.messagesMap + (conversationId to updatedMsgs),
+                conversations = updatedConvs
+            )
+        }
+
+        viewModelScope.launch {
+            supabaseRepo.markMessageDeletedForSender(messageId)
+        }
+    }
+
     fun sendMessage(conversationId: String, text: String, partnerName: String) {
         if (text.isBlank()) return
         if (isUserBlocked(userName = partnerName)) return
+        updateUserActivity()
         val newMsg = ChatMessage(
             id = UUID.randomUUID().toString(),
             conversationId = conversationId,

@@ -11,7 +11,8 @@ data class SupabaseUserDto(
     @Json(name = "distance_meters") val distanceMeters: Int = 100,
     @Json(name = "bio") val bio: String = "",
     @Json(name = "avatar_hex") val avatarHex: Long = 0xFF2E7D32,
-    @Json(name = "is_online") val isOnline: Boolean = true
+    @Json(name = "is_online") val isOnline: Boolean = true,
+    @Json(name = "last_active_at") val lastActiveAt: Long = System.currentTimeMillis()
 )
 
 @JsonClass(generateAdapter = true)
@@ -32,7 +33,9 @@ data class SupabaseMessageDto(
     @Json(name = "conversation_id") val conversationId: String,
     @Json(name = "sender_id") val senderId: String,
     @Json(name = "text") val text: String,
-    @Json(name = "created_at") val createdAt: Long = System.currentTimeMillis()
+    @Json(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
+    @Json(name = "deleted_for_sender") val deletedForSender: Boolean = false,
+    @Json(name = "deleted_for_receiver") val deletedForReceiver: Boolean = false
 )
 
 @JsonClass(generateAdapter = true)
