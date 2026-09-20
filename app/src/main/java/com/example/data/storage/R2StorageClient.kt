@@ -78,7 +78,7 @@ object R2StorageClient {
         val accountId = getAccountId()
         // If domain is empty or mistakenly uses pub-<accountId>.r2.dev, default to the active custom domain
         if (domain.isBlank() || (accountId.isNotBlank() && domain.contains("pub-$accountId.r2.dev"))) {
-            return "https://pintarpdf.org"
+            return "https://lovychat.my.id"
         }
         return domain
     }

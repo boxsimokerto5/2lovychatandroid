@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
@@ -213,6 +214,14 @@ fun ProfileTabScreen(
                 .padding(horizontal = 16.dp)
         ) {
             Column {
+                ProfileMenuItem(
+                    icon = Icons.Default.CloudSync,
+                    iconTint = Color(0xFF0288D1),
+                    title = "Koneksi Cloud & Penyimpanan",
+                    subtitle = if (isSupabaseConnected) "Cloud aktif • Data & media tersinkron" else "Mode lokal • Ketuk untuk konfigurasi cloud",
+                    onClick = onNavigateToSupabaseConfig
+                )
+                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
                 ProfileMenuItem(
                     icon = Icons.Default.Lock,
                     iconTint = EmeraldGreen,

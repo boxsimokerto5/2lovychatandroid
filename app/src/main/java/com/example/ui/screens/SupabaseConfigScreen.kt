@@ -144,6 +144,12 @@ create policy "Allow anon all messages" on chat_messages for all using (true) wi
 
 alter table moments enable row level security;
 create policy "Allow anon all moments" on moments for all using (true) with check (true);
+
+-- Indeks performa untuk 30k+ pengguna:
+create index if not exists idx_chat_messages_conv on chat_messages (conversation_id, created_at asc);
+create index if not exists idx_chat_messages_sender on chat_messages (sender_id);
+create index if not exists idx_ocean_bottles_created on ocean_bottles (created_at desc);
+create index if not exists idx_moments_created on moments (created_at desc);
     """.trimIndent()
 
     Scaffold(
