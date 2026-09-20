@@ -74,6 +74,7 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.example.model.MomentItem
 import com.example.ui.components.IronSourceBannerView
+import com.example.ui.components.LevelPlayNativeAdCard
 import com.example.ui.components.LovyAvatar
 import com.example.ui.theme.EmeraldGreen
 import com.example.ui.theme.NeutralBorder
@@ -199,15 +200,26 @@ fun MomentsScreen(
                 }
             }
 
-            items(moments, key = { it.id }) { item ->
-                MomentCard(
-                    item = item,
-                    onToggleLike = { onToggleLike(item.id) },
-                    onPhotoClick = { url -> fullscreenPhotoUrl = url },
-                    onShareClick = {
-                        Toast.makeText(context, "Tautan momen disalin!", Toast.LENGTH_SHORT).show()
+            moments.forEachIndexed { index, item ->
+                item(key = item.id) {
+                    MomentCard(
+                        item = item,
+                        onToggleLike = { onToggleLike(item.id) },
+                        onPhotoClick = { url -> fullscreenPhotoUrl = url },
+                        onShareClick = {
+                            Toast.makeText(context, "Tautan momen disalin!", Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                }
+
+                // Sisipkan Iklan Native secara natural dan teratur setiap 4 postingan momen
+                if ((index + 1) % 4 == 0) {
+                    item(key = "native_ad_moments_$index") {
+                        LevelPlayNativeAdCard(
+                            testTag = "native_ad_moments_$index"
+                        )
                     }
-                )
+                }
             }
 
             item {

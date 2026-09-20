@@ -62,6 +62,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import com.example.ui.components.IronSourceBannerView
+import com.example.ui.components.LevelPlayNativeAdCard
 import com.example.ui.components.LovyAvatar
 import com.example.ui.components.NearbyRadarView
 import androidx.compose.runtime.Composable
@@ -491,12 +492,23 @@ fun NearbyScreen(
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
-                items(displayedUsers, key = { it.id }) { user ->
-                    NearbyUserCard(
-                        user = user,
-                        onClick = { selectedUserForProfile = user },
-                        onSayHi = { onSayHi(user) }
-                    )
+                displayedUsers.forEachIndexed { index, user ->
+                    item(key = user.id) {
+                        NearbyUserCard(
+                            user = user,
+                            onClick = { selectedUserForProfile = user },
+                            onSayHi = { onSayHi(user) }
+                        )
+                    }
+
+                    // Sisipkan Iklan Native yang elegan setelah profil ke-4
+                    if (index == 3) {
+                        item(key = "native_ad_nearby_$index") {
+                            LevelPlayNativeAdCard(
+                                testTag = "native_ad_nearby_$index"
+                            )
+                        }
+                    }
                 }
 
                 // Tombol "Cari Lebih Banyak" yang memicu Iklan Reward

@@ -5,6 +5,8 @@ import android.util.Log
 import com.ironsource.mediationsdk.ISBannerSize
 import com.ironsource.mediationsdk.IronSource
 import com.ironsource.mediationsdk.IronSourceBannerLayout
+import com.ironsource.mediationsdk.ads.nativead.LevelPlayNativeAd
+import com.ironsource.mediationsdk.ads.nativead.LevelPlayNativeAdListener
 import com.ironsource.mediationsdk.adunit.adapter.utility.AdInfo
 import com.ironsource.mediationsdk.logger.IronSourceError
 import com.ironsource.mediationsdk.model.Placement
@@ -27,6 +29,12 @@ object AdManager {
 
     // App Key from the user's ironSource / LevelPlay dashboard for Lovy Chat
     const val IRONSOURCE_APP_KEY = "283361415"
+
+    // ironSource Ad Unit IDs
+    const val AD_UNIT_NATIVE_ID = "2f06kx1nra7a3jny"
+    const val AD_UNIT_BANNER_ID = "yuqh9gyjbtqwd7lw"
+    const val AD_UNIT_INTERSTITIAL_ID = "677846ihi3c83989"
+    const val AD_UNIT_REWARDED_ID = "gyh6pbj3hekz8bku"
 
     private var isInitialized = false
     private var currentActivityRef: java.lang.ref.WeakReference<Activity>? = null
@@ -61,13 +69,14 @@ object AdManager {
             setupInterstitialListener()
             setupRewardedVideoListener()
 
-            // Initialize IronSource with Banner, Interstitial, and Rewarded Video
+            // Initialize IronSource with Banner, Interstitial, Rewarded Video, and Native Ad
             IronSource.init(
                 activity,
                 IRONSOURCE_APP_KEY,
                 IronSource.AD_UNIT.BANNER,
                 IronSource.AD_UNIT.INTERSTITIAL,
-                IronSource.AD_UNIT.REWARDED_VIDEO
+                IronSource.AD_UNIT.REWARDED_VIDEO,
+                IronSource.AD_UNIT.NATIVE_AD
             )
 
             isInitialized = true
@@ -132,6 +141,67 @@ object AdManager {
                 Log.d(TAG, "Banner destroyed")
             } catch (e: Exception) {
                 Log.e(TAG, "Error destroying banner: ${e.message}", e)
+            }
+        }
+    }
+
+    /**
+     * Create and load a LevelPlay Native Ad for the given Activity.
+     * Placement Name defaults to AD_UNIT_NATIVE_ID or "DefaultNative".
+     */
+    fun createNativeAd(
+        activity: Activity,
+        placementName: String = AD_UNIT_NATIVE_ID,
+        onAdLoaded: (LevelPlayNativeAd) -> Unit = {},
+        onAdFailed: (String) -> Unit = {}
+    ): LevelPlayNativeAd? {
+        return try {
+            val builder = LevelPlayNativeAd.Builder()
+                .withActivity(activity)
+                .withPlacementName(placementName)
+                .withListener(object : LevelPlayNativeAdListener {
+                    override fun onAdLoaded(nativeAd: LevelPlayNativeAd?, adInfo: AdInfo?) {
+                        Log.d(TAG, "Native ad loaded successfully: ${adInfo?.adNetwork}")
+                        if (nativeAd != null) {
+                            onAdLoaded(nativeAd)
+                        }
+                    }
+
+                    override fun onAdLoadFailed(nativeAd: LevelPlayNativeAd?, error: IronSourceError?) {
+                        Log.w(TAG, "Native ad load failed: ${error?.errorMessage} (code: ${error?.errorCode})")
+                        onAdFailed(error?.errorMessage ?: "Native ad load failed")
+                    }
+
+                    override fun onAdClicked(nativeAd: LevelPlayNativeAd?, adInfo: AdInfo?) {
+                        Log.d(TAG, "Native ad clicked")
+                    }
+
+                    override fun onAdImpression(nativeAd: LevelPlayNativeAd?, adInfo: AdInfo?) {
+                        Log.d(TAG, "Native ad impression recorded")
+                    }
+                })
+
+            val nativeAd = builder.build()
+            nativeAd.loadAd()
+            Log.d(TAG, "LevelPlayNativeAd load request sent")
+            nativeAd
+        } catch (e: Throwable) {
+            Log.e(TAG, "Error creating native ad: ${e.message}", e)
+            onAdFailed(e.message ?: "Unknown error")
+            null
+        }
+    }
+
+    /**
+     * Safely destroy a LevelPlay Native Ad.
+     */
+    fun destroyNativeAd(nativeAd: LevelPlayNativeAd?) {
+        if (nativeAd != null) {
+            try {
+                nativeAd.destroyAd()
+                Log.d(TAG, "Native ad destroyed")
+            } catch (e: Throwable) {
+                Log.e(TAG, "Error destroying native ad: ${e.message}", e)
             }
         }
     }
