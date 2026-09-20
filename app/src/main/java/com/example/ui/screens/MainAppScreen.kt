@@ -110,6 +110,8 @@ fun MainAppScreen(
         is CurrentScreen.Moments -> {
             MomentsScreen(
                 moments = uiState.moments,
+                currentUserId = uiState.myLovyId,
+                currentUserName = uiState.myName,
                 onBack = { viewModel.navigateBack() },
                 onToggleLike = { viewModel.toggleLikeMoment(it) },
                 onPostMoment = { viewModel.postMoment(it) },
@@ -118,6 +120,9 @@ fun MainAppScreen(
                 },
                 onPostMomentWithPhotoUri = { content, uri, loc ->
                     viewModel.postMomentWithPhoto(content, uri, loc)
+                },
+                onDeleteMoment = { momentId ->
+                    viewModel.deleteMoment(momentId)
                 },
                 isUploadingPhoto = uiState.isUploadingPhoto,
                 uploadProgressText = uiState.uploadProgressText

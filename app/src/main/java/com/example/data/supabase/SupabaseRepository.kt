@@ -138,7 +138,8 @@ class SupabaseRepository {
                         likesCount = dto.likesCount,
                         commentsCount = dto.commentsCount,
                         isLiked = false,
-                        imageUrl = dto.imageUrl
+                        imageUrl = dto.imageUrl,
+                        authorId = dto.authorId
                     )
                 }
             } else {
@@ -171,6 +172,20 @@ class SupabaseRepository {
             response.isSuccessful
         } catch (e: Exception) {
             Log.w(TAG, "Gagal menyimpan moment ke Supabase", e)
+            false
+        }
+    }
+
+    suspend fun deleteMoment(momentId: String): Boolean = withContext(Dispatchers.IO) {
+        val api = SupabaseClient.getApi() ?: return@withContext false
+        val apiKey = SupabaseClient.getSupabaseAnonKey()
+        val auth = SupabaseClient.getAuthHeader()
+
+        try {
+            val response = api.deleteMoment(apiKey, auth, "eq.$momentId")
+            response.isSuccessful
+        } catch (e: Exception) {
+            Log.w(TAG, "Gagal menghapus moment dari Supabase", e)
             false
         }
     }

@@ -950,6 +950,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     fun postMoment(content: String, imageUrl: String? = null, locationTag: String? = null) {
         if (content.isBlank()) return
         recordFeatureClick()
+        val authorId = _uiState.value.myLovyId.ifBlank { "me" }
         val newMoment = MomentItem(
             id = UUID.randomUUID().toString(),
             authorName = _uiState.value.myName,
@@ -961,13 +962,14 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             commentsCount = 0,
             imageUrl = imageUrl,
             authorAvatarUrl = null,
-            locationTag = locationTag ?: "Jakarta Selatan"
+            locationTag = locationTag ?: "Jakarta Selatan",
+            authorId = authorId
         )
         _uiState.update { it.copy(moments = listOf(newMoment) + it.moments) }
 
         // Simpan ke Supabase
         viewModelScope.launch {
-            supabaseRepo.sendMoment(newMoment, "me")
+            supabaseRepo.sendMoment(newMoment, authorId)
         }
     }
 
@@ -975,6 +977,14 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         recordFeatureClick()
         _uiState.update { state ->
             state.copy(moments = state.moments.filter { it.id != momentId })
+        }
+        // Hapus dari Supabase jika tersambung
+        viewModelScope.launch {
+            try {
+                supabaseRepo.deleteMoment(momentId)
+            } catch (e: Exception) {
+                Log.w("LovyChatViewModel", "Gagal menghapus momen di cloud: $momentId", e)
+            }
         }
     }
 

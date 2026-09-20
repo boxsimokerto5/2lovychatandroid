@@ -86,4 +86,11 @@ interface SupabaseRestApi {
         @Header("Authorization") authHeader: String,
         @Body moment: SupabaseMomentDto
     ): Response<List<SupabaseMomentDto>>
+
+    @DELETE("rest/v1/moments")
+    suspend fun deleteMoment(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("id") idFilter: String
+    ): Response<Unit>
 }

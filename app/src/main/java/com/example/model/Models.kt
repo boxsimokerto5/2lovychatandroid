@@ -75,5 +75,6 @@ data class MomentItem(
     val imageUrl: String? = null,
     val authorAvatarUrl: String? = null,
     val locationTag: String? = null,
-    val isDeleted: Boolean = false
+    val isDeleted: Boolean = false,
+    val authorId: String = ""
 )
