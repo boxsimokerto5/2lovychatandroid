@@ -446,8 +446,12 @@ fun NearbyScreen(
                 // Tampilan Radar Interaktif
                 NearbyRadarView(
                     users = displayedUsers,
+                    totalNearbyCount = filteredUsers.size,
+                    isExpanded = isExpanded,
                     onSayHi = onSayHi,
                     onUserClick = { user -> selectedUserForProfile = user },
+                    onExpandNearby = onExpandNearby,
+                    language = language,
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)

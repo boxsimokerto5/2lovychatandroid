@@ -1,5 +1,9 @@
 package com.example.ui.components
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -12,6 +16,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,6 +25,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -33,10 +39,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Female
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Male
+import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.filled.WavingHand
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -61,6 +70,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -73,18 +83,36 @@ import com.example.model.User
 import com.example.ui.theme.EmeraldGreen
 import com.example.ui.theme.NeutralDark
 import com.example.ui.theme.NeutralMedium
+import com.example.util.AdManager
+import com.example.util.AppLanguage
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
+private fun Context.findActivity(): Activity? {
+    var ctx = this
+    while (ctx is ContextWrapper) {
+        if (ctx is Activity) return ctx
+        ctx = ctx.baseContext
+    }
+    return null
+}
+
 @Composable
 fun NearbyRadarView(
     users: List<User>,
+    totalNearbyCount: Int = users.size,
+    isExpanded: Boolean = false,
     onSayHi: (User) -> Unit,
     onUserClick: ((User) -> Unit)? = null,
+    onExpandNearby: (() -> Unit)? = null,
+    language: AppLanguage = AppLanguage.INDONESIAN,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     var selectedUser by remember { mutableStateOf<User?>(null) }
+    val hasHiddenUsers = !isExpanded && totalNearbyCount > users.size
+    val hiddenCount = if (hasHiddenUsers) totalNearbyCount - users.size else 0
 
     // Animasi sapuan scanner (360 derajat)
     val infiniteTransition = rememberInfiniteTransition(label = "radar_anim")
@@ -142,11 +170,15 @@ fun NearbyRadarView(
                         modifier = Modifier
                             .size(10.dp)
                             .clip(CircleShape)
-                            .background(EmeraldGreen)
+                            .background(if (isExpanded) Color(0xFF00E676) else EmeraldGreen)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Radar Aktif • Radius 5 km",
+                        text = if (isExpanded) {
+                            if (language == AppLanguage.INDONESIAN) "Radar Diperluas • Radius 15 km" else "Expanded Radar • 15 km Radius"
+                        } else {
+                            if (language == AppLanguage.INDONESIAN) "Radar Aktif • Radius 5 km" else "Active Radar • 5 km Radius"
+                        },
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFFA5D6A7)
@@ -156,11 +188,15 @@ fun NearbyRadarView(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0xFF1B382B))
+                        .background(if (isExpanded) Color(0xFF2E7D32) else Color(0xFF1B382B))
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "${users.size} Terdeteksi",
+                        text = if (hasHiddenUsers) {
+                            "${users.size} dari $totalNearbyCount Terdeteksi"
+                        } else {
+                            "${users.size} Terdeteksi"
+                        },
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -307,13 +343,17 @@ fun NearbyRadarView(
                     }
 
                     // 3. Letakkan Avatar Teman Sekitar di Koordinat Polar Radar
-                    val maxDistance = 6500f // batas estimasi jarak dalam meter
+                    val maxDistance = if (isExpanded) 10000f else 6500f // batas estimasi jarak dalam meter
+                    val avatarSize = if (users.size > 8) 36.dp else 40.dp
+                    val selectedAvatarSize = if (users.size > 8) 42.dp else 46.dp
+                    val stepAngle = 360f / maxOf(users.size, 1)
+
                     users.forEachIndexed { index, user ->
-                        // Hitung jarak radius relatif (0.22f hingga 0.85f agar tidak menumpuk di pusat atau terpotong di tepi)
-                        val distRatio = (user.distanceMeters.toFloat() / maxDistance).coerceIn(0.22f, 0.85f)
+                        // Hitung jarak radius relatif (0.20f hingga 0.86f agar tidak menumpuk di pusat atau terpotong di tepi)
+                        val distRatio = (user.distanceMeters.toFloat() / maxDistance).coerceIn(0.20f, 0.86f)
                         
-                        // Hitung sudut polar secara deterministik dari index dan id
-                        val seedAngle = ((index * 68) + (user.id.hashCode() % 35)).let {
+                        // Hitung sudut polar secara deterministik & merata
+                        val seedAngle = ((index * stepAngle) + (user.id.hashCode() % 23)).let {
                             val mod = it % 360
                             if (mod < 0) mod + 360 else mod
                         }
@@ -339,7 +379,7 @@ fun NearbyRadarView(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(if (isSelected) 46.dp else 40.dp)
+                                        .size(if (isSelected) selectedAvatarSize else avatarSize)
                                         .shadow(6.dp, CircleShape)
                                         .border(
                                             width = if (isSelected) 3.dp else 1.5.dp,
@@ -351,8 +391,8 @@ fun NearbyRadarView(
                                         name = user.name,
                                         avatarColorHex = user.avatarColorHex,
                                         avatarUrl = user.avatarUrl,
-                                        size = if (isSelected) 46.dp else 40.dp,
-                                        fontSize = 14.sp,
+                                        size = if (isSelected) selectedAvatarSize else avatarSize,
+                                        fontSize = if (users.size > 8) 12.sp else 14.sp,
                                         isOnline = user.isOnline
                                     )
                                 }
@@ -367,7 +407,7 @@ fun NearbyRadarView(
                                 ) {
                                     Text(
                                         text = "${user.distanceMeters}m",
-                                        fontSize = 9.sp,
+                                        fontSize = if (users.size > 8) 8.5.sp else 9.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = if (isSelected) Color(0xFFFFD54F) else Color.White
                                     )
@@ -378,14 +418,167 @@ fun NearbyRadarView(
                 }
             }
 
-            // Teks petunjuk sentuh
-            Text(
-                text = "Sentuh avatar di radar untuk melihat profil & menyapa",
-                fontSize = 11.5.sp,
-                color = Color(0xFF81C784),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = 6.dp)
-            )
+            // Area Kontrol di Bawah Radar
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Teks petunjuk sentuh
+                Text(
+                    text = "Sentuh avatar di radar untuk melihat profil & menyapa",
+                    fontSize = 11.5.sp,
+                    color = Color(0xFF81C784),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 6.dp)
+                )
+
+                // Tombol "Cari Lebih Banyak di Radar" dengan Iklan Reward jika belum diperluas
+                if (hasHiddenUsers && selectedUser == null) {
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF14291F)),
+                        border = BorderStroke(1.dp, Color(0xFFFFB300).copy(alpha = 0.6f)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 6.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                val activity = context.findActivity()
+                                val adLaunched = AdManager.showRewardedVideo(activity = activity) {
+                                    onExpandNearby?.invoke()
+                                    Toast.makeText(
+                                        context,
+                                        if (language == AppLanguage.INDONESIAN) {
+                                            "Selamat! Radar diperluas & $hiddenCount teman baru ditemukan 🎉"
+                                        } else {
+                                            "Success! Radar expanded & $hiddenCount new friends found 🎉"
+                                        },
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                                if (!adLaunched) {
+                                    Toast.makeText(
+                                        context,
+                                        if (language == AppLanguage.INDONESIAN) {
+                                            "Mempersiapkan radar... Menampilkan semua pengguna sekitar untuk Anda ✨"
+                                        } else {
+                                            "Preparing radar... Unlocking all nearby users for you ✨"
+                                        },
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    onExpandNearby?.invoke()
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    brush = Brush.horizontalGradient(
+                                        colors = listOf(Color(0xFFE65100), Color(0xFFFF8F00))
+                                    ),
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                                .testTag("radar_btn_expand_reward")
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.weight(1f, fill = false)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(36.dp)
+                                            .clip(CircleShape)
+                                            .background(Color.White.copy(alpha = 0.25f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.PlayCircle,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column {
+                                        Text(
+                                            text = if (language == AppLanguage.INDONESIAN) {
+                                                "Cari Lebih Banyak di Radar"
+                                            } else {
+                                                "Discover More on Radar"
+                                            },
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
+                                        Text(
+                                            text = if (language == AppLanguage.INDONESIAN) {
+                                                "+$hiddenCount teman baru • Tonton video singkat 🎬"
+                                            } else {
+                                                "+$hiddenCount new people • Watch short video 🎬"
+                                            },
+                                            fontSize = 11.sp,
+                                            color = Color.White.copy(alpha = 0.9f)
+                                        )
+                                    }
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(Color.White.copy(alpha = 0.25f))
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Text(
+                                        text = "REWARD",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Black,
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                        }
+                    }
+                } else if (isExpanded && selectedUser == null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .padding(bottom = 6.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Color(0xFF1B382B))
+                            .border(1.dp, EmeraldGreen.copy(alpha = 0.5f), RoundedCornerShape(20.dp))
+                            .padding(horizontal = 14.dp, vertical = 6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = Color(0xFF69F0AE),
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (language == AppLanguage.INDONESIAN) {
+                                "Radar Maksimal Aktif • ${users.size} Pengguna Terbuka ✨"
+                            } else {
+                                "Max Radar Active • ${users.size} Users Unlocked ✨"
+                            },
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFFE8F5E9)
+                        )
+                    }
+                }
+            }
 
             // 4. Kartu Pengguna Terpilih (Peek Profile Card) di bagian bawah
             AnimatedVisibility(
