@@ -26,6 +26,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -174,8 +175,8 @@ fun MainAppScreen(
             Scaffold(
                 bottomBar = {
                     Column(modifier = Modifier.fillMaxWidth()) {
-                        // ironSource Banner Ad location
-                        IronSourceBannerView()
+                        // ironSource Banner Ad location - merapat ke frame bottom navigation bar
+                        IronSourceBannerView(applyNavigationBarsPadding = false)
                         LovyBottomNavigationBar(
                             selectedTab = uiState.currentTab,
                             language = uiState.language,
@@ -200,15 +201,21 @@ fun MainAppScreen(
                                 viewModel.navigateTo(CurrentScreen.Nearby)
                             }
                         )
-                        1 -> FriendsTabScreen(
-                            friends = if (uiState.chattedFriends.isNotEmpty()) uiState.chattedFriends else uiState.nearbyUsers,
-                            onSelectFriend = { user ->
-                                viewModel.sayHiToUser(user)
-                            },
-                            onNavigateToNearby = {
-                                viewModel.navigateTo(CurrentScreen.Nearby)
+                        1 -> {
+                            val combinedFriends = remember(uiState.chattedFriends, uiState.nearbyUsers) {
+                                val chattedIds = uiState.chattedFriends.map { it.id }.toSet()
+                                uiState.chattedFriends + uiState.nearbyUsers.filterNot { it.id in chattedIds }
                             }
-                        )
+                            FriendsTabScreen(
+                                friends = combinedFriends,
+                                onSelectFriend = { user ->
+                                    viewModel.sayHiToUser(user)
+                                },
+                                onNavigateToNearby = {
+                                    viewModel.navigateTo(CurrentScreen.Nearby)
+                                }
+                            )
+                        }
                         2 -> DiscoverTabScreen(
                             language = uiState.language,
                             onNavigateToNearby = {

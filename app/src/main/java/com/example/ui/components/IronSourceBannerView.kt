@@ -48,7 +48,8 @@ import com.ironsource.mediationsdk.IronSourceBannerLayout
  */
 @Composable
 fun IronSourceBannerView(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    applyNavigationBarsPadding: Boolean = false
 ) {
     val context = LocalContext.current
     val activity = context as? Activity ?: return
@@ -84,31 +85,31 @@ fun IronSourceBannerView(
                 modifier = modifier
                     .fillMaxWidth()
                     .background(Color.White)
-                    .navigationBarsPadding()
+                    .then(if (applyNavigationBarsPadding) Modifier.navigationBarsPadding() else Modifier)
                     .testTag("iron_source_banner_container"),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 HorizontalDivider(color = NeutralBorder, thickness = 0.5.dp)
 
-                // Subtle sponsored indicator badge
+                // Subtle sponsored indicator badge (rapat & minimalis)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 2.dp),
+                        .padding(horizontal = 6.dp, vertical = 1.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(3.dp))
+                            .clip(RoundedCornerShape(2.dp))
                             .background(Color(0xFFEEEEEE))
-                            .padding(horizontal = 5.dp, vertical = 1.dp)
+                            .padding(horizontal = 4.dp, vertical = 0.5.dp)
                     ) {
                         Text(
                             text = "IKLAN",
-                            fontSize = 8.5.sp,
+                            fontSize = 7.5.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = NeutralMedium,
-                            letterSpacing = 0.5.sp
+                            letterSpacing = 0.4.sp
                         )
                     }
                 }
@@ -118,7 +119,7 @@ fun IronSourceBannerView(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)
-                        .background(Color(0xFFFAFAFA)),
+                        .background(Color.White),
                     contentAlignment = Alignment.Center
                 ) {
                     AndroidView(
@@ -152,8 +153,6 @@ fun IronSourceBannerView(
                         }
                     )
                 }
-
-                HorizontalDivider(color = NeutralBorder, thickness = 0.5.dp)
             }
         }
     }

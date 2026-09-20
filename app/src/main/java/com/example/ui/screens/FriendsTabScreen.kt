@@ -110,12 +110,13 @@ fun FriendsTabScreen(
                 )
             }
         },
-        containerColor = ScreenBackground,
+        containerColor = Color.White,
         modifier = modifier.fillMaxSize()
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .background(Color.White)
                 .padding(paddingValues)
         ) {
             // Shortcut items
@@ -140,16 +141,15 @@ fun FriendsTabScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
-
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                        .background(Color(0xFFF7F9FA))
+                        .padding(horizontal = 16.dp, vertical = 7.dp)
                 ) {
                     Text(
                         text = "Kontak Saya (${filtered.size})",
-                        fontSize = 12.5.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeutralMedium
                     )

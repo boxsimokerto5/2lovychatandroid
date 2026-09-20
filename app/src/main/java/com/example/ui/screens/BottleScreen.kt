@@ -138,7 +138,7 @@ fun BottleScreen(
             )
         },
         bottomBar = {
-            IronSourceBannerView()
+            IronSourceBannerView(applyNavigationBarsPadding = true)
         },
         containerColor = ScreenBackground,
         modifier = modifier.fillMaxSize()

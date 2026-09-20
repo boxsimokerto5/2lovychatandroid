@@ -136,7 +136,7 @@ fun ChatsTabScreen(
                 Icon(imageVector = Icons.Default.AddComment, contentDescription = "Mulai Chat")
             }
         },
-        containerColor = ScreenBackground,
+        containerColor = Color.White,
         modifier = modifier.fillMaxSize()
     ) { paddingValues ->
         if (filtered.isEmpty()) {
@@ -144,6 +144,7 @@ fun ChatsTabScreen(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .fillMaxSize()
+                    .background(Color.White)
                     .padding(paddingValues)
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -165,9 +166,10 @@ fun ChatsTabScreen(
             }
         } else {
             LazyColumn(
-                contentPadding = PaddingValues(vertical = 4.dp),
+                contentPadding = PaddingValues(top = 4.dp, bottom = 0.dp),
                 modifier = Modifier
                     .fillMaxSize()
+                    .background(Color.White)
                     .padding(paddingValues)
             ) {
                 items(filtered, key = { it.id }) { conv ->

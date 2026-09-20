@@ -205,7 +205,7 @@ fun NearbyScreen(
             )
         },
         bottomBar = {
-            IronSourceBannerView()
+            IronSourceBannerView(applyNavigationBarsPadding = true)
         },
         containerColor = ScreenBackground,
         modifier = modifier.fillMaxSize()

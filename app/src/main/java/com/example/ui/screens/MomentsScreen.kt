@@ -144,7 +144,7 @@ fun MomentsScreen(
             )
         },
         bottomBar = {
-            IronSourceBannerView()
+            IronSourceBannerView(applyNavigationBarsPadding = true)
         },
         floatingActionButton = {
             FloatingActionButton(
