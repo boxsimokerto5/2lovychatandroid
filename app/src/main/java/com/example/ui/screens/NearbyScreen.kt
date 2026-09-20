@@ -648,10 +648,12 @@ fun NearbyScreen(
 @Composable
 fun NearbyUserCard(
     user: User,
+    onClick: () -> Unit = {},
     onSayHi: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
+        onClick = onClick,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
