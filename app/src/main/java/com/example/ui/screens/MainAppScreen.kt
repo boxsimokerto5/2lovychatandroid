@@ -70,6 +70,8 @@ fun MainAppScreen(
                 detectedGeoArea = uiState.detectedGeoArea,
                 isLocalMode = uiState.isLocalLanguageMode,
                 onLanguageChange = { viewModel.setLanguage(it) },
+                onRegister = { username, password -> viewModel.registerAccount(username, password) },
+                onLoginWithCredentials = { username, password -> viewModel.loginWithCredentials(username, password) },
                 onLoginSuccess = { name -> viewModel.loginUser(name) },
                 onGuestLogin = { viewModel.loginAsGuest() }
             )

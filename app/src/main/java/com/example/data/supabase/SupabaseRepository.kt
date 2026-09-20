@@ -14,7 +14,7 @@ class SupabaseRepository {
 
     suspend fun testConnection(): Result<String> = withContext(Dispatchers.IO) {
         val api = SupabaseClient.getApi()
-            ?: return@withContext Result.failure(Exception("Supabase belum dikonfigurasi. Masukkan URL dan Anon Key."))
+            ?: return@withContext Result.failure(Exception("Layanan sinkronisasi belum dikonfigurasi."))
 
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -22,14 +22,14 @@ class SupabaseRepository {
         try {
             val response = api.getNearbyUsers(apiKey, auth, limit = 1)
             if (response.isSuccessful) {
-                Result.success("Terhubung ke Supabase dengan sukses! (HTTP ${response.code()})")
+                Result.success("Terhubung ke layanan cloud dengan sukses! (HTTP ${response.code()})")
             } else if (response.code() == 404 || response.code() == 400 || response.code() == 401 || response.code() == 403) {
-                Result.success("Tersambung ke project Supabase (Status HTTP ${response.code()}). Tabel database siap dipakai.")
+                Result.success("Tersambung ke server cloud (Status HTTP ${response.code()}). Layanan siap digunakan.")
             } else {
                 Result.failure(Exception("Gagal: HTTP ${response.code()} - ${response.message()}"))
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Koneksi ke Supabase gagal", e)
+            Log.e(TAG, "Koneksi cloud gagal", e)
             Result.failure(e)
         }
     }

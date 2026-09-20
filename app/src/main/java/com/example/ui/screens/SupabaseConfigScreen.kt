@@ -152,7 +152,7 @@ create policy "Allow anon all moments" on moments for all using (true) with chec
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "Koneksi Supabase",
+                            text = "Koneksi Cloud & Sinkronisasi",
                             fontSize = 19.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -218,14 +218,14 @@ create policy "Allow anon all moments" on moments for all using (true) with chec
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = if (isConnected) "Supabase Terhubung Aktif" else "Supabase Belum Terhubung",
+                            text = if (isConnected) "Layanan Cloud Aktif" else "Layanan Cloud Belum Terhubung",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = NeutralDark
                         )
                         Spacer(modifier = Modifier.height(3.dp))
                         Text(
-                            text = connectionStatusMessage ?: if (isConnected) "Database cloud siap digunakan untuk pesan & botol lautan." else "Aplikasi saat ini menggunakan database cadangan lokal.",
+                            text = connectionStatusMessage ?: if (isConnected) "Penyimpanan cloud aktif untuk pesan & cerita." else "Aplikasi saat ini berjalan dalam mode penyimpanan perangkat.",
                             fontSize = 12.sp,
                             color = NeutralMedium,
                             lineHeight = 16.sp
@@ -262,7 +262,7 @@ create policy "Allow anon all moments" on moments for all using (true) with chec
 
                     // URL
                     Text(
-                        text = "Project URL Supabase",
+                        text = "Cloud Server URL",
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = NeutralDark
@@ -271,7 +271,7 @@ create policy "Allow anon all moments" on moments for all using (true) with chec
                     OutlinedTextField(
                         value = urlInput,
                         onValueChange = { urlInput = it },
-                        placeholder = { Text("https://xxxxxxxxxxxxxxxxxxxx.supabase.co", fontSize = 13.sp) },
+                        placeholder = { Text("https://xxxxxxxxxxxxxxxxxxxx.co", fontSize = 13.sp) },
                         singleLine = true,
                         leadingIcon = {
                             Icon(imageVector = Icons.Default.Link, contentDescription = null, tint = EmeraldGreen)
@@ -285,7 +285,7 @@ create policy "Allow anon all moments" on moments for all using (true) with chec
 
                     // Anon Key
                     Text(
-                        text = "Anon (Public) Key",
+                        text = "Access Token / API Key",
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = NeutralDark
@@ -294,7 +294,7 @@ create policy "Allow anon all moments" on moments for all using (true) with chec
                     OutlinedTextField(
                         value = keyInput,
                         onValueChange = { keyInput = it },
-                        placeholder = { Text("eyJh...... (Anon Public Key)", fontSize = 13.sp) },
+                        placeholder = { Text("eyJh...... (Token Akses Publik)", fontSize = 13.sp) },
                         minLines = 2,
                         maxLines = 3,
                         leadingIcon = {
@@ -316,7 +316,7 @@ create policy "Allow anon all moments" on moments for all using (true) with chec
                             onClick = {
                                 onSaveCredentials(urlInput.trim(), keyInput.trim())
                                 scope.launch {
-                                    snackbarHostState.showSnackbar("Kredensial Supabase berhasil disimpan!")
+                                    snackbarHostState.showSnackbar("Pengaturan cloud berhasil disimpan!")
                                 }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
@@ -384,7 +384,7 @@ create policy "Allow anon all moments" on moments for all using (true) with chec
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = "Skrip SQL Tabel Supabase",
+                            text = "Struktur Sinkronisasi Data",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = NeutralDark
@@ -394,20 +394,20 @@ create policy "Allow anon all moments" on moments for all using (true) with chec
                             onClick = {
                                 clipboardManager.setText(AnnotatedString(sqlSchema))
                                 scope.launch {
-                                    snackbarHostState.showSnackbar("Skrip SQL berhasil disalin ke clipboard!")
+                                    snackbarHostState.showSnackbar("Skrip struktur data berhasil disalin!")
                                 }
                             },
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Icon(imageVector = Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(14.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Salin SQL", fontSize = 12.sp)
+                            Text("Salin Skrip", fontSize = 12.sp)
                         }
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Jalankan skrip ini sekali saja di dashboard Supabase (SQL Editor) untuk menyiapkan tabel Lovy Chat:",
+                        text = "Skrip inisialisasi struktur data cloud untuk sinkronisasi pesan & profil Lovy Chat:",
                         fontSize = 12.sp,
                         color = NeutralMedium
                     )
