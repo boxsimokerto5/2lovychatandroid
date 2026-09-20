@@ -73,7 +73,14 @@ object R2StorageClient {
         val configured = sharedPrefs?.getString(PREF_PUBLIC_DOMAIN, null)
             ?.takeIf { it.isNotBlank() }
             ?: BuildConfig.R2_PUBLIC_DOMAIN
-        return configured.trim().removeSuffix("/")
+
+        val domain = configured.trim().removeSuffix("/")
+        val accountId = getAccountId()
+        // If domain is empty or mistakenly uses pub-<accountId>.r2.dev, default to the active custom domain
+        if (domain.isBlank() || (accountId.isNotBlank() && domain.contains("pub-$accountId.r2.dev"))) {
+            return "https://pintarpdf.org"
+        }
+        return domain
     }
 
     fun isConfigured(): Boolean {
