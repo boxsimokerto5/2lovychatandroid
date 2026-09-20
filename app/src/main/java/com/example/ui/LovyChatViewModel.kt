@@ -78,7 +78,14 @@ data class LovyChatUiState(
     val isNearbyExpanded: Boolean = false,
     // Blocked Users State (Prevents chats & hides from Around Me)
     val blockedUserIds: Set<String> = emptySet(),
-    val blockedUserNames: Set<String> = emptySet()
+    val blockedUserNames: Set<String> = emptySet(),
+    // Cloudflare R2 State
+    val isR2Configured: Boolean = false,
+    val r2AccountId: String = "",
+    val r2BucketName: String = "lovychat",
+    val r2PublicDomain: String = "",
+    val isUploadingPhoto: Boolean = false,
+    val uploadProgressText: String? = null
 )
 
 class LovyChatViewModel(application: Application) : AndroidViewModel(application) {
@@ -103,10 +110,12 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         try {
             val ctx = try { application.applicationContext } catch (_: Throwable) { null } ?: application
             SupabaseClient.init(ctx)
+            com.example.data.storage.R2StorageClient.init(ctx)
         } catch (_: Throwable) {
         }
         loadBlockedUsers()
         refreshSupabaseState()
+        refreshR2State()
         detectAndApplyGeoLanguage()
         observeUserProfile()
         observeChatFriends()
@@ -368,6 +377,57 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     fun clearSupabaseCredentials() {
         SupabaseClient.clearCustomCredentials(getApplication<Application>().applicationContext)
         refreshSupabaseState()
+    }
+
+    fun refreshR2State() {
+        val app = try { getApplication<Application>() } catch (_: Throwable) { null }
+        val ctx = try { app?.applicationContext } catch (_: Throwable) { null } ?: app
+        if (ctx != null) {
+            com.example.data.storage.R2StorageClient.init(ctx)
+        }
+        val configured = com.example.data.storage.R2StorageClient.isConfigured()
+        val accountId = com.example.data.storage.R2StorageClient.getAccountId()
+        val bucketName = com.example.data.storage.R2StorageClient.getBucketName()
+        val publicDomain = com.example.data.storage.R2StorageClient.getPublicDomain()
+        _uiState.update {
+            it.copy(
+                isR2Configured = configured,
+                r2AccountId = accountId,
+                r2BucketName = bucketName,
+                r2PublicDomain = publicDomain
+            )
+        }
+    }
+
+    fun saveR2Credentials(
+        accountId: String,
+        accessKeyId: String,
+        secretAccessKey: String,
+        bucketName: String,
+        publicDomain: String
+    ) {
+        val app = getApplication<Application>()
+        com.example.data.storage.R2StorageClient.saveConfig(
+            app.applicationContext,
+            accountId,
+            accessKeyId,
+            secretAccessKey,
+            bucketName,
+            publicDomain
+        )
+        refreshR2State()
+    }
+
+    fun testR2Connection(onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            val res = com.example.data.storage.R2StorageClient.testConnection()
+            res.onSuccess { msg ->
+                refreshR2State()
+                onResult(true, msg)
+            }.onFailure { err ->
+                onResult(false, err.message ?: "Koneksi R2 gagal")
+            }
+        }
     }
 
     fun testSupabaseConnection() {
@@ -915,6 +975,247 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         recordFeatureClick()
         _uiState.update { state ->
             state.copy(moments = state.moments.filter { it.id != momentId })
+        }
+    }
+
+    // --- Cloudflare R2 Photo Upload Methods ---
+
+    /**
+     * Upload user profile photo to Cloudflare R2 and update profile state & database.
+     */
+    fun uploadProfilePhoto(
+        uri: android.net.Uri,
+        context: android.content.Context? = null,
+        onComplete: ((Boolean, String?) -> Unit)? = null
+    ) {
+        val ctx = context ?: getApplication<Application>()
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isUploadingPhoto = true,
+                    uploadProgressText = "Mengunggah foto profil ke Cloudflare R2..."
+                )
+            }
+            try {
+                val bytes = com.example.util.ImageCompressor.compressImage(
+                    context = ctx,
+                    uri = uri,
+                    maxDimension = 800,
+                    quality = 85
+                )
+                if (bytes == null || bytes.isEmpty()) {
+                    _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
+                    onComplete?.invoke(false, "Gagal memproses gambar.")
+                    return@launch
+                }
+
+                val fileName = "avatar_${_uiState.value.myLovyId}_${System.currentTimeMillis()}.jpg"
+                val result = com.example.data.storage.R2StorageClient.uploadImage(
+                    bytes = bytes,
+                    folder = "avatars",
+                    fileName = fileName
+                )
+
+                if (result.isSuccess) {
+                    val publicUrl = result.getOrThrow()
+                    val updatedProfile = _uiState.value.userProfile.copy(profilePicture = publicUrl)
+                    saveUserProfile(updatedProfile)
+                    _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
+                    onComplete?.invoke(true, publicUrl)
+                } else {
+                    val err = result.exceptionOrNull()?.localizedMessage ?: "Gagal mengunggah ke Cloudflare R2"
+                    _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
+                    onComplete?.invoke(false, err)
+                }
+            } catch (e: Exception) {
+                Log.e("LovyChatViewModel", "Error upload profile photo", e)
+                _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
+                onComplete?.invoke(false, e.localizedMessage)
+            }
+        }
+    }
+
+    /**
+     * Post a moment with an optional photo uploaded to Cloudflare R2.
+     */
+    fun postMomentWithPhoto(
+        content: String,
+        uri: android.net.Uri?,
+        locationTag: String? = null,
+        context: android.content.Context? = null,
+        onComplete: ((Boolean) -> Unit)? = null
+    ) {
+        if (content.isBlank()) {
+            onComplete?.invoke(false)
+            return
+        }
+
+        val ctx = context ?: getApplication<Application>()
+        if (uri == null) {
+            postMoment(content, null, locationTag)
+            onComplete?.invoke(true)
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isUploadingPhoto = true,
+                    uploadProgressText = "Mengunggah foto momen ke Cloudflare R2..."
+                )
+            }
+            try {
+                val bytes = com.example.util.ImageCompressor.compressImage(
+                    context = ctx,
+                    uri = uri,
+                    maxDimension = 1280,
+                    quality = 85
+                )
+                var uploadedUrl: String? = null
+                if (bytes != null && bytes.isNotEmpty()) {
+                    val fileName = "moment_${UUID.randomUUID()}.jpg"
+                    val result = com.example.data.storage.R2StorageClient.uploadImage(
+                        bytes = bytes,
+                        folder = "moments",
+                        fileName = fileName
+                    )
+                    uploadedUrl = result.getOrNull()
+                }
+
+                postMoment(content, uploadedUrl, locationTag)
+                _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
+                onComplete?.invoke(true)
+            } catch (e: Exception) {
+                Log.e("LovyChatViewModel", "Error posting moment with photo", e)
+                // Fallback to text moment if image upload fails
+                postMoment(content, null, locationTag)
+                _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
+                onComplete?.invoke(false)
+            }
+        }
+    }
+
+    /**
+     * Upload a photo to Cloudflare R2 and send it as a chat message.
+     */
+    fun sendPhotoMessage(
+        conversationId: String,
+        uri: android.net.Uri,
+        partnerName: String,
+        caption: String = "",
+        context: android.content.Context? = null
+    ) {
+        if (isUserBlocked(userName = partnerName)) return
+        updateUserActivity()
+
+        val ctx = context ?: getApplication<Application>()
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isUploadingPhoto = true,
+                    uploadProgressText = "Mengunggah foto chat ke Cloudflare R2..."
+                )
+            }
+            try {
+                val bytes = com.example.util.ImageCompressor.compressImage(
+                    context = ctx,
+                    uri = uri,
+                    maxDimension = 1280,
+                    quality = 85
+                )
+                if (bytes == null || bytes.isEmpty()) {
+                    _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
+                    return@launch
+                }
+
+                val fileName = "chat_${UUID.randomUUID()}.jpg"
+                val result = com.example.data.storage.R2StorageClient.uploadImage(
+                    bytes = bytes,
+                    folder = "chats/$conversationId",
+                    fileName = fileName
+                )
+
+                if (result.isSuccess) {
+                    val photoUrl = result.getOrThrow()
+                    val displayText = caption.trim().ifBlank { "📷 Foto" }
+                    val newMsg = ChatMessage(
+                        id = UUID.randomUUID().toString(),
+                        conversationId = conversationId,
+                        text = displayText,
+                        timestamp = System.currentTimeMillis(),
+                        isFromMe = true,
+                        imageUrl = photoUrl
+                    )
+
+                    val updatedMessages = (_uiState.value.messagesMap[conversationId] ?: emptyList()) + newMsg
+                    val updatedConversations = _uiState.value.conversations.map {
+                        if (it.id == conversationId) {
+                            it.copy(lastMessage = "📷 Foto", lastTimestamp = System.currentTimeMillis())
+                        } else it
+                    }
+
+                    _uiState.update {
+                        it.copy(
+                            conversations = updatedConversations,
+                            messagesMap = it.messagesMap + (conversationId to updatedMessages),
+                            isUploadingPhoto = false,
+                            uploadProgressText = null
+                        )
+                    }
+
+                    // Sinkronisasi ke Supabase
+                    supabaseRepo.sendChatMessage(newMsg)
+
+                    // Auto-reply admiring the photo
+                    schedulePhotoAutoReply(conversationId, partnerName)
+                } else {
+                    _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
+                }
+            } catch (e: Exception) {
+                Log.e("LovyChatViewModel", "Error sending photo message", e)
+                _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
+            }
+        }
+    }
+
+    private fun schedulePhotoAutoReply(conversationId: String, partnerName: String) {
+        viewModelScope.launch {
+            delay(2500)
+            if (isUserBlocked(userName = partnerName)) return@launch
+            val photoReplies = listOf(
+                "Wah fotonya bagus banget! 😍📸",
+                "Keren banget fotonya! Suka deh liatnya ✨",
+                "Makasih udah berbagi fotonya ya! Bagus banget! 😊",
+                "Wah menarik banget! Diambil di mana tuh fotonya? 🌸",
+                "Foto yang cantik! Senang ngobrol sama kamu 👍"
+            )
+            val replyMsg = ChatMessage(
+                id = UUID.randomUUID().toString(),
+                conversationId = conversationId,
+                text = photoReplies.random(),
+                timestamp = System.currentTimeMillis(),
+                isFromMe = false
+            )
+
+            val curMsgs = _uiState.value.messagesMap[conversationId] ?: emptyList()
+            val updatedConvs = _uiState.value.conversations.map {
+                if (it.id == conversationId) {
+                    it.copy(
+                        lastMessage = replyMsg.text,
+                        lastTimestamp = replyMsg.timestamp,
+                        unreadCount = if (_uiState.value.activeChatId == conversationId) 0 else it.unreadCount + 1
+                    )
+                } else it
+            }
+
+            _uiState.update {
+                it.copy(
+                    conversations = updatedConvs,
+                    messagesMap = it.messagesMap + (conversationId to (curMsgs + replyMsg))
+                )
+            }
+
+            supabaseRepo.sendChatMessage(replyMsg)
         }
     }
 }

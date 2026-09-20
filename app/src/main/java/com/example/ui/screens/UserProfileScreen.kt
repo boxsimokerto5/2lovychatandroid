@@ -35,6 +35,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -57,6 +58,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -83,9 +90,20 @@ fun UserProfileScreen(
     userProfile: UserProfile,
     onBack: () -> Unit,
     onSaveProfile: (UserProfile) -> Unit,
+    isUploadingPhoto: Boolean = false,
+    uploadProgressText: String? = null,
+    onUploadPhoto: ((android.net.Uri) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var showEditDialog by remember { mutableStateOf(false) }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: android.net.Uri? ->
+        if (uri != null) {
+            onUploadPhoto?.invoke(uri)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -171,6 +189,11 @@ fun UserProfileScreen(
                                         listOf(EmeraldGreen, Color(0xFF00796B))
                                     )
                                 )
+                                .clickable {
+                                    photoPickerLauncher.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    )
+                                }
                         ) {
                             if (!userProfile.profilePicture.isNullOrBlank()) {
                                 AsyncImage(
@@ -189,6 +212,21 @@ fun UserProfileScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                             }
+
+                            if (isUploadingPhoto) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(Color.Black.copy(alpha = 0.6f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(
+                                        color = Color.White,
+                                        modifier = Modifier.size(36.dp),
+                                        strokeWidth = 3.dp
+                                    )
+                                }
+                            }
                         }
 
                         // Edit overlay circle button
@@ -199,16 +237,30 @@ fun UserProfileScreen(
                                 .clip(CircleShape)
                                 .background(EmeraldGreen)
                                 .border(2.dp, Color.White, CircleShape)
-                                .clickable { showEditDialog = true }
+                                .clickable {
+                                    photoPickerLauncher.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    )
+                                }
                                 .testTag("btn_avatar_edit")
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Edit,
+                                imageVector = Icons.Default.CameraAlt,
                                 contentDescription = "Ubah Foto",
                                 tint = Color.White,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
+                    }
+
+                    if (isUploadingPhoto && !uploadProgressText.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = uploadProgressText,
+                            fontSize = 12.sp,
+                            color = EmeraldGreen,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(14.dp))
@@ -392,6 +444,13 @@ fun UserProfileScreen(
         EditProfileDialog(
             currentProfile = userProfile,
             onDismiss = { showEditDialog = false },
+            onPickPhotoFromGallery = {
+                photoPickerLauncher.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                )
+            },
+            isUploadingPhoto = isUploadingPhoto,
+            uploadProgressText = uploadProgressText,
             onSave = { updatedProfile ->
                 onSaveProfile(updatedProfile)
                 showEditDialog = false
@@ -437,12 +496,21 @@ private fun ProfileDetailRow(
 fun EditProfileDialog(
     currentProfile: UserProfile,
     onDismiss: () -> Unit,
+    onPickPhotoFromGallery: () -> Unit,
+    isUploadingPhoto: Boolean = false,
+    uploadProgressText: String? = null,
     onSave: (UserProfile) -> Unit
 ) {
     var displayName by remember { mutableStateOf(currentProfile.displayName) }
     var bio by remember { mutableStateOf(currentProfile.bio) }
     var profilePictureUrl by remember { mutableStateOf(currentProfile.profilePicture ?: "") }
     var city by remember { mutableStateOf(currentProfile.city) }
+
+    androidx.compose.runtime.LaunchedEffect(currentProfile.profilePicture) {
+        if (!currentProfile.profilePicture.isNullOrBlank()) {
+            profilePictureUrl = currentProfile.profilePicture
+        }
+    }
 
     // Preset Avatar Options for quick testing
     val presetAvatars = listOf(
@@ -477,6 +545,35 @@ fun EditProfileDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                // Upload Photo from Gallery to Cloudflare R2
+                Button(
+                    onClick = onPickPhotoFromGallery,
+                    enabled = !isUploadingPhoto,
+                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("btn_pick_photo_r2")
+                ) {
+                    if (isUploadingPhoto) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(uploadProgressText ?: "Mengunggah...", fontSize = 13.sp)
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.AddPhotoAlternate,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Pilih Foto Galeri (Cloudflare R2)", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
                 OutlinedTextField(
                     value = displayName,
                     onValueChange = { displayName = it },
@@ -500,7 +597,7 @@ fun EditProfileDialog(
                 OutlinedTextField(
                     value = profilePictureUrl,
                     onValueChange = { profilePictureUrl = it },
-                    label = { Text("URL Foto Profil (Opsional)") },
+                    label = { Text("URL Foto Profil (R2 / Web)") },
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()

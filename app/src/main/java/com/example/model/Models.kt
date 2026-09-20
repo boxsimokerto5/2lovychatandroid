@@ -32,7 +32,8 @@ data class ChatMessage(
     val isFromMe: Boolean,
     val isRead: Boolean = true,
     val deletedForSender: Boolean = false,
-    val deletedForReceiver: Boolean = false
+    val deletedForReceiver: Boolean = false,
+    val imageUrl: String? = null
 )
 
 data class ChatConversation(

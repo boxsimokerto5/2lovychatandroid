@@ -12,7 +12,8 @@ data class SupabaseUserDto(
     @Json(name = "bio") val bio: String = "",
     @Json(name = "avatar_hex") val avatarHex: Long = 0xFF2E7D32,
     @Json(name = "is_online") val isOnline: Boolean = true,
-    @Json(name = "last_active_at") val lastActiveAt: Long = System.currentTimeMillis()
+    @Json(name = "last_active_at") val lastActiveAt: Long = System.currentTimeMillis(),
+    @Json(name = "avatar_url") val avatarUrl: String? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -35,7 +36,8 @@ data class SupabaseMessageDto(
     @Json(name = "text") val text: String,
     @Json(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
     @Json(name = "deleted_for_sender") val deletedForSender: Boolean = false,
-    @Json(name = "deleted_for_receiver") val deletedForReceiver: Boolean = false
+    @Json(name = "deleted_for_receiver") val deletedForReceiver: Boolean = false,
+    @Json(name = "image_url") val imageUrl: String? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -47,5 +49,6 @@ data class SupabaseMomentDto(
     @Json(name = "likes_count") val likesCount: Int = 0,
     @Json(name = "comments_count") val commentsCount: Int = 0,
     @Json(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
-    @Json(name = "author_avatar_hex") val authorAvatarHex: Long = 0xFFFB8C00
+    @Json(name = "author_avatar_hex") val authorAvatarHex: Long = 0xFFFB8C00,
+    @Json(name = "image_url") val imageUrl: String? = null
 )

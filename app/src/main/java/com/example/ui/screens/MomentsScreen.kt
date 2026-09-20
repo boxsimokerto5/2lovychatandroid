@@ -40,6 +40,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -77,6 +78,10 @@ import com.example.ui.components.IronSourceBannerView
 import com.example.ui.components.LevelPlayNativeAdCard
 import com.example.ui.components.LovyAvatar
 import com.example.ui.theme.EmeraldGreen
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import com.example.ui.theme.NeutralBorder
 import com.example.ui.theme.NeutralDark
 import com.example.ui.theme.NeutralMedium
@@ -90,13 +95,26 @@ fun MomentsScreen(
     onToggleLike: (String) -> Unit,
     onPostMoment: (String) -> Unit,
     onPostMomentWithDetails: ((content: String, imageUrl: String?, locationTag: String?) -> Unit)? = null,
+    onPostMomentWithPhotoUri: ((content: String, uri: android.net.Uri?, locationTag: String?) -> Unit)? = null,
+    isUploadingPhoto: Boolean = false,
+    uploadProgressText: String? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     var showPostDialog by remember { mutableStateOf(false) }
     var postText by remember { mutableStateOf("") }
     var postLocation by remember { mutableStateOf("Jakarta Selatan") }
-    var selectedPhotoUrl by remember { mutableStateOf<String?>("https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1000&q=80") }
+    var selectedPhotoUrl by remember { mutableStateOf<String?>(null) }
+    var selectedPhotoUri by remember { mutableStateOf<android.net.Uri?>(null) }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: android.net.Uri? ->
+        if (uri != null) {
+            selectedPhotoUri = uri
+            selectedPhotoUrl = null
+        }
+    }
     
     // State for viewing photos fullscreen
     var fullscreenPhotoUrl by remember { mutableStateOf<String?>(null) }
@@ -276,11 +294,33 @@ fun MomentsScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
+                    // Gallery Photo Picker Button (Cloudflare R2)
+                    Button(
+                        onClick = {
+                            photoPickerLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("btn_pick_moment_photo")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AddPhotoAlternate,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Pilih Foto dari Galeri (Cloudflare R2)", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
+                    }
+
                     Text(
-                        text = "Pilih Foto Menarik:",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = NeutralDark
+                        text = "Atau Pilih Contoh Foto:",
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = NeutralMedium
                     )
 
                     // Photo chips selection
@@ -290,13 +330,18 @@ fun MomentsScreen(
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         photoSuggestions.forEach { (label, url) ->
-                            val isSelected = selectedPhotoUrl == url
+                            val isSelected = selectedPhotoUrl == url && selectedPhotoUri == null
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(if (isSelected) EmeraldGreen else Color(0xFFF1F3F4))
                                     .clickable {
-                                        selectedPhotoUrl = if (isSelected) null else url
+                                        if (isSelected) {
+                                            selectedPhotoUrl = null
+                                        } else {
+                                            selectedPhotoUrl = url
+                                            selectedPhotoUri = null
+                                        }
                                     }
                                     .padding(horizontal = 8.dp, vertical = 5.dp)
                             ) {
@@ -310,18 +355,19 @@ fun MomentsScreen(
                         }
                     }
 
-                    // Photo preview
-                    if (!selectedPhotoUrl.isNullOrBlank()) {
+                    // Photo preview (Gallery URI or Template URL)
+                    val activePreview = selectedPhotoUri ?: selectedPhotoUrl
+                    if (activePreview != null) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(120.dp)
+                                .height(140.dp)
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(Color(0xFFEEEEEE))
                         ) {
                             AsyncImage(
-                                model = selectedPhotoUrl,
-                                contentDescription = "Pratinjau Foto",
+                                model = activePreview,
+                                contentDescription = "Pratinjau Foto Momen",
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
                             )
@@ -330,8 +376,11 @@ fun MomentsScreen(
                                     .align(Alignment.TopEnd)
                                     .padding(6.dp)
                                     .clip(CircleShape)
-                                    .background(Color.Black.copy(alpha = 0.5f))
-                                    .clickable { selectedPhotoUrl = null }
+                                    .background(Color.Black.copy(alpha = 0.55f))
+                                    .clickable {
+                                        selectedPhotoUrl = null
+                                        selectedPhotoUri = null
+                                    }
                                     .padding(4.dp)
                             ) {
                                 Icon(
@@ -343,21 +392,46 @@ fun MomentsScreen(
                             }
                         }
                     }
+
+                    if (isUploadingPhoto) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = EmeraldGreen,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = uploadProgressText ?: "Mengunggah foto ke Cloudflare R2...",
+                                fontSize = 12.sp,
+                                color = EmeraldGreen,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
                         if (postText.isNotBlank()) {
-                            if (onPostMomentWithDetails != null) {
+                            if (selectedPhotoUri != null && onPostMomentWithPhotoUri != null) {
+                                onPostMomentWithPhotoUri(postText, selectedPhotoUri, postLocation)
+                            } else if (onPostMomentWithDetails != null) {
                                 onPostMomentWithDetails(postText, selectedPhotoUrl, postLocation)
                             } else {
                                 onPostMoment(postText)
                             }
                             postText = ""
+                            selectedPhotoUri = null
+                            selectedPhotoUrl = null
                             showPostDialog = false
                         }
                     },
+                    enabled = !isUploadingPhoto,
                     colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
                     shape = RoundedCornerShape(10.dp)
                 ) {

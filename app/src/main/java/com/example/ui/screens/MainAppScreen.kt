@@ -115,7 +115,12 @@ fun MainAppScreen(
                 onPostMoment = { viewModel.postMoment(it) },
                 onPostMomentWithDetails = { content, img, loc ->
                     viewModel.postMoment(content, img, loc)
-                }
+                },
+                onPostMomentWithPhotoUri = { content, uri, loc ->
+                    viewModel.postMomentWithPhoto(content, uri, loc)
+                },
+                isUploadingPhoto = uiState.isUploadingPhoto,
+                uploadProgressText = uiState.uploadProgressText
             )
         }
         is CurrentScreen.SupabaseConfig -> {
@@ -157,6 +162,11 @@ fun MainAppScreen(
                 onSendMessage = { text ->
                     viewModel.sendMessage(screen.conversationId, text, screen.partnerName)
                 },
+                onSendPhotoMessage = { uri, caption ->
+                    viewModel.sendPhotoMessage(screen.conversationId, uri, screen.partnerName, caption)
+                },
+                isUploadingPhoto = uiState.isUploadingPhoto,
+                uploadProgressText = uiState.uploadProgressText,
                 onDeleteMessageForSender = { messageId ->
                     viewModel.deleteMessageForSender(screen.conversationId, messageId)
                 }
@@ -168,6 +178,11 @@ fun MainAppScreen(
                 onBack = { viewModel.navigateBack() },
                 onSaveProfile = { profile ->
                     viewModel.saveUserProfile(profile)
+                },
+                isUploadingPhoto = uiState.isUploadingPhoto,
+                uploadProgressText = uiState.uploadProgressText,
+                onUploadPhoto = { uri ->
+                    viewModel.uploadProfilePhoto(uri)
                 }
             )
         }

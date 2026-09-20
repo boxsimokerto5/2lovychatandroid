@@ -137,7 +137,8 @@ class SupabaseRepository {
                         timeAgo = "Baru saja",
                         likesCount = dto.likesCount,
                         commentsCount = dto.commentsCount,
-                        isLiked = false
+                        isLiked = false,
+                        imageUrl = dto.imageUrl
                     )
                 }
             } else {
@@ -163,7 +164,8 @@ class SupabaseRepository {
                 likesCount = moment.likesCount,
                 commentsCount = moment.commentsCount,
                 createdAt = System.currentTimeMillis(),
-                authorAvatarHex = moment.authorAvatarHex
+                authorAvatarHex = moment.authorAvatarHex,
+                imageUrl = moment.imageUrl
             )
             val response = api.insertMoment(apiKey, auth, dto)
             response.isSuccessful
@@ -193,7 +195,8 @@ class SupabaseRepository {
                         timestamp = dto.createdAt,
                         isFromMe = dto.senderId == "me",
                         deletedForSender = dto.deletedForSender,
-                        deletedForReceiver = dto.deletedForReceiver
+                        deletedForReceiver = dto.deletedForReceiver,
+                        imageUrl = dto.imageUrl
                     )
                 }
             } else {
@@ -218,7 +221,8 @@ class SupabaseRepository {
                 text = message.text,
                 createdAt = message.timestamp,
                 deletedForSender = message.deletedForSender,
-                deletedForReceiver = message.deletedForReceiver
+                deletedForReceiver = message.deletedForReceiver,
+                imageUrl = message.imageUrl
             )
             val response = api.insertChatMessage(apiKey, auth, dto)
             response.isSuccessful

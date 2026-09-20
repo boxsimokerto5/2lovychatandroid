@@ -1,5 +1,8 @@
 package com.example.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -14,9 +17,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -27,6 +32,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.ChatBubbleOutline
@@ -49,6 +55,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -126,11 +133,25 @@ fun ChatDetailScreen(
     onToggleLikeMoment: ((String) -> Unit)? = null,
     onPartnerProfileClick: (() -> Unit)? = null,
     onDeleteMessageForSender: ((String) -> Unit)? = null,
+    onSendPhotoMessage: ((android.net.Uri, String) -> Unit)? = null,
+    isUploadingPhoto: Boolean = false,
+    uploadProgressText: String? = null,
     modifier: Modifier = Modifier
 ) {
     var inputText by remember { mutableStateOf("") }
     var showPartnerProfileSheet by remember { mutableStateOf(false) }
     var messageToDelete by remember { mutableStateOf<ChatMessage?>(null) }
+    var pendingPhotoUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    var viewingPhotoUrl by remember { mutableStateOf<String?>(null) }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: android.net.Uri? ->
+        if (uri != null) {
+            pendingPhotoUri = uri
+        }
+    }
+
     val listState = rememberLazyListState()
 
     // Scroll to bottom when new messages arrive
@@ -260,6 +281,9 @@ fun ChatDetailScreen(
                             if (msg.isFromMe) {
                                 messageToDelete = msg
                             }
+                        },
+                        onPhotoClick = { url ->
+                            viewingPhotoUrl = url
                         }
                     )
                 }
@@ -402,6 +426,72 @@ fun ChatDetailScreen(
                             }
                         }
                     } else {
+                        // Pending Photo Preview Bar
+                        if (pendingPhotoUri != null) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xFFF1F8E9),
+                                border = BorderStroke(1.dp, Color(0xFFC8E6C9)),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 6.dp)
+                                    .testTag("chat_photo_preview_bar")
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(8.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(54.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(Color.LightGray)
+                                    ) {
+                                        AsyncImage(
+                                            model = pendingPhotoUri,
+                                            contentDescription = "Foto yang akan dikirim",
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "Foto siap dikirim",
+                                            fontSize = 12.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = EmeraldGreen
+                                        )
+                                        Text(
+                                            text = if (isUploadingPhoto) (uploadProgressText ?: "Mengunggah ke Cloudflare R2...") else "Ketik keterangan atau tekan tombol kirim",
+                                            fontSize = 11.sp,
+                                            color = NeutralMedium
+                                        )
+                                    }
+                                    if (isUploadingPhoto) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(20.dp),
+                                            color = EmeraldGreen,
+                                            strokeWidth = 2.dp
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                    } else {
+                                        IconButton(
+                                            onClick = { pendingPhotoUri = null },
+                                            modifier = Modifier.size(28.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = "Batal",
+                                                tint = NeutralMedium,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         // Bottom Input Bar
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -409,10 +499,37 @@ fun ChatDetailScreen(
                                 .fillMaxWidth()
                                 .padding(top = 2.dp, bottom = 2.dp)
                         ) {
+                            // Attach Photo Button (Gallery -> Cloudflare R2)
+                            IconButton(
+                                onClick = {
+                                    photoPickerLauncher.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    )
+                                },
+                                enabled = !isUploadingPhoto,
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .testTag("chat_btn_attach_photo")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AddPhotoAlternate,
+                                    contentDescription = "Kirim Foto",
+                                    tint = EmeraldGreen,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(4.dp))
+
                             OutlinedTextField(
                                 value = inputText,
                                 onValueChange = { inputText = it },
-                                placeholder = { Text("Ketik pesan...", fontSize = 14.sp) },
+                                placeholder = {
+                                    Text(
+                                        text = if (pendingPhotoUri != null) "Tambah keterangan foto..." else "Ketik pesan...",
+                                        fontSize = 14.sp
+                                    )
+                                },
                                 maxLines = 4,
                                 shape = RoundedCornerShape(24.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
@@ -430,28 +547,83 @@ fun ChatDetailScreen(
 
                             IconButton(
                                 onClick = {
-                                    if (inputText.isNotBlank()) {
+                                    if (pendingPhotoUri != null && onSendPhotoMessage != null) {
+                                        val uriToSend = pendingPhotoUri!!
+                                        val caption = inputText
+                                        pendingPhotoUri = null
+                                        inputText = ""
+                                        onSendPhotoMessage(uriToSend, caption)
+                                    } else if (inputText.isNotBlank()) {
                                         onSendMessage(inputText)
                                         inputText = ""
                                     }
                                 },
+                                enabled = !isUploadingPhoto && (pendingPhotoUri != null || inputText.isNotBlank()),
                                 colors = IconButtonDefaults.iconButtonColors(
                                     containerColor = EmeraldGreen,
-                                    contentColor = Color.White
+                                    contentColor = Color.White,
+                                    disabledContainerColor = EmeraldGreen.copy(alpha = 0.4f),
+                                    disabledContentColor = Color.White.copy(alpha = 0.6f)
                                 ),
                                 modifier = Modifier
                                     .size(46.dp)
                                     .clip(CircleShape)
                                     .testTag("chat_send_button")
                             ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.Send,
-                                    contentDescription = "Kirim",
-                                    modifier = Modifier.size(20.dp)
-                                )
+                                if (isUploadingPhoto) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(18.dp),
+                                        color = Color.White,
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.Send,
+                                        contentDescription = "Kirim",
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+
+    // Fullscreen Chat Photo Dialog
+    viewingPhotoUrl?.let { photoUrl ->
+        Dialog(
+            onDismissRequest = { viewingPhotoUrl = null },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.95f))
+                    .clickable { viewingPhotoUrl = null }
+            ) {
+                AsyncImage(
+                    model = photoUrl,
+                    contentDescription = "Foto Obrolan Penuh",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.Center)
+                )
+                IconButton(
+                    onClick = { viewingPhotoUrl = null },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                        .size(40.dp)
+                        .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Tutup",
+                        tint = Color.White
+                    )
                 }
             }
         }
@@ -1331,7 +1503,8 @@ fun PartnerPhotoPreviewDialog(
 fun ChatBubble(
     message: ChatMessage,
     modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    onPhotoClick: ((String) -> Unit)? = null
 ) {
     val timeFormat = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
     val formattedTime = remember(message.timestamp) {
@@ -1357,21 +1530,54 @@ fun ChatBubble(
                     if (onClick != null) Modifier.clickable { onClick() }
                     else Modifier
                 )
-                .padding(horizontal = 14.dp, vertical = 9.dp)
+                .padding(horizontal = 10.dp, vertical = 8.dp)
         ) {
             Column(horizontalAlignment = if (message.isFromMe) Alignment.End else Alignment.Start) {
-                Text(
-                    text = message.text,
-                    fontSize = 14.sp,
-                    color = NeutralDark,
-                    lineHeight = 19.sp
-                )
+                // If message has photo attachment
+                if (!message.imageUrl.isNullOrBlank()) {
+                    Box(
+                        modifier = Modifier
+                            .widthIn(min = 140.dp, max = 220.dp)
+                            .heightIn(min = 140.dp, max = 240.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable {
+                                onPhotoClick?.invoke(message.imageUrl)
+                            }
+                    ) {
+                        AsyncImage(
+                            model = message.imageUrl,
+                            contentDescription = "Foto Obrolan",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+
+                    if (message.text.isNotBlank() && message.text != "📷 Foto") {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = message.text,
+                            fontSize = 14.sp,
+                            color = NeutralDark,
+                            lineHeight = 19.sp,
+                            modifier = Modifier.padding(horizontal = 4.dp)
+                        )
+                    }
+                } else {
+                    Text(
+                        text = message.text,
+                        fontSize = 14.sp,
+                        color = NeutralDark,
+                        lineHeight = 19.sp,
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(3.dp))
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.padding(horizontal = 4.dp)
                 ) {
                     Text(
                         text = formattedTime,
