@@ -61,6 +61,7 @@ fun MainAppScreen(
         is CurrentScreen.Splash -> {
             SplashScreen(
                 language = uiState.language,
+                onPermissionResult = { granted -> viewModel.updateLocationPermission(granted) },
                 onSplashFinished = { viewModel.onSplashFinished() }
             )
         }

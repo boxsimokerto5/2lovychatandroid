@@ -157,29 +157,29 @@ fun NearbyRadarView(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Status bar info di bagian atas radar
+            // Status bar info di bagian atas radar (padding rapat & elegan)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(10.dp)
+                            .size(9.dp)
                             .clip(CircleShape)
                             .background(if (isExpanded) Color(0xFF00E676) else EmeraldGreen)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = if (isExpanded) {
                             if (language == AppLanguage.INDONESIAN) "Radar Diperluas • Radius 15 km" else "Expanded Radar • 15 km Radius"
                         } else {
                             if (language == AppLanguage.INDONESIAN) "Radar Aktif • Radius 5 km" else "Active Radar • 5 km Radius"
                         },
-                        fontSize = 12.5.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFFA5D6A7)
                     )
@@ -187,9 +187,9 @@ fun NearbyRadarView(
 
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(14.dp))
                         .background(if (isExpanded) Color(0xFF2E7D32) else Color(0xFF1B382B))
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
                         text = if (hasHiddenUsers) {
@@ -197,19 +197,19 @@ fun NearbyRadarView(
                         } else {
                             "${users.size} Terdeteksi"
                         },
-                        fontSize = 11.5.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
                 }
             }
 
-            // Area Lingkaran Radar Canvas + Avatars
+            // Area Lingkaran Radar Canvas + Avatars (padding minimal agar diameter radar maksimal)
             BoxWithConstraints(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
                 contentAlignment = Alignment.Center
             ) {
                 val radarDiameter = minOf(maxWidth, maxHeight)

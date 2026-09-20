@@ -12,6 +12,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -128,13 +130,6 @@ fun NearbyScreen(
 ) {
     val context = LocalContext.current
     var selectedUserForProfile by remember { mutableStateOf<User?>(null) }
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val fineGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
-        val coarseGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
-        onPermissionResult(fineGranted || coarseGranted)
-    }
 
     LaunchedEffect(Unit) {
         val fineCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -229,108 +224,26 @@ fun NearbyScreen(
                 )
             }
 
-            // Android Native GPS Status Banner
-            Card(
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (hasLocationPermission) Color(0xFFE8F5E9) else Color(0xFFFFF3E0)
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .size(34.dp)
-                                .clip(CircleShape)
-                                .background(if (hasLocationPermission) EmeraldGreen.copy(alpha = 0.15f) else Color(0xFFFF9800).copy(alpha = 0.15f))
-                        ) {
-                            Icon(
-                                imageVector = if (hasLocationPermission) Icons.Default.GpsFixed else Icons.Default.LocationOff,
-                                contentDescription = null,
-                                tint = if (hasLocationPermission) EmeraldGreen else Color(0xFFE65100),
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column {
-                            Text(
-                                text = if (hasLocationPermission) "GPS Android Native Aktif" else "Izin Lokasi Belum Aktif",
-                                fontSize = 12.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = NeutralDark
-                            )
-                            Text(
-                                text = if (currentGpsLocation != null) {
-                                    currentGpsLocation.readableLocation + " (Akurasi: ±${currentGpsLocation.accuracy.toInt()}m)"
-                                } else if (hasLocationPermission) {
-                                    "Mencari sinyal satelit GPS..."
-                                } else {
-                                    "Aktifkan GPS agar jarak teman di sekitar akurat"
-                                },
-                                fontSize = 11.sp,
-                                color = NeutralMedium,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-
-                    if (!hasLocationPermission) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Button(
-                            onClick = {
-                                permissionLauncher.launch(
-                                    arrayOf(
-                                        Manifest.permission.ACCESS_FINE_LOCATION,
-                                        Manifest.permission.ACCESS_COARSE_LOCATION
-                                    )
-                                )
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE65100)),
-                            shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                            modifier = Modifier.height(32.dp).testTag("btn_request_gps")
-                        ) {
-                            Text("Izinkan", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-            }
-
-            // Toggle Tab (Radar vs. Daftar)
+            // Baris 1: Toggle Tab (Radar vs. Daftar) - Dipadatkan & Dinaikkan ke atas
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color.White)
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                    .padding(horizontal = 14.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.Center
             ) {
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
                         .background(Color(0xFFE8F5E9))
-                        .padding(3.dp)
+                        .padding(2.dp)
                 ) {
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(16.dp))
                             .background(if (isRadarView) EmeraldGreen else Color.Transparent)
                             .clickable { isRadarView = true }
-                            .padding(horizontal = 16.dp, vertical = 6.dp)
+                            .padding(horizontal = 14.dp, vertical = 5.dp)
                             .testTag("tab_mode_radar"),
                         contentAlignment = Alignment.Center
                     ) {
@@ -339,12 +252,12 @@ fun NearbyScreen(
                                 imageVector = Icons.Default.Radar,
                                 contentDescription = null,
                                 tint = if (isRadarView) Color.White else EmeraldGreen,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(15.dp)
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Spacer(modifier = Modifier.width(5.dp))
                             Text(
                                 text = "Radar Interaktif",
-                                fontSize = 12.5.sp,
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (isRadarView) Color.White else EmeraldGreen
                             )
@@ -356,7 +269,7 @@ fun NearbyScreen(
                             .clip(RoundedCornerShape(16.dp))
                             .background(if (!isRadarView) EmeraldGreen else Color.Transparent)
                             .clickable { isRadarView = false }
-                            .padding(horizontal = 16.dp, vertical = 6.dp)
+                            .padding(horizontal = 14.dp, vertical = 5.dp)
                             .testTag("tab_mode_list"),
                         contentAlignment = Alignment.Center
                     ) {
@@ -365,12 +278,12 @@ fun NearbyScreen(
                                 imageVector = Icons.AutoMirrored.Filled.FormatListBulleted,
                                 contentDescription = null,
                                 tint = if (!isRadarView) Color.White else EmeraldGreen,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(15.dp)
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Spacer(modifier = Modifier.width(5.dp))
                             Text(
                                 text = "Daftar Pengguna",
-                                fontSize = 12.5.sp,
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (!isRadarView) Color.White else EmeraldGreen
                             )
@@ -379,26 +292,34 @@ fun NearbyScreen(
                 }
             }
 
-            // Filter Chips Bar
+            // Baris 2: Filter Chips Bar - Horizontal scroll lancar, padding rapat, tidak terjepit
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color.White)
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 12.dp, vertical = 3.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
                     imageVector = Icons.Default.FilterList,
                     contentDescription = null,
                     tint = NeutralMedium,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(16.dp)
                 )
 
                 FilterChip(
                     selected = selectedGenderFilter == null,
                     onClick = { onFilterChange(null) },
-                    label = { Text("Semua") },
+                    label = { 
+                        Text(
+                            text = "Semua",
+                            maxLines = 1,
+                            softWrap = false,
+                            fontSize = 11.5.sp
+                        ) 
+                    },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = EmeraldGreen,
                         selectedLabelColor = Color.White
@@ -409,12 +330,19 @@ fun NearbyScreen(
                 FilterChip(
                     selected = selectedGenderFilter == Gender.FEMALE,
                     onClick = { onFilterChange(Gender.FEMALE) },
-                    label = { Text("Hanya Wanita") },
+                    label = { 
+                        Text(
+                            text = "Hanya Wanita",
+                            maxLines = 1,
+                            softWrap = false,
+                            fontSize = 11.5.sp
+                        ) 
+                    },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Female,
                             contentDescription = null,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(15.dp)
                         )
                     },
                     colors = FilterChipDefaults.filterChipColors(
@@ -427,12 +355,19 @@ fun NearbyScreen(
                 FilterChip(
                     selected = selectedGenderFilter == Gender.MALE,
                     onClick = { onFilterChange(Gender.MALE) },
-                    label = { Text("Hanya Pria") },
+                    label = { 
+                        Text(
+                            text = "Hanya Pria",
+                            maxLines = 1,
+                            softWrap = false,
+                            fontSize = 11.5.sp
+                        ) 
+                    },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Male,
                             contentDescription = null,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(15.dp)
                         )
                     },
                     colors = FilterChipDefaults.filterChipColors(
