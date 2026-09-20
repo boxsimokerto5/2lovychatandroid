@@ -200,7 +200,10 @@ object R2StorageClient {
      */
     fun resolvePublicUrl(objectKey: String): String {
         val publicDomain = getPublicDomain()
-        if (publicDomain.isNotBlank()) {
+        val accountId = getAccountId()
+        val isInvalidAccountPattern = accountId.isNotBlank() && publicDomain.contains("pub-$accountId.r2.dev")
+
+        if (publicDomain.isNotBlank() && !isInvalidAccountPattern) {
             return "$publicDomain/$objectKey"
         }
         // Fallback to generating a 7-day Presigned GET URL
