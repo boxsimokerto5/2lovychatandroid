@@ -75,8 +75,9 @@ data class LovyChatUiState(
     val currentGpsLocation: com.example.util.UserGpsLocation? = null,
     val hasLocationPermission: Boolean = false,
     val isGpsEnabled: Boolean = true,
-    // Nearby Search Expansion (Rewarded Ad trigger)
+    // Nearby Search Expansion (Rewarded Ad trigger: Tier 0 = max 12, Tier 1 = max 30, Tier 2 = max 45)
     val isNearbyExpanded: Boolean = false,
+    val nearbyExpansionTier: Int = 0,
     // Blocked Users State (Prevents chats & hides from Around Me)
     val blockedUserIds: Set<String> = emptySet(),
     val blockedUserNames: Set<String> = emptySet(),
@@ -733,11 +734,17 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
     fun expandNearbyUsers() {
         recordFeatureClick()
-        _uiState.update { it.copy(isNearbyExpanded = true) }
+        _uiState.update { current ->
+            val nextTier = (current.nearbyExpansionTier + 1).coerceAtMost(2)
+            current.copy(
+                nearbyExpansionTier = nextTier,
+                isNearbyExpanded = nextTier >= 2
+            )
+        }
     }
 
     fun resetNearbyExpansion() {
-        _uiState.update { it.copy(isNearbyExpanded = false) }
+        _uiState.update { it.copy(nearbyExpansionTier = 0, isNearbyExpanded = false) }
     }
 
     fun refreshNearbyScan() {

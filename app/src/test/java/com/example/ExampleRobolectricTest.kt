@@ -153,17 +153,24 @@ class ExampleRobolectricTest {
     val viewModel = LovyChatViewModel(app)
 
     val state = viewModel.uiState.value
-    // Default initial state: isNearbyExpanded should be false
+    // Default initial state: isNearbyExpanded should be false, tier should be 0
     org.junit.Assert.assertFalse(state.isNearbyExpanded)
-    // Nearby users list has plenty of users (more than 6)
-    assertTrue(state.nearbyUsers.size > 6)
+    assertEquals(0, state.nearbyExpansionTier)
+    // Nearby users list has plenty of users (at least 45 users)
+    assertTrue(state.nearbyUsers.size >= 45)
 
-    // Expand nearby users
+    // First expansion: Tier 1 (30 users)
     viewModel.expandNearbyUsers()
+    assertEquals(1, viewModel.uiState.value.nearbyExpansionTier)
+
+    // Second expansion: Tier 2 (45 users - fully expanded)
+    viewModel.expandNearbyUsers()
+    assertEquals(2, viewModel.uiState.value.nearbyExpansionTier)
     assertTrue(viewModel.uiState.value.isNearbyExpanded)
 
     // Reset nearby expansion
     viewModel.resetNearbyExpansion()
+    assertEquals(0, viewModel.uiState.value.nearbyExpansionTier)
     org.junit.Assert.assertFalse(viewModel.uiState.value.isNearbyExpanded)
   }
 

@@ -112,6 +112,7 @@ fun NearbyScreen(
     selectedGenderFilter: Gender?,
     isScanning: Boolean,
     isExpanded: Boolean = false,
+    nearbyExpansionTier: Int = 0,
     currentGpsLocation: com.example.util.UserGpsLocation? = null,
     hasLocationPermission: Boolean = false,
     isGpsEnabled: Boolean = true,
@@ -146,13 +147,20 @@ fun NearbyScreen(
         else unblocked.filter { it.gender == selectedGenderFilter }
     }
 
-    val displayedUsers = remember(filteredUsers, isExpanded) {
-        if (isExpanded) filteredUsers
-        else filteredUsers.take(6)
+    val displayedLimit = when (nearbyExpansionTier) {
+        0 -> 12
+        1 -> 30
+        else -> 45
     }
 
-    val hasHiddenUsers = !isExpanded && filteredUsers.size > 6
-    val hiddenCount = if (hasHiddenUsers) filteredUsers.size - 6 else 0
+    val displayedUsers = remember(filteredUsers, nearbyExpansionTier) {
+        filteredUsers.take(displayedLimit)
+    }
+
+    val isFullyExpanded = nearbyExpansionTier >= 2 || displayedUsers.size >= filteredUsers.size
+    val hasHiddenUsers = !isFullyExpanded && filteredUsers.size > displayedUsers.size
+    val nextTargetLimit = if (nearbyExpansionTier == 0) minOf(30, filteredUsers.size) else minOf(45, filteredUsers.size)
+    val hiddenCount = (nextTargetLimit - displayedUsers.size).coerceAtLeast(0)
     var isRadarView by remember { mutableStateOf(true) }
 
     Scaffold(
@@ -385,6 +393,7 @@ fun NearbyScreen(
                     users = displayedUsers,
                     totalNearbyCount = filteredUsers.size,
                     isExpanded = isExpanded,
+                    nearbyExpansionTier = nearbyExpansionTier,
                     hideExactDistance = hideExactDistance,
                     onSayHi = onSayHi,
                     onUserClick = { user -> selectedUserForProfile = user },
@@ -403,15 +412,15 @@ fun NearbyScreen(
                 ) {
                     val radarInfo = if (hasHiddenUsers) {
                         if (language == com.example.util.AppLanguage.INDONESIAN) {
-                            "Menampilkan 6 dari ${filteredUsers.size} orang dalam radar sekitarmu"
+                            "Menampilkan ${displayedUsers.size} dari ${filteredUsers.size} orang dalam radar sekitarmu"
                         } else {
-                            "Showing 6 of ${filteredUsers.size} people in your nearby radar"
+                            "Showing ${displayedUsers.size} of ${filteredUsers.size} people in your nearby radar"
                         }
                     } else {
                         if (language == com.example.util.AppLanguage.INDONESIAN) {
-                            "Ditemukan ${filteredUsers.size} orang dalam radius sekitarmu (Semua Terbuka ✨)"
+                            "Ditemukan ${displayedUsers.size} orang dalam radius sekitarmu (Semua Terbuka ✨)"
                         } else {
-                            "Found ${filteredUsers.size} people in your area (All Unlocked ✨)"
+                            "Found ${displayedUsers.size} people in your area (All Unlocked ✨)"
                         }
                     }
                     Text(
@@ -452,6 +461,31 @@ fun NearbyScreen(
                 // Tombol "Cari Lebih Banyak" yang memicu Iklan Reward
                 if (hasHiddenUsers) {
                     item {
+                        val cardTitle = when {
+                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 0 -> "Buka $hiddenCount Teman Sekitar Lagi"
+                            language == com.example.util.AppLanguage.INDONESIAN -> "Buka Maksimal Teman Sekitar ($nextTargetLimit User)"
+                            nearbyExpansionTier == 0 -> "Unlock $hiddenCount More Nearby Friends"
+                            else -> "Unlock Maximum Nearby Friends ($nextTargetLimit Users)"
+                        }
+                        val cardDesc = when {
+                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 0 -> "Tonton video singkat untuk menampilkan hingga 30 pengguna aktif di sekitar Anda."
+                            language == com.example.util.AppLanguage.INDONESIAN -> "Tonton video singkat untuk membuka hingga 45 pengguna aktif di sekitar Anda secara maksimal!"
+                            nearbyExpansionTier == 0 -> "Watch a short video to display up to 30 active nearby users."
+                            else -> "Watch a short video to unlock up to 45 active nearby users!"
+                        }
+                        val toastMsg = when {
+                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 0 -> "Selamat! Pengguna sekitar ditambah menjadi $nextTargetLimit orang 🎉"
+                            language == com.example.util.AppLanguage.INDONESIAN -> "Selamat! Pengguna sekitar maksimal telah terbuka 🎉"
+                            nearbyExpansionTier == 0 -> "Success! Nearby users expanded to $nextTargetLimit people 🎉"
+                            else -> "Success! Maximum nearby users unlocked 🎉"
+                        }
+                        val btnText = when {
+                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 0 -> "Tonton Iklan (+18 Pengguna)"
+                            language == com.example.util.AppLanguage.INDONESIAN -> "Tonton Iklan (+15 Pengguna Lagi)"
+                            nearbyExpansionTier == 0 -> "Watch Ad (+18 Users)"
+                            else -> "Watch Ad (+15 More Users)"
+                        }
+
                         Card(
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -483,7 +517,7 @@ fun NearbyScreen(
                                 }
                                 Spacer(modifier = Modifier.height(10.dp))
                                 Text(
-                                    text = AppStrings.btnLoadMoreNearbyTitle(language, hiddenCount),
+                                    text = cardTitle,
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = NeutralDark,
@@ -491,7 +525,7 @@ fun NearbyScreen(
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = AppStrings.btnLoadMoreNearbyDesc(language),
+                                    text = cardDesc,
                                     fontSize = 12.sp,
                                     color = NeutralMedium,
                                     textAlign = TextAlign.Center,
@@ -505,11 +539,7 @@ fun NearbyScreen(
                                             onExpandNearby()
                                             Toast.makeText(
                                                 context,
-                                                if (language == com.example.util.AppLanguage.INDONESIAN) {
-                                                    "Selamat! Semua pengguna di sekitar telah dibuka 🎉"
-                                                } else {
-                                                    "Success! All nearby users are now unlocked 🎉"
-                                                },
+                                                toastMsg,
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
@@ -518,7 +548,7 @@ fun NearbyScreen(
                                             Toast.makeText(
                                                 context,
                                                 if (language == com.example.util.AppLanguage.INDONESIAN) {
-                                                    "Iklan reward sedang dipersiapkan. Membuka semua pengguna sekitar untuk Anda..."
+                                                    "Iklan reward sedang dipersiapkan. Membuka pengguna sekitar untuk Anda..."
                                                 } else {
                                                     "Reward ad is preparing. Unlocking nearby users for you..."
                                                 },
@@ -546,7 +576,7 @@ fun NearbyScreen(
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(
-                                            text = AppStrings.btnLoadMoreNearby(language),
+                                            text = btnText,
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = Color.White
@@ -556,7 +586,7 @@ fun NearbyScreen(
                             }
                         }
                     }
-                } else if (isExpanded && filteredUsers.size > 6) {
+                } else if (isFullyExpanded && filteredUsers.size > 12) {
                     item {
                         Card(
                             shape = RoundedCornerShape(12.dp),
@@ -580,7 +610,11 @@ fun NearbyScreen(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = AppStrings.allNearbyLoaded(language, filteredUsers.size),
+                                    text = if (language == com.example.util.AppLanguage.INDONESIAN) {
+                                        "Semua pengguna sekitar telah berhasil ditampilkan (Maksimal ${displayedUsers.size} user aktif)"
+                                    } else {
+                                        "All nearby users are now displayed (Max ${displayedUsers.size} active users)"
+                                    },
                                     fontSize = 12.5.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = EmeraldGreen

@@ -98,11 +98,98 @@ private fun Context.findActivity(): Activity? {
     return null
 }
 
+data class RadarPosition(
+    val radiusRatio: Float,
+    val angleDegrees: Float
+)
+
+fun calculateRadarPositions(count: Int): List<RadarPosition> {
+    if (count <= 0) return emptyList()
+    val positions = ArrayList<RadarPosition>(count)
+
+    if (count <= 12) {
+        // 3 concentric rings: Ring 1 (Inner, 3 blips), Ring 2 (Mid, 4 blips), Ring 3 (Outer, remaining)
+        val r1 = 0.32f
+        val r2 = 0.58f
+        val r3 = 0.82f
+        val n1 = minOf(3, count)
+        val n2 = minOf(4, (count - n1).coerceAtLeast(0))
+        val n3 = (count - n1 - n2).coerceAtLeast(0)
+
+        for (i in 0 until n1) {
+            val angle = 30f + i * (360f / maxOf(n1, 1))
+            positions.add(RadarPosition(r1, angle))
+        }
+        for (i in 0 until n2) {
+            val angle = 45f + i * (360f / maxOf(n2, 1))
+            positions.add(RadarPosition(r2, angle))
+        }
+        for (i in 0 until n3) {
+            val angle = 18f + i * (360f / maxOf(n3, 1))
+            positions.add(RadarPosition(r3, angle))
+        }
+    } else if (count <= 30) {
+        // 3 concentric rings designed for up to 30 blips without clumping
+        val r1 = 0.30f
+        val r2 = 0.56f
+        val r3 = 0.82f
+        val n1 = 6
+        val n2 = 10
+        val n3 = (count - n1 - n2).coerceAtLeast(0)
+
+        for (i in 0 until minOf(n1, count)) {
+            val angle = 20f + i * (360f / n1)
+            positions.add(RadarPosition(r1, angle))
+        }
+        val remainingFor2 = (count - n1).coerceAtLeast(0)
+        for (i in 0 until minOf(n2, remainingFor2)) {
+            val angle = 36f + i * (360f / n2)
+            positions.add(RadarPosition(r2, angle))
+        }
+        for (i in 0 until n3) {
+            val angle = 12f + i * (360f / maxOf(n3, 1))
+            positions.add(RadarPosition(r3, angle))
+        }
+    } else {
+        // 4 concentric rings designed for up to 45 blips with generous spacing
+        val r1 = 0.28f
+        val r2 = 0.47f
+        val r3 = 0.66f
+        val r4 = 0.84f
+        val n1 = 6
+        val n2 = 10
+        val n3 = 13
+        val n4 = (count - n1 - n2 - n3).coerceAtLeast(0)
+
+        for (i in 0 until minOf(n1, count)) {
+            val angle = 15f + i * (360f / n1)
+            positions.add(RadarPosition(r1, angle))
+        }
+        val remainingFor2 = (count - n1).coerceAtLeast(0)
+        for (i in 0 until minOf(n2, remainingFor2)) {
+            val angle = 33f + i * (360f / n2)
+            positions.add(RadarPosition(r2, angle))
+        }
+        val remainingFor3 = (count - n1 - n2).coerceAtLeast(0)
+        for (i in 0 until minOf(n3, remainingFor3)) {
+            val angle = 18f + i * (360f / n3)
+            positions.add(RadarPosition(r3, angle))
+        }
+        for (i in 0 until n4) {
+            val angle = 27f + i * (360f / maxOf(n4, 1))
+            positions.add(RadarPosition(r4, angle))
+        }
+    }
+
+    return positions
+}
+
 @Composable
 fun NearbyRadarView(
     users: List<User>,
     totalNearbyCount: Int = users.size,
     isExpanded: Boolean = false,
+    nearbyExpansionTier: Int = 0,
     hideExactDistance: Boolean = false,
     onSayHi: (User) -> Unit,
     onUserClick: ((User) -> Unit)? = null,
@@ -112,8 +199,10 @@ fun NearbyRadarView(
 ) {
     val context = LocalContext.current
     var selectedUser by remember { mutableStateOf<User?>(null) }
-    val hasHiddenUsers = !isExpanded && totalNearbyCount > users.size
-    val hiddenCount = if (hasHiddenUsers) totalNearbyCount - users.size else 0
+    val isFullyExpanded = nearbyExpansionTier >= 2 || users.size >= totalNearbyCount
+    val hasHiddenUsers = !isFullyExpanded && totalNearbyCount > users.size
+    val nextTargetCount = if (nearbyExpansionTier == 0) minOf(30, totalNearbyCount) else minOf(45, totalNearbyCount)
+    val hiddenCount = (nextTargetCount - users.size).coerceAtLeast(0)
 
     // Animasi sapuan scanner (360 derajat)
     val infiniteTransition = rememberInfiniteTransition(label = "radar_anim")
@@ -189,14 +278,14 @@ fun NearbyRadarView(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(14.dp))
-                        .background(if (isExpanded) Color(0xFF2E7D32) else Color(0xFF1B382B))
+                        .background(if (isFullyExpanded) Color(0xFF2E7D32) else Color(0xFF1B382B))
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
                         text = if (hasHiddenUsers) {
                             "${users.size} dari $totalNearbyCount Terdeteksi"
                         } else {
-                            "${users.size} Terdeteksi"
+                            "${users.size} dari $totalNearbyCount Terdeteksi (Semua Terbuka ✨)"
                         },
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -343,25 +432,29 @@ fun NearbyRadarView(
                         )
                     }
 
-                    // 3. Letakkan Avatar Teman Sekitar di Koordinat Polar Radar
-                    val maxDistance = if (isExpanded) 10000f else 6500f // batas estimasi jarak dalam meter
-                    val avatarSize = if (users.size > 8) 36.dp else 40.dp
-                    val selectedAvatarSize = if (users.size > 8) 42.dp else 46.dp
-                    val stepAngle = 360f / maxOf(users.size, 1)
+                    // 3. Letakkan Avatar Teman Sekitar di Koordinat Polar Radar Secara Merata & Tanpa Menumpuk
+                    val radarPositions = remember(users.size) { calculateRadarPositions(users.size) }
+                    val avatarSize = when {
+                        users.size <= 12 -> 36.dp
+                        users.size <= 30 -> 28.dp
+                        else -> 23.dp
+                    }
+                    val selectedAvatarSize = avatarSize + 8.dp
+                    val avatarFontSize = when {
+                        users.size <= 12 -> 13.sp
+                        users.size <= 30 -> 10.sp
+                        else -> 8.5.sp
+                    }
+                    val distanceBadgeFontSize = when {
+                        users.size <= 12 -> 8.5.sp
+                        users.size <= 30 -> 7.sp
+                        else -> 6.sp
+                    }
 
                     users.forEachIndexed { index, user ->
-                        // Hitung jarak radius relatif (0.20f hingga 0.86f agar tidak menumpuk di pusat atau terpotong di tepi)
-                        val distRatio = (user.distanceMeters.toFloat() / maxDistance).coerceIn(0.20f, 0.86f)
-                        
-                        // Hitung sudut polar secara deterministik & merata
-                        val seedAngle = ((index * stepAngle) + (user.id.hashCode() % 23)).let {
-                            val mod = it % 360
-                            if (mod < 0) mod + 360 else mod
-                        }
-                        val angleRad = Math.toRadians(seedAngle.toDouble())
-
-                        // Konversi ke koordinat Cartesius (X, Y)
-                        val radiusFactor = (radarDiameter.value / 2f) * distRatio
+                        val pos = radarPositions.getOrNull(index) ?: RadarPosition(0.5f, index * 30f)
+                        val angleRad = Math.toRadians(pos.angleDegrees.toDouble())
+                        val radiusFactor = (radarDiameter.value / 2f) * pos.radiusRatio
                         val xOffsetDp = (cos(angleRad) * radiusFactor).dp
                         val yOffsetDp = (sin(angleRad) * radiusFactor).dp
 
@@ -393,7 +486,7 @@ fun NearbyRadarView(
                                         avatarColorHex = user.avatarColorHex,
                                         avatarUrl = user.avatarUrl,
                                         size = if (isSelected) selectedAvatarSize else avatarSize,
-                                        fontSize = if (users.size > 8) 12.sp else 14.sp,
+                                        fontSize = if (isSelected) 14.sp else avatarFontSize,
                                         isOnline = user.isOnline
                                     )
                                 }
@@ -404,11 +497,11 @@ fun NearbyRadarView(
                                         .offset(y = (-2).dp)
                                         .clip(RoundedCornerShape(6.dp))
                                         .background(Color.Black.copy(alpha = 0.75f))
-                                        .padding(horizontal = 4.dp, vertical = 1.dp)
+                                        .padding(horizontal = 3.dp, vertical = 1.dp)
                                 ) {
                                     Text(
                                         text = if (hideExactDistance) user.city else "${user.distanceMeters}m",
-                                        fontSize = if (users.size > 8) 8.5.sp else 9.sp,
+                                        fontSize = distanceBadgeFontSize,
                                         fontWeight = FontWeight.Bold,
                                         color = if (isSelected) Color(0xFFFFD54F) else Color.White
                                     )
@@ -435,8 +528,27 @@ fun NearbyRadarView(
                     modifier = Modifier.padding(bottom = 6.dp)
                 )
 
-                // Tombol "Cari Lebih Banyak di Radar" dengan Iklan Reward jika belum diperluas
+                // Tombol "Cari Lebih Banyak di Radar" dengan Iklan Reward jika belum maksimal
                 if (hasHiddenUsers && selectedUser == null) {
+                    val expandBtnTitle = when {
+                        language == AppLanguage.INDONESIAN && nearbyExpansionTier == 0 -> "Cari Lebih Banyak di Radar"
+                        language == AppLanguage.INDONESIAN -> "Buka Maksimal Teman Sekitar"
+                        nearbyExpansionTier == 0 -> "Discover More on Radar"
+                        else -> "Unlock Maximum Nearby Friends"
+                    }
+                    val expandBtnSubtitle = when {
+                        language == AppLanguage.INDONESIAN && nearbyExpansionTier == 0 -> "+$hiddenCount teman baru (Total $nextTargetCount) • Tonton video singkat 🎬"
+                        language == AppLanguage.INDONESIAN -> "+$hiddenCount teman lagi (Maksimal $nextTargetCount) • Tonton video singkat 🎬"
+                        nearbyExpansionTier == 0 -> "+$hiddenCount new people (Total $nextTargetCount) • Watch short video 🎬"
+                        else -> "+$hiddenCount more people (Max $nextTargetCount) • Watch short video 🎬"
+                    }
+                    val toastSuccessMsg = when {
+                        language == AppLanguage.INDONESIAN && nearbyExpansionTier == 0 -> "Selamat! Radar diperluas & $hiddenCount teman baru ditemukan (Total $nextTargetCount) 🎉"
+                        language == AppLanguage.INDONESIAN -> "Selamat! Radar maksimal aktif & $hiddenCount teman lagi ditemukan (Total $nextTargetCount) 🎉"
+                        nearbyExpansionTier == 0 -> "Success! Radar expanded & $hiddenCount new friends found 🎉"
+                        else -> "Success! Maximum radar unlocked & all friends found 🎉"
+                    }
+
                     Card(
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = Color(0xFF14291F)),
@@ -453,11 +565,7 @@ fun NearbyRadarView(
                                     onExpandNearby?.invoke()
                                     Toast.makeText(
                                         context,
-                                        if (language == AppLanguage.INDONESIAN) {
-                                            "Selamat! Radar diperluas & $hiddenCount teman baru ditemukan 🎉"
-                                        } else {
-                                            "Success! Radar expanded & $hiddenCount new friends found 🎉"
-                                        },
+                                        toastSuccessMsg,
                                         Toast.LENGTH_SHORT
                                     ).show()
                                 }
@@ -465,9 +573,9 @@ fun NearbyRadarView(
                                     Toast.makeText(
                                         context,
                                         if (language == AppLanguage.INDONESIAN) {
-                                            "Mempersiapkan radar... Menampilkan semua pengguna sekitar untuk Anda ✨"
+                                            "Mempersiapkan radar... Menampilkan pengguna sekitar untuk Anda ✨"
                                         } else {
-                                            "Preparing radar... Unlocking all nearby users for you ✨"
+                                            "Preparing radar... Unlocking nearby users for you ✨"
                                         },
                                         Toast.LENGTH_SHORT
                                     ).show()
@@ -513,21 +621,13 @@ fun NearbyRadarView(
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column {
                                         Text(
-                                            text = if (language == AppLanguage.INDONESIAN) {
-                                                "Cari Lebih Banyak di Radar"
-                                            } else {
-                                                "Discover More on Radar"
-                                            },
+                                            text = expandBtnTitle,
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = Color.White
                                         )
                                         Text(
-                                            text = if (language == AppLanguage.INDONESIAN) {
-                                                "+$hiddenCount teman baru • Tonton video singkat 🎬"
-                                            } else {
-                                                "+$hiddenCount new people • Watch short video 🎬"
-                                            },
+                                            text = expandBtnSubtitle,
                                             fontSize = 11.sp,
                                             color = Color.White.copy(alpha = 0.9f)
                                         )
@@ -550,7 +650,7 @@ fun NearbyRadarView(
                             }
                         }
                     }
-                } else if (isExpanded && selectedUser == null) {
+                } else if (isFullyExpanded && selectedUser == null) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier

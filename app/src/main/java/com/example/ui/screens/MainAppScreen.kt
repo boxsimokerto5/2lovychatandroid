@@ -82,6 +82,7 @@ fun MainAppScreen(
                 selectedGenderFilter = uiState.nearbyGenderFilter,
                 isScanning = uiState.isScanningNearby,
                 isExpanded = uiState.isNearbyExpanded,
+                nearbyExpansionTier = uiState.nearbyExpansionTier,
                 currentGpsLocation = uiState.currentGpsLocation,
                 hasLocationPermission = uiState.hasLocationPermission,
                 isGpsEnabled = uiState.isGpsEnabled,
