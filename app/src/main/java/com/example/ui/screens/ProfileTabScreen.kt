@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudOff
@@ -106,11 +107,14 @@ fun ProfileTabScreen(
     onNavigateToBottle: () -> Unit,
     onNavigateToMoments: () -> Unit,
     onNavigateToSupabaseConfig: () -> Unit = {},
+    blockedUserNames: Set<String> = emptySet(),
+    onUnblockUser: (String) -> Unit = {},
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showLanguagePicker by remember { mutableStateOf(false) }
     var showPrivacyDialog by remember { mutableStateOf(false) }
+    var showBlockedUsersDialog by remember { mutableStateOf(false) }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -271,6 +275,14 @@ fun ProfileTabScreen(
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
                 ProfileMenuItem(
+                    icon = Icons.Default.Block,
+                    iconTint = Color(0xFFE53935),
+                    title = "Pengguna Diblokir",
+                    subtitle = if (blockedUserNames.isEmpty()) "Tidak ada pengguna diblokir" else "${blockedUserNames.size} pengguna diblokir",
+                    onClick = { showBlockedUsersDialog = true }
+                )
+                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
+                ProfileMenuItem(
                     icon = Icons.Default.Language,
                     iconTint = Color(0xFF5C6BC0),
                     title = com.example.util.AppStrings.languageSetting(language),
@@ -297,6 +309,14 @@ fun ProfileTabScreen(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+    }
+
+    if (showBlockedUsersDialog) {
+        BlockedUsersDialog(
+            blockedUserNames = blockedUserNames,
+            onUnblockUser = onUnblockUser,
+            onDismiss = { showBlockedUsersDialog = false }
+        )
     }
 
     if (showLanguagePicker) {
@@ -807,6 +827,151 @@ fun PrivacyLocationDialog(
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Text("Selesai", color = Color.White, fontWeight = FontWeight.Bold)
+            }
+        }
+    )
+}
+
+@Composable
+fun BlockedUsersDialog(
+    blockedUserNames: Set<String>,
+    onUnblockUser: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Block,
+                    contentDescription = null,
+                    tint = Color(0xFFE53935),
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "Daftar Pengguna Diblokir",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp,
+                    color = NeutralDark
+                )
+            }
+        },
+        text = {
+            if (blockedUserNames.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            tint = EmeraldGreen,
+                            modifier = Modifier.size(40.dp)
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = "Tidak ada pengguna yang diblokir",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = NeutralMedium
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Pengguna yang Anda blokir di ruang chat akan muncul di sini.",
+                            fontSize = 12.sp,
+                            color = NeutralMedium,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
+                }
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "Pengguna di bawah ini tidak dapat mengirimi Anda pesan atau melihat Anda di Sekitar Saya:",
+                        fontSize = 12.sp,
+                        color = NeutralMedium
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    blockedUserNames.forEach { blockedName ->
+                        Card(
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = ScreenBackground),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(36.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFFFFEBEE)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = blockedName.take(1).uppercase(),
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFFE53935),
+                                            fontSize = 15.sp
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(
+                                        text = blockedName,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 14.sp,
+                                        color = NeutralDark,
+                                        maxLines = 1
+                                    )
+                                }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        onUnblockUser(blockedName)
+                                        Toast.makeText(context, "Blokir untuk $blockedName dibuka", Toast.LENGTH_SHORT).show()
+                                    },
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.testTag("btn_unblock_$blockedName")
+                                ) {
+                                    Text(
+                                        text = "Buka Blokir",
+                                        fontSize = 12.sp,
+                                        color = EmeraldGreen,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("Tutup", color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
     )

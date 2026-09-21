@@ -305,6 +305,10 @@ fun MainAppScreen(
                             onNavigateToMoments = {
                                 viewModel.navigateTo(CurrentScreen.Moments)
                             },
+                            blockedUserNames = uiState.blockedUserNames,
+                            onUnblockUser = { userName ->
+                                viewModel.unblockUser(userId = "", userName = userName)
+                            },
                             onLogout = {
                                 viewModel.logout()
                             }
