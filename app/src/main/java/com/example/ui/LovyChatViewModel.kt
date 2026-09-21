@@ -1184,7 +1184,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             commentsCount = 0,
             imageUrl = imageUrl,
             authorAvatarUrl = null,
-            locationTag = locationTag ?: "Jakarta Selatan",
+            locationTag = locationTag?.ifBlank { null }
+                ?: _uiState.value.currentGpsLocation?.cityName?.ifBlank { null }
+                ?: "Surabaya",
             authorId = authorId
         )
         val newMomentIds = _uiState.value.myMomentIds + newMoment.id
@@ -1310,7 +1312,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             _uiState.update {
                 it.copy(
                     isUploadingPhoto = true,
-                    uploadProgressText = "Mengunggah foto momen ke Cloudflare R2..."
+                    uploadProgressText = "Mengunggah foto momen..."
                 )
             }
             try {

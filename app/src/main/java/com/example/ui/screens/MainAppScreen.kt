@@ -117,6 +117,7 @@ fun MainAppScreen(
                 myMomentIds = uiState.myMomentIds,
                 currentUserId = uiState.myLovyId,
                 currentUserName = uiState.myName,
+                currentGpsLocation = uiState.currentGpsLocation,
                 onBack = { viewModel.navigateBack() },
                 onToggleLike = { viewModel.toggleLikeMoment(it) },
                 onPostMoment = { viewModel.postMoment(it) },

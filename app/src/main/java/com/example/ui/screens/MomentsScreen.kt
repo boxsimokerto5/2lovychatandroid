@@ -59,6 +59,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -87,6 +88,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.MyLocation
 import com.example.ui.theme.NeutralBorder
 import com.example.ui.theme.NeutralDark
 import com.example.ui.theme.NeutralMedium
@@ -99,6 +101,7 @@ fun MomentsScreen(
     myMomentIds: Set<String> = emptySet(),
     currentUserId: String = "",
     currentUserName: String = "",
+    currentGpsLocation: com.example.util.UserGpsLocation? = null,
     onBack: () -> Unit,
     onToggleLike: (String) -> Unit,
     onPostMoment: (String) -> Unit,
@@ -112,8 +115,32 @@ fun MomentsScreen(
     val context = LocalContext.current
     var showPostDialog by remember { mutableStateOf(false) }
     var postText by remember { mutableStateOf("") }
-    var postLocation by remember { mutableStateOf("Jakarta Selatan") }
-    var selectedPhotoUrl by remember { mutableStateOf<String?>(null) }
+    
+    // Otomatis deteksi nama kota dari GPS map
+    val resolvedGpsCity = remember(currentGpsLocation) {
+        currentGpsLocation?.cityName?.ifBlank { null }
+            ?: if (currentGpsLocation != null) com.example.util.AndroidGpsTracker.getCityName(context, currentGpsLocation.latitude, currentGpsLocation.longitude) else null
+    }
+
+    var postLocation by remember { 
+        mutableStateOf(resolvedGpsCity ?: "Surabaya") 
+    }
+
+    // Setiap kali dialog "Bagikan Momen Baru" dibuka, isi nama kota sesuai GPS map
+    LaunchedEffect(showPostDialog, resolvedGpsCity) {
+        if (showPostDialog) {
+            val detected = resolvedGpsCity 
+                ?: com.example.util.AndroidGpsTracker.getLastKnownLocation(context)?.let {
+                    it.cityName.ifBlank {
+                        com.example.util.AndroidGpsTracker.getCityName(context, it.latitude, it.longitude)
+                    }
+                }
+            if (!detected.isNullOrBlank()) {
+                postLocation = detected
+            }
+        }
+    }
+
     var selectedPhotoUri by remember { mutableStateOf<android.net.Uri?>(null) }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -121,21 +148,11 @@ fun MomentsScreen(
     ) { uri: android.net.Uri? ->
         if (uri != null) {
             selectedPhotoUri = uri
-            selectedPhotoUrl = null
         }
     }
     
     // State for viewing photos fullscreen
     var fullscreenPhotoUrl by remember { mutableStateOf<String?>(null) }
-
-    // Pre-made photo suggestions
-    val photoSuggestions = listOf(
-        Pair("☕ Kopi", "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1000&q=80"),
-        Pair("📸 Kota", "https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1000&q=80"),
-        Pair("🎨 Seni", "https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=1000&q=80"),
-        Pair("🐱 Kucing", "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=1000&q=80"),
-        Pair("🏖️ Pantai", "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1000&q=80")
-    )
 
     Scaffold(
         topBar = {
@@ -302,6 +319,30 @@ fun MomentsScreen(
                         leadingIcon = {
                             Icon(Icons.Default.LocationOn, contentDescription = null, tint = EmeraldGreen, modifier = Modifier.size(18.dp))
                         },
+                        trailingIcon = {
+                            IconButton(
+                                onClick = {
+                                    val lastLoc = com.example.util.AndroidGpsTracker.getLastKnownLocation(context)
+                                    val city = if (lastLoc != null) {
+                                        lastLoc.cityName.ifBlank {
+                                            com.example.util.AndroidGpsTracker.getCityName(context, lastLoc.latitude, lastLoc.longitude)
+                                        }
+                                    } else {
+                                        resolvedGpsCity ?: "Surabaya"
+                                    }
+                                    if (city.isNotBlank()) {
+                                        postLocation = city
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.MyLocation,
+                                    contentDescription = "Deteksi Lokasi GPS",
+                                    tint = EmeraldGreen,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -311,7 +352,7 @@ fun MomentsScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Gallery Photo Picker Button (Cloudflare R2)
+                    // Tombol Pilih Foto dari Galeri
                     Button(
                         onClick = {
                             photoPickerLauncher.launch(
@@ -330,60 +371,20 @@ fun MomentsScreen(
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Pilih Foto dari Galeri (Cloudflare R2)", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
+                        Text("Pilih Foto dari Galeri", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     }
 
-                    Text(
-                        text = "Atau Pilih Contoh Foto:",
-                        fontSize = 11.5.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = NeutralMedium
-                    )
-
-                    // Photo chips selection
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        photoSuggestions.forEach { (label, url) ->
-                            val isSelected = selectedPhotoUrl == url && selectedPhotoUri == null
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(if (isSelected) EmeraldGreen else Color(0xFFF1F3F4))
-                                    .clickable {
-                                        if (isSelected) {
-                                            selectedPhotoUrl = null
-                                        } else {
-                                            selectedPhotoUrl = url
-                                            selectedPhotoUri = null
-                                        }
-                                    }
-                                    .padding(horizontal = 8.dp, vertical = 5.dp)
-                            ) {
-                                Text(
-                                    text = label,
-                                    fontSize = 11.5.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isSelected) Color.White else NeutralDark
-                                )
-                            }
-                        }
-                    }
-
-                    // Photo preview (Gallery URI or Template URL)
-                    val activePreview = selectedPhotoUri ?: selectedPhotoUrl
-                    if (activePreview != null) {
+                    // Pratinjau Foto Galeri yang dipilih
+                    if (selectedPhotoUri != null) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(140.dp)
+                                .height(150.dp)
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(Color(0xFFEEEEEE))
                         ) {
                             AsyncImage(
-                                model = activePreview,
+                                model = selectedPhotoUri,
                                 contentDescription = "Pratinjau Foto Momen",
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
@@ -395,7 +396,6 @@ fun MomentsScreen(
                                     .clip(CircleShape)
                                     .background(Color.Black.copy(alpha = 0.55f))
                                     .clickable {
-                                        selectedPhotoUrl = null
                                         selectedPhotoUri = null
                                     }
                                     .padding(4.dp)
@@ -422,7 +422,7 @@ fun MomentsScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = uploadProgressText ?: "Mengunggah foto ke Cloudflare R2...",
+                                text = uploadProgressText ?: "Mengunggah foto...",
                                 fontSize = 12.sp,
                                 color = EmeraldGreen,
                                 fontWeight = FontWeight.Medium
@@ -438,13 +438,12 @@ fun MomentsScreen(
                             if (selectedPhotoUri != null && onPostMomentWithPhotoUri != null) {
                                 onPostMomentWithPhotoUri(postText, selectedPhotoUri, postLocation)
                             } else if (onPostMomentWithDetails != null) {
-                                onPostMomentWithDetails(postText, selectedPhotoUrl, postLocation)
+                                onPostMomentWithDetails(postText, null, postLocation)
                             } else {
                                 onPostMoment(postText)
                             }
                             postText = ""
                             selectedPhotoUri = null
-                            selectedPhotoUrl = null
                             showPostDialog = false
                         }
                     },

@@ -156,16 +156,30 @@ class ExampleRobolectricTest {
     // Default initial state: isNearbyExpanded should be false, tier should be 0
     org.junit.Assert.assertFalse(state.isNearbyExpanded)
     assertEquals(0, state.nearbyExpansionTier)
-    // Nearby users list has plenty of users (at least 45 users)
-    assertTrue(state.nearbyUsers.size >= 45)
+    // Nearby users list has plenty of users (at least 125 users)
+    assertTrue(state.nearbyUsers.size >= 120)
 
     // First expansion: Tier 1 (30 users)
     viewModel.expandNearbyUsers()
     assertEquals(1, viewModel.uiState.value.nearbyExpansionTier)
+    org.junit.Assert.assertFalse(viewModel.uiState.value.isNearbyExpanded)
 
-    // Second expansion: Tier 2 (45 users - fully expanded)
+    // Second expansion: Tier 2 (45 users)
     viewModel.expandNearbyUsers()
     assertEquals(2, viewModel.uiState.value.nearbyExpansionTier)
+    org.junit.Assert.assertFalse(viewModel.uiState.value.isNearbyExpanded)
+
+    // Third expansion: Tier 3 (70 users)
+    viewModel.expandNearbyUsers()
+    assertEquals(3, viewModel.uiState.value.nearbyExpansionTier)
+
+    // Fourth expansion: Tier 4 (100 users)
+    viewModel.expandNearbyUsers()
+    assertEquals(4, viewModel.uiState.value.nearbyExpansionTier)
+
+    // Fifth expansion: Tier 5 (125 users - fully expanded)
+    viewModel.expandNearbyUsers()
+    assertEquals(5, viewModel.uiState.value.nearbyExpansionTier)
     assertTrue(viewModel.uiState.value.isNearbyExpanded)
 
     // Reset nearby expansion
