@@ -115,6 +115,7 @@ fun NearbyScreen(
     currentGpsLocation: com.example.util.UserGpsLocation? = null,
     hasLocationPermission: Boolean = false,
     isGpsEnabled: Boolean = true,
+    hideExactDistance: Boolean = false,
     language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     isUserBlocked: (String, String) -> Boolean = { _, _ -> false },
     onBlockUser: (User) -> Unit = {},
@@ -384,6 +385,7 @@ fun NearbyScreen(
                     users = displayedUsers,
                     totalNearbyCount = filteredUsers.size,
                     isExpanded = isExpanded,
+                    hideExactDistance = hideExactDistance,
                     onSayHi = onSayHi,
                     onUserClick = { user -> selectedUserForProfile = user },
                     onExpandNearby = onExpandNearby,
@@ -431,6 +433,7 @@ fun NearbyScreen(
                     item(key = user.id) {
                         NearbyUserCard(
                             user = user,
+                            hideExactDistance = hideExactDistance,
                             onClick = { selectedUserForProfile = user },
                             onSayHi = { onSayHi(user) }
                         )
@@ -599,6 +602,7 @@ fun NearbyScreen(
 @Composable
 fun NearbyUserCard(
     user: User,
+    hideExactDistance: Boolean = false,
     onClick: () -> Unit = {},
     onSayHi: () -> Unit,
     modifier: Modifier = Modifier
@@ -696,7 +700,7 @@ fun NearbyUserCard(
                         modifier = Modifier.size(13.dp)
                     )
                     Text(
-                        text = "${user.formattedDistance} • ${user.city}",
+                        text = if (hideExactDistance) user.city else "${user.formattedDistance} • ${user.city}",
                         fontSize = 11.5.sp,
                         color = EmeraldGreen,
                         fontWeight = FontWeight.Medium

@@ -103,6 +103,7 @@ fun NearbyRadarView(
     users: List<User>,
     totalNearbyCount: Int = users.size,
     isExpanded: Boolean = false,
+    hideExactDistance: Boolean = false,
     onSayHi: (User) -> Unit,
     onUserClick: ((User) -> Unit)? = null,
     onExpandNearby: (() -> Unit)? = null,
@@ -406,7 +407,7 @@ fun NearbyRadarView(
                                         .padding(horizontal = 4.dp, vertical = 1.dp)
                                 ) {
                                     Text(
-                                        text = "${user.distanceMeters}m",
+                                        text = if (hideExactDistance) user.city else "${user.distanceMeters}m",
                                         fontSize = if (users.size > 8) 8.5.sp else 9.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = if (isSelected) Color(0xFFFFD54F) else Color.White
@@ -660,7 +661,7 @@ fun NearbyRadarView(
                                         )
                                         Spacer(modifier = Modifier.width(2.dp))
                                         Text(
-                                            text = "${user.distanceMeters} m • ${user.city}",
+                                            text = if (hideExactDistance) user.city else "${user.distanceMeters} m • ${user.city}",
                                             fontSize = 11.5.sp,
                                             color = NeutralMedium,
                                             fontWeight = FontWeight.Medium

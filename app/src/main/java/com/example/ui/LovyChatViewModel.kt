@@ -52,6 +52,7 @@ data class LovyChatUiState(
     val messagesMap: Map<String, List<ChatMessage>> = MockDataSource.initialMessages,
     val oceanBottles: List<BottleMessage> = MockDataSource.oceanBottles,
     val myBottles: List<BottleMessage> = emptyList(),
+    val fishedBottles: List<BottleMessage> = emptyList(),
     val fishedBottle: BottleMessage? = null,
     val isFishing: Boolean = false,
     val moments: List<MomentItem> = MockDataSource.initialMoments,
@@ -87,7 +88,11 @@ data class LovyChatUiState(
     val isUploadingPhoto: Boolean = false,
     val uploadProgressText: String? = null,
     // My Moments tracking (IDs of moments created by this user)
-    val myMomentIds: Set<String> = emptySet()
+    val myMomentIds: Set<String> = emptySet(),
+    // Privacy and Location Settings
+    val isNearbyVisible: Boolean = true,
+    val hideExactDistance: Boolean = false,
+    val showOnlineStatus: Boolean = true
 )
 
 class LovyChatViewModel(application: Application) : AndroidViewModel(application) {
@@ -117,6 +122,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
         loadBlockedUsers()
         loadMyMoments()
+        loadSavedBottles()
+        loadPrivacySettings()
         refreshSupabaseState()
         refreshR2State()
         detectAndApplyGeoLanguage()
@@ -184,6 +191,164 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             _uiState.update { it.copy(myMomentIds = savedIds) }
         } catch (_: Throwable) {
         }
+    }
+
+    private fun loadSavedBottles() {
+        try {
+            val savedFished = loadFishedBottles()
+            val savedMine = loadMyBottles()
+            _uiState.update { 
+                it.copy(
+                    fishedBottles = savedFished,
+                    myBottles = if (savedMine.isNotEmpty()) savedMine else it.myBottles
+                ) 
+            }
+        } catch (_: Throwable) {
+        }
+    }
+
+    private fun saveFishedBottles(bottles: List<BottleMessage>) {
+        try {
+            val jsonArray = org.json.JSONArray()
+            for (b in bottles) {
+                val obj = org.json.JSONObject()
+                obj.put("id", b.id)
+                obj.put("senderId", b.senderId)
+                obj.put("senderName", b.senderName)
+                obj.put("senderGender", b.senderGender.name)
+                obj.put("avatarHex", b.avatarHex)
+                obj.put("content", b.content)
+                obj.put("thrownTimestamp", b.thrownTimestamp)
+                obj.put("locationHint", b.locationHint)
+                obj.put("isFromMe", b.isFromMe)
+                obj.put("replyCount", b.replyCount)
+                if (b.avatarUrl != null) obj.put("avatarUrl", b.avatarUrl)
+                jsonArray.put(obj)
+            }
+            prefs.edit().putString("fished_bottles_json", jsonArray.toString()).apply()
+        } catch (_: Throwable) {
+        }
+    }
+
+    private fun loadFishedBottles(): List<BottleMessage> {
+        try {
+            val raw = prefs.getString("fished_bottles_json", null) ?: return emptyList()
+            val jsonArray = org.json.JSONArray(raw)
+            val list = mutableListOf<BottleMessage>()
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.getJSONObject(i)
+                list.add(
+                    BottleMessage(
+                        id = obj.optString("id"),
+                        senderId = obj.optString("senderId"),
+                        senderName = obj.optString("senderName"),
+                        senderGender = try { Gender.valueOf(obj.optString("senderGender", "MALE")) } catch (_: Throwable) { Gender.MALE },
+                        avatarHex = obj.optLong("avatarHex", 0xFF00838F),
+                        content = obj.optString("content"),
+                        thrownTimestamp = obj.optLong("thrownTimestamp", System.currentTimeMillis()),
+                        locationHint = obj.optString("locationHint", "Lautan Lovy"),
+                        isFromMe = obj.optBoolean("isFromMe", false),
+                        replyCount = obj.optInt("replyCount", 0),
+                        avatarUrl = if (obj.has("avatarUrl")) obj.optString("avatarUrl") else null
+                    )
+                )
+            }
+            return list
+        } catch (_: Throwable) {
+            return emptyList()
+        }
+    }
+
+    private fun saveMyBottles(bottles: List<BottleMessage>) {
+        try {
+            val jsonArray = org.json.JSONArray()
+            for (b in bottles) {
+                val obj = org.json.JSONObject()
+                obj.put("id", b.id)
+                obj.put("senderId", b.senderId)
+                obj.put("senderName", b.senderName)
+                obj.put("senderGender", b.senderGender.name)
+                obj.put("avatarHex", b.avatarHex)
+                obj.put("content", b.content)
+                obj.put("thrownTimestamp", b.thrownTimestamp)
+                obj.put("locationHint", b.locationHint)
+                obj.put("isFromMe", b.isFromMe)
+                obj.put("replyCount", b.replyCount)
+                if (b.avatarUrl != null) obj.put("avatarUrl", b.avatarUrl)
+                jsonArray.put(obj)
+            }
+            prefs.edit().putString("my_bottles_json", jsonArray.toString()).apply()
+        } catch (_: Throwable) {
+        }
+    }
+
+    private fun loadMyBottles(): List<BottleMessage> {
+        try {
+            val raw = prefs.getString("my_bottles_json", null) ?: return emptyList()
+            val jsonArray = org.json.JSONArray(raw)
+            val list = mutableListOf<BottleMessage>()
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.getJSONObject(i)
+                list.add(
+                    BottleMessage(
+                        id = obj.optString("id"),
+                        senderId = obj.optString("senderId"),
+                        senderName = obj.optString("senderName"),
+                        senderGender = try { Gender.valueOf(obj.optString("senderGender", "MALE")) } catch (_: Throwable) { Gender.MALE },
+                        avatarHex = obj.optLong("avatarHex", 0xFF00A86B),
+                        content = obj.optString("content"),
+                        thrownTimestamp = obj.optLong("thrownTimestamp", System.currentTimeMillis()),
+                        locationHint = obj.optString("locationHint", "Laut Nusantara"),
+                        isFromMe = true,
+                        replyCount = obj.optInt("replyCount", 0),
+                        avatarUrl = if (obj.has("avatarUrl")) obj.optString("avatarUrl") else null
+                    )
+                )
+            }
+            return list
+        } catch (_: Throwable) {
+            return emptyList()
+        }
+    }
+
+    private fun loadPrivacySettings() {
+        try {
+            val visible = prefs.getBoolean("pref_nearby_visible", true)
+            val hideDist = prefs.getBoolean("pref_hide_exact_distance", false)
+            val online = prefs.getBoolean("pref_show_online_status", true)
+            _uiState.update {
+                it.copy(
+                    isNearbyVisible = visible,
+                    hideExactDistance = hideDist,
+                    showOnlineStatus = online
+                )
+            }
+        } catch (_: Throwable) {
+        }
+    }
+
+    fun setNearbyVisible(visible: Boolean) {
+        try {
+            prefs.edit().putBoolean("pref_nearby_visible", visible).apply()
+        } catch (_: Throwable) {
+        }
+        _uiState.update { it.copy(isNearbyVisible = visible) }
+    }
+
+    fun setHideExactDistance(hide: Boolean) {
+        try {
+            prefs.edit().putBoolean("pref_hide_exact_distance", hide).apply()
+        } catch (_: Throwable) {
+        }
+        _uiState.update { it.copy(hideExactDistance = hide) }
+    }
+
+    fun setShowOnlineStatus(show: Boolean) {
+        try {
+            prefs.edit().putBoolean("pref_show_online_status", show).apply()
+        } catch (_: Throwable) {
+        }
+        _uiState.update { it.copy(showOnlineStatus = show) }
     }
 
     fun isUserBlocked(userId: String = "", userName: String = ""): Boolean {
@@ -906,9 +1071,11 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             isFromMe = true,
             replyCount = 0
         )
+        val updatedMyBottles = listOf(newBottle) + _uiState.value.myBottles
+        saveMyBottles(updatedMyBottles)
         _uiState.update {
             it.copy(
-                myBottles = listOf(newBottle) + it.myBottles,
+                myBottles = updatedMyBottles,
                 oceanBottles = listOf(newBottle) + it.oceanBottles
             )
         }
@@ -926,22 +1093,59 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             _uiState.update { it.copy(isFishing = true, fishedBottle = null) }
             
-            // Coba ambil botol terbaru dari Supabase
-            val remoteBottles = supabaseRepo.fetchOceanBottles()
-            if (!remoteBottles.isNullOrEmpty()) {
-                _uiState.update { it.copy(oceanBottles = remoteBottles) }
+            // Coba ambil botol terbaru dari Supabase jika ada
+            try {
+                val remoteBottles = supabaseRepo.fetchOceanBottles()
+                if (!remoteBottles.isNullOrEmpty()) {
+                    _uiState.update { it.copy(oceanBottles = remoteBottles) }
+                }
+            } catch (_: Throwable) {
             }
 
             delay(1200)
-            val available = _uiState.value.oceanBottles.filter { !it.isFromMe }
-            val chosen = if (available.isNotEmpty()) available.random() else MockDataSource.oceanBottles.first()
-            _uiState.update { it.copy(isFishing = false, fishedBottle = chosen) }
+            val allOcean = _uiState.value.oceanBottles.filter { !it.isFromMe }
+            val currentFished = _uiState.value.fishedBottles
+            
+            // Prioritaskan botol di lautan yang belum pernah diambil
+            val unfished = allOcean.filter { oceanB -> currentFished.none { it.id == oceanB.id } }
+            val chosen = when {
+                unfished.isNotEmpty() -> unfished.random()
+                allOcean.isNotEmpty() -> allOcean.random()
+                else -> MockDataSource.oceanBottles.first()
+            }
+
+            val updatedFished = if (currentFished.none { it.id == chosen.id }) {
+                listOf(chosen) + currentFished
+            } else {
+                currentFished
+            }
+            saveFishedBottles(updatedFished)
+
+            _uiState.update { 
+                it.copy(
+                    isFishing = false, 
+                    fishedBottle = chosen,
+                    fishedBottles = updatedFished
+                ) 
+            }
         }
     }
 
     fun dismissFishedBottle() {
         recordFeatureClick()
         _uiState.update { it.copy(fishedBottle = null) }
+    }
+
+    fun returnFishedBottleToOcean(bottle: BottleMessage) {
+        recordFeatureClick()
+        val updatedFished = _uiState.value.fishedBottles.filter { it.id != bottle.id }
+        saveFishedBottles(updatedFished)
+        _uiState.update { 
+            it.copy(
+                fishedBottles = updatedFished,
+                fishedBottle = if (it.fishedBottle?.id == bottle.id) null else it.fishedBottle
+            ) 
+        }
     }
 
     fun toggleLikeMoment(momentId: String) {

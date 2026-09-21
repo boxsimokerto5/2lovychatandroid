@@ -82,14 +82,16 @@ import com.example.ui.theme.ScreenBackground
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BottleScreen(
-    oceanBottles: List<BottleMessage>,
-    myBottles: List<BottleMessage>,
-    fishedBottle: BottleMessage?,
-    isFishing: Boolean,
+    fishedBottles: List<BottleMessage> = emptyList(),
+    myBottles: List<BottleMessage> = emptyList(),
+    oceanBottles: List<BottleMessage> = emptyList(),
+    fishedBottle: BottleMessage? = null,
+    isFishing: Boolean = false,
     onBack: () -> Unit,
     onThrowBottle: (String) -> Unit,
     onFishBottle: () -> Unit,
     onDismissFishedBottle: () -> Unit,
+    onReleaseFishedBottle: (BottleMessage) -> Unit = {},
     onReplyBottle: (BottleMessage) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -269,7 +271,7 @@ fun BottleScreen(
                 }
             }
 
-            // Tabs: Botol Lautan vs Botol Saya
+            // Tabs: Botol Diambil vs Botol Saya
             TabRow(
                 selectedTabIndex = selectedTab,
                 containerColor = Color.White,
@@ -278,8 +280,8 @@ fun BottleScreen(
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    text = { Text("Lautan Pesan (${oceanBottles.size})", fontWeight = FontWeight.SemiBold) },
-                    modifier = Modifier.testTag("tab_ocean_bottles")
+                    text = { Text("Botol Diambil (${fishedBottles.size})", fontWeight = FontWeight.SemiBold) },
+                    modifier = Modifier.testTag("tab_fished_bottles")
                 )
                 Tab(
                     selected = selectedTab == 1,
@@ -290,31 +292,104 @@ fun BottleScreen(
             }
 
             // Content List
-            val displayList = if (selectedTab == 0) oceanBottles else myBottles
+            val displayList = if (selectedTab == 0) fishedBottles else myBottles
 
             if (displayList.isEmpty()) {
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(32.dp)
+                        .padding(24.dp)
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = "🍾", fontSize = 48.sp)
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = if (selectedTab == 0) "Belum ada botol di sekitar" else "Kamu belum pernah melempar botol",
-                            fontSize = 14.sp,
-                            color = NeutralMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Tulis kata-kata manismu dan lempar ke lautan!",
-                            fontSize = 12.sp,
-                            color = NeutralMedium,
-                            textAlign = TextAlign.Center
-                        )
+                    if (selectedTab == 0) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(72.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFE0F7FA))
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Phishing,
+                                    contentDescription = null,
+                                    tint = Color(0xFF00838F),
+                                    modifier = Modifier.size(36.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(14.dp))
+                            Text(
+                                text = "Belum Ada Botol yang Diambil",
+                                fontSize = 16.sp,
+                                color = NeutralDark,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "Lautan Lovy menyimpan ribuan pesan misteri dari berbagai kota. Ketuk tombol 'Pancing' di atas untuk menjaring botol pertamamu!",
+                                fontSize = 12.5.sp,
+                                color = NeutralMedium,
+                                textAlign = TextAlign.Center,
+                                lineHeight = 18.sp
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = onFishBottle,
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00BCD4)),
+                                shape = RoundedCornerShape(20.dp),
+                                modifier = Modifier.testTag("btn_empty_fish")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Phishing,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Pancing Sekarang", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    } else {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(72.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFE8F5E9))
+                            ) {
+                                Text(text = "🍾", fontSize = 36.sp)
+                            }
+                            Spacer(modifier = Modifier.height(14.dp))
+                            Text(
+                                text = "Kamu Belum Pernah Melempar Botol",
+                                fontSize = 16.sp,
+                                color = NeutralDark,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "Tulis kata hatimu, salam hangat, atau curhatan dan hanyutkan ke lautan untuk ditemukan pengguna lain!",
+                                fontSize = 12.5.sp,
+                                color = NeutralMedium,
+                                textAlign = TextAlign.Center,
+                                lineHeight = 18.sp
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = { showThrowDialog = true },
+                                colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
+                                shape = RoundedCornerShape(20.dp),
+                                modifier = Modifier.testTag("btn_empty_throw")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.Send,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Lempar Botol Sekarang", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
                     }
                 }
             } else {
@@ -326,7 +401,10 @@ fun BottleScreen(
                     items(displayList, key = { it.id }) { bottle ->
                         BottleCardItem(
                             bottle = bottle,
-                            onReply = { onReplyBottle(bottle) }
+                            onReply = { onReplyBottle(bottle) },
+                            onRelease = if (selectedTab == 0) {
+                                { onReleaseFishedBottle(bottle) }
+                            } else null
                         )
                     }
                 }
@@ -459,24 +537,33 @@ fun BottleScreen(
                 }
             },
             confirmButton = {
-                Button(
-                    onClick = {
-                        onReplyBottle(bottle)
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
-                    modifier = Modifier.testTag("btn_reply_fished_bottle")
-                ) {
-                    Icon(imageVector = Icons.AutoMirrored.Filled.Chat, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Balas di Obrolan")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(
+                        onClick = onDismissFishedBottle,
+                        shape = RoundedCornerShape(20.dp)
+                    ) {
+                        Text("Simpan", fontSize = 12.sp)
+                    }
+                    Button(
+                        onClick = {
+                            onReplyBottle(bottle)
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.testTag("btn_reply_fished_bottle")
+                    ) {
+                        Icon(imageVector = Icons.AutoMirrored.Filled.Chat, contentDescription = null, modifier = Modifier.size(15.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Balas di Obrolan", fontSize = 12.sp)
+                    }
                 }
             },
             dismissButton = {
                 TextButton(
-                    onClick = onDismissFishedBottle,
+                    onClick = { onReleaseFishedBottle(bottle) },
                     modifier = Modifier.testTag("btn_dismiss_fished_bottle")
                 ) {
-                    Text("Lempar Kembali", color = NeutralMedium)
+                    Text("Hanyutkan Kembali", color = NeutralMedium, fontSize = 12.sp)
                 }
             }
         )
@@ -487,6 +574,7 @@ fun BottleScreen(
 fun BottleCardItem(
     bottle: BottleMessage,
     onReply: () -> Unit,
+    onRelease: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -527,7 +615,7 @@ fun BottleCardItem(
                         color = NeutralDark
                     )
                     Text(
-                        text = "${bottle.locationHint} • Lautan Lovy",
+                        text = if (bottle.isFromMe) "Hanyut di ${bottle.locationHint}" else "${bottle.locationHint} • Diambil dari Lautan",
                         fontSize = 11.5.sp,
                         color = NeutralMedium
                     )
@@ -536,13 +624,13 @@ fun BottleCardItem(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFFE0F7FA))
+                        .background(if (bottle.isFromMe) Color(0xFFE8F5E9) else Color(0xFFE0F7FA))
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
-                        text = "🌊 Botol",
+                        text = if (bottle.isFromMe) "🍾 Botol Saya" else "🎣 Diambil",
                         fontSize = 11.sp,
-                        color = Color(0xFF00838F),
+                        color = if (bottle.isFromMe) EmeraldGreen else Color(0xFF00838F),
                         fontWeight = FontWeight.SemiBold
                     )
                 }
@@ -560,9 +648,26 @@ fun BottleCardItem(
             if (!bottle.isFromMe) {
                 Spacer(modifier = Modifier.height(10.dp))
                 Row(
-                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
+                    if (onRelease != null) {
+                        TextButton(
+                            onClick = onRelease,
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                            modifier = Modifier.testTag("btn_release_bottle_${bottle.id}")
+                        ) {
+                            Text(
+                                text = "Hanyutkan Lagi",
+                                fontSize = 11.5.sp,
+                                color = NeutralMedium
+                            )
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.width(1.dp))
+                    }
+
                     TextButton(
                         onClick = onReply,
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),

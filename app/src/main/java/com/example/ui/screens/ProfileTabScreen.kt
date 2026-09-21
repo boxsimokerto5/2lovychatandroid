@@ -1,5 +1,11 @@
 package com.example.ui.screens
 
+import android.Manifest
+import android.content.Intent
+import android.provider.Settings
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,20 +29,33 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.GpsFixed
+import androidx.compose.material.icons.filled.GpsOff
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LocationOff
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Waves
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -50,6 +69,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -66,20 +86,30 @@ fun ProfileTabScreen(
     myName: String,
     myBio: String,
     myLovyId: String,
-    isSupabaseConnected: Boolean,
+    isSupabaseConnected: Boolean = true,
     profilePicture: String? = null,
     language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     detectedGeoArea: String = "ID/MY",
     isLocalMode: Boolean = true,
+    isNearbyVisible: Boolean = true,
+    hideExactDistance: Boolean = false,
+    showOnlineStatus: Boolean = true,
+    hasLocationPermission: Boolean = false,
+    isGpsEnabled: Boolean = true,
+    onToggleNearbyVisible: (Boolean) -> Unit = {},
+    onToggleHideExactDistance: (Boolean) -> Unit = {},
+    onToggleShowOnlineStatus: (Boolean) -> Unit = {},
+    onLocationPermissionChanged: (Boolean) -> Unit = {},
     onLanguageChange: (com.example.util.AppLanguage) -> Unit = {},
     onNavigateToUserProfile: () -> Unit = {},
     onNavigateToBottle: () -> Unit,
     onNavigateToMoments: () -> Unit,
-    onNavigateToSupabaseConfig: () -> Unit,
+    onNavigateToSupabaseConfig: () -> Unit = {},
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showLanguagePicker by remember { mutableStateOf(false) }
+    var showPrivacyDialog by remember { mutableStateOf(false) }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -215,19 +245,11 @@ fun ProfileTabScreen(
         ) {
             Column {
                 ProfileMenuItem(
-                    icon = Icons.Default.CloudSync,
-                    iconTint = Color(0xFF0288D1),
-                    title = "Koneksi Cloud & Penyimpanan",
-                    subtitle = if (isSupabaseConnected) "Cloud aktif • Data & media tersinkron" else "Mode lokal • Ketuk untuk konfigurasi cloud",
-                    onClick = onNavigateToSupabaseConfig
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
-                ProfileMenuItem(
                     icon = Icons.Default.Lock,
                     iconTint = EmeraldGreen,
                     title = "Privasi & Lokasi",
-                    subtitle = "Atur jarak dan izin visibilitas sekitar",
-                    onClick = {}
+                    subtitle = if (!isNearbyVisible) "Mode Penyamaran aktif" else if (hideExactDistance) "Jarak persis disembunyikan" else "Visibilitas sekitar aktif",
+                    onClick = { showPrivacyDialog = true }
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
                 ProfileMenuItem(
@@ -431,6 +453,21 @@ fun ProfileTabScreen(
             }
         )
     }
+
+    if (showPrivacyDialog) {
+        PrivacyLocationDialog(
+            isNearbyVisible = isNearbyVisible,
+            hideExactDistance = hideExactDistance,
+            showOnlineStatus = showOnlineStatus,
+            hasLocationPermission = hasLocationPermission,
+            isGpsEnabled = isGpsEnabled,
+            onToggleNearbyVisible = onToggleNearbyVisible,
+            onToggleHideExactDistance = onToggleHideExactDistance,
+            onToggleShowOnlineStatus = onToggleShowOnlineStatus,
+            onLocationPermissionChanged = onLocationPermissionChanged,
+            onDismiss = { showPrivacyDialog = false }
+        )
+    }
 }
 
 @Composable
@@ -478,4 +515,281 @@ fun ProfileMenuItem(
             modifier = Modifier.size(20.dp)
         )
     }
+}
+
+@Composable
+fun PrivacyLocationDialog(
+    isNearbyVisible: Boolean,
+    hideExactDistance: Boolean,
+    showOnlineStatus: Boolean,
+    hasLocationPermission: Boolean,
+    isGpsEnabled: Boolean,
+    onToggleNearbyVisible: (Boolean) -> Unit,
+    onToggleHideExactDistance: (Boolean) -> Unit,
+    onToggleShowOnlineStatus: (Boolean) -> Unit,
+    onLocationPermissionChanged: (Boolean) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        onLocationPermissionChanged(granted)
+        if (granted) {
+            Toast.makeText(context, "Izin lokasi berhasil diaktifkan", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "Izin lokasi belum diberikan", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = EmeraldGreen.copy(alpha = 0.15f),
+                    modifier = Modifier.size(38.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Security,
+                            contentDescription = null,
+                            tint = EmeraldGreen,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+                Text(
+                    text = "Privasi & Lokasi",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = NeutralDark
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // 1. Radar Around Me Visibility (Ghost Mode)
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = ScreenBackground)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = if (isNearbyVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = null,
+                                tint = EmeraldGreen,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "Tampilkan Saya di Sekitar",
+                                fontSize = 13.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeutralDark,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Switch(
+                                checked = isNearbyVisible,
+                                onCheckedChange = onToggleNearbyVisible,
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = EmeraldGreen,
+                                    checkedTrackColor = EmeraldGreen.copy(alpha = 0.35f)
+                                )
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = if (isNearbyVisible)
+                                "Profil Anda aktif dan dapat ditemukan oleh pengguna lain di radar 'Di Sekitar Saya'."
+                            else
+                                "Mode Penyamaran aktif. Profil Anda disembunyikan dari radar pencarian orang sekitar.",
+                            fontSize = 11.5.sp,
+                            color = NeutralMedium,
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
+
+                // 2. Hide Exact Distance
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = ScreenBackground)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = if (hideExactDistance) Icons.Default.LocationOff else Icons.Default.LocationOn,
+                                contentDescription = null,
+                                tint = if (hideExactDistance) Color(0xFFE53935) else EmeraldGreen,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "Sembunyikan Jarak Persis",
+                                fontSize = 13.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeutralDark,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Switch(
+                                checked = hideExactDistance,
+                                onCheckedChange = onToggleHideExactDistance,
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = EmeraldGreen,
+                                    checkedTrackColor = EmeraldGreen.copy(alpha = 0.35f)
+                                )
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = if (hideExactDistance)
+                                "Jarak meter/km disembunyikan. Orang lain hanya dapat melihat nama kota/wilayah Anda."
+                            else
+                                "Pengguna lain dapat melihat perkiraan jarak meter atau kilometer dari lokasi Anda.",
+                            fontSize = 11.5.sp,
+                            color = NeutralMedium,
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
+
+                // 3. Online Status Visibility
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = ScreenBackground)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = EmeraldGreen,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "Tampilkan Status Online",
+                                fontSize = 13.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeutralDark,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Switch(
+                                checked = showOnlineStatus,
+                                onCheckedChange = onToggleShowOnlineStatus,
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = EmeraldGreen,
+                                    checkedTrackColor = EmeraldGreen.copy(alpha = 0.35f)
+                                )
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Menampilkan tanda online ketika Anda sedang aktif membuka Lovy Chat.",
+                            fontSize = 11.5.sp,
+                            color = NeutralMedium,
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
+
+                // 4. GPS Hardware & System Permission
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = ScreenBackground)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = if (hasLocationPermission) Icons.Default.GpsFixed else Icons.Default.GpsOff,
+                                contentDescription = null,
+                                tint = if (hasLocationPermission) EmeraldGreen else Color(0xFFE53935),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Izin Lokasi & GPS Perangkat",
+                                    fontSize = 13.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = NeutralDark
+                                )
+                                Text(
+                                    text = if (hasLocationPermission) "Izin GPS diberikan • Aktif" else "Izin lokasi belum diberikan",
+                                    fontSize = 11.5.sp,
+                                    color = if (hasLocationPermission) EmeraldGreen else Color(0xFFE53935),
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+
+                        if (!hasLocationPermission) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(
+                                onClick = {
+                                    permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                                },
+                                shape = RoundedCornerShape(8.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Izinkan Akses GPS", fontSize = 12.sp, color = Color.White)
+                            }
+                        }
+
+                        if (!isGpsEnabled) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            OutlinedButton(
+                                onClick = {
+                                    try {
+                                        context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+                                    } catch (_: Throwable) {
+                                    }
+                                },
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Buka Pengaturan Lokasi HP", fontSize = 12.sp, color = NeutralDark)
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    Toast.makeText(context, "Pengaturan privasi & lokasi diperbarui", Toast.LENGTH_SHORT).show()
+                    onDismiss()
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("Selesai", color = Color.White, fontWeight = FontWeight.Bold)
+            }
+        }
+    )
 }

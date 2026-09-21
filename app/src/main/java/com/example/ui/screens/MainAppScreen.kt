@@ -85,6 +85,7 @@ fun MainAppScreen(
                 currentGpsLocation = uiState.currentGpsLocation,
                 hasLocationPermission = uiState.hasLocationPermission,
                 isGpsEnabled = uiState.isGpsEnabled,
+                hideExactDistance = uiState.hideExactDistance,
                 language = uiState.language,
                 onPermissionResult = { granted -> viewModel.updateLocationPermission(granted) },
                 onBack = { viewModel.navigateBack() },
@@ -96,14 +97,16 @@ fun MainAppScreen(
         }
         is CurrentScreen.Bottle -> {
             BottleScreen(
-                oceanBottles = uiState.oceanBottles,
+                fishedBottles = uiState.fishedBottles,
                 myBottles = uiState.myBottles,
+                oceanBottles = uiState.oceanBottles,
                 fishedBottle = uiState.fishedBottle,
                 isFishing = uiState.isFishing,
                 onBack = { viewModel.navigateBack() },
                 onThrowBottle = { viewModel.throwBottle(it) },
                 onFishBottle = { viewModel.fishBottle() },
                 onDismissFishedBottle = { viewModel.dismissFishedBottle() },
+                onReleaseFishedBottle = { viewModel.returnFishedBottleToOcean(it) },
                 onReplyBottle = { viewModel.openChatWithBottleSender(it) }
             )
         }
@@ -258,6 +261,15 @@ fun MainAppScreen(
                             language = uiState.language,
                             detectedGeoArea = uiState.detectedGeoArea,
                             isLocalMode = uiState.isLocalLanguageMode,
+                            isNearbyVisible = uiState.isNearbyVisible,
+                            hideExactDistance = uiState.hideExactDistance,
+                            showOnlineStatus = uiState.showOnlineStatus,
+                            hasLocationPermission = uiState.hasLocationPermission,
+                            isGpsEnabled = uiState.isGpsEnabled,
+                            onToggleNearbyVisible = { viewModel.setNearbyVisible(it) },
+                            onToggleHideExactDistance = { viewModel.setHideExactDistance(it) },
+                            onToggleShowOnlineStatus = { viewModel.setShowOnlineStatus(it) },
+                            onLocationPermissionChanged = { viewModel.updateLocationPermission(it) },
                             onLanguageChange = { viewModel.setLanguage(it) },
                             onNavigateToUserProfile = {
                                 viewModel.navigateTo(CurrentScreen.UserProfile)
@@ -267,9 +279,6 @@ fun MainAppScreen(
                             },
                             onNavigateToMoments = {
                                 viewModel.navigateTo(CurrentScreen.Moments)
-                            },
-                            onNavigateToSupabaseConfig = {
-                                viewModel.navigateTo(CurrentScreen.SupabaseConfig)
                             },
                             onLogout = {
                                 viewModel.logout()
