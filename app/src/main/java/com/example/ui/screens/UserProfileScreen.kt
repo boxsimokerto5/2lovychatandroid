@@ -512,14 +512,6 @@ fun EditProfileDialog(
         }
     }
 
-    // Preset Avatar Options for quick testing
-    val presetAvatars = listOf(
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" to "Wanita 1",
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150" to "Pria 1",
-        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150" to "Wanita 2",
-        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150" to "Pria 2"
-    )
-
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -543,8 +535,74 @@ fun EditProfileDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
+                // Avatar Preview with edit badge
+                Box(
+                    contentAlignment = Alignment.BottomEnd,
+                    modifier = Modifier
+                        .padding(top = 4.dp, bottom = 2.dp)
+                        .clickable(enabled = !isUploadingPhoto, onClick = onPickPhotoFromGallery)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFE0E0E0))
+                            .border(2.dp, EmeraldGreen.copy(alpha = 0.5f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (profilePictureUrl.isNotBlank()) {
+                            AsyncImage(
+                                model = profilePictureUrl,
+                                contentDescription = "Foto Profil",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Text(
+                                text = displayName.take(1).uppercase().ifBlank { "U" },
+                                color = EmeraldGreen,
+                                fontSize = 32.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        if (isUploadingPhoto) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Black.copy(alpha = 0.5f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(
+                                    color = Color.White,
+                                    modifier = Modifier.size(28.dp),
+                                    strokeWidth = 2.5.dp
+                                )
+                            }
+                        }
+                    }
+
+                    // Camera Icon Badge
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(EmeraldGreen)
+                            .border(2.dp, Color.White, CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CameraAlt,
+                            contentDescription = "Ganti Foto",
+                            tint = Color.White,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                }
+
                 // Upload Photo from Gallery to Cloudflare R2
                 Button(
                     onClick = onPickPhotoFromGallery,
@@ -593,48 +651,6 @@ fun EditProfileDialog(
                         .fillMaxWidth()
                         .testTag("input_edit_bio")
                 )
-
-                OutlinedTextField(
-                    value = profilePictureUrl,
-                    onValueChange = { profilePictureUrl = it },
-                    label = { Text("URL Foto Profil (R2 / Web)") },
-                    singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("input_edit_avatar_url")
-                )
-
-                // Quick preset avatar buttons
-                Text(
-                    text = "Pilih Contoh Foto Profil Cepat:",
-                    fontSize = 11.5.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = NeutralMedium
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    presetAvatars.forEach { (url, label) ->
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (profilePictureUrl == url) EmeraldGreen.copy(alpha = 0.15f) else NeutralLight,
-                            border = if (profilePictureUrl == url) androidx.compose.foundation.BorderStroke(1.dp, EmeraldGreen) else null,
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { profilePictureUrl = url }
-                        ) {
-                            Text(
-                                text = label,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = if (profilePictureUrl == url) EmeraldGreen else NeutralDark,
-                                modifier = Modifier.padding(vertical = 6.dp, horizontal = 4.dp),
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                            )
-                        }
-                    }
-                }
 
                 OutlinedTextField(
                     value = city,
