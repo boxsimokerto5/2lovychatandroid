@@ -93,7 +93,8 @@ data class LovyChatUiState(
     // Privacy and Location Settings
     val isNearbyVisible: Boolean = true,
     val hideExactDistance: Boolean = false,
-    val showOnlineStatus: Boolean = true
+    val showOnlineStatus: Boolean = true,
+    val fcmToken: String = ""
 )
 
 class LovyChatViewModel(application: Application) : AndroidViewModel(application) {
@@ -152,6 +153,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         observeUserProfile()
         observeChatFriends()
         updateUserActivity()
+        initFirebaseMessaging()
         // Coba sinkronisasi data awal jika Supabase sudah terkonfigurasi
         syncFromSupabase()
     }
@@ -192,6 +194,25 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             } catch (e: Exception) {
                 Log.w("LovyChatViewModel", "Gagal update last_active_at", e)
             }
+        }
+    }
+
+    private fun initFirebaseMessaging() {
+        try {
+            com.example.util.LovyFirebaseMessagingService.createNotificationChannel(getApplication())
+            com.google.firebase.messaging.FirebaseMessaging.getInstance().token
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful && !task.result.isNullOrBlank()) {
+                        val token = task.result
+                        _uiState.update { it.copy(fcmToken = token) }
+                        val fcmPrefs = getApplication<Application>()
+                            .getSharedPreferences("lovy_fcm_prefs", android.content.Context.MODE_PRIVATE)
+                        fcmPrefs.edit().putString("fcm_token", token).apply()
+                        Log.d("LovyFCM", "Current FCM Token fetched: $token")
+                    }
+                }
+        } catch (e: Throwable) {
+            Log.w("LovyFCM", "Inisialisasi FCM dilewati atau belum tersedia: ${e.message}")
         }
     }
 
