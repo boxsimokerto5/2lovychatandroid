@@ -98,8 +98,12 @@ create table if not exists nearby_users (
     distance_meters int default 100,
     bio text,
     avatar_hex bigint default 3046706,
-    is_online boolean default true
+    is_online boolean default true,
+    last_active_at bigint default 0,
+    avatar_url text
 );
+alter table nearby_users add column if not exists last_active_at bigint default 0;
+alter table nearby_users add column if not exists avatar_url text;
 
 create table if not exists ocean_bottles (
     id text primary key,
@@ -116,9 +120,17 @@ create table if not exists chat_messages (
     id text primary key,
     conversation_id text not null,
     sender_id text not null,
+    receiver_id text,
     text text not null,
-    created_at bigint not null
+    created_at bigint not null,
+    deleted_for_sender boolean default false,
+    deleted_for_receiver boolean default false,
+    image_url text
 );
+alter table chat_messages add column if not exists receiver_id text;
+alter table chat_messages add column if not exists deleted_for_sender boolean default false;
+alter table chat_messages add column if not exists deleted_for_receiver boolean default false;
+alter table chat_messages add column if not exists image_url text;
 
 create table if not exists moments (
     id text primary key,
@@ -146,28 +158,35 @@ create table if not exists app_accounts (
     last_login_at bigint not null
 );
 
--- Buka policy Read & Insert untuk public (anon)
+-- Buka policy CRUD untuk public (anon)
 alter table nearby_users enable row level security;
-create policy "Allow anon read nearby" on nearby_users for select using (true);
-create policy "Allow anon insert nearby" on nearby_users for insert with check (true);
+drop policy if exists "Allow anon read nearby" on nearby_users;
+drop policy if exists "Allow anon insert nearby" on nearby_users;
+drop policy if exists "Allow anon all nearby" on nearby_users;
+create policy "Allow anon all nearby" on nearby_users for all using (true) with check (true);
 
 alter table ocean_bottles enable row level security;
+drop policy if exists "Allow anon all bottles" on ocean_bottles;
 create policy "Allow anon all bottles" on ocean_bottles for all using (true) with check (true);
 
 alter table chat_messages enable row level security;
+drop policy if exists "Allow anon all messages" on chat_messages;
 create policy "Allow anon all messages" on chat_messages for all using (true) with check (true);
 
 alter table moments enable row level security;
+drop policy if exists "Allow anon all moments" on moments;
 create policy "Allow anon all moments" on moments for all using (true) with check (true);
 
 alter table app_accounts enable row level security;
+drop policy if exists "Allow anon all accounts" on app_accounts;
 create policy "Allow anon all accounts" on app_accounts for all using (true) with check (true);
 
--- Indeks performa untuk 30k+ pengguna:
+-- Indeks performa untuk jutaan pesan & pengguna:
 create index if not exists idx_accounts_username on app_accounts (username);
 create index if not exists idx_accounts_google on app_accounts (google_email);
 create index if not exists idx_chat_messages_conv on chat_messages (conversation_id, created_at asc);
 create index if not exists idx_chat_messages_sender on chat_messages (sender_id);
+create index if not exists idx_chat_messages_receiver on chat_messages (receiver_id);
 create index if not exists idx_ocean_bottles_created on ocean_bottles (created_at desc);
 create index if not exists idx_moments_created on moments (created_at desc);
     """.trimIndent()

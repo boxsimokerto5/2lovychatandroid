@@ -8,11 +8,11 @@ data class SupabaseUserDto(
     @Json(name = "id") val id: String,
     @Json(name = "name") val name: String,
     @Json(name = "gender") val gender: String, // "male", "female"
-    @Json(name = "distance_meters") val distanceMeters: Int = 100,
-    @Json(name = "bio") val bio: String = "",
-    @Json(name = "avatar_hex") val avatarHex: Long = 0xFF2E7D32,
-    @Json(name = "is_online") val isOnline: Boolean = true,
-    @Json(name = "last_active_at") val lastActiveAt: Long = System.currentTimeMillis(),
+    @Json(name = "distance_meters") val distanceMeters: Int? = 100,
+    @Json(name = "bio") val bio: String? = "",
+    @Json(name = "avatar_hex") val avatarHex: Long? = 0xFF2E7D32,
+    @Json(name = "is_online") val isOnline: Boolean? = true,
+    @Json(name = "last_active_at") val lastActiveAt: Long? = null,
     @Json(name = "avatar_url") val avatarUrl: String? = null
 )
 
@@ -24,8 +24,8 @@ data class SupabaseBottleDto(
     @Json(name = "sender_gender") val senderGender: String,
     @Json(name = "content") val content: String,
     @Json(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
-    @Json(name = "location_hint") val locationHint: String = "Lautan Nusantara",
-    @Json(name = "avatar_hex") val avatarHex: Long = 0xFF00838F
+    @Json(name = "location_hint") val locationHint: String? = "Lautan Nusantara",
+    @Json(name = "avatar_hex") val avatarHex: Long? = 0xFF00838F
 )
 
 @JsonClass(generateAdapter = true)
@@ -36,8 +36,8 @@ data class SupabaseMessageDto(
     @Json(name = "receiver_id") val receiverId: String? = null,
     @Json(name = "text") val text: String,
     @Json(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
-    @Json(name = "deleted_for_sender") val deletedForSender: Boolean = false,
-    @Json(name = "deleted_for_receiver") val deletedForReceiver: Boolean = false,
+    @Json(name = "deleted_for_sender") val deletedForSender: Boolean? = null,
+    @Json(name = "deleted_for_receiver") val deletedForReceiver: Boolean? = null,
     @Json(name = "image_url") val imageUrl: String? = null
 )
 
@@ -47,10 +47,10 @@ data class SupabaseMomentDto(
     @Json(name = "author_id") val authorId: String,
     @Json(name = "author_name") val authorName: String,
     @Json(name = "content") val content: String,
-    @Json(name = "likes_count") val likesCount: Int = 0,
-    @Json(name = "comments_count") val commentsCount: Int = 0,
+    @Json(name = "likes_count") val likesCount: Int? = 0,
+    @Json(name = "comments_count") val commentsCount: Int? = 0,
     @Json(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
-    @Json(name = "author_avatar_hex") val authorAvatarHex: Long = 0xFFFB8C00,
+    @Json(name = "author_avatar_hex") val authorAvatarHex: Long? = 0xFFFB8C00,
     @Json(name = "image_url") val imageUrl: String? = null
 )
 
@@ -59,12 +59,12 @@ data class SupabaseAccountDto(
     @Json(name = "id") val id: String,
     @Json(name = "username") val username: String,
     @Json(name = "password_hash") val passwordHash: String? = null,
-    @Json(name = "display_name") val displayName: String,
-    @Json(name = "gender") val gender: String = "FEMALE",
-    @Json(name = "bio") val bio: String = "",
+    @Json(name = "display_name") val displayName: String? = null,
+    @Json(name = "gender") val gender: String? = "FEMALE",
+    @Json(name = "bio") val bio: String? = "",
     @Json(name = "avatar_url") val avatarUrl: String? = null,
     @Json(name = "google_id") val googleId: String? = null,
     @Json(name = "google_email") val googleEmail: String? = null,
-    @Json(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
-    @Json(name = "last_login_at") val lastLoginAt: Long = System.currentTimeMillis()
+    @Json(name = "created_at") val createdAt: Long? = System.currentTimeMillis(),
+    @Json(name = "last_login_at") val lastLoginAt: Long? = System.currentTimeMillis()
 )

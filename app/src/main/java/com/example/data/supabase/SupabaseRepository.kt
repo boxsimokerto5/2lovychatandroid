@@ -21,12 +21,22 @@ class SupabaseRepository {
 
         try {
             val response = api.getNearbyUsers(apiKey, auth, limit = 1)
-            if (response.isSuccessful) {
-                Result.success("Terhubung ke layanan cloud dengan sukses! (HTTP ${response.code()})")
-            } else if (response.code() == 404 || response.code() == 400 || response.code() == 401 || response.code() == 403) {
-                Result.success("Tersambung ke server cloud (Status HTTP ${response.code()}). Layanan siap digunakan.")
-            } else {
-                Result.failure(Exception("Gagal: HTTP ${response.code()} - ${response.message()}"))
+            when (response.code()) {
+                in 200..299 -> {
+                    Result.success("Terhubung ke Supabase dengan sukses! (HTTP ${response.code()})")
+                }
+                401 -> {
+                    Result.failure(Exception("Autentikasi gagal (HTTP 401). Periksa kembali token SUPABASE_ANON_KEY Anda."))
+                }
+                403 -> {
+                    Result.failure(Exception("Akses ditolak (HTTP 403). Pastikan RLS Policy tabel diaktifkan di Supabase."))
+                }
+                404 -> {
+                    Result.failure(Exception("Tabel 'nearby_users' belum ada (HTTP 404). Silakan salin & jalankan skrip SQL di SQL Editor Supabase."))
+                }
+                else -> {
+                    Result.failure(Exception("Gagal: HTTP ${response.code()} - ${response.message()}"))
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Koneksi cloud gagal", e)
@@ -49,10 +59,10 @@ class SupabaseRepository {
                         name = dto.name,
                         gender = if (dto.gender.equals("male", ignoreCase = true)) Gender.MALE else Gender.FEMALE,
                         age = 22,
-                        distanceMeters = dto.distanceMeters,
-                        bio = dto.bio,
-                        avatarColorHex = dto.avatarHex,
-                        isOnline = dto.isOnline
+                        distanceMeters = dto.distanceMeters ?: 100,
+                        bio = dto.bio ?: "",
+                        avatarColorHex = dto.avatarHex ?: 0xFF2E7D32,
+                        isOnline = dto.isOnline ?: true
                     )
                 }
             } else {
@@ -81,8 +91,8 @@ class SupabaseRepository {
                         senderGender = if (dto.senderGender.equals("male", ignoreCase = true)) Gender.MALE else Gender.FEMALE,
                         content = dto.content,
                         thrownTimestamp = dto.createdAt,
-                        locationHint = dto.locationHint,
-                        avatarHex = dto.avatarHex,
+                        locationHint = dto.locationHint ?: "Lautan Nusantara",
+                        avatarHex = dto.avatarHex ?: 0xFF00838F,
                         isFromMe = false
                     )
                 }
@@ -132,11 +142,11 @@ class SupabaseRepository {
                     MomentItem(
                         id = dto.id,
                         authorName = dto.authorName,
-                        authorAvatarHex = dto.authorAvatarHex,
+                        authorAvatarHex = dto.authorAvatarHex ?: 0xFFFB8C00,
                         content = dto.content,
                         timeAgo = "Baru saja",
-                        likesCount = dto.likesCount,
-                        commentsCount = dto.commentsCount,
+                        likesCount = dto.likesCount ?: 0,
+                        commentsCount = dto.commentsCount ?: 0,
                         isLiked = false,
                         imageUrl = dto.imageUrl,
                         authorId = dto.authorId
@@ -232,8 +242,10 @@ class SupabaseRepository {
                 val list = response.body() ?: return@withContext null
                 list.filter { dto ->
                     val isSentByMe = isSenderMe(dto.senderId, dto.receiverId, currentUserId)
-                    if (isSentByMe && dto.deletedForSender) return@filter false
-                    if (!isSentByMe && dto.deletedForReceiver) return@filter false
+                    val delForSender = dto.deletedForSender ?: false
+                    val delForReceiver = dto.deletedForReceiver ?: false
+                    if (isSentByMe && delForSender) return@filter false
+                    if (!isSentByMe && delForReceiver) return@filter false
                     true
                 }.map { dto ->
                     ChatMessage(
@@ -242,8 +254,8 @@ class SupabaseRepository {
                         text = dto.text,
                         timestamp = dto.createdAt,
                         isFromMe = isSenderMe(dto.senderId, dto.receiverId, currentUserId),
-                        deletedForSender = dto.deletedForSender,
-                        deletedForReceiver = dto.deletedForReceiver,
+                        deletedForSender = dto.deletedForSender ?: false,
+                        deletedForReceiver = dto.deletedForReceiver ?: false,
                         imageUrl = dto.imageUrl
                     )
                 }
@@ -293,8 +305,8 @@ class SupabaseRepository {
                 return@withContext true
             }
 
-            // Fallback jika database Supabase belum memiliki kolom receiver_id/image_url
-            if (response.code() == 400 && (receiverId != null || message.imageUrl != null)) {
+            // Fallback jika database Supabase versi lama belum memiliki kolom receiver_id/image_url/deleted flags
+            if (!response.isSuccessful) {
                 val coreDto = SupabaseMessageDto(
                     id = message.id,
                     conversationId = message.conversationId,
@@ -302,12 +314,14 @@ class SupabaseRepository {
                     receiverId = null,
                     text = message.text,
                     createdAt = message.timestamp,
-                    deletedForSender = false,
-                    deletedForReceiver = false,
+                    deletedForSender = null,
+                    deletedForReceiver = null,
                     imageUrl = null
                 )
                 val retryResp = api.insertChatMessage(apiKey, auth, coreDto)
-                return@withContext retryResp.isSuccessful
+                if (retryResp.isSuccessful) {
+                    return@withContext true
+                }
             }
             false
         } catch (e: Exception) {
@@ -322,6 +336,23 @@ class SupabaseRepository {
         val auth = SupabaseClient.getAuthHeader()
 
         try {
+            // Coba query komprehensif (sender_id, receiver_id, atau percakapan terkait)
+            val orResp = api.getRecentMessagesOr(
+                apiKey,
+                auth,
+                "(sender_id.eq.$userId,receiver_id.eq.$userId,conversation_id.ilike.%25$userId%25)"
+            )
+            if (orResp.isSuccessful && orResp.body() != null) {
+                return@withContext orResp.body()
+            }
+
+            // Fallback 1: ilike dengan URL wildcard SQL %
+            val ilikeResp = api.getRecentMessages(apiKey, auth, "ilike.%25$userId%25")
+            if (ilikeResp.isSuccessful && ilikeResp.body() != null) {
+                return@withContext ilikeResp.body()
+            }
+
+            // Fallback 2: format legacy
             val response = api.getRecentMessages(apiKey, auth, "like.*$userId*")
             if (response.isSuccessful) response.body() else null
         } catch (e: Exception) {
@@ -355,7 +386,24 @@ class SupabaseRepository {
                 avatarUrl = avatarUrl
             )
             val response = api.upsertNearbyUser(apiKey, auth, dto)
-            response.isSuccessful
+            if (response.isSuccessful) {
+                return@withContext true
+            }
+
+            // Fallback jika database Supabase belum memiliki kolom last_active_at / avatar_url
+            val coreDto = SupabaseUserDto(
+                id = id,
+                name = name,
+                gender = if (gender == Gender.MALE) "male" else "female",
+                distanceMeters = 100,
+                bio = bio,
+                avatarHex = avatarHex,
+                isOnline = true,
+                lastActiveAt = null,
+                avatarUrl = null
+            )
+            val retry = api.upsertNearbyUser(apiKey, auth, coreDto)
+            retry.isSuccessful
         } catch (e: Exception) {
             Log.w(TAG, "Gagal upsert nearby_user di Supabase", e)
             false

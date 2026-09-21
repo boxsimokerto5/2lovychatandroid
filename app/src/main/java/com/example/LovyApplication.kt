@@ -12,6 +12,16 @@ class LovyApplication : Application() {
         exemptHiddenApi()
     }
 
+    override fun onCreate() {
+        super.onCreate()
+        try {
+            com.example.data.supabase.SupabaseClient.init(this)
+            com.example.data.storage.R2StorageClient.init(this)
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed initializing client services in onCreate", t)
+        }
+    }
+
     private fun exemptHiddenApi() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             try {

@@ -1865,8 +1865,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     text = dto.text,
                     timestamp = dto.createdAt,
                     isFromMe = dto.senderId.equals(myId, ignoreCase = true) || (dto.senderId.equals("me", ignoreCase = true) && !dto.receiverId.equals(myId, ignoreCase = true)),
-                    deletedForSender = dto.deletedForSender,
-                    deletedForReceiver = dto.deletedForReceiver,
+                    deletedForSender = dto.deletedForSender ?: false,
+                    deletedForReceiver = dto.deletedForReceiver ?: false,
                     imageUrl = dto.imageUrl
                 )
             }

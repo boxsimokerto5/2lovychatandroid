@@ -29,6 +29,16 @@ object SupabaseClient {
     @Volatile
     private var cachedBaseUrl: String? = null
 
+    private fun normalizeBaseUrl(raw: String): String {
+        var url = raw.trim()
+        if (url.endsWith("/rest/v1/")) {
+            url = url.substring(0, url.length - "rest/v1/".length)
+        } else if (url.endsWith("/rest/v1")) {
+            url = url.substring(0, url.length - "rest/v1".length)
+        }
+        return if (!url.endsWith("/")) "$url/" else url
+    }
+
     fun init(context: Context?) {
         if (context == null) return
         try {
@@ -42,7 +52,7 @@ object SupabaseClient {
 
     fun saveCustomCredentials(context: Context?, url: String, anonKey: String) {
         if (context == null) return
-        val cleanUrl = url.trim().let { if (!it.endsWith("/")) "$it/" else it }
+        val cleanUrl = normalizeBaseUrl(url)
         val cleanKey = anonKey.trim()
 
         try {
@@ -77,12 +87,12 @@ object SupabaseClient {
     }
 
     fun getSupabaseUrl(): String {
-        customUrl?.let { if (it.isNotBlank()) return it }
+        customUrl?.let { if (it.isNotBlank()) return normalizeBaseUrl(it) }
         return try {
             val field = BuildConfig::class.java.getField("SUPABASE_URL")
             val value = field.get(null) as? String ?: ""
             if (value.isNotBlank() && !value.contains("your-project-id")) {
-                if (value.endsWith("/")) value else "$value/"
+                normalizeBaseUrl(value)
             } else ""
         } catch (_: Exception) {
             ""

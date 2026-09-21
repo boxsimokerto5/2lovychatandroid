@@ -69,7 +69,15 @@ interface SupabaseRestApi {
     suspend fun getRecentMessages(
         @Header("apikey") apiKey: String,
         @Header("Authorization") authHeader: String,
-        @Query("conversation_id") conversationPattern: String,
+        @Query(value = "conversation_id", encoded = true) conversationPattern: String,
+        @Query("limit") limit: Int = 60
+    ): Response<List<SupabaseMessageDto>>
+
+    @GET("rest/v1/chat_messages?select=*&order=created_at.desc")
+    suspend fun getRecentMessagesOr(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query(value = "or", encoded = true) orFilter: String,
         @Query("limit") limit: Int = 60
     ): Response<List<SupabaseMessageDto>>
 

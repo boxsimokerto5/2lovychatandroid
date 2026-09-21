@@ -253,7 +253,9 @@ class AuthRepository(
                         supabaseRepo.updateAccountLoginTime(cloudAccount.id)
                         supabaseRepo.updateUserLastActive(cloudAccount.id)
 
-                        val userGender = if (cloudAccount.gender.equals("MALE", ignoreCase = true)) Gender.MALE else Gender.FEMALE
+                        val userGender = if (cloudAccount.gender?.equals("MALE", ignoreCase = true) == true) Gender.MALE else Gender.FEMALE
+                        val dispName = cloudAccount.displayName ?: cloudAccount.username
+                        val bioText = cloudAccount.bio ?: ""
 
                         // Simpan cadangan lokal
                         val map = getUsersMap()
@@ -265,9 +267,9 @@ class AuthRepository(
                             isGuest = false,
                             lovyId = cloudAccount.id,
                             username = cloudAccount.username,
-                            displayName = cloudAccount.displayName,
+                            displayName = dispName,
                             gender = userGender,
-                            bio = cloudAccount.bio,
+                            bio = bioText,
                             avatarUrl = cloudAccount.avatarUrl,
                             isGoogleUser = false
                         )
@@ -277,10 +279,10 @@ class AuthRepository(
                             success = true,
                             message = "Login berhasil! Selamat datang kembali.",
                             username = cloudAccount.username,
-                            displayName = cloudAccount.displayName,
+                            displayName = dispName,
                             lovyId = cloudAccount.id,
                             gender = userGender,
-                            bio = cloudAccount.bio,
+                            bio = bioText,
                             avatarUrl = cloudAccount.avatarUrl,
                             isGoogleUser = false
                         )
@@ -355,16 +357,18 @@ class AuthRepository(
                     supabaseRepo.updateAccountLoginTime(existingCloudAccount.id)
                     supabaseRepo.updateUserLastActive(existingCloudAccount.id)
 
-                    val userGender = if (existingCloudAccount.gender.equals("MALE", ignoreCase = true)) Gender.MALE else Gender.FEMALE
+                    val userGender = if (existingCloudAccount.gender?.equals("MALE", ignoreCase = true) == true) Gender.MALE else Gender.FEMALE
+                    val dispName = existingCloudAccount.displayName ?: existingCloudAccount.username
+                    val bioText = existingCloudAccount.bio ?: ""
 
                     val session = SavedSession(
                         isLoggedIn = true,
                         isGuest = false,
                         lovyId = existingCloudAccount.id,
                         username = existingCloudAccount.username,
-                        displayName = existingCloudAccount.displayName,
+                        displayName = dispName,
                         gender = userGender,
-                        bio = existingCloudAccount.bio,
+                        bio = bioText,
                         avatarUrl = existingCloudAccount.avatarUrl ?: avatarUrl,
                         isGoogleUser = true
                     )
@@ -372,12 +376,12 @@ class AuthRepository(
 
                     return@withContext AuthResult(
                         success = true,
-                        message = "Selamat datang kembali, ${existingCloudAccount.displayName}!",
+                        message = "Selamat datang kembali, $dispName!",
                         username = existingCloudAccount.username,
-                        displayName = existingCloudAccount.displayName,
+                        displayName = dispName,
                         lovyId = existingCloudAccount.id,
                         gender = userGender,
-                        bio = existingCloudAccount.bio,
+                        bio = bioText,
                         avatarUrl = session.avatarUrl,
                         isGoogleUser = true
                     )
@@ -405,7 +409,7 @@ class AuthRepository(
                         id = newLovyId,
                         name = displayName,
                         gender = Gender.FEMALE,
-                        bio = newAccount.bio,
+                        bio = newAccount.bio ?: "",
                         avatarUrl = avatarUrl
                     )
 
@@ -416,7 +420,7 @@ class AuthRepository(
                         username = baseUsername,
                         displayName = displayName,
                         gender = Gender.FEMALE,
-                        bio = newAccount.bio,
+                        bio = newAccount.bio ?: "",
                         avatarUrl = avatarUrl,
                         isGoogleUser = true
                     )
