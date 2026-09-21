@@ -53,3 +53,18 @@ data class SupabaseMomentDto(
     @Json(name = "author_avatar_hex") val authorAvatarHex: Long = 0xFFFB8C00,
     @Json(name = "image_url") val imageUrl: String? = null
 )
+
+@JsonClass(generateAdapter = true)
+data class SupabaseAccountDto(
+    @Json(name = "id") val id: String,
+    @Json(name = "username") val username: String,
+    @Json(name = "password_hash") val passwordHash: String? = null,
+    @Json(name = "display_name") val displayName: String,
+    @Json(name = "gender") val gender: String = "FEMALE",
+    @Json(name = "bio") val bio: String = "",
+    @Json(name = "avatar_url") val avatarUrl: String? = null,
+    @Json(name = "google_id") val googleId: String? = null,
+    @Json(name = "google_email") val googleEmail: String? = null,
+    @Json(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
+    @Json(name = "last_login_at") val lastLoginAt: Long = System.currentTimeMillis()
+)

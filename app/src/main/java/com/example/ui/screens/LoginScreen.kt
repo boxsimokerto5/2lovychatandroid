@@ -36,6 +36,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -86,12 +88,15 @@ fun LoginScreen(
     detectedGeoArea: String = "ID/MY",
     isLocalMode: Boolean = true,
     onLanguageChange: (com.example.util.AppLanguage) -> Unit = {},
-    onLoginSuccess: (name: String) -> Unit,
+    onPerformLogin: suspend (username: String, password: String) -> com.example.data.AuthResult,
+    onPerformRegister: suspend (username: String, password: String, gender: com.example.model.Gender) -> com.example.data.AuthResult,
+    onPerformGoogleLogin: suspend (googleUser: com.example.util.GoogleAuthHelper.GoogleUserResult) -> com.example.data.AuthResult,
     onGuestLogin: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var usernameInput by remember { mutableStateOf("") }
     var passwordInput by remember { mutableStateOf("") }
+    var selectedGender by remember { mutableStateOf(com.example.model.Gender.FEMALE) }
     var isPasswordVisible by remember { mutableStateOf(false) }
     var isSubmitting by remember { mutableStateOf(false) }
     var isGoogleLoading by remember { mutableStateOf(false) }
@@ -107,11 +112,16 @@ fun LoginScreen(
         isGoogleLoading = true
         scope.launch {
             val result = com.example.util.GoogleAuthHelper.signInWithGoogle(context)
-            isGoogleLoading = false
             result.onSuccess { googleUser ->
-                snackbarHostState.showSnackbar("Selamat datang, ${googleUser.displayName}!")
-                onLoginSuccess(googleUser.displayName)
+                val authResult = onPerformGoogleLogin(googleUser)
+                isGoogleLoading = false
+                if (authResult.success) {
+                    snackbarHostState.showSnackbar(authResult.message)
+                } else {
+                    snackbarHostState.showSnackbar(authResult.message)
+                }
             }.onFailure { exception ->
+                isGoogleLoading = false
                 val errorMsg = exception.message ?: "Gagal login dengan Google"
                 snackbarHostState.showSnackbar(errorMsg)
             }
@@ -122,23 +132,40 @@ fun LoginScreen(
         val trimmedUser = usernameInput.trim()
         if (trimmedUser.isEmpty()) {
             scope.launch {
-                snackbarHostState.showSnackbar("Silakan masukkan nama atau username Anda")
+                snackbarHostState.showSnackbar(
+                    if (language == com.example.util.AppLanguage.INDONESIAN) "Silakan masukkan username Anda"
+                    else "Please enter your username"
+                )
             }
             return
         }
 
         if (passwordInput.length < 4) {
             scope.launch {
-                snackbarHostState.showSnackbar("Kata sandi minimal 4 karakter")
+                snackbarHostState.showSnackbar(
+                    if (language == com.example.util.AppLanguage.INDONESIAN) "Kata sandi minimal 4 karakter"
+                    else "Password must be at least 4 characters"
+                )
             }
             return
         }
 
         isSubmitting = true
         scope.launch {
-            delay(700)
-            isSubmitting = false
-            onLoginSuccess(trimmedUser)
+            try {
+                val result = if (isSignUpMode) {
+                    onPerformRegister(trimmedUser, passwordInput, selectedGender)
+                } else {
+                    onPerformLogin(trimmedUser, passwordInput)
+                }
+                isSubmitting = false
+                if (!result.success) {
+                    snackbarHostState.showSnackbar(result.message)
+                }
+            } catch (e: Exception) {
+                isSubmitting = false
+                snackbarHostState.showSnackbar(e.message ?: "Terjadi kesalahan saat memproses akun")
+            }
         }
     }
 
@@ -415,6 +442,54 @@ fun LoginScreen(
                             .fillMaxWidth()
                             .testTag("input_password")
                     )
+
+                    if (isSignUpMode) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = if (language == com.example.util.AppLanguage.INDONESIAN) "Jenis Kelamin" else "Gender",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = NeutralDark
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            FilterChip(
+                                selected = selectedGender == com.example.model.Gender.FEMALE,
+                                onClick = { selectedGender = com.example.model.Gender.FEMALE },
+                                label = {
+                                    Text(
+                                        text = if (language == com.example.util.AppLanguage.INDONESIAN) "👩 Wanita" else "👩 Female",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = EmeraldGreen.copy(alpha = 0.15f),
+                                    selectedLabelColor = EmeraldGreen
+                                ),
+                                modifier = Modifier.weight(1f).testTag("chip_gender_female")
+                            )
+                            FilterChip(
+                                selected = selectedGender == com.example.model.Gender.MALE,
+                                onClick = { selectedGender = com.example.model.Gender.MALE },
+                                label = {
+                                    Text(
+                                        text = if (language == com.example.util.AppLanguage.INDONESIAN) "👨 Pria" else "👨 Male",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = EmeraldGreen.copy(alpha = 0.15f),
+                                    selectedLabelColor = EmeraldGreen
+                                ),
+                                modifier = Modifier.weight(1f).testTag("chip_gender_male")
+                            )
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(12.dp))
 

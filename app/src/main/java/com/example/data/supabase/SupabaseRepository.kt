@@ -325,8 +325,8 @@ class SupabaseRepository {
         name: String,
         gender: Gender,
         bio: String,
-        avatarHex: Long,
-        avatarUrl: String?
+        avatarHex: Long = 0xFFFB8C00,
+        avatarUrl: String? = null
     ): Boolean = withContext(Dispatchers.IO) {
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
@@ -390,6 +390,74 @@ class SupabaseRepository {
             response.isSuccessful
         } catch (e: Exception) {
             Log.w(TAG, "Gagal memperbarui last_active_at pengguna", e)
+            false
+        }
+    }
+
+    suspend fun findAccountByUsername(username: String): SupabaseAccountDto? = withContext(Dispatchers.IO) {
+        val api = SupabaseClient.getApi() ?: return@withContext null
+        val apiKey = SupabaseClient.getSupabaseAnonKey()
+        val auth = SupabaseClient.getAuthHeader()
+        val normalized = username.trim().lowercase()
+
+        try {
+            val response = api.getAccountByUsername(apiKey, auth, "eq.$normalized")
+            if (response.isSuccessful) {
+                response.body()?.firstOrNull()
+            } else {
+                Log.d(TAG, "findAccountByUsername code=${response.code()} msg=${response.message()}")
+                null
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "findAccountByUsername error: ${e.message}")
+            null
+        }
+    }
+
+    suspend fun findAccountByGoogle(googleEmail: String): SupabaseAccountDto? = withContext(Dispatchers.IO) {
+        val api = SupabaseClient.getApi() ?: return@withContext null
+        val apiKey = SupabaseClient.getSupabaseAnonKey()
+        val auth = SupabaseClient.getAuthHeader()
+        val normalized = googleEmail.trim().lowercase()
+
+        try {
+            val response = api.getAccountByGoogle(apiKey, auth, "eq.$normalized")
+            if (response.isSuccessful) {
+                response.body()?.firstOrNull()
+            } else {
+                Log.d(TAG, "findAccountByGoogle code=${response.code()} msg=${response.message()}")
+                null
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "findAccountByGoogle error: ${e.message}")
+            null
+        }
+    }
+
+    suspend fun registerOrUpdateAccount(account: SupabaseAccountDto): Boolean = withContext(Dispatchers.IO) {
+        val api = SupabaseClient.getApi() ?: return@withContext false
+        val apiKey = SupabaseClient.getSupabaseAnonKey()
+        val auth = SupabaseClient.getAuthHeader()
+
+        try {
+            val response = api.upsertAccount(apiKey, auth, account)
+            response.isSuccessful
+        } catch (e: Exception) {
+            Log.w(TAG, "registerOrUpdateAccount error: ${e.message}")
+            false
+        }
+    }
+
+    suspend fun updateAccountLoginTime(accountId: String): Boolean = withContext(Dispatchers.IO) {
+        val api = SupabaseClient.getApi() ?: return@withContext false
+        val apiKey = SupabaseClient.getSupabaseAnonKey()
+        val auth = SupabaseClient.getAuthHeader()
+
+        try {
+            val response = api.updateAccountLoginTime(apiKey, auth, "eq.$accountId", mapOf("last_login_at" to System.currentTimeMillis()))
+            response.isSuccessful
+        } catch (e: Exception) {
+            Log.w(TAG, "updateAccountLoginTime error: ${e.message}")
             false
         }
     }

@@ -110,4 +110,36 @@ interface SupabaseRestApi {
         @Header("Authorization") authHeader: String,
         @Query("id") idFilter: String
     ): Response<Unit>
+
+    @GET("rest/v1/app_accounts?select=*")
+    suspend fun getAccountByUsername(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("username") usernameFilter: String,
+        @Query("limit") limit: Int = 1
+    ): Response<List<SupabaseAccountDto>>
+
+    @GET("rest/v1/app_accounts?select=*")
+    suspend fun getAccountByGoogle(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("google_email") googleEmailFilter: String,
+        @Query("limit") limit: Int = 1
+    ): Response<List<SupabaseAccountDto>>
+
+    @POST("rest/v1/app_accounts")
+    @Headers("Prefer: return=representation,resolution=merge-duplicates")
+    suspend fun upsertAccount(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Body account: SupabaseAccountDto
+    ): Response<List<SupabaseAccountDto>>
+
+    @PATCH("rest/v1/app_accounts")
+    suspend fun updateAccountLoginTime(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("id") idFilter: String,
+        @Body updates: Map<String, Long>
+    ): Response<Unit>
 }

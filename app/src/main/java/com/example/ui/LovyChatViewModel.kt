@@ -26,6 +26,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.util.Log
 import java.util.UUID
+import com.example.data.AuthRepository
+import com.example.data.AuthResult
+import com.example.util.GoogleAuthHelper
 
 sealed interface CurrentScreen {
     object Splash : CurrentScreen
@@ -114,6 +117,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         val db = AppDatabase.getInstance(app)
         db.chatFriendDao()
     }
+    private val authRepo by lazy {
+        AuthRepository(getApplication<Application>(), supabaseRepo)
+    }
 
     // --- Strategi Hemat Kuota Database untuk 100k+ Users (Smart Caching & Throttling) ---
     private var lastNearbyScanTime = 0L
@@ -156,6 +162,22 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         observeChatFriends()
         updateUserActivity()
         initFirebaseMessaging()
+        // Pulihkan sesi login jika sebelumnya pengguna sudah masuk
+        try {
+            val savedSession = authRepo.getSavedSession()
+            if (savedSession != null && savedSession.isLoggedIn) {
+                _uiState.update {
+                    it.copy(
+                        isLoggedIn = true,
+                        isGuest = savedSession.isGuest,
+                        myName = savedSession.displayName.ifBlank { savedSession.username },
+                        myLovyId = savedSession.lovyId
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            Log.w("LovyChatViewModel", "Gagal memulihkan sesi login: ${e.message}")
+        }
         // Coba sinkronisasi data awal jika Supabase sudah terkonfigurasi
         syncFromSupabase()
     }
@@ -760,6 +782,102 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         syncUserProfileToSupabase()
     }
 
+    suspend fun performRegister(username: String, password: String, gender: Gender): AuthResult {
+        val result = authRepo.register(username = username, password = password, displayName = username, gender = gender)
+        if (result.success) {
+            val lovyId = result.lovyId ?: "lovy_${(100000..999999).random()}"
+            val finalName = result.displayName ?: result.username ?: username
+            _uiState.update {
+                it.copy(
+                    isLoggedIn = true,
+                    isGuest = false,
+                    myName = finalName,
+                    myLovyId = lovyId,
+                    currentScreen = CurrentScreen.Main,
+                    conversations = emptyList(),
+                    messagesMap = emptyMap()
+                )
+            }
+            val newProfile = UserProfile(
+                id = "current_user",
+                displayName = finalName,
+                bio = result.bio ?: "Halo, saya pengguna baru Lovy Chat! ✨",
+                lovyId = lovyId,
+                gender = gender.name,
+                city = "Jakarta Selatan"
+            )
+            saveUserProfile(newProfile)
+            updateUserActivity()
+            syncFromSupabase(forceRefresh = true)
+            syncUserProfileToSupabase()
+        }
+        return result
+    }
+
+    suspend fun performLogin(username: String, password: String): AuthResult {
+        val result = authRepo.login(username = username, password = password)
+        if (result.success) {
+            val lovyId = result.lovyId ?: _uiState.value.myLovyId
+            val finalName = result.displayName ?: result.username ?: username
+            _uiState.update {
+                it.copy(
+                    isLoggedIn = true,
+                    isGuest = false,
+                    myName = finalName,
+                    myLovyId = lovyId,
+                    currentScreen = CurrentScreen.Main,
+                    conversations = emptyList(),
+                    messagesMap = emptyMap()
+                )
+            }
+            val existingProfile = _uiState.value.userProfile
+            val updatedProfile = existingProfile.copy(
+                displayName = finalName,
+                lovyId = lovyId,
+                gender = result.gender.name,
+                bio = result.bio ?: existingProfile.bio,
+                profilePicture = result.avatarUrl ?: existingProfile.profilePicture
+            )
+            saveUserProfile(updatedProfile)
+            updateUserActivity()
+            syncFromSupabase(forceRefresh = true)
+            syncUserProfileToSupabase()
+        }
+        return result
+    }
+
+    suspend fun performGoogleLogin(googleUser: GoogleAuthHelper.GoogleUserResult): AuthResult {
+        val result = authRepo.loginWithGoogle(googleUser)
+        if (result.success) {
+            val lovyId = result.lovyId ?: _uiState.value.myLovyId
+            val finalName = result.displayName ?: googleUser.displayName
+            _uiState.update {
+                it.copy(
+                    isLoggedIn = true,
+                    isGuest = false,
+                    myName = finalName,
+                    myLovyId = lovyId,
+                    currentScreen = CurrentScreen.Main,
+                    conversations = emptyList(),
+                    messagesMap = emptyMap()
+                )
+            }
+            val existingProfile = _uiState.value.userProfile
+            val updatedProfile = existingProfile.copy(
+                displayName = finalName,
+                lovyId = lovyId,
+                email = googleUser.email,
+                profilePicture = result.avatarUrl ?: googleUser.profilePictureUri ?: existingProfile.profilePicture,
+                bio = result.bio ?: existingProfile.bio
+            )
+            saveUserProfile(updatedProfile)
+            updateUserActivity()
+            syncFromSupabase(forceRefresh = true)
+            syncUserProfileToSupabase()
+        }
+        return result
+    }
+
     fun loginAsGuest() {
         _uiState.update {
             it.copy(
@@ -777,12 +895,14 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun logout() {
+        authRepo.clearSession()
         val wasRealUser = !_uiState.value.isGuest && _uiState.value.isLoggedIn
         if (wasRealUser) {
+            val myId = _uiState.value.myLovyId
             // Tandai dan hapus semua pesan di Supabase untuk pengirim saat logout
             viewModelScope.launch {
                 try {
-                    supabaseRepo.markAllSenderMessagesDeleted("me")
+                    supabaseRepo.markAllSenderMessagesDeleted(myId)
                 } catch (e: Exception) {
                     Log.w("LovyChatViewModel", "Gagal membersihkan pesan di Supabase saat logout", e)
                 }

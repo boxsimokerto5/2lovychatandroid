@@ -128,7 +128,22 @@ create table if not exists moments (
     likes_count int default 0,
     comments_count int default 0,
     created_at bigint not null,
-    author_avatar_hex bigint default 4222123520
+    author_avatar_hex bigint default 4222123520,
+    image_url text
+);
+
+create table if not exists app_accounts (
+    id text primary key,
+    username text unique not null,
+    password_hash text,
+    display_name text not null,
+    gender text default 'FEMALE',
+    bio text default '',
+    avatar_url text,
+    google_id text unique,
+    google_email text,
+    created_at bigint not null,
+    last_login_at bigint not null
 );
 
 -- Buka policy Read & Insert untuk public (anon)
@@ -145,7 +160,12 @@ create policy "Allow anon all messages" on chat_messages for all using (true) wi
 alter table moments enable row level security;
 create policy "Allow anon all moments" on moments for all using (true) with check (true);
 
+alter table app_accounts enable row level security;
+create policy "Allow anon all accounts" on app_accounts for all using (true) with check (true);
+
 -- Indeks performa untuk 30k+ pengguna:
+create index if not exists idx_accounts_username on app_accounts (username);
+create index if not exists idx_accounts_google on app_accounts (google_email);
 create index if not exists idx_chat_messages_conv on chat_messages (conversation_id, created_at asc);
 create index if not exists idx_chat_messages_sender on chat_messages (sender_id);
 create index if not exists idx_ocean_bottles_created on ocean_bottles (created_at desc);
