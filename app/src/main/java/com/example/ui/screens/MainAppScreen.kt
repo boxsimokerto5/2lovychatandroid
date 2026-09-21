@@ -91,7 +91,7 @@ fun MainAppScreen(
                 onPermissionResult = { granted -> viewModel.updateLocationPermission(granted) },
                 onBack = { viewModel.navigateBack() },
                 onFilterChange = { viewModel.setNearbyGenderFilter(it) },
-                onRefreshScan = { viewModel.refreshNearbyScan() },
+                onRefreshScan = { viewModel.refreshNearbyScan(forceRefresh = true) },
                 onSayHi = { viewModel.sayHiToUser(it) },
                 onExpandNearby = { viewModel.expandNearbyUsers() }
             )
@@ -129,6 +129,9 @@ fun MainAppScreen(
                 },
                 onDeleteMoment = { momentId ->
                     viewModel.deleteMoment(momentId)
+                },
+                onRefresh = {
+                    viewModel.refreshMoments(force = true)
                 },
                 isUploadingPhoto = uiState.isUploadingPhoto,
                 uploadProgressText = uiState.uploadProgressText
@@ -224,6 +227,7 @@ fun MainAppScreen(
                                 viewModel.openChat(conv.id, conv.partnerName, conv.partnerAvatarHex)
                             },
                             onStartNewChat = {
+                                viewModel.refreshNearbyScan(forceRefresh = false)
                                 viewModel.navigateTo(CurrentScreen.Nearby)
                             }
                         )
@@ -238,6 +242,7 @@ fun MainAppScreen(
                                     viewModel.sayHiToUser(user)
                                 },
                                 onNavigateToNearby = {
+                                    viewModel.refreshNearbyScan(forceRefresh = false)
                                     viewModel.navigateTo(CurrentScreen.Nearby)
                                 }
                             )
@@ -245,12 +250,14 @@ fun MainAppScreen(
                         2 -> DiscoverTabScreen(
                             language = uiState.language,
                             onNavigateToNearby = {
+                                viewModel.refreshNearbyScan(forceRefresh = false)
                                 viewModel.navigateTo(CurrentScreen.Nearby)
                             },
                             onNavigateToBottle = {
                                 viewModel.navigateTo(CurrentScreen.Bottle)
                             },
                             onNavigateToMoments = {
+                                viewModel.refreshMoments(force = false)
                                 viewModel.navigateTo(CurrentScreen.Moments)
                             }
                         )

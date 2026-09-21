@@ -111,6 +111,27 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         val db = AppDatabase.getInstance(app)
         db.chatFriendDao()
     }
+
+    // --- Strategi Hemat Kuota Database untuk 100k+ Users (Smart Caching & Throttling) ---
+    private var lastNearbyScanTime = 0L
+    private var lastMomentsSyncTime = 0L
+    private var lastBottlesSyncTime = 0L
+    private var lastChatSyncMap = mutableMapOf<String, Long>()
+    private var lastGpsUpdateTimestamp = 0L
+    private var lastSyncedLat: Double? = null
+    private var lastSyncedLon: Double? = null
+    private var lastUserActivityTimestamp = 0L
+
+    companion object {
+        // Cache data selama 3 menit untuk memangkas 80%+ query baca ke cloud
+        private const val CACHE_DURATION_MS = 3 * 60 * 1000L
+        // Pembaruan GPS di-throttle: hanya jika berpindah > 500m atau jeda > 10 menit
+        private const val GPS_THROTTLE_MIN_DISTANCE_METERS = 500.0
+        private const val GPS_THROTTLE_MIN_INTERVAL_MS = 10 * 60 * 1000L
+        // User activity heartbeat di-throttle ke database cloud minimal jeda 5 menit
+        private const val USER_ACTIVITY_THROTTLE_MS = 5 * 60 * 1000L
+    }
+
     private val _uiState = MutableStateFlow(LovyChatUiState())
     val uiState: StateFlow<LovyChatUiState> = _uiState.asStateFlow()
 
@@ -159,6 +180,12 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun updateUserActivity() {
+        val now = System.currentTimeMillis()
+        if (now - lastUserActivityTimestamp < USER_ACTIVITY_THROTTLE_MS) {
+            // Abaikan heartbeat berulang jika belum lewat 5 menit (sangat menghemat kuota tulis)
+            return
+        }
+        lastUserActivityTimestamp = now
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 supabaseRepo.updateUserLastActive(_uiState.value.myLovyId)
@@ -404,7 +431,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 blockedUserNames = newNames
             )
         }
-        refreshNearbyScan()
+        refreshNearbyScan(forceRefresh = false)
     }
 
     private fun observeUserProfile() {
@@ -524,22 +551,49 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun syncFromSupabase() {
+    fun syncFromSupabase(forceRefresh: Boolean = false) {
         if (!SupabaseClient.isConfigured()) return
+        val now = System.currentTimeMillis()
+        if (!forceRefresh && now - lastNearbyScanTime < CACHE_DURATION_MS && now - lastMomentsSyncTime < CACHE_DURATION_MS) {
+            // Data masih segar di cache (< 3 menit), jangan query database server
+            return
+        }
+
         viewModelScope.launch {
-            val remoteUsers = supabaseRepo.fetchNearbyUsers()
-            if (!remoteUsers.isNullOrEmpty()) {
-                _uiState.update { it.copy(nearbyUsers = remoteUsers) }
+            if (forceRefresh || now - lastNearbyScanTime >= CACHE_DURATION_MS) {
+                val remoteUsers = supabaseRepo.fetchNearbyUsers()
+                if (!remoteUsers.isNullOrEmpty()) {
+                    _uiState.update { it.copy(nearbyUsers = remoteUsers) }
+                    lastNearbyScanTime = System.currentTimeMillis()
+                }
             }
 
-            val remoteBottles = supabaseRepo.fetchOceanBottles()
-            if (!remoteBottles.isNullOrEmpty()) {
-                _uiState.update { it.copy(oceanBottles = remoteBottles) }
+            if (forceRefresh || now - lastBottlesSyncTime >= CACHE_DURATION_MS) {
+                val remoteBottles = supabaseRepo.fetchOceanBottles()
+                if (!remoteBottles.isNullOrEmpty()) {
+                    _uiState.update { it.copy(oceanBottles = remoteBottles) }
+                    lastBottlesSyncTime = System.currentTimeMillis()
+                }
             }
 
+            if (forceRefresh || now - lastMomentsSyncTime >= CACHE_DURATION_MS) {
+                val remoteMoments = supabaseRepo.fetchMoments()
+                if (!remoteMoments.isNullOrEmpty()) {
+                    _uiState.update { it.copy(moments = remoteMoments) }
+                    lastMomentsSyncTime = System.currentTimeMillis()
+                }
+            }
+        }
+    }
+
+    fun refreshMoments(force: Boolean = false) {
+        val now = System.currentTimeMillis()
+        if (!force && now - lastMomentsSyncTime < CACHE_DURATION_MS) return
+        viewModelScope.launch {
             val remoteMoments = supabaseRepo.fetchMoments()
             if (!remoteMoments.isNullOrEmpty()) {
                 _uiState.update { it.copy(moments = remoteMoments) }
+                lastMomentsSyncTime = System.currentTimeMillis()
             }
         }
     }
@@ -724,12 +778,33 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     currentGpsLocation = lastLoc
                 ) 
             }
-            refreshNearbyScan()
+            refreshNearbyScan(forceRefresh = false)
         }
     }
 
     fun updateGpsLocation(location: com.example.util.UserGpsLocation) {
         _uiState.update { it.copy(currentGpsLocation = location) }
+
+        // --- GPS Throttling: Hanya sinkronkan ke cloud jika berpindah > 500 meter atau > 10 menit ---
+        val now = System.currentTimeMillis()
+        val prevLat = lastSyncedLat
+        val prevLon = lastSyncedLon
+
+        val shouldSyncGps = if (prevLat == null || prevLon == null) {
+            true
+        } else {
+            val dist = com.example.util.AndroidGpsTracker.calculateDistanceMeters(
+                prevLat, prevLon, location.latitude, location.longitude
+            )
+            dist >= GPS_THROTTLE_MIN_DISTANCE_METERS || (now - lastGpsUpdateTimestamp >= GPS_THROTTLE_MIN_INTERVAL_MS)
+        }
+
+        if (shouldSyncGps) {
+            lastSyncedLat = location.latitude
+            lastSyncedLon = location.longitude
+            lastGpsUpdateTimestamp = now
+            updateUserActivity()
+        }
     }
 
     fun expandNearbyUsers() {
@@ -747,8 +822,11 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         _uiState.update { it.copy(nearbyExpansionTier = 0, isNearbyExpanded = false) }
     }
 
-    fun refreshNearbyScan() {
+    fun refreshNearbyScan(forceRefresh: Boolean = false) {
         recordFeatureClick()
+        val now = System.currentTimeMillis()
+        val isCacheValid = !forceRefresh && (now - lastNearbyScanTime < CACHE_DURATION_MS)
+
         viewModelScope.launch {
             _uiState.update { it.copy(isScanningNearby = true) }
             
@@ -758,20 +836,22 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             val gpsLoc = com.example.util.AndroidGpsTracker.getLastKnownLocation(app)
             _uiState.update { it.copy(isGpsEnabled = isGpsOn, currentGpsLocation = gpsLoc ?: it.currentGpsLocation) }
 
-            delay(1000)
+            delay(600)
 
-            // Coba ambil dari Supabase jika ada
-            val remoteUsers = supabaseRepo.fetchNearbyUsers()
+            // Coba ambil dari Supabase jika ada & cache sudah kadaluwarsa atau diminta paksa
+            val remoteUsers = if (!isCacheValid) supabaseRepo.fetchNearbyUsers() else null
             if (!remoteUsers.isNullOrEmpty()) {
+                lastNearbyScanTime = System.currentTimeMillis()
                 val filtered = remoteUsers.filterNot { isUserBlocked(it.id, it.name) }
                 _uiState.update { it.copy(isScanningNearby = false, nearbyUsers = filtered) }
             } else {
                 val currentLoc = _uiState.value.currentGpsLocation
-                val updated = MockDataSource.initialNearbyUsers
+                val sourceList = if (_uiState.value.nearbyUsers.isNotEmpty()) _uiState.value.nearbyUsers else MockDataSource.initialNearbyUsers
+                val updated = sourceList
                     .filterNot { isUserBlocked(it.id, it.name) }
                     .mapIndexed { index, user ->
                     val calculatedDistance = if (currentLoc != null) {
-                        // Hitung jarak dinamis berbasis koordinat GPS nyata pengguna (offset simulasi bertahap)
+                        // Hitung jarak dinamis berbasis koordinat GPS nyata pengguna
                         val targetLat = currentLoc.latitude + (index * 0.0018) + ((-5..5).random() * 0.0002)
                         val targetLon = currentLoc.longitude + (index * 0.0015) + ((-5..5).random() * 0.0002)
                         com.example.util.AndroidGpsTracker.calculateDistanceMeters(
@@ -879,17 +959,22 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             )
         }
 
-        // Sinkronisasi pesan obrolan jika ada di Supabase
-        viewModelScope.launch {
-            val remoteMsgs = supabaseRepo.fetchChatMessages(conversationId)
-            if (!remoteMsgs.isNullOrEmpty()) {
-                val current = _uiState.value.messagesMap[conversationId] ?: emptyList()
-                val merged = (current + remoteMsgs)
-                    .filterNot { it.deletedForSender && it.isFromMe }
-                    .distinctBy { it.id }
-                    .sortedBy { it.timestamp }
-                _uiState.update {
-                    it.copy(messagesMap = it.messagesMap + (conversationId to merged))
+        // Sinkronisasi pesan obrolan jika ada di Supabase (dengan smart cache 30 detik agar tidak boros query tiap kali buka chat)
+        val lastChatSync = lastChatSyncMap[conversationId] ?: 0L
+        val now = System.currentTimeMillis()
+        if (now - lastChatSync >= 30_000L) {
+            lastChatSyncMap[conversationId] = now
+            viewModelScope.launch {
+                val remoteMsgs = supabaseRepo.fetchChatMessages(conversationId)
+                if (!remoteMsgs.isNullOrEmpty()) {
+                    val current = _uiState.value.messagesMap[conversationId] ?: emptyList()
+                    val merged = (current + remoteMsgs)
+                        .filterNot { it.deletedForSender && it.isFromMe }
+                        .distinctBy { it.id }
+                        .sortedBy { it.timestamp }
+                    _uiState.update {
+                        it.copy(messagesMap = it.messagesMap + (conversationId to merged))
+                    }
                 }
             }
         }

@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -108,6 +109,7 @@ fun MomentsScreen(
     onPostMomentWithDetails: ((content: String, imageUrl: String?, locationTag: String?) -> Unit)? = null,
     onPostMomentWithPhotoUri: ((content: String, uri: android.net.Uri?, locationTag: String?) -> Unit)? = null,
     onDeleteMoment: ((String) -> Unit)? = null,
+    onRefresh: (() -> Unit)? = null,
     isUploadingPhoto: Boolean = false,
     uploadProgressText: String? = null,
     modifier: Modifier = Modifier
@@ -182,6 +184,20 @@ fun MomentsScreen(
                             contentDescription = "Kembali",
                             tint = Color.White
                         )
+                    }
+                },
+                actions = {
+                    if (onRefresh != null) {
+                        IconButton(
+                            onClick = onRefresh,
+                            modifier = Modifier.testTag("moments_btn_refresh")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Muat Ulang Momen",
+                                tint = Color.White
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = EmeraldGreen)
