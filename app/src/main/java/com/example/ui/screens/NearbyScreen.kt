@@ -150,16 +150,25 @@ fun NearbyScreen(
     val displayedLimit = when (nearbyExpansionTier) {
         0 -> 12
         1 -> 30
-        else -> 45
+        2 -> 45
+        3 -> 70
+        4 -> 100
+        else -> 125
     }
 
     val displayedUsers = remember(filteredUsers, nearbyExpansionTier) {
         filteredUsers.take(displayedLimit)
     }
 
-    val isFullyExpanded = nearbyExpansionTier >= 2 || displayedUsers.size >= filteredUsers.size
+    val isFullyExpanded = nearbyExpansionTier >= 5 || displayedUsers.size >= filteredUsers.size
     val hasHiddenUsers = !isFullyExpanded && filteredUsers.size > displayedUsers.size
-    val nextTargetLimit = if (nearbyExpansionTier == 0) minOf(30, filteredUsers.size) else minOf(45, filteredUsers.size)
+    val nextTargetLimit = when (nearbyExpansionTier) {
+        0 -> minOf(30, filteredUsers.size)
+        1 -> minOf(45, filteredUsers.size)
+        2 -> minOf(70, filteredUsers.size)
+        3 -> minOf(100, filteredUsers.size)
+        else -> minOf(125, filteredUsers.size)
+    }
     val hiddenCount = (nextTargetLimit - displayedUsers.size).coerceAtLeast(0)
     var isRadarView by remember { mutableStateOf(true) }
 
@@ -463,27 +472,45 @@ fun NearbyScreen(
                     item {
                         val cardTitle = when {
                             language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 0 -> "Buka $hiddenCount Teman Sekitar Lagi"
+                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 1 -> "Buka $hiddenCount Teman Sekitar Lagi"
+                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 2 -> "Buka $hiddenCount Teman Sekitar Lagi (Total $nextTargetLimit User)"
+                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 3 -> "Buka $hiddenCount Teman Sekitar Lagi (Total $nextTargetLimit User)"
                             language == com.example.util.AppLanguage.INDONESIAN -> "Buka Maksimal Teman Sekitar ($nextTargetLimit User)"
                             nearbyExpansionTier == 0 -> "Unlock $hiddenCount More Nearby Friends"
+                            nearbyExpansionTier == 1 -> "Unlock $hiddenCount More Nearby Friends"
+                            nearbyExpansionTier == 2 -> "Unlock $hiddenCount More Nearby Friends (Total $nextTargetLimit Users)"
+                            nearbyExpansionTier == 3 -> "Unlock $hiddenCount More Nearby Friends (Total $nextTargetLimit Users)"
                             else -> "Unlock Maximum Nearby Friends ($nextTargetLimit Users)"
                         }
                         val cardDesc = when {
                             language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 0 -> "Tonton video singkat untuk menampilkan hingga 30 pengguna aktif di sekitar Anda."
-                            language == com.example.util.AppLanguage.INDONESIAN -> "Tonton video singkat untuk membuka hingga 45 pengguna aktif di sekitar Anda secara maksimal!"
+                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 1 -> "Tonton video singkat untuk menampilkan hingga 45 pengguna aktif di sekitar Anda."
+                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 2 -> "Tonton video singkat untuk membuka hingga 70 pengguna aktif di sekitar Anda!"
+                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 3 -> "Tonton video singkat untuk membuka hingga 100 pengguna aktif di sekitar Anda!"
+                            language == com.example.util.AppLanguage.INDONESIAN -> "Tonton video singkat untuk membuka hingga 125 pengguna aktif secara maksimal!"
                             nearbyExpansionTier == 0 -> "Watch a short video to display up to 30 active nearby users."
-                            else -> "Watch a short video to unlock up to 45 active nearby users!"
+                            nearbyExpansionTier == 1 -> "Watch a short video to display up to 45 active nearby users."
+                            nearbyExpansionTier == 2 -> "Watch a short video to unlock up to 70 active nearby users!"
+                            nearbyExpansionTier == 3 -> "Watch a short video to unlock up to 100 active nearby users!"
+                            else -> "Watch a short video to unlock up to 125 active nearby users!"
                         }
                         val toastMsg = when {
-                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 0 -> "Selamat! Pengguna sekitar ditambah menjadi $nextTargetLimit orang 🎉"
-                            language == com.example.util.AppLanguage.INDONESIAN -> "Selamat! Pengguna sekitar maksimal telah terbuka 🎉"
-                            nearbyExpansionTier == 0 -> "Success! Nearby users expanded to $nextTargetLimit people 🎉"
-                            else -> "Success! Maximum nearby users unlocked 🎉"
+                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier < 4 -> "Selamat! Pengguna sekitar ditambah menjadi $nextTargetLimit orang 🎉"
+                            language == com.example.util.AppLanguage.INDONESIAN -> "Selamat! Pengguna sekitar maksimal ($nextTargetLimit orang) telah terbuka 🎉"
+                            nearbyExpansionTier < 4 -> "Success! Nearby users expanded to $nextTargetLimit people 🎉"
+                            else -> "Success! Maximum nearby users ($nextTargetLimit people) unlocked 🎉"
                         }
                         val btnText = when {
                             language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 0 -> "Tonton Iklan (+18 Pengguna)"
-                            language == com.example.util.AppLanguage.INDONESIAN -> "Tonton Iklan (+15 Pengguna Lagi)"
+                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 1 -> "Tonton Iklan (+15 Pengguna Lagi)"
+                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 2 -> "Tonton Iklan (+25 Pengguna)"
+                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 3 -> "Tonton Iklan (+30 Pengguna)"
+                            language == com.example.util.AppLanguage.INDONESIAN -> "Tonton Iklan (+25 Pengguna Maksimal)"
                             nearbyExpansionTier == 0 -> "Watch Ad (+18 Users)"
-                            else -> "Watch Ad (+15 More Users)"
+                            nearbyExpansionTier == 1 -> "Watch Ad (+15 More Users)"
+                            nearbyExpansionTier == 2 -> "Watch Ad (+25 More Users)"
+                            nearbyExpansionTier == 3 -> "Watch Ad (+30 More Users)"
+                            else -> "Watch Ad (+25 Maximum Users)"
                         }
 
                         Card(

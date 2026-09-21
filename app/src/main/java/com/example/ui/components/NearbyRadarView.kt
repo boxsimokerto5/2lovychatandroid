@@ -150,7 +150,7 @@ fun calculateRadarPositions(count: Int): List<RadarPosition> {
             val angle = 12f + i * (360f / maxOf(n3, 1))
             positions.add(RadarPosition(r3, angle))
         }
-    } else {
+    } else if (count <= 45) {
         // 4 concentric rings designed for up to 45 blips with generous spacing
         val r1 = 0.28f
         val r2 = 0.47f
@@ -179,6 +179,105 @@ fun calculateRadarPositions(count: Int): List<RadarPosition> {
             val angle = 27f + i * (360f / maxOf(n4, 1))
             positions.add(RadarPosition(r4, angle))
         }
+    } else if (count <= 70) {
+        // 5 concentric rings for up to 70 blips
+        val r1 = 0.24f
+        val r2 = 0.40f
+        val r3 = 0.56f
+        val r4 = 0.72f
+        val r5 = 0.88f
+        val n1 = 7
+        val n2 = 11
+        val n3 = 15
+        val n4 = 18
+        val n5 = (count - n1 - n2 - n3 - n4).coerceAtLeast(0)
+
+        for (i in 0 until minOf(n1, count)) {
+            positions.add(RadarPosition(r1, 14f + i * (360f / n1)))
+        }
+        for (i in 0 until minOf(n2, (count - n1).coerceAtLeast(0))) {
+            positions.add(RadarPosition(r2, 28f + i * (360f / n2)))
+        }
+        for (i in 0 until minOf(n3, (count - n1 - n2).coerceAtLeast(0))) {
+            positions.add(RadarPosition(r3, 12f + i * (360f / n3)))
+        }
+        for (i in 0 until minOf(n4, (count - n1 - n2 - n3).coerceAtLeast(0))) {
+            positions.add(RadarPosition(r4, 25f + i * (360f / n4)))
+        }
+        for (i in 0 until n5) {
+            positions.add(RadarPosition(r5, 9f + i * (360f / maxOf(n5, 1))))
+        }
+    } else if (count <= 100) {
+        // 6 concentric rings for up to 100 blips
+        val r1 = 0.22f
+        val r2 = 0.35f
+        val r3 = 0.48f
+        val r4 = 0.62f
+        val r5 = 0.75f
+        val r6 = 0.88f
+        val n1 = 7
+        val n2 = 11
+        val n3 = 15
+        val n4 = 19
+        val n5 = 23
+        val n6 = (count - n1 - n2 - n3 - n4 - n5).coerceAtLeast(0)
+
+        for (i in 0 until minOf(n1, count)) {
+            positions.add(RadarPosition(r1, 16f + i * (360f / n1)))
+        }
+        for (i in 0 until minOf(n2, (count - n1).coerceAtLeast(0))) {
+            positions.add(RadarPosition(r2, 32f + i * (360f / n2)))
+        }
+        for (i in 0 until minOf(n3, (count - n1 - n2).coerceAtLeast(0))) {
+            positions.add(RadarPosition(r3, 10f + i * (360f / n3)))
+        }
+        for (i in 0 until minOf(n4, (count - n1 - n2 - n3).coerceAtLeast(0))) {
+            positions.add(RadarPosition(r4, 26f + i * (360f / n4)))
+        }
+        for (i in 0 until minOf(n5, (count - n1 - n2 - n3 - n4).coerceAtLeast(0))) {
+            positions.add(RadarPosition(r5, 8f + i * (360f / n5)))
+        }
+        for (i in 0 until n6) {
+            positions.add(RadarPosition(r6, 20f + i * (360f / maxOf(n6, 1))))
+        }
+    } else {
+        // 7 concentric rings for up to 125 blips
+        val r1 = 0.20f
+        val r2 = 0.32f
+        val r3 = 0.44f
+        val r4 = 0.56f
+        val r5 = 0.68f
+        val r6 = 0.79f
+        val r7 = 0.90f
+        val n1 = 7
+        val n2 = 11
+        val n3 = 15
+        val n4 = 19
+        val n5 = 22
+        val n6 = 25
+        val n7 = (count - n1 - n2 - n3 - n4 - n5 - n6).coerceAtLeast(0)
+
+        for (i in 0 until minOf(n1, count)) {
+            positions.add(RadarPosition(r1, 15f + i * (360f / n1)))
+        }
+        for (i in 0 until minOf(n2, (count - n1).coerceAtLeast(0))) {
+            positions.add(RadarPosition(r2, 30f + i * (360f / n2)))
+        }
+        for (i in 0 until minOf(n3, (count - n1 - n2).coerceAtLeast(0))) {
+            positions.add(RadarPosition(r3, 12f + i * (360f / n3)))
+        }
+        for (i in 0 until minOf(n4, (count - n1 - n2 - n3).coerceAtLeast(0))) {
+            positions.add(RadarPosition(r4, 25f + i * (360f / n4)))
+        }
+        for (i in 0 until minOf(n5, (count - n1 - n2 - n3 - n4).coerceAtLeast(0))) {
+            positions.add(RadarPosition(r5, 8f + i * (360f / n5)))
+        }
+        for (i in 0 until minOf(n6, (count - n1 - n2 - n3 - n4 - n5).coerceAtLeast(0))) {
+            positions.add(RadarPosition(r6, 22f + i * (360f / n6)))
+        }
+        for (i in 0 until n7) {
+            positions.add(RadarPosition(r7, 14f + i * (360f / maxOf(n7, 1))))
+        }
     }
 
     return positions
@@ -199,9 +298,15 @@ fun NearbyRadarView(
 ) {
     val context = LocalContext.current
     var selectedUser by remember { mutableStateOf<User?>(null) }
-    val isFullyExpanded = nearbyExpansionTier >= 2 || users.size >= totalNearbyCount
+    val isFullyExpanded = nearbyExpansionTier >= 5 || users.size >= totalNearbyCount
     val hasHiddenUsers = !isFullyExpanded && totalNearbyCount > users.size
-    val nextTargetCount = if (nearbyExpansionTier == 0) minOf(30, totalNearbyCount) else minOf(45, totalNearbyCount)
+    val nextTargetCount = when (nearbyExpansionTier) {
+        0 -> minOf(30, totalNearbyCount)
+        1 -> minOf(45, totalNearbyCount)
+        2 -> minOf(70, totalNearbyCount)
+        3 -> minOf(100, totalNearbyCount)
+        else -> minOf(125, totalNearbyCount)
+    }
     val hiddenCount = (nextTargetCount - users.size).coerceAtLeast(0)
 
     // Animasi sapuan scanner (360 derajat)
@@ -437,18 +542,27 @@ fun NearbyRadarView(
                     val avatarSize = when {
                         users.size <= 12 -> 36.dp
                         users.size <= 30 -> 28.dp
-                        else -> 23.dp
+                        users.size <= 45 -> 23.dp
+                        users.size <= 70 -> 19.dp
+                        users.size <= 100 -> 16.dp
+                        else -> 14.dp
                     }
                     val selectedAvatarSize = avatarSize + 8.dp
                     val avatarFontSize = when {
                         users.size <= 12 -> 13.sp
                         users.size <= 30 -> 10.sp
-                        else -> 8.5.sp
+                        users.size <= 45 -> 8.5.sp
+                        users.size <= 70 -> 7.sp
+                        users.size <= 100 -> 6.sp
+                        else -> 5.sp
                     }
                     val distanceBadgeFontSize = when {
                         users.size <= 12 -> 8.5.sp
                         users.size <= 30 -> 7.sp
-                        else -> 6.sp
+                        users.size <= 45 -> 6.sp
+                        users.size <= 70 -> 5.5.sp
+                        users.size <= 100 -> 5.sp
+                        else -> 4.5.sp
                     }
 
                     users.forEachIndexed { index, user ->
@@ -532,20 +646,24 @@ fun NearbyRadarView(
                 if (hasHiddenUsers && selectedUser == null) {
                     val expandBtnTitle = when {
                         language == AppLanguage.INDONESIAN && nearbyExpansionTier == 0 -> "Cari Lebih Banyak di Radar"
+                        language == AppLanguage.INDONESIAN && nearbyExpansionTier < 4 -> "Perluas Radar Teman Sekitar"
                         language == AppLanguage.INDONESIAN -> "Buka Maksimal Teman Sekitar"
                         nearbyExpansionTier == 0 -> "Discover More on Radar"
+                        nearbyExpansionTier < 4 -> "Expand Radar Friends"
                         else -> "Unlock Maximum Nearby Friends"
                     }
                     val expandBtnSubtitle = when {
                         language == AppLanguage.INDONESIAN && nearbyExpansionTier == 0 -> "+$hiddenCount teman baru (Total $nextTargetCount) • Tonton video singkat 🎬"
+                        language == AppLanguage.INDONESIAN && nearbyExpansionTier < 4 -> "+$hiddenCount teman baru (Total $nextTargetCount) • Tonton video singkat 🎬"
                         language == AppLanguage.INDONESIAN -> "+$hiddenCount teman lagi (Maksimal $nextTargetCount) • Tonton video singkat 🎬"
                         nearbyExpansionTier == 0 -> "+$hiddenCount new people (Total $nextTargetCount) • Watch short video 🎬"
+                        nearbyExpansionTier < 4 -> "+$hiddenCount new people (Total $nextTargetCount) • Watch short video 🎬"
                         else -> "+$hiddenCount more people (Max $nextTargetCount) • Watch short video 🎬"
                     }
                     val toastSuccessMsg = when {
-                        language == AppLanguage.INDONESIAN && nearbyExpansionTier == 0 -> "Selamat! Radar diperluas & $hiddenCount teman baru ditemukan (Total $nextTargetCount) 🎉"
+                        language == AppLanguage.INDONESIAN && nearbyExpansionTier < 4 -> "Selamat! Radar diperluas & $hiddenCount teman baru ditemukan (Total $nextTargetCount) 🎉"
                         language == AppLanguage.INDONESIAN -> "Selamat! Radar maksimal aktif & $hiddenCount teman lagi ditemukan (Total $nextTargetCount) 🎉"
-                        nearbyExpansionTier == 0 -> "Success! Radar expanded & $hiddenCount new friends found 🎉"
+                        nearbyExpansionTier < 4 -> "Success! Radar expanded & $hiddenCount new friends found 🎉"
                         else -> "Success! Maximum radar unlocked & all friends found 🎉"
                     }
 
