@@ -33,6 +33,7 @@ data class SupabaseMessageDto(
     @Json(name = "id") val id: String,
     @Json(name = "conversation_id") val conversationId: String,
     @Json(name = "sender_id") val senderId: String,
+    @Json(name = "receiver_id") val receiverId: String? = null,
     @Json(name = "text") val text: String,
     @Json(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
     @Json(name = "deleted_for_sender") val deletedForSender: Boolean = false,

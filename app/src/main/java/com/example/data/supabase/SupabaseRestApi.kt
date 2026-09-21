@@ -12,6 +12,14 @@ import retrofit2.http.Query
 
 interface SupabaseRestApi {
 
+    @POST("rest/v1/nearby_users")
+    @Headers("Prefer: return=representation,resolution=merge-duplicates")
+    suspend fun upsertNearbyUser(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Body user: SupabaseUserDto
+    ): Response<List<SupabaseUserDto>>
+
     @GET("rest/v1/nearby_users?select=*")
     suspend fun getNearbyUsers(
         @Header("apikey") apiKey: String,
@@ -47,6 +55,14 @@ interface SupabaseRestApi {
         @Header("apikey") apiKey: String,
         @Header("Authorization") authHeader: String,
         @Query("conversation_id") conversationFilter: String
+    ): Response<List<SupabaseMessageDto>>
+
+    @GET("rest/v1/chat_messages?select=*&order=created_at.desc")
+    suspend fun getRecentMessages(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("conversation_id") conversationPattern: String,
+        @Query("limit") limit: Int = 60
     ): Response<List<SupabaseMessageDto>>
 
     @POST("rest/v1/chat_messages")

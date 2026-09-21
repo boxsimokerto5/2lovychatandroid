@@ -136,6 +136,7 @@ fun ChatDetailScreen(
     onSendPhotoMessage: ((android.net.Uri, String) -> Unit)? = null,
     isUploadingPhoto: Boolean = false,
     uploadProgressText: String? = null,
+    onPollMessages: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var inputText by remember { mutableStateOf("") }
@@ -158,6 +159,14 @@ fun ChatDetailScreen(
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
+        }
+    }
+
+    // Polling berkala (2.5 detik) untuk obrolan 2 arah secara real-time
+    LaunchedEffect(conversationId) {
+        while (true) {
+            kotlinx.coroutines.delay(2500)
+            onPollMessages?.invoke()
         }
     }
 

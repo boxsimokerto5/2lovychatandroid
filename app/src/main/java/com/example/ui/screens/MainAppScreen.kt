@@ -183,6 +183,10 @@ fun MainAppScreen(
                 uploadProgressText = uiState.uploadProgressText,
                 onDeleteMessageForSender = { messageId ->
                     viewModel.deleteMessageForSender(screen.conversationId, messageId)
+                },
+                onPollMessages = {
+                    val partnerId = conv?.partnerId ?: viewModel.extractPartnerIdFromConvId(screen.conversationId, uiState.myLovyId)
+                    viewModel.pollChatMessages(screen.conversationId, partnerId)
                 }
             )
         }
@@ -229,6 +233,9 @@ fun MainAppScreen(
                             onStartNewChat = {
                                 viewModel.refreshNearbyScan(forceRefresh = false)
                                 viewModel.navigateTo(CurrentScreen.Nearby)
+                            },
+                            onRefresh = {
+                                viewModel.syncIncomingChats()
                             }
                         )
                         1 -> {

@@ -190,25 +190,48 @@ class SupabaseRepository {
         }
     }
 
-    suspend fun fetchChatMessages(conversationId: String): List<ChatMessage>? = withContext(Dispatchers.IO) {
+    suspend fun fetchChatMessages(
+        conversationId: String,
+        currentUserId: String = "",
+        partnerId: String = ""
+    ): List<ChatMessage>? = withContext(Dispatchers.IO) {
         val api = SupabaseClient.getApi() ?: return@withContext null
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
 
         try {
-            val response = api.getChatMessages(apiKey, auth, "eq.$conversationId")
+            // Dukung conversation_id 2 arah simetris maupun legacy format
+            val filter = if (partnerId.isNotBlank() && currentUserId.isNotBlank()) {
+                val legacy1 = "conv_$partnerId"
+                val legacy2 = "conv_$currentUserId"
+                if (conversationId != legacy1 && conversationId != legacy2) {
+                    "in.($conversationId,$legacy1,$legacy2)"
+                } else {
+                    "in.($conversationId)"
+                }
+            } else {
+                "eq.$conversationId"
+            }
+
+            var response = api.getChatMessages(apiKey, auth, filter)
+            if (!response.isSuccessful) {
+                response = api.getChatMessages(apiKey, auth, "eq.$conversationId")
+            }
+
             if (response.isSuccessful) {
                 val list = response.body() ?: return@withContext null
                 list.filter { dto ->
-                    // Jangan tampilkan jika pesan sudah dihapus untuk pengirim (me)
-                    !(dto.senderId == "me" && dto.deletedForSender)
+                    val isSentByMe = isSenderMe(dto.senderId, dto.receiverId, currentUserId)
+                    if (isSentByMe && dto.deletedForSender) return@filter false
+                    if (!isSentByMe && dto.deletedForReceiver) return@filter false
+                    true
                 }.map { dto ->
                     ChatMessage(
                         id = dto.id,
-                        conversationId = dto.conversationId,
+                        conversationId = conversationId,
                         text = dto.text,
                         timestamp = dto.createdAt,
-                        isFromMe = dto.senderId == "me",
+                        isFromMe = isSenderMe(dto.senderId, dto.receiverId, currentUserId),
                         deletedForSender = dto.deletedForSender,
                         deletedForReceiver = dto.deletedForReceiver,
                         imageUrl = dto.imageUrl
@@ -223,7 +246,22 @@ class SupabaseRepository {
         }
     }
 
-    suspend fun sendChatMessage(message: ChatMessage): Boolean = withContext(Dispatchers.IO) {
+    private fun isSenderMe(senderId: String, receiverId: String?, currentUserId: String): Boolean {
+        if (currentUserId.isNotBlank()) {
+            if (senderId.equals(currentUserId, ignoreCase = true)) return true
+            if (receiverId != null && receiverId.equals(currentUserId, ignoreCase = true)) return false
+        }
+        if (senderId.equals("me", ignoreCase = true)) {
+            return receiverId == null || !receiverId.equals(currentUserId, ignoreCase = true)
+        }
+        return false
+    }
+
+    suspend fun sendChatMessage(
+        message: ChatMessage,
+        senderId: String = "me",
+        receiverId: String? = null
+    ): Boolean = withContext(Dispatchers.IO) {
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -232,7 +270,8 @@ class SupabaseRepository {
             val dto = SupabaseMessageDto(
                 id = message.id,
                 conversationId = message.conversationId,
-                senderId = if (message.isFromMe) "me" else "partner",
+                senderId = senderId,
+                receiverId = receiverId,
                 text = message.text,
                 createdAt = message.timestamp,
                 deletedForSender = message.deletedForSender,
@@ -240,9 +279,75 @@ class SupabaseRepository {
                 imageUrl = message.imageUrl
             )
             val response = api.insertChatMessage(apiKey, auth, dto)
-            response.isSuccessful
+            if (response.isSuccessful) {
+                return@withContext true
+            }
+
+            // Fallback jika database Supabase belum memiliki kolom receiver_id/image_url
+            if (response.code() == 400 && (receiverId != null || message.imageUrl != null)) {
+                val coreDto = SupabaseMessageDto(
+                    id = message.id,
+                    conversationId = message.conversationId,
+                    senderId = senderId,
+                    receiverId = null,
+                    text = message.text,
+                    createdAt = message.timestamp,
+                    deletedForSender = false,
+                    deletedForReceiver = false,
+                    imageUrl = null
+                )
+                val retryResp = api.insertChatMessage(apiKey, auth, coreDto)
+                return@withContext retryResp.isSuccessful
+            }
+            false
         } catch (e: Exception) {
             Log.w(TAG, "Gagal menyimpan message ke Supabase", e)
+            false
+        }
+    }
+
+    suspend fun fetchRecentMessagesForUser(userId: String): List<SupabaseMessageDto>? = withContext(Dispatchers.IO) {
+        val api = SupabaseClient.getApi() ?: return@withContext null
+        val apiKey = SupabaseClient.getSupabaseAnonKey()
+        val auth = SupabaseClient.getAuthHeader()
+
+        try {
+            val response = api.getRecentMessages(apiKey, auth, "like.*$userId*")
+            if (response.isSuccessful) response.body() else null
+        } catch (e: Exception) {
+            Log.w(TAG, "Gagal mengambil pesan terbaru pengguna", e)
+            null
+        }
+    }
+
+    suspend fun registerOrUpdateUser(
+        id: String,
+        name: String,
+        gender: Gender,
+        bio: String,
+        avatarHex: Long,
+        avatarUrl: String?
+    ): Boolean = withContext(Dispatchers.IO) {
+        val api = SupabaseClient.getApi() ?: return@withContext false
+        val apiKey = SupabaseClient.getSupabaseAnonKey()
+        val auth = SupabaseClient.getAuthHeader()
+
+        try {
+            val dto = SupabaseUserDto(
+                id = id,
+                name = name,
+                gender = if (gender == Gender.MALE) "male" else "female",
+                distanceMeters = 100,
+                bio = bio,
+                avatarHex = avatarHex,
+                isOnline = true,
+                lastActiveAt = System.currentTimeMillis(),
+                avatarUrl = avatarUrl
+            )
+            val response = api.upsertNearbyUser(apiKey, auth, dto)
+            response.isSuccessful
+        } catch (e: Exception) {
+            Log.w(TAG, "Gagal upsert nearby_user di Supabase", e)
             false
         }
     }

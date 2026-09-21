@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import android.util.Log
 import java.util.UUID
 
@@ -504,6 +505,25 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             } catch (e: Throwable) {
                 android.util.Log.e("LovyChatViewModel", "Error saving UserProfile to Room: ${e.message}")
             }
+            syncUserProfileToSupabase()
+        }
+    }
+
+    fun syncUserProfileToSupabase() {
+        if (_uiState.value.isGuest) return
+        if (!SupabaseClient.isConfigured()) return
+        val profile = _uiState.value.userProfile
+        val lovyId = _uiState.value.myLovyId
+        val userGender = if (profile.gender.equals("MALE", ignoreCase = true)) Gender.MALE else Gender.FEMALE
+        viewModelScope.launch(Dispatchers.IO) {
+            supabaseRepo.registerOrUpdateUser(
+                id = lovyId,
+                name = profile.displayName.ifBlank { _uiState.value.myName },
+                gender = userGender,
+                bio = profile.bio,
+                avatarHex = 0xFF4CAF50,
+                avatarUrl = profile.profilePicture?.takeIf { it.isNotBlank() }
+            )
         }
     }
 
@@ -607,6 +627,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     lastMomentsSyncTime = System.currentTimeMillis()
                 }
             }
+
+            syncIncomingChats()
         }
     }
 
@@ -735,6 +757,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
         updateUserActivity()
         syncFromSupabase(forceRefresh = true)
+        syncUserProfileToSupabase()
     }
 
     fun loginAsGuest() {
@@ -781,6 +804,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     fun selectTab(tabIndex: Int) {
         recordFeatureClick()
         _uiState.update { it.copy(currentTab = tabIndex, currentScreen = CurrentScreen.Main) }
+        if (tabIndex == 0 && !_uiState.value.isGuest) {
+            syncIncomingChats()
+        }
     }
 
     fun navigateTo(screen: CurrentScreen) {
@@ -903,13 +929,37 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun getCanonicalConversationId(id1: String, id2: String): String {
+        val clean1 = id1.trim()
+        val clean2 = id2.trim()
+        if (clean1.isEmpty() && clean2.isEmpty()) return "conv_chat"
+        if (clean1.isEmpty()) return "conv_$clean2"
+        if (clean2.isEmpty()) return "conv_$clean1"
+        val sorted = if (clean1 <= clean2) listOf(clean1, clean2) else listOf(clean2, clean1)
+        return "conv_${sorted[0]}_${sorted[1]}"
+    }
+
+    fun extractPartnerIdFromConvId(convId: String, myId: String): String {
+        if (!convId.startsWith("conv_")) return convId
+        val content = convId.removePrefix("conv_")
+        val parts = content.split("_")
+        if (parts.size >= 2) {
+            return parts.firstOrNull { !it.equals(myId, ignoreCase = true) } ?: parts[0]
+        }
+        return content
+    }
+
     fun sayHiToUser(user: User) {
         if (isUserBlocked(user.id, user.name)) return
         recordFeatureClick()
         saveChatFriend(user)
         updateUserActivity()
-        val convId = "conv_${user.id}"
-        val existing = _uiState.value.conversations.find { it.partnerId == user.id }
+        val convId = if (_uiState.value.isGuest) {
+            "conv_${user.id}"
+        } else {
+            getCanonicalConversationId(_uiState.value.myLovyId, user.id)
+        }
+        val existing = _uiState.value.conversations.find { it.id == convId || it.partnerId == user.id }
         
         val greetingText = "Halo ${user.name}! Salam kenal dari fitur Teman Sekitar ya 👋"
         val newMsg = ChatMessage(
@@ -923,7 +973,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         val updatedMessages = (_uiState.value.messagesMap[convId] ?: emptyList()) + newMsg
         val updatedConversations = if (existing != null) {
             _uiState.value.conversations.map {
-                if (it.id == convId) it.copy(lastMessage = greetingText, lastTimestamp = System.currentTimeMillis()) else it
+                if (it.id == convId || it.id == existing.id) it.copy(id = convId, lastMessage = greetingText, lastTimestamp = System.currentTimeMillis()) else it
             }
         } else {
             listOf(
@@ -953,9 +1003,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             // Mode Tamu: Tidak pernah kirim ke Supabase, gunakan auto reply lokal
             scheduleAutoReply(convId, user.name)
         } else {
-            // Mode Pengguna Asli: Kirim ke Supabase, TIDAK ADA auto-reply bot
+            // Mode Pengguna Asli: Kirim ke Supabase dengan sender_id dan receiver_id
             viewModelScope.launch {
-                supabaseRepo.sendChatMessage(newMsg)
+                supabaseRepo.sendChatMessage(
+                    message = newMsg,
+                    senderId = _uiState.value.myLovyId,
+                    receiverId = user.id
+                )
             }
         }
 
@@ -993,23 +1047,40 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             )
         }
 
-        // Sinkronisasi pesan obrolan jika ada di Supabase untuk pengguna asli (dengan smart cache 30 detik)
+        // Sinkronisasi pesan obrolan 2 arah secara langsung untuk pengguna asli
         if (!_uiState.value.isGuest) {
-            val lastChatSync = lastChatSyncMap[conversationId] ?: 0L
-            val now = System.currentTimeMillis()
-            if (now - lastChatSync >= 30_000L) {
-                lastChatSyncMap[conversationId] = now
-                viewModelScope.launch {
-                    val remoteMsgs = supabaseRepo.fetchChatMessages(conversationId)
-                    if (!remoteMsgs.isNullOrEmpty()) {
-                        val current = _uiState.value.messagesMap[conversationId] ?: emptyList()
-                        val merged = (current + remoteMsgs)
-                            .filterNot { it.deletedForSender && it.isFromMe }
-                            .distinctBy { it.id }
-                            .sortedBy { it.timestamp }
-                        _uiState.update {
-                            it.copy(messagesMap = it.messagesMap + (conversationId to merged))
-                        }
+            val partnerId = conv?.partnerId ?: extractPartnerIdFromConvId(conversationId, _uiState.value.myLovyId)
+            pollChatMessages(conversationId, partnerId)
+        }
+    }
+
+    fun pollChatMessages(conversationId: String, partnerId: String) {
+        if (_uiState.value.isGuest) return
+        if (!SupabaseClient.isConfigured()) return
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val myId = _uiState.value.myLovyId
+            val remoteMsgs = supabaseRepo.fetchChatMessages(conversationId, myId, partnerId)
+            if (!remoteMsgs.isNullOrEmpty()) {
+                withContext(Dispatchers.Main) {
+                    val current = _uiState.value.messagesMap[conversationId] ?: emptyList()
+                    val merged = (current + remoteMsgs)
+                        .filterNot { it.deletedForSender && it.isFromMe }
+                        .distinctBy { it.id }
+                        .sortedBy { it.timestamp }
+
+                    val lastMsg = merged.lastOrNull()
+                    val updatedConvs = _uiState.value.conversations.map { c ->
+                        if (c.id == conversationId && lastMsg != null) {
+                            c.copy(lastMessage = lastMsg.text, lastTimestamp = lastMsg.timestamp)
+                        } else c
+                    }
+
+                    _uiState.update {
+                        it.copy(
+                            conversations = updatedConvs,
+                            messagesMap = it.messagesMap + (conversationId to merged)
+                        )
                     }
                 }
             }
@@ -1032,8 +1103,12 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         saveChatFriend(friendUser)
         updateUserActivity()
 
-        val convId = "conv_${bottle.senderId}"
-        val existing = _uiState.value.conversations.find { it.partnerId == bottle.senderId }
+        val convId = if (_uiState.value.isGuest) {
+            "conv_${bottle.senderId}"
+        } else {
+            getCanonicalConversationId(_uiState.value.myLovyId, bottle.senderId)
+        }
+        val existing = _uiState.value.conversations.find { it.id == convId || it.partnerId == bottle.senderId }
         val greetingText = "Halo ${bottle.senderName}! Aku menemukan pesan botolmu: \"${bottle.content.take(30)}...\" 🍾🌊"
         val newMsg = ChatMessage(
             id = UUID.randomUUID().toString(),
@@ -1045,7 +1120,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         val updatedMessages = (_uiState.value.messagesMap[convId] ?: emptyList()) + newMsg
         val updatedConversations = if (existing != null) {
             _uiState.value.conversations.map {
-                if (it.id == convId) it.copy(lastMessage = greetingText, lastTimestamp = System.currentTimeMillis()) else it
+                if (it.id == convId || it.id == existing.id) it.copy(id = convId, lastMessage = greetingText, lastTimestamp = System.currentTimeMillis()) else it
             }
         } else {
             listOf(
@@ -1076,7 +1151,11 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             scheduleAutoReply(convId, bottle.senderName)
         } else {
             viewModelScope.launch {
-                supabaseRepo.sendChatMessage(newMsg)
+                supabaseRepo.sendChatMessage(
+                    message = newMsg,
+                    senderId = _uiState.value.myLovyId,
+                    receiverId = bottle.senderId
+                )
             }
         }
 
@@ -1144,9 +1223,15 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             // Mesin generator jawab otomatis hanya melayani mode tamu untuk simulasi interaktif
             scheduleAutoReply(conversationId, partnerName)
         } else {
-            // Mode Pengguna Asli: Sinkronisasi ke Supabase, TIDAK ADA auto-reply bot
+            // Mode Pengguna Asli: Sinkronisasi ke Supabase untuk obrolan 2 arah
+            val conv = _uiState.value.conversations.find { it.id == conversationId }
+            val partnerId = conv?.partnerId ?: extractPartnerIdFromConvId(conversationId, _uiState.value.myLovyId)
             viewModelScope.launch {
-                supabaseRepo.sendChatMessage(newMsg)
+                supabaseRepo.sendChatMessage(
+                    message = newMsg,
+                    senderId = _uiState.value.myLovyId,
+                    receiverId = partnerId
+                )
             }
         }
     }
@@ -1558,8 +1643,14 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                         // Mode Tamu: auto-reply lokal untuk foto
                         schedulePhotoAutoReply(conversationId, partnerName)
                     } else {
-                        // Mode Pengguna Asli: Sinkronisasi ke Supabase, TIDAK ADA auto-reply bot
-                        supabaseRepo.sendChatMessage(newMsg)
+                        // Mode Pengguna Asli: Sinkronisasi ke Supabase
+                        val conv = _uiState.value.conversations.find { it.id == conversationId }
+                        val partnerId = conv?.partnerId ?: extractPartnerIdFromConvId(conversationId, _uiState.value.myLovyId)
+                        supabaseRepo.sendChatMessage(
+                            message = newMsg,
+                            senderId = _uiState.value.myLovyId,
+                            receiverId = partnerId
+                        )
                     }
                 } else {
                     _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
@@ -1612,6 +1703,81 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             }
 
             // PENTING: Mode Tamu tidak mengirim balasan foto simulasi ke Supabase
+        }
+    }
+
+    fun syncIncomingChats() {
+        if (_uiState.value.isGuest) return
+        if (!SupabaseClient.isConfigured()) return
+        val myId = _uiState.value.myLovyId
+        viewModelScope.launch(Dispatchers.IO) {
+            val recent = supabaseRepo.fetchRecentMessagesForUser(myId)
+            if (!recent.isNullOrEmpty()) {
+                withContext(Dispatchers.Main) {
+                    processIncomingRecentMessages(recent, myId)
+                }
+            }
+        }
+    }
+
+    private fun processIncomingRecentMessages(recent: List<com.example.data.supabase.SupabaseMessageDto>, myId: String) {
+        val grouped = recent.groupBy { it.conversationId }
+        val currentConversations = _uiState.value.conversations.toMutableList()
+        val currentMessages = _uiState.value.messagesMap.toMutableMap()
+
+        for ((convId, dtoList) in grouped) {
+            val partnerId = extractPartnerIdFromConvId(convId, myId)
+            if (partnerId.isBlank()) continue
+
+            val sortedMsgs = dtoList.sortedBy { it.createdAt }.map { dto ->
+                ChatMessage(
+                    id = dto.id,
+                    conversationId = convId,
+                    text = dto.text,
+                    timestamp = dto.createdAt,
+                    isFromMe = dto.senderId.equals(myId, ignoreCase = true) || (dto.senderId.equals("me", ignoreCase = true) && !dto.receiverId.equals(myId, ignoreCase = true)),
+                    deletedForSender = dto.deletedForSender,
+                    deletedForReceiver = dto.deletedForReceiver,
+                    imageUrl = dto.imageUrl
+                )
+            }
+
+            val existingMsgs = currentMessages[convId] ?: emptyList()
+            val mergedMsgs = (existingMsgs + sortedMsgs).distinctBy { it.id }.sortedBy { it.timestamp }
+            currentMessages[convId] = mergedMsgs
+
+            val lastMsg = mergedMsgs.lastOrNull() ?: continue
+            val existingConvIndex = currentConversations.indexOfFirst { it.id == convId || it.partnerId == partnerId }
+            if (existingConvIndex >= 0) {
+                val old = currentConversations[existingConvIndex]
+                currentConversations[existingConvIndex] = old.copy(
+                    id = convId,
+                    lastMessage = lastMsg.text,
+                    lastTimestamp = lastMsg.timestamp
+                )
+            } else {
+                val partnerUser = _uiState.value.nearbyUsers.find { it.id == partnerId }
+                val newConv = ChatConversation(
+                    id = convId,
+                    partnerId = partnerId,
+                    partnerName = partnerUser?.name ?: "Pengguna $partnerId",
+                    partnerAvatarHex = partnerUser?.avatarColorHex ?: 0xFF4CAF50,
+                    partnerGender = partnerUser?.gender ?: Gender.FEMALE,
+                    lastMessage = lastMsg.text,
+                    lastTimestamp = lastMsg.timestamp,
+                    unreadCount = if (!lastMsg.isFromMe && _uiState.value.activeChatId != convId) 1 else 0,
+                    isOnline = partnerUser?.isOnline ?: true,
+                    partnerAvatarUrl = partnerUser?.avatarUrl
+                )
+                currentConversations.add(0, newConv)
+            }
+        }
+
+        _uiState.update {
+            it.copy(
+                conversations = currentConversations,
+                messagesMap = currentMessages
+            )
         }
     }
 }
