@@ -46,27 +46,35 @@ object R2StorageClient {
     }
 
     fun getAccountId(): String {
-        return sharedPrefs?.getString(PREF_ACCOUNT_ID, null)
-            ?.takeIf { it.isNotBlank() }
-            ?: BuildConfig.R2_ACCOUNT_ID
+        val stored = sharedPrefs?.getString(PREF_ACCOUNT_ID, null)?.takeIf { it.isNotBlank() }
+        if (stored != null) return stored
+        val build = BuildConfig.R2_ACCOUNT_ID
+        if (build.isNotBlank() && !build.startsWith("default_")) return build
+        return "e918621d95bd4f025275ab5514e67753"
     }
 
     fun getAccessKeyId(): String {
-        return sharedPrefs?.getString(PREF_ACCESS_KEY, null)
-            ?.takeIf { it.isNotBlank() }
-            ?: BuildConfig.R2_ACCESS_KEY_ID
+        val stored = sharedPrefs?.getString(PREF_ACCESS_KEY, null)?.takeIf { it.isNotBlank() }
+        if (stored != null) return stored
+        val build = BuildConfig.R2_ACCESS_KEY_ID
+        if (build.isNotBlank() && !build.startsWith("default_")) return build
+        return "6090158ccbc5f5f27741f212bd6594bd"
     }
 
     fun getSecretAccessKey(): String {
-        return sharedPrefs?.getString(PREF_SECRET_KEY, null)
-            ?.takeIf { it.isNotBlank() }
-            ?: BuildConfig.R2_SECRET_ACCESS_KEY
+        val stored = sharedPrefs?.getString(PREF_SECRET_KEY, null)?.takeIf { it.isNotBlank() }
+        if (stored != null) return stored
+        val build = BuildConfig.R2_SECRET_ACCESS_KEY
+        if (build.isNotBlank() && !build.startsWith("default_")) return build
+        return "9dfb893c990bec0a60a6ef23ee21efbbed4f267eccba2f137784f3a60df530ac"
     }
 
     fun getBucketName(): String {
-        return sharedPrefs?.getString(PREF_BUCKET_NAME, null)
-            ?.takeIf { it.isNotBlank() }
-            ?: BuildConfig.R2_BUCKET_NAME.ifBlank { "lovychat" }
+        val stored = sharedPrefs?.getString(PREF_BUCKET_NAME, null)?.takeIf { it.isNotBlank() }
+        if (stored != null) return stored
+        val build = BuildConfig.R2_BUCKET_NAME
+        if (build.isNotBlank() && !build.startsWith("default_")) return build
+        return "Backend_lovychat_api_token"
     }
 
     fun getPublicDomain(): String {

@@ -14,8 +14,8 @@ import java.security.MessageDigest
 import java.util.UUID
 
 object GoogleAuthHelper {
-    // Client ID dari Google Cloud Console proyek pengguna
-    const val SERVER_CLIENT_ID = "347302027962-arib0vs4tq697ole1ua23kojq1uqbs3i.apps.googleusercontent.com"
+    // Web Application Client ID dari Google Cloud Console proyek pengguna (wajib tipe Web untuk serverClientId)
+    const val SERVER_CLIENT_ID = "347302027962-9g1rvg326b9hvtgamckkqcn7mr00i2gp.apps.googleusercontent.com"
 
     data class GoogleUserResult(
         val idToken: String,

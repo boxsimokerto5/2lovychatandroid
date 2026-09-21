@@ -137,7 +137,7 @@ class ExampleRobolectricTest {
 
     // Verify Google Client ID is configured correctly
     assertEquals(
-        "347302027962-arib0vs4tq697ole1ua23kojq1uqbs3i.apps.googleusercontent.com",
+        "347302027962-9g1rvg326b9hvtgamckkqcn7mr00i2gp.apps.googleusercontent.com",
         com.example.util.GoogleAuthHelper.SERVER_CLIENT_ID
     )
 

@@ -89,7 +89,7 @@ data class LovyChatUiState(
     // Cloudflare R2 State
     val isR2Configured: Boolean = false,
     val r2AccountId: String = "",
-    val r2BucketName: String = "lovychat",
+    val r2BucketName: String = "Backend_lovychat_api_token",
     val r2PublicDomain: String = "",
     val isUploadingPhoto: Boolean = false,
     val uploadProgressText: String? = null,
