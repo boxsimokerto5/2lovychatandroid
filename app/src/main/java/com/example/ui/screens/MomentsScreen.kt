@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.ChatBubbleOutline
@@ -252,7 +253,49 @@ fun MomentsScreen(
                 }
             }
 
-            moments.forEachIndexed { index, item ->
+            if (moments.isEmpty()) {
+                item {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 48.dp, horizontal = 24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CameraAlt,
+                            contentDescription = null,
+                            tint = EmeraldGreen.copy(alpha = 0.6f),
+                            modifier = Modifier.size(56.dp)
+                        )
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Text(
+                            text = "Belum Ada Momen",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = NeutralDark
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Belum ada cerita atau foto yang dibagikan. Jadilah yang pertama membagikan momen seru!",
+                            fontSize = 13.sp,
+                            color = NeutralMedium,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            lineHeight = 18.sp
+                        )
+                        Spacer(modifier = Modifier.height(18.dp))
+                        Button(
+                            onClick = { showPostDialog = true },
+                            colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
+                            shape = RoundedCornerShape(20.dp)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Bagikan Momen", fontSize = 13.sp)
+                        }
+                    }
+                }
+            } else {
+                moments.forEachIndexed { index, item ->
                 val isMyMoment = item.id in myMomentIds ||
                         item.authorId == "me" ||
                         (currentUserId.isNotBlank() && item.authorId == currentUserId) ||
@@ -280,6 +323,7 @@ fun MomentsScreen(
                         )
                     }
                 }
+            }
             }
 
             item {

@@ -22,7 +22,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.PersonSearch
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -127,7 +130,7 @@ fun FriendsTabScreen(
                         iconBgColor = Color(0xFFE8F5E9),
                         iconTint = EmeraldGreen,
                         title = "Teman Baru",
-                        badge = "2",
+                        badge = null,
                         onClick = onNavigateToNearby
                     )
                     HorizontalDivider(modifier = Modifier.padding(start = 72.dp), color = NeutralBorder, thickness = 0.6.dp)
@@ -156,7 +159,49 @@ fun FriendsTabScreen(
                 }
             }
 
-            items(filtered, key = { it.id }) { user ->
+            if (filtered.isEmpty()) {
+                item {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 40.dp, horizontal = 24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PersonSearch,
+                            contentDescription = null,
+                            tint = EmeraldGreen.copy(alpha = 0.6f),
+                            modifier = Modifier.size(56.dp)
+                        )
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Text(
+                            text = "Belum Ada Kontak Teman",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = NeutralDark
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Mulai percakapan dengan menyapa pengguna di sekitar melalui fitur radar untuk menambahkan teman ke kontak.",
+                            fontSize = 13.sp,
+                            color = NeutralMedium,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            lineHeight = 18.sp
+                        )
+                        Spacer(modifier = Modifier.height(18.dp))
+                        Button(
+                            onClick = onNavigateToNearby,
+                            colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
+                            shape = RoundedCornerShape(20.dp)
+                        ) {
+                            Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Cari Teman Sekitar", fontSize = 13.sp)
+                        }
+                    }
+                }
+            } else {
+                items(filtered, key = { it.id }) { user ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
@@ -197,6 +242,7 @@ fun FriendsTabScreen(
             }
         }
     }
+}
 }
 
 @Composable

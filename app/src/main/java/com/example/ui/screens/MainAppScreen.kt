@@ -241,12 +241,18 @@ fun MainAppScreen(
                             }
                         )
                         1 -> {
-                            val combinedFriends = remember(uiState.chattedFriends, uiState.nearbyUsers) {
-                                val chattedIds = uiState.chattedFriends.map { it.id }.toSet()
-                                uiState.chattedFriends + uiState.nearbyUsers.filterNot { it.id in chattedIds }
+                            val friendsList = remember(uiState.isGuest, uiState.chattedFriends, uiState.nearbyUsers) {
+                                if (uiState.isGuest) {
+                                    // Mode Tamu: Tampilkan daftar demo agar tamu bisa menjelajahi UI
+                                    val chattedIds = uiState.chattedFriends.map { it.id }.toSet()
+                                    uiState.chattedFriends + uiState.nearbyUsers.filterNot { it.id in chattedIds }
+                                } else {
+                                    // Mode Asli: HANYA tampilkan kontak nyata yang pernah diajak mengobrol atau berteman
+                                    uiState.chattedFriends
+                                }
                             }
                             FriendsTabScreen(
-                                friends = combinedFriends,
+                                friends = friendsList,
                                 onSelectFriend = { user ->
                                     viewModel.sayHiToUser(user)
                                 },

@@ -48,19 +48,19 @@ data class LovyChatUiState(
     val isLoggedIn: Boolean = false,
     val isGuest: Boolean = false,
     val userProfile: UserProfile = UserProfile(),
-    val nearbyUsers: List<User> = MockDataSource.initialNearbyUsers,
+    val nearbyUsers: List<User> = emptyList(),
     val chattedFriends: List<User> = emptyList(),
 
     val nearbyGenderFilter: Gender? = null,
     val isScanningNearby: Boolean = false,
-    val conversations: List<ChatConversation> = MockDataSource.initialConversations,
-    val messagesMap: Map<String, List<ChatMessage>> = MockDataSource.initialMessages,
-    val oceanBottles: List<BottleMessage> = MockDataSource.oceanBottles,
+    val conversations: List<ChatConversation> = emptyList(),
+    val messagesMap: Map<String, List<ChatMessage>> = emptyMap(),
+    val oceanBottles: List<BottleMessage> = emptyList(),
     val myBottles: List<BottleMessage> = emptyList(),
     val fishedBottles: List<BottleMessage> = emptyList(),
     val fishedBottle: BottleMessage? = null,
     val isFishing: Boolean = false,
-    val moments: List<MomentItem> = MockDataSource.initialMoments,
+    val moments: List<MomentItem> = emptyList(),
     val activeChatId: String? = null,
     val myName: String = "Pengguna Lovy",
     val myBio: String = "Menjelajahi dunia dan mencari teman baru di Lovy Chat ✨",
@@ -166,12 +166,18 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         try {
             val savedSession = authRepo.getSavedSession()
             if (savedSession != null && savedSession.isLoggedIn) {
+                val isGuestUser = savedSession.isGuest
                 _uiState.update {
                     it.copy(
                         isLoggedIn = true,
-                        isGuest = savedSession.isGuest,
+                        isGuest = isGuestUser,
                         myName = savedSession.displayName.ifBlank { savedSession.username },
-                        myLovyId = savedSession.lovyId
+                        myLovyId = savedSession.lovyId,
+                        conversations = if (isGuestUser) MockDataSource.initialConversations else emptyList(),
+                        messagesMap = if (isGuestUser) MockDataSource.initialMessages else emptyMap(),
+                        oceanBottles = if (isGuestUser) MockDataSource.oceanBottles else emptyList(),
+                        moments = if (isGuestUser) MockDataSource.initialMoments else emptyList(),
+                        nearbyUsers = if (isGuestUser) MockDataSource.initialNearbyUsers else emptyList()
                     )
                 }
             }
@@ -628,15 +634,19 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             if (forceRefresh || now - lastNearbyScanTime >= CACHE_DURATION_MS) {
                 val remoteUsers = supabaseRepo.fetchNearbyUsers()
-                if (!remoteUsers.isNullOrEmpty()) {
-                    _uiState.update { it.copy(nearbyUsers = remoteUsers) }
+                if (remoteUsers != null) {
+                    val myId = _uiState.value.myLovyId
+                    val filtered = remoteUsers
+                        .filterNot { it.id == myId || it.id == "current_user" }
+                        .filterNot { isUserBlocked(it.id, it.name) }
+                    _uiState.update { it.copy(nearbyUsers = filtered) }
                     lastNearbyScanTime = System.currentTimeMillis()
                 }
             }
 
             if (forceRefresh || now - lastBottlesSyncTime >= CACHE_DURATION_MS) {
                 val remoteBottles = supabaseRepo.fetchOceanBottles()
-                if (!remoteBottles.isNullOrEmpty()) {
+                if (remoteBottles != null) {
                     _uiState.update { it.copy(oceanBottles = remoteBottles) }
                     lastBottlesSyncTime = System.currentTimeMillis()
                 }
@@ -644,7 +654,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
             if (forceRefresh || now - lastMomentsSyncTime >= CACHE_DURATION_MS) {
                 val remoteMoments = supabaseRepo.fetchMoments()
-                if (!remoteMoments.isNullOrEmpty()) {
+                if (remoteMoments != null) {
                     _uiState.update { it.copy(moments = remoteMoments) }
                     lastMomentsSyncTime = System.currentTimeMillis()
                 }
@@ -660,7 +670,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         if (!force && now - lastMomentsSyncTime < CACHE_DURATION_MS) return
         viewModelScope.launch {
             val remoteMoments = supabaseRepo.fetchMoments()
-            if (!remoteMoments.isNullOrEmpty()) {
+            if (remoteMoments != null) {
                 _uiState.update { it.copy(moments = remoteMoments) }
                 lastMomentsSyncTime = System.currentTimeMillis()
             }
@@ -774,7 +784,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 currentScreen = CurrentScreen.Main,
                 // Mode Pengguna Asli: Pisahkan dari percakapan dummy tamu agar tidak bercampur
                 conversations = emptyList(),
-                messagesMap = emptyMap()
+                messagesMap = emptyMap(),
+                moments = emptyList(),
+                oceanBottles = emptyList(),
+                nearbyUsers = emptyList()
             )
         }
         updateUserActivity()
@@ -795,7 +808,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     myLovyId = lovyId,
                     currentScreen = CurrentScreen.Main,
                     conversations = emptyList(),
-                    messagesMap = emptyMap()
+                    messagesMap = emptyMap(),
+                    moments = emptyList(),
+                    oceanBottles = emptyList(),
+                    nearbyUsers = emptyList()
                 )
             }
             val newProfile = UserProfile(
@@ -827,7 +843,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     myLovyId = lovyId,
                     currentScreen = CurrentScreen.Main,
                     conversations = emptyList(),
-                    messagesMap = emptyMap()
+                    messagesMap = emptyMap(),
+                    moments = emptyList(),
+                    oceanBottles = emptyList(),
+                    nearbyUsers = emptyList()
                 )
             }
             val existingProfile = _uiState.value.userProfile
@@ -859,7 +878,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     myLovyId = lovyId,
                     currentScreen = CurrentScreen.Main,
                     conversations = emptyList(),
-                    messagesMap = emptyMap()
+                    messagesMap = emptyMap(),
+                    moments = emptyList(),
+                    oceanBottles = emptyList(),
+                    nearbyUsers = emptyList()
                 )
             }
             val existingProfile = _uiState.value.userProfile
@@ -889,7 +911,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 conversations = MockDataSource.initialConversations,
                 messagesMap = MockDataSource.initialMessages,
                 oceanBottles = MockDataSource.oceanBottles,
-                moments = MockDataSource.initialMoments
+                moments = MockDataSource.initialMoments,
+                nearbyUsers = MockDataSource.initialNearbyUsers
             )
         }
     }
@@ -916,7 +939,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 currentScreen = CurrentScreen.Login,
                 messagesMap = emptyMap(),
                 activeChatId = null,
-                conversations = emptyList()
+                conversations = emptyList(),
+                moments = emptyList(),
+                oceanBottles = emptyList(),
+                nearbyUsers = emptyList()
             )
         }
     }
@@ -1016,13 +1042,17 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
             delay(600)
 
-            // Coba ambil dari Supabase jika ada & cache sudah kadaluwarsa atau diminta paksa (hanya untuk pengguna asli)
-            val remoteUsers = if (!isCacheValid && !_uiState.value.isGuest) supabaseRepo.fetchNearbyUsers() else null
-            if (!remoteUsers.isNullOrEmpty()) {
+            if (!_uiState.value.isGuest) {
+                // Mode Pengguna Asli: HANYA gunakan pengguna nyata dari Supabase
+                val remoteUsers = if (!isCacheValid || forceRefresh) supabaseRepo.fetchNearbyUsers() else _uiState.value.nearbyUsers
                 lastNearbyScanTime = System.currentTimeMillis()
-                val filtered = remoteUsers.filterNot { isUserBlocked(it.id, it.name) }
+                val myId = _uiState.value.myLovyId
+                val filtered = (remoteUsers ?: emptyList())
+                    .filterNot { it.id == myId || it.id == "current_user" }
+                    .filterNot { isUserBlocked(it.id, it.name) }
                 _uiState.update { it.copy(isScanningNearby = false, nearbyUsers = filtered) }
             } else {
+                // Mode Tamu: Gunakan data demo simulasi (MockDataSource)
                 val currentLoc = _uiState.value.currentGpsLocation
                 val sourceList = if (_uiState.value.nearbyUsers.isNotEmpty()) _uiState.value.nearbyUsers else MockDataSource.initialNearbyUsers
                 val updated = sourceList
@@ -1468,7 +1498,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             val chosen = when {
                 unfished.isNotEmpty() -> unfished.random()
                 allOcean.isNotEmpty() -> allOcean.random()
-                else -> MockDataSource.oceanBottles.first()
+                _uiState.value.isGuest -> MockDataSource.oceanBottles.first()
+                else -> null
+            }
+
+            if (chosen == null) {
+                _uiState.update { it.copy(isFishing = false, fishedBottle = null) }
+                return@launch
             }
 
             val updatedFished = if (currentFished.none { it.id == chosen.id }) {

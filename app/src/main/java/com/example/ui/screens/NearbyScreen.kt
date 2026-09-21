@@ -447,7 +447,52 @@ fun NearbyScreen(
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
-                displayedUsers.forEachIndexed { index, user ->
+                if (displayedUsers.isEmpty()) {
+                    item {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 48.dp, horizontal = 24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Radar,
+                                contentDescription = null,
+                                tint = EmeraldGreen.copy(alpha = 0.6f),
+                                modifier = Modifier.size(56.dp)
+                            )
+                            Spacer(modifier = Modifier.height(14.dp))
+                            Text(
+                                text = if (language == com.example.util.AppLanguage.INDONESIAN) "Belum Ada Pengguna di Sekitar" else "No Nearby Users Found",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeutralDark
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = if (language == com.example.util.AppLanguage.INDONESIAN)
+                                    "Belum ada pengguna aktif lain di sekitar lokasi Anda saat ini. Pastikan GPS aktif dan coba pindai ulang!"
+                                else
+                                    "No other active users found near your location right now. Ensure GPS is enabled and try scanning again!",
+                                fontSize = 13.sp,
+                                color = NeutralMedium,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                lineHeight = 18.sp
+                            )
+                            Spacer(modifier = Modifier.height(18.dp))
+                            Button(
+                                onClick = onRefreshScan,
+                                colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
+                                shape = RoundedCornerShape(20.dp)
+                            ) {
+                                Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(if (language == com.example.util.AppLanguage.INDONESIAN) "Pindai Ulang" else "Scan Again", fontSize = 13.sp)
+                            }
+                        }
+                    }
+                } else {
+                    displayedUsers.forEachIndexed { index, user ->
                     item(key = user.id) {
                         NearbyUserCard(
                             user = user,
@@ -465,6 +510,7 @@ fun NearbyScreen(
                             )
                         }
                     }
+                }
                 }
 
                 // Tombol "Cari Lebih Banyak" yang memicu Iklan Reward
