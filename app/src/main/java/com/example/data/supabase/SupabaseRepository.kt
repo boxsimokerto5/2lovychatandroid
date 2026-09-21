@@ -193,7 +193,8 @@ class SupabaseRepository {
     suspend fun fetchChatMessages(
         conversationId: String,
         currentUserId: String = "",
-        partnerId: String = ""
+        partnerId: String = "",
+        sinceTimestamp: Long = 0L
     ): List<ChatMessage>? = withContext(Dispatchers.IO) {
         val api = SupabaseClient.getApi() ?: return@withContext null
         val apiKey = SupabaseClient.getSupabaseAnonKey()
@@ -213,9 +214,18 @@ class SupabaseRepository {
                 "eq.$conversationId"
             }
 
-            var response = api.getChatMessages(apiKey, auth, filter)
+            var response = if (sinceTimestamp > 0L) {
+                api.getDeltaChatMessages(apiKey, auth, filter, "gt.$sinceTimestamp")
+            } else {
+                api.getChatMessages(apiKey, auth, filter)
+            }
+
             if (!response.isSuccessful) {
-                response = api.getChatMessages(apiKey, auth, "eq.$conversationId")
+                response = if (sinceTimestamp > 0L) {
+                    api.getDeltaChatMessages(apiKey, auth, "eq.$conversationId", "gt.$sinceTimestamp")
+                } else {
+                    api.getChatMessages(apiKey, auth, "eq.$conversationId")
+                }
             }
 
             if (response.isSuccessful) {

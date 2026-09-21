@@ -1174,13 +1174,22 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun pollChatMessages(conversationId: String, partnerId: String) {
+    fun pollChatMessages(conversationId: String, partnerId: String, forceFullSync: Boolean = false) {
         if (_uiState.value.isGuest) return
         if (!SupabaseClient.isConfigured()) return
 
+        val myId = _uiState.value.myLovyId
+        val currentMsgs = _uiState.value.messagesMap[conversationId] ?: emptyList()
+        // Jika sudah ada pesan dan bukan forceFullSync, minta hanya pesan baru setelah pesan terakhir
+        val sinceTimestamp = if (forceFullSync || currentMsgs.isEmpty()) 0L else (currentMsgs.maxOfOrNull { it.timestamp } ?: 0L)
+
         viewModelScope.launch(Dispatchers.IO) {
-            val myId = _uiState.value.myLovyId
-            val remoteMsgs = supabaseRepo.fetchChatMessages(conversationId, myId, partnerId)
+            val remoteMsgs = supabaseRepo.fetchChatMessages(
+                conversationId = conversationId,
+                currentUserId = myId,
+                partnerId = partnerId,
+                sinceTimestamp = sinceTimestamp
+            )
             if (!remoteMsgs.isNullOrEmpty()) {
                 withContext(Dispatchers.Main) {
                     val current = _uiState.value.messagesMap[conversationId] ?: emptyList()

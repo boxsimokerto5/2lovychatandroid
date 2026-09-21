@@ -155,18 +155,48 @@ fun ChatDetailScreen(
 
     val listState = rememberLazyListState()
 
-    // Scroll to bottom when new messages arrive
+    // Lacak waktu aktivitas dan status lifecycle layar untuk Smart Adaptive Polling (Fase 1)
+    var lastActivityTime by remember { mutableStateOf(System.currentTimeMillis()) }
+    var isScreenVisible by remember { mutableStateOf(true) }
+
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                isScreenVisible = true
+                lastActivityTime = System.currentTimeMillis()
+                onPollMessages?.invoke()
+            } else if (event == androidx.lifecycle.Lifecycle.Event.ON_PAUSE || event == androidx.lifecycle.Lifecycle.Event.ON_STOP) {
+                isScreenVisible = false
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    // Scroll to bottom when new messages arrive dan perbarui waktu aktivitas
     LaunchedEffect(messages.size) {
+        lastActivityTime = System.currentTimeMillis()
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
         }
     }
 
-    // Polling berkala (2.5 detik) untuk obrolan 2 arah secara real-time
+    // Smart Adaptive Polling (Menghemat kuota koneksi & CPU database gratisan untuk 50k users)
     LaunchedEffect(conversationId) {
         while (true) {
-            kotlinx.coroutines.delay(2500)
-            onPollMessages?.invoke()
+            val idleSeconds = (System.currentTimeMillis() - lastActivityTime) / 1000
+            val pollDelayMs = when {
+                idleSeconds < 25 -> 4000L   // Obrolan aktif: polling setiap 4 detik
+                idleSeconds < 90 -> 8000L   // Percakapan melambat: 8 detik
+                else -> 15000L              // Percakapan diam/ditinggal: 15 detik
+            }
+            kotlinx.coroutines.delay(pollDelayMs)
+            if (isScreenVisible) {
+                onPollMessages?.invoke()
+            }
         }
     }
 
@@ -556,6 +586,7 @@ fun ChatDetailScreen(
 
                             IconButton(
                                 onClick = {
+                                    lastActivityTime = System.currentTimeMillis()
                                     if (pendingPhotoUri != null && onSendPhotoMessage != null) {
                                         val uriToSend = pendingPhotoUri!!
                                         val caption = inputText
