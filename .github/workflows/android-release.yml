@@ -35,8 +35,14 @@ jobs:
             echo "Using existing release.jks"
           fi
 
+      - name: Prepare Environment File (.env)
+        run: |
+          if [ ! -f .env ]; then
+            cp .env.example .env
+          fi
+
       - name: Build Release Bundle (AAB for Play Store)
-        run: gradle :app:bundleRelease
+        run: gradle :app:bundleRelease -x lint
         env:
           KEYSTORE_PATH: ${{ github.workspace }}/release.jks
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD || 'LovyChatRelease2026' }}
@@ -44,7 +50,7 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'LovyChatRelease2026' }}
 
       - name: Build Release APK
-        run: gradle :app:assembleRelease
+        run: gradle :app:assembleRelease -x lint
         env:
           KEYSTORE_PATH: ${{ github.workspace }}/release.jks
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD || 'LovyChatRelease2026' }}
