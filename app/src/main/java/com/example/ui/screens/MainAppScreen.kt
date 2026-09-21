@@ -110,6 +110,7 @@ fun MainAppScreen(
         is CurrentScreen.Moments -> {
             MomentsScreen(
                 moments = uiState.moments,
+                myMomentIds = uiState.myMomentIds,
                 currentUserId = uiState.myLovyId,
                 currentUserName = uiState.myName,
                 onBack = { viewModel.navigateBack() },

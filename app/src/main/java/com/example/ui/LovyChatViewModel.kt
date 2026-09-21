@@ -85,7 +85,9 @@ data class LovyChatUiState(
     val r2BucketName: String = "lovychat",
     val r2PublicDomain: String = "",
     val isUploadingPhoto: Boolean = false,
-    val uploadProgressText: String? = null
+    val uploadProgressText: String? = null,
+    // My Moments tracking (IDs of moments created by this user)
+    val myMomentIds: Set<String> = emptySet()
 )
 
 class LovyChatViewModel(application: Application) : AndroidViewModel(application) {
@@ -114,6 +116,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         } catch (_: Throwable) {
         }
         loadBlockedUsers()
+        loadMyMoments()
         refreshSupabaseState()
         refreshR2State()
         detectAndApplyGeoLanguage()
@@ -171,6 +174,14 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     nearbyUsers = filteredNearby
                 )
             }
+        } catch (_: Throwable) {
+        }
+    }
+
+    private fun loadMyMoments() {
+        try {
+            val savedIds = prefs.getStringSet("my_moment_ids", emptySet()) ?: emptySet()
+            _uiState.update { it.copy(myMomentIds = savedIds) }
         } catch (_: Throwable) {
         }
     }
@@ -965,7 +976,12 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             locationTag = locationTag ?: "Jakarta Selatan",
             authorId = authorId
         )
-        _uiState.update { it.copy(moments = listOf(newMoment) + it.moments) }
+        val newMomentIds = _uiState.value.myMomentIds + newMoment.id
+        try {
+            prefs.edit().putStringSet("my_moment_ids", newMomentIds).apply()
+        } catch (_: Throwable) {
+        }
+        _uiState.update { it.copy(moments = listOf(newMoment) + it.moments, myMomentIds = newMomentIds) }
 
         // Simpan ke Supabase
         viewModelScope.launch {
@@ -975,8 +991,20 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
     fun deleteMoment(momentId: String) {
         recordFeatureClick()
+        val newMomentIds = _uiState.value.myMomentIds - momentId
+        try {
+            prefs.edit().putStringSet("my_moment_ids", newMomentIds).apply()
+        } catch (_: Throwable) {
+        }
         _uiState.update { state ->
-            state.copy(moments = state.moments.filter { it.id != momentId })
+            state.copy(
+                moments = state.moments.filter { it.id != momentId },
+                myMomentIds = newMomentIds
+            )
+        }
+        try {
+            android.widget.Toast.makeText(getApplication(), "Momen berhasil dihapus", android.widget.Toast.LENGTH_SHORT).show()
+        } catch (_: Throwable) {
         }
         // Hapus dari Supabase jika tersambung
         viewModelScope.launch {

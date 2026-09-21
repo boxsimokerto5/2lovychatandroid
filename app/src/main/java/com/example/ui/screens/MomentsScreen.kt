@@ -53,6 +53,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -95,11 +96,15 @@ import com.example.ui.theme.ScreenBackground
 @Composable
 fun MomentsScreen(
     moments: List<MomentItem>,
+    myMomentIds: Set<String> = emptySet(),
+    currentUserId: String = "",
+    currentUserName: String = "",
     onBack: () -> Unit,
     onToggleLike: (String) -> Unit,
     onPostMoment: (String) -> Unit,
     onPostMomentWithDetails: ((content: String, imageUrl: String?, locationTag: String?) -> Unit)? = null,
     onPostMomentWithPhotoUri: ((content: String, uri: android.net.Uri?, locationTag: String?) -> Unit)? = null,
+    onDeleteMoment: ((String) -> Unit)? = null,
     isUploadingPhoto: Boolean = false,
     uploadProgressText: String? = null,
     modifier: Modifier = Modifier
@@ -215,14 +220,22 @@ fun MomentsScreen(
             }
 
             moments.forEachIndexed { index, item ->
+                val isMyMoment = item.id in myMomentIds ||
+                        item.authorId == "me" ||
+                        (currentUserId.isNotBlank() && item.authorId == currentUserId) ||
+                        (currentUserName.isNotBlank() && item.authorName.equals(currentUserName, ignoreCase = true))
                 item(key = item.id) {
                     MomentCard(
                         item = item,
+                        isMyMoment = isMyMoment,
                         onToggleLike = { onToggleLike(item.id) },
                         onPhotoClick = { url -> fullscreenPhotoUrl = url },
                         onShareClick = {
                             Toast.makeText(context, "Tautan momen disalin!", Toast.LENGTH_SHORT).show()
-                        }
+                        },
+                        onDeleteClick = if (isMyMoment && onDeleteMoment != null) {
+                            { onDeleteMoment(item.id) }
+                        } else null
                     )
                 }
 
@@ -494,15 +507,56 @@ fun MomentsScreen(
 @Composable
 fun MomentCard(
     item: MomentItem,
+    isMyMoment: Boolean = false,
     onToggleLike: () -> Unit,
     onPhotoClick: (String) -> Unit,
     onShareClick: () -> Unit,
+    onDeleteClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
     val heartColor by animateColorAsState(
         targetValue = if (item.isLiked) Color(0xFFE53935) else NeutralMedium,
         label = "heartColor"
     )
+
+    if (showDeleteConfirm && onDeleteClick != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = {
+                Text(
+                    text = "Hapus Momen?",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp,
+                    color = NeutralDark
+                )
+            },
+            text = {
+                Text(
+                    text = "Apakah kamu yakin ingin menghapus momen ini? Tindakan ini tidak dapat dibatalkan.",
+                    fontSize = 14.sp,
+                    color = NeutralMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirm = false
+                        onDeleteClick()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935))
+                ) {
+                    Text("Hapus", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Batal", color = NeutralMedium)
+                }
+            }
+        )
+    }
 
     Card(
         shape = RoundedCornerShape(18.dp),
@@ -513,7 +567,7 @@ fun MomentCard(
             .testTag("moment_card_${item.id}")
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Header Row: Avatar, Name, Location, Time
+            // Header Row: Avatar, Name, Location, Time, Delete button (if my moment)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
@@ -567,6 +621,26 @@ fun MomentCard(
                                     overflow = TextOverflow.Ellipsis
                                 )
                             }
+                        }
+                    }
+                }
+
+                if (isMyMoment && onDeleteClick != null) {
+                    Surface(
+                        onClick = { showDeleteConfirm = true },
+                        shape = RoundedCornerShape(10.dp),
+                        color = Color(0xFFFFEBEE),
+                        modifier = Modifier
+                            .size(36.dp)
+                            .testTag("btn_delete_moment_${item.id}")
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.DeleteOutline,
+                                contentDescription = "Hapus Momen",
+                                tint = Color(0xFFD32F2F),
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
                     }
                 }
@@ -710,6 +784,32 @@ fun MomentCard(
                         color = NeutralMedium,
                         fontWeight = FontWeight.Medium
                     )
+                }
+
+                // Delete Button (if my moment)
+                if (isMyMoment && onDeleteClick != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { showDeleteConfirm = true }
+                            .padding(horizontal = 8.dp, vertical = 6.dp)
+                            .testTag("btn_delete_action_${item.id}")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DeleteOutline,
+                            contentDescription = "Hapus Momen",
+                            tint = Color(0xFFD32F2F),
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Hapus",
+                            fontSize = 12.5.sp,
+                            color = Color(0xFFD32F2F),
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
             }
         }
