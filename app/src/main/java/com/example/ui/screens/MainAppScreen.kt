@@ -265,6 +265,7 @@ fun MainAppScreen(
                             myName = uiState.myName,
                             myBio = uiState.myBio,
                             myLovyId = uiState.myLovyId,
+                            isGuest = uiState.isGuest,
                             profilePicture = uiState.userProfile.profilePicture,
                             isSupabaseConnected = uiState.isSupabaseConnected,
                             language = uiState.language,

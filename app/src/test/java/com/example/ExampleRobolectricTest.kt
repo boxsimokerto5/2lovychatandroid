@@ -323,5 +323,35 @@ class ExampleRobolectricTest {
     }
     assertTrue("Deleted moment should not be in active partner moments", updatedMoments.none { it.id == momentToDelete.id })
   }
+
+  @Test
+  fun `test guest mode login sets isGuest true and sandbox data`() {
+    val app = ApplicationProvider.getApplicationContext<android.app.Application>()
+    val viewModel = LovyChatViewModel(app)
+
+    viewModel.loginAsGuest()
+    val state = viewModel.uiState.value
+    assertTrue("isGuest should be true in guest mode", state.isGuest)
+    assertTrue("isLoggedIn should be true in guest mode", state.isLoggedIn)
+    assertEquals("Tamu Lovy", state.myName)
+    assertEquals(com.example.ui.CurrentScreen.Main, state.currentScreen)
+    assertTrue("Guest mode should have demo conversations", state.conversations.isNotEmpty())
+    assertTrue("Guest mode should have demo moments", state.moments.isNotEmpty())
+  }
+
+  @Test
+  fun `test real user login sets isGuest false and isolates from guest dummy conversations`() {
+    val app = ApplicationProvider.getApplicationContext<android.app.Application>()
+    val viewModel = LovyChatViewModel(app)
+
+    viewModel.loginUser("Budi Santoso")
+    val state = viewModel.uiState.value
+    org.junit.Assert.assertFalse("isGuest should be false for registered user", state.isGuest)
+    assertTrue("isLoggedIn should be true for registered user", state.isLoggedIn)
+    assertEquals("Budi Santoso", state.myName)
+    assertEquals(com.example.ui.CurrentScreen.Main, state.currentScreen)
+    // Real user starts isolated from dummy mock conversations
+    assertTrue("Registered user conversations should be isolated from guest dummy chats", state.conversations.isEmpty())
+  }
 }
 

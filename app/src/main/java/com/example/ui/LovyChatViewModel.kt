@@ -42,6 +42,7 @@ data class LovyChatUiState(
     val currentTab: Int = 2, // Default to Temukan (matching the screenshot)
     val currentScreen: CurrentScreen = CurrentScreen.Splash,
     val isLoggedIn: Boolean = false,
+    val isGuest: Boolean = false,
     val userProfile: UserProfile = UserProfile(),
     val nearbyUsers: List<User> = MockDataSource.initialNearbyUsers,
     val chattedFriends: List<User> = emptyList(),
@@ -182,6 +183,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun updateUserActivity() {
+        if (_uiState.value.isGuest) return // Mode Tamu tidak mengirim heartbeat ke Supabase
         val now = System.currentTimeMillis()
         if (now - lastUserActivityTimestamp < USER_ACTIVITY_THROTTLE_MS) {
             // Abaikan heartbeat berulang jika belum lewat 5 menit (sangat menghemat kuota tulis)
@@ -573,6 +575,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun syncFromSupabase(forceRefresh: Boolean = false) {
+        if (_uiState.value.isGuest) return // Mode Tamu tidak disinkronkan ke Supabase
         if (!SupabaseClient.isConfigured()) return
         val now = System.currentTimeMillis()
         if (!forceRefresh && now - lastNearbyScanTime < CACHE_DURATION_MS && now - lastMomentsSyncTime < CACHE_DURATION_MS) {
@@ -608,6 +611,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun refreshMoments(force: Boolean = false) {
+        if (_uiState.value.isGuest) return
         val now = System.currentTimeMillis()
         if (!force && now - lastMomentsSyncTime < CACHE_DURATION_MS) return
         viewModelScope.launch {
@@ -721,48 +725,55 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         _uiState.update {
             it.copy(
                 isLoggedIn = true,
+                isGuest = false,
                 myName = finalName,
-                currentScreen = CurrentScreen.Main
+                currentScreen = CurrentScreen.Main,
+                // Mode Pengguna Asli: Pisahkan dari percakapan dummy tamu agar tidak bercampur
+                conversations = emptyList(),
+                messagesMap = emptyMap()
             )
         }
         updateUserActivity()
+        syncFromSupabase(forceRefresh = true)
     }
 
     fun loginAsGuest() {
         _uiState.update {
             it.copy(
                 isLoggedIn = true,
+                isGuest = true,
                 myName = "Tamu Lovy",
-                currentScreen = CurrentScreen.Main
+                currentScreen = CurrentScreen.Main,
+                // Mode Tamu: Memuat percakapan dan pesan simulasi demo lokal (sandbox)
+                conversations = MockDataSource.initialConversations,
+                messagesMap = MockDataSource.initialMessages,
+                oceanBottles = MockDataSource.oceanBottles,
+                moments = MockDataSource.initialMoments
             )
         }
-        updateUserActivity()
     }
 
     fun logout() {
-        // Tandai dan hapus semua pesan di Supabase untuk pengirim saat logout
-        viewModelScope.launch {
-            try {
-                supabaseRepo.markAllSenderMessagesDeleted("me")
-            } catch (e: Exception) {
-                Log.w("LovyChatViewModel", "Gagal membersihkan pesan di Supabase saat logout", e)
+        val wasRealUser = !_uiState.value.isGuest && _uiState.value.isLoggedIn
+        if (wasRealUser) {
+            // Tandai dan hapus semua pesan di Supabase untuk pengirim saat logout
+            viewModelScope.launch {
+                try {
+                    supabaseRepo.markAllSenderMessagesDeleted("me")
+                } catch (e: Exception) {
+                    Log.w("LovyChatViewModel", "Gagal membersihkan pesan di Supabase saat logout", e)
+                }
             }
         }
 
         _uiState.update {
             it.copy(
                 isLoggedIn = false,
+                isGuest = false,
                 currentScreen = CurrentScreen.Login,
-                // Semua pesan dihapus saat logout sesuai instruksi
                 messagesMap = emptyMap(),
                 activeChatId = null,
-                // Reset cuplikan pesan di daftar percakapan, tetapi kontak teman tetap utuh
-                conversations = it.conversations.map { conv ->
-                    conv.copy(
-                        lastMessage = "Pesan telah dibersihkan saat logout",
-                        unreadCount = 0
-                    )
-                }
+                conversations = emptyList()
             )
         }
     }
@@ -859,8 +870,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
             delay(600)
 
-            // Coba ambil dari Supabase jika ada & cache sudah kadaluwarsa atau diminta paksa
-            val remoteUsers = if (!isCacheValid) supabaseRepo.fetchNearbyUsers() else null
+            // Coba ambil dari Supabase jika ada & cache sudah kadaluwarsa atau diminta paksa (hanya untuk pengguna asli)
+            val remoteUsers = if (!isCacheValid && !_uiState.value.isGuest) supabaseRepo.fetchNearbyUsers() else null
             if (!remoteUsers.isNullOrEmpty()) {
                 lastNearbyScanTime = System.currentTimeMillis()
                 val filtered = remoteUsers.filterNot { isUserBlocked(it.id, it.name) }
@@ -938,16 +949,18 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             )
         }
 
-        // Kirim ke Supabase di background jika tersambung
-        viewModelScope.launch {
-            supabaseRepo.sendChatMessage(newMsg)
+        if (_uiState.value.isGuest) {
+            // Mode Tamu: Tidak pernah kirim ke Supabase, gunakan auto reply lokal
+            scheduleAutoReply(convId, user.name)
+        } else {
+            // Mode Pengguna Asli: Kirim ke Supabase, TIDAK ADA auto-reply bot
+            viewModelScope.launch {
+                supabaseRepo.sendChatMessage(newMsg)
+            }
         }
 
         // Open chat directly
         openChat(convId, user.name, user.avatarColorHex)
-
-        // Schedule auto response
-        scheduleAutoReply(convId, user.name)
     }
 
     fun openChat(conversationId: String, partnerName: String, partnerAvatarHex: Long) {
@@ -980,21 +993,23 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             )
         }
 
-        // Sinkronisasi pesan obrolan jika ada di Supabase (dengan smart cache 30 detik agar tidak boros query tiap kali buka chat)
-        val lastChatSync = lastChatSyncMap[conversationId] ?: 0L
-        val now = System.currentTimeMillis()
-        if (now - lastChatSync >= 30_000L) {
-            lastChatSyncMap[conversationId] = now
-            viewModelScope.launch {
-                val remoteMsgs = supabaseRepo.fetchChatMessages(conversationId)
-                if (!remoteMsgs.isNullOrEmpty()) {
-                    val current = _uiState.value.messagesMap[conversationId] ?: emptyList()
-                    val merged = (current + remoteMsgs)
-                        .filterNot { it.deletedForSender && it.isFromMe }
-                        .distinctBy { it.id }
-                        .sortedBy { it.timestamp }
-                    _uiState.update {
-                        it.copy(messagesMap = it.messagesMap + (conversationId to merged))
+        // Sinkronisasi pesan obrolan jika ada di Supabase untuk pengguna asli (dengan smart cache 30 detik)
+        if (!_uiState.value.isGuest) {
+            val lastChatSync = lastChatSyncMap[conversationId] ?: 0L
+            val now = System.currentTimeMillis()
+            if (now - lastChatSync >= 30_000L) {
+                lastChatSyncMap[conversationId] = now
+                viewModelScope.launch {
+                    val remoteMsgs = supabaseRepo.fetchChatMessages(conversationId)
+                    if (!remoteMsgs.isNullOrEmpty()) {
+                        val current = _uiState.value.messagesMap[conversationId] ?: emptyList()
+                        val merged = (current + remoteMsgs)
+                            .filterNot { it.deletedForSender && it.isFromMe }
+                            .distinctBy { it.id }
+                            .sortedBy { it.timestamp }
+                        _uiState.update {
+                            it.copy(messagesMap = it.messagesMap + (conversationId to merged))
+                        }
                     }
                 }
             }
@@ -1057,12 +1072,15 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             )
         }
 
-        viewModelScope.launch {
-            supabaseRepo.sendChatMessage(newMsg)
+        if (_uiState.value.isGuest) {
+            scheduleAutoReply(convId, bottle.senderName)
+        } else {
+            viewModelScope.launch {
+                supabaseRepo.sendChatMessage(newMsg)
+            }
         }
 
         openChat(convId, bottle.senderName, bottle.avatarHex)
-        scheduleAutoReply(convId, bottle.senderName)
     }
 
     fun deleteMessageForSender(conversationId: String, messageId: String) {
@@ -1088,8 +1106,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             )
         }
 
-        viewModelScope.launch {
-            supabaseRepo.markMessageDeletedForSender(messageId)
+        if (!_uiState.value.isGuest) {
+            viewModelScope.launch {
+                supabaseRepo.markMessageDeletedForSender(messageId)
+            }
         }
     }
 
@@ -1119,15 +1139,22 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             )
         }
 
-        // Sinkronisasi ke Supabase
-        viewModelScope.launch {
-            supabaseRepo.sendChatMessage(newMsg)
+        if (_uiState.value.isGuest) {
+            // Mode Tamu: HANYA lokal, JANGAN pernah kirim ke Supabase!
+            // Mesin generator jawab otomatis hanya melayani mode tamu untuk simulasi interaktif
+            scheduleAutoReply(conversationId, partnerName)
+        } else {
+            // Mode Pengguna Asli: Sinkronisasi ke Supabase, TIDAK ADA auto-reply bot
+            viewModelScope.launch {
+                supabaseRepo.sendChatMessage(newMsg)
+            }
         }
-
-        scheduleAutoReply(conversationId, partnerName)
     }
 
     private fun scheduleAutoReply(conversationId: String, partnerName: String) {
+        // Hanya aktif untuk Mode Tamu
+        if (!_uiState.value.isGuest) return
+
         viewModelScope.launch {
             delay(2000)
             if (isUserBlocked(userName = partnerName)) return@launch
@@ -1164,8 +1191,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 )
             }
 
-            // Simpan balasan ke Supabase
-            supabaseRepo.sendChatMessage(replyMsg)
+            // PENTING: Mode Tamu tidak pernah mengirim balasan simulasi ke Supabase
         }
     }
 
@@ -1193,9 +1219,11 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             )
         }
 
-        // Sinkronisasi ke Supabase
-        viewModelScope.launch {
-            supabaseRepo.sendBottle(newBottle)
+        // Sinkronisasi ke Supabase (hanya untuk pengguna asli)
+        if (!_uiState.value.isGuest) {
+            viewModelScope.launch {
+                supabaseRepo.sendBottle(newBottle)
+            }
         }
 
         return true
@@ -1206,13 +1234,15 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             _uiState.update { it.copy(isFishing = true, fishedBottle = null) }
             
-            // Coba ambil botol terbaru dari Supabase jika ada
-            try {
-                val remoteBottles = supabaseRepo.fetchOceanBottles()
-                if (!remoteBottles.isNullOrEmpty()) {
-                    _uiState.update { it.copy(oceanBottles = remoteBottles) }
+            // Coba ambil botol terbaru dari Supabase jika ada (hanya pengguna asli)
+            if (!_uiState.value.isGuest) {
+                try {
+                    val remoteBottles = supabaseRepo.fetchOceanBottles()
+                    if (!remoteBottles.isNullOrEmpty()) {
+                        _uiState.update { it.copy(oceanBottles = remoteBottles) }
+                    }
+                } catch (_: Throwable) {
                 }
-            } catch (_: Throwable) {
             }
 
             delay(1200)
@@ -1302,9 +1332,11 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
         _uiState.update { it.copy(moments = listOf(newMoment) + it.moments, myMomentIds = newMomentIds) }
 
-        // Simpan ke Supabase
-        viewModelScope.launch {
-            supabaseRepo.sendMoment(newMoment, authorId)
+        // Simpan ke Supabase (hanya jika bukan mode tamu)
+        if (!_uiState.value.isGuest) {
+            viewModelScope.launch {
+                supabaseRepo.sendMoment(newMoment, authorId)
+            }
         }
     }
 
@@ -1325,12 +1357,14 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             android.widget.Toast.makeText(getApplication(), "Momen berhasil dihapus", android.widget.Toast.LENGTH_SHORT).show()
         } catch (_: Throwable) {
         }
-        // Hapus dari Supabase jika tersambung
-        viewModelScope.launch {
-            try {
-                supabaseRepo.deleteMoment(momentId)
-            } catch (e: Exception) {
-                Log.w("LovyChatViewModel", "Gagal menghapus momen di cloud: $momentId", e)
+        // Hapus dari Supabase jika tersambung (hanya jika bukan mode tamu)
+        if (!_uiState.value.isGuest) {
+            viewModelScope.launch {
+                try {
+                    supabaseRepo.deleteMoment(momentId)
+                } catch (e: Exception) {
+                    Log.w("LovyChatViewModel", "Gagal menghapus momen di cloud: $momentId", e)
+                }
             }
         }
     }
@@ -1520,11 +1554,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                         )
                     }
 
-                    // Sinkronisasi ke Supabase
-                    supabaseRepo.sendChatMessage(newMsg)
-
-                    // Auto-reply admiring the photo
-                    schedulePhotoAutoReply(conversationId, partnerName)
+                    if (_uiState.value.isGuest) {
+                        // Mode Tamu: auto-reply lokal untuk foto
+                        schedulePhotoAutoReply(conversationId, partnerName)
+                    } else {
+                        // Mode Pengguna Asli: Sinkronisasi ke Supabase, TIDAK ADA auto-reply bot
+                        supabaseRepo.sendChatMessage(newMsg)
+                    }
                 } else {
                     _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
                 }
@@ -1536,6 +1572,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun schedulePhotoAutoReply(conversationId: String, partnerName: String) {
+        // Hanya aktif untuk Mode Tamu
+        if (!_uiState.value.isGuest) return
+
         viewModelScope.launch {
             delay(2500)
             if (isUserBlocked(userName = partnerName)) return@launch
@@ -1572,7 +1611,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 )
             }
 
-            supabaseRepo.sendChatMessage(replyMsg)
+            // PENTING: Mode Tamu tidak mengirim balasan foto simulasi ke Supabase
         }
     }
 }
