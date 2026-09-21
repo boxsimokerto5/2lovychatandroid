@@ -639,6 +639,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     val filtered = remoteUsers
                         .filterNot { it.id == myId || it.id == "current_user" }
                         .filterNot { isUserBlocked(it.id, it.name) }
+                        .shuffled() // Diacak agar penemuan teman terasa dinamis & adil (misal 400m, 1km, 200m)
                     _uiState.update { it.copy(nearbyUsers = filtered) }
                     lastNearbyScanTime = System.currentTimeMillis()
                 }
@@ -1050,6 +1051,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 val filtered = (remoteUsers ?: emptyList())
                     .filterNot { it.id == myId || it.id == "current_user" }
                     .filterNot { isUserBlocked(it.id, it.name) }
+                    .shuffled() // Diacak agar penemuan teman dalam jangkauan terasa dinamis (misal 400m, 1km, 200m)
                 _uiState.update { it.copy(isScanningNearby = false, nearbyUsers = filtered) }
             } else {
                 // Mode Tamu: Gunakan data demo simulasi (MockDataSource)
@@ -1073,7 +1075,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                         (user.distanceMeters + variation).coerceAtLeast(40)
                     }
                     user.copy(distanceMeters = calculatedDistance)
-                }.sortedBy { it.distanceMeters }
+                }.shuffled() // Diacak posisinya dalam radius (400m, 1.2km, 200m, dst)
                 _uiState.update { it.copy(isScanningNearby = false, nearbyUsers = updated) }
             }
         }
