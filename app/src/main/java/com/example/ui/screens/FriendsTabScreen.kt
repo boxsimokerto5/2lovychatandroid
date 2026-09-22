@@ -19,19 +19,25 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonSearch
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -59,12 +65,23 @@ fun FriendsTabScreen(
     friends: List<User>,
     onSelectFriend: (User) -> Unit,
     onNavigateToNearby: () -> Unit,
+    onDeleteFriend: (User) -> Unit = {},
+    onClearAllFriends: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    val filtered = remember(friends, searchQuery) {
-        if (searchQuery.isBlank()) friends
+    var friendToDelete by remember { mutableStateOf<User?>(null) }
+    var showClearAllDialog by remember { mutableStateOf(false) }
+
+    // Urutkan daftar teman: pengguna yang sedang ONLINE berada di paling atas!
+    val sortedAndFiltered = remember(friends, searchQuery) {
+        val baseList = if (searchQuery.isBlank()) friends
         else friends.filter { it.name.contains(searchQuery, ignoreCase = true) }
+
+        baseList.sortedWith(
+            compareByDescending<User> { it.isOnline }
+                .thenBy { it.name.lowercase() }
+        )
     }
 
     Scaffold(
@@ -144,22 +161,37 @@ fun FriendsTabScreen(
                     )
                 }
 
-                Box(
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(Color(0xFFF7F9FA))
-                        .padding(horizontal = 16.dp, vertical = 7.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Text(
-                        text = "Kontak Saya (${filtered.size})",
+                        text = "Kontak Saya (${sortedAndFiltered.size})",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeutralMedium
                     )
+
+                    if (sortedAndFiltered.isNotEmpty()) {
+                        Text(
+                            text = "Hapus Semua",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFFE53935),
+                            modifier = Modifier
+                                .clickable { showClearAllDialog = true }
+                                .padding(vertical = 2.dp, horizontal = 4.dp)
+                                .testTag("clear_all_friends_button")
+                        )
+                    }
                 }
             }
 
-            if (filtered.isEmpty()) {
+            if (sortedAndFiltered.isEmpty()) {
                 item {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -201,48 +233,150 @@ fun FriendsTabScreen(
                     }
                 }
             } else {
-                items(filtered, key = { it.id }) { user ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onSelectFriend(user) }
-                        .background(Color.White)
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                        .testTag("friend_item_${user.id}")
-                ) {
-                    LovyAvatar(
-                        name = user.name,
-                        avatarColorHex = user.avatarColorHex,
-                        avatarUrl = user.avatarUrl,
-                        size = 46.dp,
-                        fontSize = 18.sp,
-                        isOnline = user.isOnline
-                    )
-
-                    Spacer(modifier = Modifier.width(14.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = user.name,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = NeutralDark
+                items(sortedAndFiltered, key = { it.id }) { user ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelectFriend(user) }
+                            .background(Color.White)
+                            .padding(start = 16.dp, end = 8.dp, top = 10.dp, bottom = 10.dp)
+                            .testTag("friend_item_${user.id}")
+                    ) {
+                        LovyAvatar(
+                            name = user.name,
+                            avatarColorHex = user.avatarColorHex,
+                            avatarUrl = user.avatarUrl,
+                            size = 46.dp,
+                            fontSize = 18.sp,
+                            isOnline = user.isOnline
                         )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = user.bio,
-                            fontSize = 12.sp,
-                            color = NeutralMedium,
-                            maxLines = 1
-                        )
+
+                        Spacer(modifier = Modifier.width(14.dp))
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = user.name,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = NeutralDark
+                                )
+                                if (user.isOnline) {
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Surface(
+                                        color = Color(0xFFE8F5E9),
+                                        shape = RoundedCornerShape(6.dp)
+                                    ) {
+                                        Text(
+                                            text = "Online",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF2E7D32),
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = user.bio,
+                                fontSize = 12.sp,
+                                color = NeutralMedium,
+                                maxLines = 1
+                            )
+                        }
+
+                        IconButton(
+                            onClick = { friendToDelete = user },
+                            modifier = Modifier
+                                .size(44.dp)
+                                .testTag("delete_friend_${user.id}")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.DeleteOutline,
+                                contentDescription = "Hapus Kontak Teman",
+                                tint = NeutralMedium.copy(alpha = 0.65f),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
+                    HorizontalDivider(modifier = Modifier.padding(start = 76.dp), color = NeutralBorder, thickness = 0.6.dp)
                 }
-                HorizontalDivider(modifier = Modifier.padding(start = 76.dp), color = NeutralBorder, thickness = 0.6.dp)
             }
         }
     }
-}
+
+    // Dialog konfirmasi hapus teman per individu
+    if (friendToDelete != null) {
+        val target = friendToDelete!!
+        AlertDialog(
+            onDismissRequest = { friendToDelete = null },
+            title = {
+                Text(text = "Hapus Kontak Teman", fontWeight = FontWeight.Bold, fontSize = 17.sp)
+            },
+            text = {
+                Text(
+                    text = "Apakah Anda yakin ingin menghapus \"${target.name}\" dari daftar kontak teman? Kontak tidak akan menyampah di halaman ini lagi.",
+                    fontSize = 14.sp,
+                    color = NeutralDark,
+                    lineHeight = 20.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onDeleteFriend(target)
+                        friendToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935)),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("Hapus", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { friendToDelete = null }) {
+                    Text("Batal", color = NeutralMedium)
+                }
+            }
+        )
+    }
+
+    // Dialog konfirmasi bersihkan semua teman
+    if (showClearAllDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearAllDialog = false },
+            title = {
+                Text(text = "Bersihkan Semua Teman", fontWeight = FontWeight.Bold, fontSize = 17.sp)
+            },
+            text = {
+                Text(
+                    text = "Hapus semua kontak teman dari daftar ini? Anda tetap dapat menyapa dan mencari teman baru kapan saja melalui radar.",
+                    fontSize = 14.sp,
+                    color = NeutralDark,
+                    lineHeight = 20.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onClearAllFriends()
+                        showClearAllDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935)),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("Hapus Semua", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearAllDialog = false }) {
+                    Text("Batal", color = NeutralMedium)
+                }
+            }
+        )
+    }
 }
 
 @Composable

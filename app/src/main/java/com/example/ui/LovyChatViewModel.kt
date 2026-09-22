@@ -168,6 +168,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             val savedSession = authRepo.getSavedSession()
             if (savedSession != null && savedSession.isLoggedIn) {
                 val isGuestUser = savedSession.isGuest
+                if (!isGuestUser) {
+                    clearDummyFriends()
+                }
                 _uiState.update {
                     it.copy(
                         isLoggedIn = true,
@@ -189,12 +192,27 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         syncFromSupabase()
     }
 
+    fun isDummyFriend(userId: String, userName: String): Boolean {
+        val dummyNames = setOf(
+            "siti rahma", "rian pratama", "nadia putri", "dimas anggara", 
+            "alya zahra", "pengguna lovy", "rania putri", "clara monica",
+            "dimas danendra", "clarissa aurelia", "salma salsabil"
+        )
+        val isMockId = userId.matches(Regex("^u[0-9]+$"))
+        return isMockId || dummyNames.contains(userName.trim().lowercase())
+    }
+
     private fun observeChatFriends() {
         viewModelScope.launch {
             try {
                 chatFriendDao.getAllFriendsFlow().collect { friendEntities ->
                     val friends = friendEntities.map { it.toUser() }
-                    _uiState.update { it.copy(chattedFriends = friends) }
+                    val finalFriends = if (!_uiState.value.isGuest) {
+                        friends.filterNot { isDummyFriend(it.id, it.name) }
+                    } else {
+                        friends
+                    }
+                    _uiState.update { it.copy(chattedFriends = finalFriends) }
                 }
             } catch (e: Exception) {
                 Log.w("LovyChatViewModel", "Gagal memuat teman mengobrol", e)
@@ -203,12 +221,62 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun saveChatFriend(user: User) {
+        if (!_uiState.value.isGuest && isDummyFriend(user.id, user.name)) {
+            // Abaikan penyimpanan user dummy jika pengguna sedang berada di akun asli
+            return
+        }
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 chatFriendDao.insertOrUpdateFriend(ChatFriendEntity.fromUser(user))
             } catch (e: Exception) {
                 Log.w("LovyChatViewModel", "Gagal menyimpan teman mengobrol", e)
             }
+        }
+    }
+
+    fun deleteChatFriend(userId: String, userName: String) {
+        recordFeatureClick()
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                chatFriendDao.deleteFriend(userId, userName)
+                chatFriendDao.deleteFriendById(userId)
+            } catch (e: Exception) {
+                Log.w("LovyChatViewModel", "Gagal menghapus teman", e)
+            }
+        }
+        _uiState.update { state ->
+            val updated = state.chattedFriends.filterNot { 
+                it.id == userId || it.name.equals(userName, ignoreCase = true) 
+            }
+            state.copy(chattedFriends = updated)
+        }
+    }
+
+    fun clearDummyFriends() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                chatFriendDao.deleteDummyFriends()
+            } catch (e: Exception) {
+                Log.w("LovyChatViewModel", "Gagal membersihkan kontak dummy", e)
+            }
+        }
+        _uiState.update { state ->
+            val updated = state.chattedFriends.filterNot { isDummyFriend(it.id, it.name) }
+            state.copy(chattedFriends = updated)
+        }
+    }
+
+    fun clearAllFriends() {
+        recordFeatureClick()
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                chatFriendDao.deleteAllFriends()
+            } catch (e: Exception) {
+                Log.w("LovyChatViewModel", "Gagal menghapus semua teman", e)
+            }
+        }
+        _uiState.update { state ->
+            state.copy(chattedFriends = emptyList())
         }
     }
 
@@ -778,6 +846,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
     fun loginUser(name: String) {
         val finalName = if (name.isNotBlank()) name else _uiState.value.myName
+        clearDummyFriends()
         _uiState.update {
             it.copy(
                 isLoggedIn = true,
@@ -802,6 +871,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         if (result.success) {
             val lovyId = result.lovyId ?: "lovy_${(100000..999999).random()}"
             val finalName = result.displayName ?: result.username ?: username
+            clearDummyFriends()
             _uiState.update {
                 it.copy(
                     isLoggedIn = true,
@@ -837,6 +907,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         if (result.success) {
             val lovyId = result.lovyId ?: _uiState.value.myLovyId
             val finalName = result.displayName ?: result.username ?: username
+            clearDummyFriends()
             _uiState.update {
                 it.copy(
                     isLoggedIn = true,
@@ -872,6 +943,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         if (result.success) {
             val lovyId = result.lovyId ?: _uiState.value.myLovyId
             val finalName = result.displayName ?: googleUser.displayName
+            clearDummyFriends()
             _uiState.update {
                 it.copy(
                     isLoggedIn = true,

@@ -21,6 +21,15 @@ interface ChatFriendDao {
     @Query("DELETE FROM chat_friends WHERE id = :id")
     suspend fun deleteFriendById(id: String)
 
+    @Query("DELETE FROM chat_friends WHERE id = :id OR name = :name")
+    suspend fun deleteFriend(id: String, name: String)
+
+    @Query("DELETE FROM chat_friends")
+    suspend fun deleteAllFriends()
+
+    @Query("DELETE FROM chat_friends WHERE id LIKE 'u%' OR name IN ('Siti Rahma', 'Rian Pratama', 'Nadia Putri', 'Dimas Anggara', 'Alya Zahra', 'Pengguna lovy', 'Rania Putri', 'Pengguna Lovy')")
+    suspend fun deleteDummyFriends()
+
     @Query("SELECT COUNT(*) FROM chat_friends")
     suspend fun getFriendsCount(): Int
 }

@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.R
+import com.example.model.User
 import com.example.ui.CurrentScreen
 import com.example.ui.LovyChatViewModel
 import com.example.ui.components.IronSourceBannerView
@@ -247,15 +248,31 @@ fun MainAppScreen(
                             }
                         )
                         1 -> {
-                            val friendsList = remember(uiState.isGuest, uiState.chattedFriends, uiState.nearbyUsers) {
-                                if (uiState.isGuest) {
+                            val friendsList = remember(uiState.isGuest, uiState.chattedFriends, uiState.nearbyUsers, uiState.conversations) {
+                                val baseList = if (uiState.isGuest) {
                                     // Mode Tamu: Tampilkan daftar demo agar tamu bisa menjelajahi UI
                                     val chattedIds = uiState.chattedFriends.map { it.id }.toSet()
                                     uiState.chattedFriends + uiState.nearbyUsers.filterNot { it.id in chattedIds }
                                 } else {
-                                    // Mode Asli: HANYA tampilkan kontak nyata yang pernah diajak mengobrol atau berteman
-                                    uiState.chattedFriends
+                                    // Mode Asli: HANYA tampilkan kontak nyata yang pernah diajak mengobrol atau berteman (tanpa user dummy)
+                                    uiState.chattedFriends.filterNot { viewModel.isDummyFriend(it.id, it.name) }
                                 }
+                                // Sinkronkan status online terkini dari radar pengguna sekitar dan obrolan
+                                val onlineIds = uiState.nearbyUsers.filter { it.isOnline }.map { it.id }.toSet()
+                                val onlinePartnerIds = uiState.conversations.filter { it.isOnline }.map { it.partnerId }.toSet()
+                                val onlineNames = (uiState.nearbyUsers.filter { it.isOnline }.map { it.name.lowercase() } +
+                                        uiState.conversations.filter { it.isOnline }.map { it.partnerName.lowercase() }).toSet()
+
+                                baseList.map { friend ->
+                                    val isNowOnline = friend.isOnline ||
+                                            friend.id in onlineIds ||
+                                            friend.id in onlinePartnerIds ||
+                                            friend.name.lowercase() in onlineNames
+                                    if (isNowOnline != friend.isOnline) friend.copy(isOnline = isNowOnline) else friend
+                                }.sortedWith(
+                                    compareByDescending<User> { it.isOnline }
+                                        .thenBy { it.name.lowercase() }
+                                )
                             }
                             FriendsTabScreen(
                                 friends = friendsList,
@@ -265,6 +282,12 @@ fun MainAppScreen(
                                 onNavigateToNearby = {
                                     viewModel.refreshNearbyScan(forceRefresh = false)
                                     viewModel.navigateTo(CurrentScreen.Nearby)
+                                },
+                                onDeleteFriend = { user ->
+                                    viewModel.deleteChatFriend(user.id, user.name)
+                                },
+                                onClearAllFriends = {
+                                    viewModel.clearAllFriends()
                                 }
                             )
                         }
