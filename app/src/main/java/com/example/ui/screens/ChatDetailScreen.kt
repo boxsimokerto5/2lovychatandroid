@@ -4,6 +4,12 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -144,6 +151,8 @@ fun ChatDetailScreen(
     isUploadingPhoto: Boolean = false,
     uploadProgressText: String? = null,
     onPollMessages: (() -> Unit)? = null,
+    isPartnerTyping: Boolean = false,
+    onUserTyping: ((Boolean) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var inputText by remember { mutableStateOf("") }
@@ -151,6 +160,23 @@ fun ChatDetailScreen(
     var messageToDelete by remember { mutableStateOf<ChatMessage?>(null) }
     var pendingPhotoUri by remember { mutableStateOf<android.net.Uri?>(null) }
     var viewingPhotoUrl by remember { mutableStateOf<String?>(null) }
+
+    // Debounce status mengetik pengguna saat mengetik di kolom input pesan
+    LaunchedEffect(inputText) {
+        if (inputText.isNotBlank()) {
+            onUserTyping?.invoke(true)
+            kotlinx.coroutines.delay(2500)
+            onUserTyping?.invoke(false)
+        } else {
+            onUserTyping?.invoke(false)
+        }
+    }
+
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        onDispose {
+            onUserTyping?.invoke(false)
+        }
+    }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -188,6 +214,13 @@ fun ChatDetailScreen(
         lastActivityTime = System.currentTimeMillis()
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
+        }
+    }
+
+    // Scroll to bottom saat lawan bicara sedang mengetik agar animasi indikator terlihat
+    LaunchedEffect(isPartnerTyping) {
+        if (isPartnerTyping && messages.isNotEmpty()) {
+            listState.animateScrollToItem(messages.size)
         }
     }
 
@@ -265,11 +298,38 @@ fun ChatDetailScreen(
                                     modifier = Modifier.size(15.dp)
                                 )
                             }
-                            Text(
-                                text = if (isPartnerBlocked) "Kontak Diblokir • Ketuk lihat profil" else "Online • Ketuk lihat profil",
-                                fontSize = 11.sp,
-                                color = if (isPartnerBlocked) Color(0xFFFFCDD2) else Color.White.copy(alpha = 0.88f)
-                            )
+                            if (isPartnerBlocked) {
+                                Text(
+                                    text = "Kontak Diblokir • Ketuk lihat profil",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFFFFCDD2)
+                                )
+                            } else if (isPartnerTyping) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.testTag("chat_detail_typing_status")
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(7.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFF69F0AE))
+                                    )
+                                    Spacer(modifier = Modifier.width(5.dp))
+                                    Text(
+                                        text = "sedang mengetik...",
+                                        fontSize = 11.5.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFFE8F5E9)
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    text = "Online • Ketuk lihat profil",
+                                    fontSize = 11.sp,
+                                    color = Color.White.copy(alpha = 0.88f)
+                                )
+                            }
                         }
                     }
                 },
@@ -332,6 +392,16 @@ fun ChatDetailScreen(
                             viewingPhotoUrl = url
                         }
                     )
+                }
+
+                if (isPartnerTyping) {
+                    item(key = "typing_indicator_bubble") {
+                        TypingIndicatorBubble(
+                            partnerName = partnerName,
+                            partnerAvatarHex = partnerAvatarHex,
+                            partnerAvatarUrl = partnerAvatarUrl
+                        )
+                    }
                 }
             }
 
@@ -599,10 +669,13 @@ fun ChatDetailScreen(
                                         val caption = inputText
                                         pendingPhotoUri = null
                                         inputText = ""
+                                        onUserTyping?.invoke(false)
                                         onSendPhotoMessage(uriToSend, caption)
                                     } else if (inputText.isNotBlank()) {
-                                        onSendMessage(inputText)
+                                        val textToSend = inputText
                                         inputText = ""
+                                        onUserTyping?.invoke(false)
+                                        onSendMessage(textToSend)
                                     }
                                 },
                                 enabled = !isUploadingPhoto && (pendingPhotoUri != null || inputText.isNotBlank()),
@@ -1748,3 +1821,97 @@ fun MessageTextWithLinks(
         }
     )
 }
+
+@Composable
+fun TypingIndicatorBubble(
+    partnerName: String,
+    partnerAvatarHex: Long,
+    partnerAvatarUrl: String? = null,
+    modifier: Modifier = Modifier
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "typing_dots_transition")
+
+    val dot1Offset by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = -5.5f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 420, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "dot1_offset"
+    )
+    val dot2Offset by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = -5.5f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 420, delayMillis = 140, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "dot2_offset"
+    )
+    val dot3Offset by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = -5.5f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 420, delayMillis = 280, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "dot3_offset"
+    )
+
+    Row(
+        verticalAlignment = Alignment.Bottom,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .testTag("typing_indicator_bubble")
+    ) {
+        LovyAvatar(
+            name = partnerName,
+            avatarColorHex = partnerAvatarHex,
+            avatarUrl = partnerAvatarUrl,
+            size = 32.dp,
+            fontSize = 13.sp,
+            isOnline = true
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Surface(
+            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 4.dp, bottomEnd = 16.dp),
+            color = Color.White,
+            shadowElevation = 1.dp,
+            border = BorderStroke(0.6.dp, Color(0xFFE0E0E0)),
+            modifier = Modifier.heightIn(min = 36.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .offset(y = dot1Offset.dp)
+                        .size(7.dp)
+                        .clip(CircleShape)
+                        .background(EmeraldGreen)
+                )
+                Box(
+                    modifier = Modifier
+                        .offset(y = dot2Offset.dp)
+                        .size(7.dp)
+                        .clip(CircleShape)
+                        .background(EmeraldGreen.copy(alpha = 0.8f))
+                )
+                Box(
+                    modifier = Modifier
+                        .offset(y = dot3Offset.dp)
+                        .size(7.dp)
+                        .clip(CircleShape)
+                        .background(EmeraldGreen.copy(alpha = 0.6f))
+                )
+            }
+        }
+    }
+}
+

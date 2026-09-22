@@ -196,6 +196,11 @@ fun MainAppScreen(
                 onPollMessages = {
                     val partnerId = conv?.partnerId ?: viewModel.extractPartnerIdFromConvId(screen.conversationId, uiState.myLovyId)
                     viewModel.pollChatMessages(screen.conversationId, partnerId)
+                },
+                isPartnerTyping = uiState.typingMap[screen.conversationId] == true,
+                onUserTyping = { isTyping ->
+                    val partnerId = conv?.partnerId ?: viewModel.extractPartnerIdFromConvId(screen.conversationId, uiState.myLovyId)
+                    viewModel.onUserTyping(screen.conversationId, partnerId, isTyping)
                 }
             )
         }

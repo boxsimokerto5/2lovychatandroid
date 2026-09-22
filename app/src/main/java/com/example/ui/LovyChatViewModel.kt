@@ -100,7 +100,8 @@ data class LovyChatUiState(
     val isNearbyVisible: Boolean = true,
     val hideExactDistance: Boolean = false,
     val showOnlineStatus: Boolean = true,
-    val fcmToken: String = ""
+    val fcmToken: String = "",
+    val typingMap: Map<String, Boolean> = emptyMap()
 )
 
 class LovyChatViewModel(application: Application) : AndroidViewModel(application) {
@@ -131,6 +132,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     private var lastSyncedLat: Double? = null
     private var lastSyncedLon: Double? = null
     private var lastUserActivityTimestamp = 0L
+    private var lastTypingSentTime = 0L
+    private val typingTimeoutJobs = mutableMapOf<String, kotlinx.coroutines.Job>()
 
     companion object {
         // Cache data selama 3 menit untuk memangkas 80%+ query baca ke cloud
@@ -261,6 +264,48 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 updated + user.copy(isFavorite = newFavorite)
             }
             state.copy(chattedFriends = finalFriends)
+        }
+    }
+
+    fun setPartnerTyping(conversationId: String, isTyping: Boolean) {
+        _uiState.update { state ->
+            val updated = state.typingMap.toMutableMap()
+            if (isTyping) {
+                updated[conversationId] = true
+            } else {
+                updated.remove(conversationId)
+            }
+            state.copy(typingMap = updated)
+        }
+    }
+
+    fun onUserTyping(conversationId: String, partnerId: String, isTyping: Boolean) {
+        if (_uiState.value.isGuest) return
+        val now = System.currentTimeMillis()
+        // Kirim status mengetik: throttle 3 detik jika sedang mengetik, atau segera kirim jika berhenti
+        if (!isTyping || now - lastTypingSentTime > 3000L) {
+            lastTypingSentTime = now
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    val msgText = if (isTyping) "__TYPING_START__" else "__TYPING_STOP__"
+                    val ephemeralMsg = ChatMessage(
+                        id = UUID.randomUUID().toString(),
+                        conversationId = conversationId,
+                        text = msgText,
+                        timestamp = now,
+                        isFromMe = true,
+                        deletedForSender = true,
+                        deletedForReceiver = false
+                    )
+                    supabaseRepo.sendChatMessage(
+                        message = ephemeralMsg,
+                        senderId = _uiState.value.myLovyId,
+                        receiverId = partnerId
+                    )
+                } catch (e: Exception) {
+                    Log.w("LovyChatViewModel", "Gagal mengirim status mengetik", e)
+                }
+            }
         }
     }
 
@@ -1332,24 +1377,50 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             )
             if (!remoteMsgs.isNullOrEmpty()) {
                 withContext(Dispatchers.Main) {
-                    val current = _uiState.value.messagesMap[conversationId] ?: emptyList()
-                    val merged = (current + remoteMsgs)
-                        .filterNot { it.deletedForSender && it.isFromMe }
-                        .distinctBy { it.id }
-                        .sortedBy { it.timestamp }
+                    val typingSignals = remoteMsgs.filter { it.text.startsWith("__TYPING_") }
+                    val actualChatMsgs = remoteMsgs.filterNot { it.text.startsWith("__TYPING_") }
 
-                    val lastMsg = merged.lastOrNull()
-                    val updatedConvs = _uiState.value.conversations.map { c ->
-                        if (c.id == conversationId && lastMsg != null) {
-                            c.copy(lastMessage = lastMsg.text, lastTimestamp = lastMsg.timestamp)
-                        } else c
+                    if (typingSignals.isNotEmpty()) {
+                        val latestSignal = typingSignals.maxByOrNull { it.timestamp }
+                        if (latestSignal != null && !latestSignal.isFromMe) {
+                            val now = System.currentTimeMillis()
+                            if (latestSignal.text == "__TYPING_START__" && now - latestSignal.timestamp < 6000L) {
+                                setPartnerTyping(conversationId, true)
+                                typingTimeoutJobs[conversationId]?.cancel()
+                                typingTimeoutJobs[conversationId] = viewModelScope.launch {
+                                    delay(4000L)
+                                    setPartnerTyping(conversationId, false)
+                                }
+                            } else if (latestSignal.text == "__TYPING_STOP__") {
+                                setPartnerTyping(conversationId, false)
+                            }
+                        }
                     }
 
-                    _uiState.update {
-                        it.copy(
-                            conversations = updatedConvs,
-                            messagesMap = it.messagesMap + (conversationId to merged)
-                        )
+                    if (actualChatMsgs.any { !it.isFromMe }) {
+                        setPartnerTyping(conversationId, false)
+                    }
+
+                    if (actualChatMsgs.isNotEmpty()) {
+                        val current = _uiState.value.messagesMap[conversationId] ?: emptyList()
+                        val merged = (current + actualChatMsgs)
+                            .filterNot { it.deletedForSender && it.isFromMe }
+                            .distinctBy { it.id }
+                            .sortedBy { it.timestamp }
+
+                        val lastMsg = merged.lastOrNull()
+                        val updatedConvs = _uiState.value.conversations.map { c ->
+                            if (c.id == conversationId && lastMsg != null) {
+                                c.copy(lastMessage = lastMsg.text, lastTimestamp = lastMsg.timestamp)
+                            } else c
+                        }
+
+                        _uiState.update {
+                            it.copy(
+                                conversations = updatedConvs,
+                                messagesMap = it.messagesMap + (conversationId to merged)
+                            )
+                        }
                     }
                 }
             }
@@ -1495,6 +1566,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             // Mode Pengguna Asli: Sinkronisasi ke Supabase untuk obrolan 2 arah
             val conv = _uiState.value.conversations.find { it.id == conversationId }
             val partnerId = conv?.partnerId ?: extractPartnerIdFromConvId(conversationId, _uiState.value.myLovyId)
+            onUserTyping(conversationId, partnerId, false)
             viewModelScope.launch {
                 supabaseRepo.sendChatMessage(
                     message = newMsg,
@@ -1510,7 +1582,12 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         if (!_uiState.value.isGuest) return
 
         viewModelScope.launch {
-            delay(2000)
+            delay(1000)
+            if (isUserBlocked(userName = partnerName)) return@launch
+            // Tampilkan animasi indikator mengetik yang hidup & realistis
+            setPartnerTyping(conversationId, true)
+            delay(2200)
+            setPartnerTyping(conversationId, false)
             if (isUserBlocked(userName = partnerName)) return@launch
             val replyTexts = listOf(
                 "Halo! Senang bisa terhubung denganmu di Lovy Chat 😊",
