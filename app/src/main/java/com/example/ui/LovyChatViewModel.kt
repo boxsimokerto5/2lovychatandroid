@@ -39,6 +39,7 @@ sealed interface CurrentScreen {
     object Moments : CurrentScreen
     object SupabaseConfig : CurrentScreen
     object UserProfile : CurrentScreen
+    object NewFriends : CurrentScreen
     data class ChatDetail(val conversationId: String, val partnerName: String, val partnerAvatarHex: Long) : CurrentScreen
 }
 
@@ -50,6 +51,8 @@ data class LovyChatUiState(
     val userProfile: UserProfile = UserProfile(),
     val nearbyUsers: List<User> = MockDataSource.initialNearbyUsers,
     val chattedFriends: List<User> = emptyList(),
+    val newFriendRequests: List<com.example.model.NewFriendRequest> = emptyList(),
+    val ignoredNewFriendIds: Set<String> = emptySet(),
 
     val nearbyGenderFilter: Gender? = null,
     val nearbyOnlyOnlineFilter: Boolean = false,
@@ -197,6 +200,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
         // Coba sinkronisasi data awal jika Supabase sudah terkonfigurasi
         syncFromSupabase()
+        refreshNewFriendRequests()
     }
 
     fun isDummyFriend(userId: String, userName: String): Boolean {
@@ -220,10 +224,159 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                         friends
                     }
                     _uiState.update { it.copy(chattedFriends = finalFriends) }
+                    refreshNewFriendRequests(finalFriends)
                 }
             } catch (e: Exception) {
                 Log.w("LovyChatViewModel", "Gagal memuat teman mengobrol", e)
             }
+        }
+    }
+
+    fun refreshNewFriendRequests(currentFriends: List<User> = _uiState.value.chattedFriends) {
+        val state = _uiState.value
+        val friendIds = currentFriends.map { it.id }.toSet()
+        val ignoredIds = state.ignoredNewFriendIds
+
+        val requestsMap = state.newFriendRequests
+            .filterNot { it.user.id in friendIds || it.user.id in ignoredIds }
+            .associateBy { it.user.id }
+            .toMutableMap()
+
+        for (conv in state.conversations) {
+            val partnerId = conv.partnerId
+            if (partnerId.isBlank() || partnerId in friendIds || partnerId in ignoredIds) continue
+
+            // Pengguna lain yang mengirimi pesan obrolan tapi belum ada di Kontak Saya
+            if (!conv.lastMessageIsFromMe || conv.unreadCount > 0) {
+                if (!requestsMap.containsKey(partnerId)) {
+                    val candidateUser = state.nearbyUsers.find { it.id == partnerId }
+                        ?: MockDataSource.initialNearbyUsers.find { it.id == partnerId }
+                        ?: User(
+                            id = partnerId,
+                            name = conv.partnerName,
+                            gender = conv.partnerGender,
+                            age = conv.partnerAge,
+                            distanceMeters = conv.partnerDistanceMeters,
+                            bio = "Mengirimi Anda pesan obrolan di Lovy Chat",
+                            avatarColorHex = conv.partnerAvatarHex,
+                            avatarUrl = conv.partnerAvatarUrl,
+                            city = conv.partnerCity ?: "Jakarta",
+                            isOnline = conv.isOnline
+                        )
+                    requestsMap[partnerId] = com.example.model.NewFriendRequest(
+                        id = partnerId,
+                        user = candidateUser,
+                        greetingMessage = conv.lastMessage,
+                        timestamp = conv.lastTimestamp
+                    )
+                }
+            }
+        }
+
+        val sortedList = requestsMap.values.sortedByDescending { it.timestamp }
+        _uiState.update { it.copy(newFriendRequests = sortedList) }
+    }
+
+    fun acceptNewFriend(user: User) {
+        recordFeatureClick()
+        saveChatFriend(user)
+        _uiState.update { state ->
+            val updatedFriends = if (state.chattedFriends.any { it.id == user.id }) {
+                state.chattedFriends
+            } else {
+                state.chattedFriends + user
+            }
+            state.copy(
+                chattedFriends = updatedFriends,
+                newFriendRequests = state.newFriendRequests.filterNot { it.user.id == user.id }
+            )
+        }
+    }
+
+    fun ignoreNewFriend(userId: String) {
+        recordFeatureClick()
+        _uiState.update { state ->
+            state.copy(
+                ignoredNewFriendIds = state.ignoredNewFriendIds + userId,
+                newFriendRequests = state.newFriendRequests.filterNot { it.user.id == userId }
+            )
+        }
+    }
+
+    fun simulateIncomingChatFromNewUser() {
+        val state = _uiState.value
+        val friendIds = state.chattedFriends.map { it.id }.toSet()
+        val pendingIds = state.newFriendRequests.map { it.user.id }.toSet()
+        val candidate = state.nearbyUsers.firstOrNull { it.id !in friendIds && it.id !in pendingIds }
+            ?: MockDataSource.initialNearbyUsers.firstOrNull { it.id !in friendIds && it.id !in pendingIds }
+            ?: return
+
+        val convId = if (state.isGuest) "conv_${candidate.id}" else getCanonicalConversationId(state.myLovyId, candidate.id)
+        val greetings = listOf(
+            "Hai ${state.myName}! Salam kenal ya dari Teman Sekitar, boleh ngobrol bareng? 😊👋",
+            "Halo! Kebetulan lagi santai di sekitar sini nih, senang bisa menemukan profilmu di Lovy Chat ✨",
+            "Hai! Lagi cari temen ngobrol asik gak nih? Sapa balik ya ☕",
+            "Halo salam kenal ya! Boleh kenalan lebih dekat? 🌟"
+        )
+        val greetingText = greetings.random()
+        val now = System.currentTimeMillis()
+        val incomingMsg = ChatMessage(
+            id = java.util.UUID.randomUUID().toString(),
+            conversationId = convId,
+            text = greetingText,
+            timestamp = now,
+            isFromMe = false
+        )
+
+        val existingConv = state.conversations.find { it.id == convId || it.partnerId == candidate.id }
+        val updatedConvs = if (existingConv != null) {
+            state.conversations.map {
+                if (it.id == convId || it.partnerId == candidate.id) {
+                    it.copy(
+                        lastMessage = greetingText,
+                        lastTimestamp = now,
+                        lastMessageIsFromMe = false,
+                        unreadCount = it.unreadCount + 1
+                    )
+                } else it
+            }
+        } else {
+            listOf(
+                ChatConversation(
+                    id = convId,
+                    partnerId = candidate.id,
+                    partnerName = candidate.name,
+                    partnerAvatarHex = candidate.avatarColorHex,
+                    partnerGender = candidate.gender,
+                    lastMessage = greetingText,
+                    lastTimestamp = now,
+                    unreadCount = 1,
+                    isOnline = candidate.isOnline,
+                    partnerAvatarUrl = candidate.avatarUrl,
+                    lastMessageIsFromMe = false,
+                    partnerAge = candidate.age,
+                    partnerDistanceMeters = candidate.distanceMeters,
+                    partnerCity = candidate.city
+                )
+            ) + state.conversations
+        }
+
+        val curMsgs = state.messagesMap[convId] ?: emptyList()
+        val updatedMsgs = state.messagesMap + (convId to (curMsgs + incomingMsg))
+
+        val newReq = com.example.model.NewFriendRequest(
+            id = candidate.id,
+            user = candidate,
+            greetingMessage = greetingText,
+            timestamp = now
+        )
+
+        _uiState.update {
+            it.copy(
+                conversations = updatedConvs,
+                messagesMap = updatedMsgs,
+                newFriendRequests = listOf(newReq) + it.newFriendRequests.filterNot { r -> r.user.id == candidate.id }
+            )
         }
     }
 
@@ -1417,7 +1570,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     fun openChat(conversationId: String, partnerName: String, partnerAvatarHex: Long) {
         recordFeatureClick()
         val conv = _uiState.value.conversations.find { it.id == conversationId }
-        if (conv != null) {
+        if (conv != null && _uiState.value.chattedFriends.any { it.id == conv.partnerId }) {
             saveChatFriend(
                 User(
                     id = conv.partnerId,
@@ -2360,5 +2513,6 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 messagesMap = currentMessages
             )
         }
+        refreshNewFriendRequests()
     }
 }

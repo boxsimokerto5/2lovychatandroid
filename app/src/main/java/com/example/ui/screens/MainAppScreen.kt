@@ -201,6 +201,23 @@ fun MainAppScreen(
                 onUserTyping = { isTyping ->
                     val partnerId = conv?.partnerId ?: viewModel.extractPartnerIdFromConvId(screen.conversationId, uiState.myLovyId)
                     viewModel.onUserTyping(screen.conversationId, partnerId, isTyping)
+                },
+                isFriend = uiState.chattedFriends.any { it.id == (conv?.partnerId ?: viewModel.extractPartnerIdFromConvId(screen.conversationId, uiState.myLovyId)) },
+                onAddFriend = {
+                    val partnerId = conv?.partnerId ?: viewModel.extractPartnerIdFromConvId(screen.conversationId, uiState.myLovyId)
+                    val partnerUser = uiState.nearbyUsers.find { it.id == partnerId } ?: User(
+                        id = partnerId,
+                        name = screen.partnerName,
+                        gender = conv?.partnerGender ?: com.example.model.Gender.FEMALE,
+                        age = conv?.partnerAge ?: 22,
+                        distanceMeters = conv?.partnerDistanceMeters ?: 500,
+                        bio = "Teman obrolan di Lovy Chat",
+                        avatarColorHex = screen.partnerAvatarHex,
+                        isOnline = conv?.isOnline ?: true,
+                        avatarUrl = conv?.partnerAvatarUrl,
+                        city = conv?.partnerCity ?: "Jakarta Selatan"
+                    )
+                    viewModel.acceptNewFriend(partnerUser)
                 }
             )
         }
@@ -224,6 +241,20 @@ fun MainAppScreen(
                 isGpsEnabled = uiState.isGpsEnabled,
                 onRefreshLocation = { viewModel.refreshLocationFromGps() },
                 onPermissionResult = { granted -> viewModel.updateLocationPermission(granted) }
+            )
+        }
+        is CurrentScreen.NewFriends -> {
+            NewFriendsScreen(
+                requests = uiState.newFriendRequests,
+                onBack = { viewModel.navigateBack() },
+                onAcceptFriend = { user -> viewModel.acceptNewFriend(user) },
+                onIgnoreFriend = { userId -> viewModel.ignoreNewFriend(userId) },
+                onOpenChat = { user ->
+                    val convId = if (uiState.isGuest) "conv_${user.id}" else viewModel.getCanonicalConversationId(uiState.myLovyId, user.id)
+                    viewModel.openChat(convId, user.name, user.avatarColorHex)
+                },
+                onNavigateToNearby = { viewModel.navigateTo(CurrentScreen.Nearby) },
+                onSimulateIncomingChat = { viewModel.simulateIncomingChatFromNewUser() }
             )
         }
         is CurrentScreen.Main -> {
@@ -263,9 +294,8 @@ fun MainAppScreen(
                         1 -> {
                             val friendsList = remember(uiState.isGuest, uiState.chattedFriends, uiState.nearbyUsers, uiState.conversations) {
                                 val baseList = if (uiState.isGuest) {
-                                    // Mode Tamu: Tampilkan daftar demo agar tamu bisa menjelajahi UI
-                                    val chattedIds = uiState.chattedFriends.map { it.id }.toSet()
-                                    uiState.chattedFriends + uiState.nearbyUsers.filterNot { it.id in chattedIds }
+                                    // Mode Tamu: Tampilkan daftar kontak teman resmi yang sudah ditambahkan
+                                    uiState.chattedFriends
                                 } else {
                                     // Mode Asli: HANYA tampilkan kontak nyata yang pernah diajak mengobrol atau berteman (tanpa user dummy)
                                     uiState.chattedFriends.filterNot { viewModel.isDummyFriend(it.id, it.name) }
@@ -290,12 +320,16 @@ fun MainAppScreen(
                             }
                             FriendsTabScreen(
                                 friends = friendsList,
+                                newFriendsCount = uiState.newFriendRequests.size,
                                 onSelectFriend = { user ->
                                     viewModel.sayHiToUser(user)
                                 },
                                 onNavigateToNearby = {
                                     viewModel.refreshNearbyScan(forceRefresh = false)
                                     viewModel.navigateTo(CurrentScreen.Nearby)
+                                },
+                                onNavigateToNewFriends = {
+                                    viewModel.navigateTo(CurrentScreen.NewFriends)
                                 },
                                 onDeleteFriend = { user ->
                                     viewModel.deleteChatFriend(user.id, user.name)

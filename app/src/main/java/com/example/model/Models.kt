@@ -91,3 +91,12 @@ data class MomentItem(
     val isDeleted: Boolean = false,
     val authorId: String = ""
 )
+
+data class NewFriendRequest(
+    val id: String,
+    val user: User,
+    val greetingMessage: String,
+    val timestamp: Long = System.currentTimeMillis(),
+    val isAccepted: Boolean = false,
+    val isIgnored: Boolean = false
+)

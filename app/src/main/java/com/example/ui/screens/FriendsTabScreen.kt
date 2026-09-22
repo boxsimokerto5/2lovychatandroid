@@ -70,8 +70,10 @@ import com.example.ui.theme.ScreenBackground
 @Composable
 fun FriendsTabScreen(
     friends: List<User>,
+    newFriendsCount: Int = 0,
     onSelectFriend: (User) -> Unit,
     onNavigateToNearby: () -> Unit,
+    onNavigateToNewFriends: () -> Unit = {},
     onDeleteFriend: (User) -> Unit = {},
     onClearAllFriends: () -> Unit = {},
     onToggleFavorite: (User) -> Unit = {},
@@ -159,8 +161,8 @@ fun FriendsTabScreen(
                         iconBgColor = Color(0xFFE8F5E9),
                         iconTint = EmeraldGreen,
                         title = "Teman Baru",
-                        badge = null,
-                        onClick = onNavigateToNearby
+                        badge = if (newFriendsCount > 0) newFriendsCount.toString() else null,
+                        onClick = onNavigateToNewFriends
                     )
                     HorizontalDivider(modifier = Modifier.padding(start = 72.dp), color = NeutralBorder, thickness = 0.6.dp)
 
