@@ -17,6 +17,9 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -164,7 +167,7 @@ fun MomentsScreen(
     var fullscreenPhotoUrl by remember { mutableStateOf<String?>(null) }
 
     // State for viewing & adding comments
-    var activeMomentForComments by remember { mutableStateOf<MomentItem?>(null) }
+    var activeMomentIdForComments by remember { mutableStateOf<String?>(null) }
     var commentInputText by remember { mutableStateOf("") }
     val commentSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -317,6 +320,7 @@ fun MomentsScreen(
                         isMyMoment = isMyMoment,
                         onToggleLike = { onToggleLike(item.id) },
                         onPhotoClick = { url -> fullscreenPhotoUrl = url },
+                        onCommentClick = { activeMomentIdForComments = item.id },
                         onShareClick = {
                             Toast.makeText(context, "Tautan momen disalin!", Toast.LENGTH_SHORT).show()
                         },
@@ -572,6 +576,274 @@ fun MomentsScreen(
             }
         }
     }
+
+    // Modal Bottom Sheet untuk Melihat & Mengirim Komentar Momen
+    val activeMoment = moments.find { it.id == activeMomentIdForComments }
+    if (activeMoment != null) {
+        val comments = momentComments[activeMoment.id] ?: emptyList()
+        ModalBottomSheet(
+            onDismissRequest = {
+                activeMomentIdForComments = null
+                commentInputText = ""
+            },
+            sheetState = commentSheetState,
+            containerColor = Color.White,
+            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+            dragHandle = {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp, bottom = 4.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(36.dp)
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(Color(0xFFE0E0E0))
+                    )
+                }
+            }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .imePadding()
+            ) {
+                // Header Sheet Komentar
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                ) {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Komentar",
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeutralDark
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Surface(
+                                shape = CircleShape,
+                                color = EmeraldGreen.copy(alpha = 0.12f)
+                            ) {
+                                Text(
+                                    text = "${comments.size}",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = EmeraldGreen,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Text(
+                            text = "Momen oleh ${activeMoment.authorName}",
+                            fontSize = 12.sp,
+                            color = NeutralMedium
+                        )
+                    }
+
+                    IconButton(
+                        onClick = {
+                            activeMomentIdForComments = null
+                            commentInputText = ""
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Tutup Komentar",
+                            tint = NeutralDark
+                        )
+                    }
+                }
+
+                HorizontalDivider(color = NeutralBorder.copy(alpha = 0.6f), thickness = 0.6.dp)
+
+                // List Komentar
+                if (comments.isEmpty()) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp)
+                            .padding(16.dp)
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = Color(0xFFF1F8E9),
+                                modifier = Modifier.size(52.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.ChatBubbleOutline,
+                                        contentDescription = null,
+                                        tint = EmeraldGreen,
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text(
+                                text = "Belum Ada Komentar",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = NeutralDark
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Jadilah yang pertama menyapa dan memberi komentar!",
+                                fontSize = 12.sp,
+                                color = NeutralMedium,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 120.dp, max = 380.dp)
+                    ) {
+                        items(comments, key = { it.id }) { comment ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                LovyAvatar(
+                                    name = comment.authorName,
+                                    avatarColorHex = comment.authorAvatarHex,
+                                    avatarUrl = comment.authorAvatarUrl,
+                                    size = 38.dp,
+                                    fontSize = 15.sp
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Surface(
+                                        shape = RoundedCornerShape(
+                                            topStart = 4.dp,
+                                            topEnd = 14.dp,
+                                            bottomStart = 14.dp,
+                                            bottomEnd = 14.dp
+                                        ),
+                                        color = Color(0xFFF5F6F8),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Text(
+                                                    text = comment.authorName,
+                                                    fontSize = 13.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = NeutralDark
+                                                )
+                                                Text(
+                                                    text = comment.timeAgo,
+                                                    fontSize = 10.5.sp,
+                                                    color = NeutralMedium
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.height(3.dp))
+                                            Text(
+                                                text = comment.text,
+                                                fontSize = 13.sp,
+                                                color = NeutralDark,
+                                                lineHeight = 18.sp
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                HorizontalDivider(color = NeutralBorder.copy(alpha = 0.5f), thickness = 0.6.dp)
+
+                // Input Bar untuk Kirim Komentar
+                Surface(
+                    color = Color.White,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = commentInputText,
+                            onValueChange = { commentInputText = it },
+                            placeholder = {
+                                Text(
+                                    "Tulis komentar ramah...",
+                                    fontSize = 13.sp,
+                                    color = NeutralMedium
+                                )
+                            },
+                            singleLine = false,
+                            maxLines = 3,
+                            shape = RoundedCornerShape(22.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = EmeraldGreen,
+                                unfocusedBorderColor = NeutralBorder.copy(alpha = 0.8f),
+                                focusedContainerColor = Color(0xFFFAFAFA),
+                                unfocusedContainerColor = Color(0xFFFAFAFA)
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("input_moment_comment")
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        IconButton(
+                            onClick = {
+                                val textToSend = commentInputText.trim()
+                                if (textToSend.isNotBlank()) {
+                                    onAddComment?.invoke(activeMoment.id, textToSend)
+                                    commentInputText = ""
+                                    Toast.makeText(context, "Komentar terkirim!", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            enabled = commentInputText.isNotBlank(),
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (commentInputText.isNotBlank()) EmeraldGreen else Color(0xFFE0E0E0)
+                                )
+                                .testTag("btn_send_moment_comment")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Send,
+                                contentDescription = "Kirim Komentar",
+                                tint = if (commentInputText.isNotBlank()) Color.White else NeutralMedium,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -581,6 +853,7 @@ fun MomentCard(
     onToggleLike: () -> Unit,
     onPhotoClick: (String) -> Unit,
     onShareClick: () -> Unit,
+    onCommentClick: () -> Unit = {},
     onDeleteClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -815,8 +1088,9 @@ fun MomentCard(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .clickable { /* Comment feedback */ }
+                        .clickable(onClick = onCommentClick)
                         .padding(horizontal = 8.dp, vertical = 6.dp)
+                        .testTag("btn_comment_${item.id}")
                 ) {
                     Icon(
                         imageVector = Icons.Default.ChatBubbleOutline,

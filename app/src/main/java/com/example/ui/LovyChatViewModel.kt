@@ -2097,7 +2097,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             authorId = myId,
             authorName = state.myName,
             authorAvatarHex = 0xFF00A86B,
-            authorAvatarUrl = null,
+            authorAvatarUrl = state.userProfile.profilePicture?.takeIf { it.isNotBlank() },
             text = text.trim(),
             timestamp = System.currentTimeMillis(),
             timeAgo = "Baru saja"

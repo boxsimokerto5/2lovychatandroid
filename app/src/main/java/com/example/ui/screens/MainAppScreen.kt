@@ -124,11 +124,15 @@ fun MainAppScreen(
             MomentsScreen(
                 moments = uiState.moments,
                 myMomentIds = uiState.myMomentIds,
+                momentComments = uiState.momentComments,
                 currentUserId = uiState.myLovyId,
                 currentUserName = uiState.myName,
                 currentGpsLocation = uiState.currentGpsLocation,
                 onBack = { viewModel.navigateBack() },
                 onToggleLike = { viewModel.toggleLikeMoment(it) },
+                onAddComment = { momentId, text ->
+                    viewModel.addMomentComment(momentId, text)
+                },
                 onPostMoment = { viewModel.postMoment(it) },
                 onPostMomentWithDetails = { content, img, loc ->
                     viewModel.postMoment(content, img, loc)
