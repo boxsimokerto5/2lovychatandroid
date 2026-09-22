@@ -142,6 +142,7 @@ fun NearbyScreen(
         val coarseCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
         if (fineCheck == PackageManager.PERMISSION_GRANTED || coarseCheck == PackageManager.PERMISSION_GRANTED) {
             onPermissionResult(true)
+            onRefreshScan()
         }
     }
 
@@ -249,6 +250,68 @@ fun NearbyScreen(
                     color = EmeraldGreen,
                     trackColor = EmeraldGreenLight
                 )
+            }
+
+            // Status Lokasi GPS Terkini Pengguna (Otomatis & Hemat Baterai)
+            val detectedCity = currentGpsLocation?.cityName?.takeIf { it.isNotBlank() } ?: "Menyesuaikan Lokasi GPS..."
+            Surface(
+                color = Color(0xFFF1F8E9),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onRefreshScan() }
+                    .testTag("bar_nearby_current_gps")
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = EmeraldGreen,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = "Pusat Radar: ",
+                            fontSize = 11.5.sp,
+                            color = NeutralMedium
+                        )
+                        Text(
+                            text = detectedCity,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = NeutralDark,
+                            maxLines = 1
+                        )
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(start = 6.dp)
+                    ) {
+                        Text(
+                            text = if (isScanning) "Mencari sinyal..." else "Perbarui GPS",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = EmeraldGreen
+                        )
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Perbarui GPS",
+                            tint = EmeraldGreen,
+                            modifier = Modifier.size(13.dp)
+                        )
+                    }
+                }
             }
 
             // Baris 1: Toggle Tab (Radar vs. Daftar) - Dipadatkan & Dinaikkan ke atas

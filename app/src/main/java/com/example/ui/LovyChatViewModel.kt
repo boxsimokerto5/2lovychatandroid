@@ -1340,21 +1340,25 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
     fun refreshLocationFromGps() {
         val app = try { getApplication<Application>() } catch (_: Throwable) { null } ?: return
-        val isEnabled = com.example.util.AndroidGpsTracker.isLocationEnabled(app)
-        val loc = com.example.util.AndroidGpsTracker.getLastKnownLocation(app)
-        if (loc != null) {
-            _uiState.update {
-                it.copy(
-                    isGpsEnabled = isEnabled,
-                    currentGpsLocation = loc
-                )
+        viewModelScope.launch {
+            val isEnabled = com.example.util.AndroidGpsTracker.isLocationEnabled(app)
+            val loc = com.example.util.AndroidGpsTracker.getCurrentFreshLocation(app, timeoutMs = 4000L)
+                ?: com.example.util.AndroidGpsTracker.getLastKnownLocation(app)
+            if (loc != null) {
+                _uiState.update {
+                    it.copy(
+                        isGpsEnabled = isEnabled,
+                        currentGpsLocation = loc
+                    )
+                }
+                updateGpsLocation(loc)
+                if (loc.cityName.isNotBlank()) {
+                    updateCityFromGps(loc.cityName, forceSync = true)
+                }
+                refreshNearbyScan(forceRefresh = true)
+            } else {
+                _uiState.update { it.copy(isGpsEnabled = isEnabled) }
             }
-            if (loc.cityName.isNotBlank()) {
-                updateCityFromGps(loc.cityName, forceSync = true)
-            }
-            refreshNearbyScan(forceRefresh = true)
-        } else {
-            _uiState.update { it.copy(isGpsEnabled = isEnabled) }
         }
     }
 
@@ -1362,18 +1366,21 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         _uiState.update { it.copy(hasLocationPermission = granted) }
         if (granted) {
             val app = try { getApplication<Application>() } catch (_: Throwable) { null }
-            val isEnabled = com.example.util.AndroidGpsTracker.isLocationEnabled(app)
-            val lastLoc = com.example.util.AndroidGpsTracker.getLastKnownLocation(app)
-            _uiState.update { 
-                it.copy(
-                    isGpsEnabled = isEnabled,
-                    currentGpsLocation = lastLoc
-                ) 
+            viewModelScope.launch {
+                val isEnabled = com.example.util.AndroidGpsTracker.isLocationEnabled(app)
+                val freshLoc = com.example.util.AndroidGpsTracker.getCurrentFreshLocation(app, timeoutMs = 3500L)
+                    ?: com.example.util.AndroidGpsTracker.getLastKnownLocation(app)
+                if (freshLoc != null) {
+                    _uiState.update { 
+                        it.copy(
+                            isGpsEnabled = isEnabled,
+                            currentGpsLocation = freshLoc
+                        ) 
+                    }
+                    updateGpsLocation(freshLoc)
+                }
+                refreshNearbyScan(forceRefresh = true)
             }
-            if (lastLoc != null && lastLoc.cityName.isNotBlank()) {
-                updateCityFromGps(lastLoc.cityName)
-            }
-            refreshNearbyScan(forceRefresh = false)
         }
     }
 
@@ -1432,8 +1439,25 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             // Periksa dan ambil koordinat GPS Native terbaru jika izin ada
             val app = try { getApplication<Application>() } catch (_: Throwable) { null }
             val isGpsOn = com.example.util.AndroidGpsTracker.isLocationEnabled(app)
-            val gpsLoc = com.example.util.AndroidGpsTracker.getLastKnownLocation(app)
-            _uiState.update { it.copy(isGpsEnabled = isGpsOn, currentGpsLocation = gpsLoc ?: it.currentGpsLocation) }
+            
+            // Dapatkan lokasi GPS aktif dan segar (aktifkan sensor sejenak, auto-off setelah dapat)
+            val gpsLoc = if (forceRefresh || _uiState.value.currentGpsLocation == null) {
+                com.example.util.AndroidGpsTracker.getCurrentFreshLocation(app, timeoutMs = 3500L)
+                    ?: com.example.util.AndroidGpsTracker.getLastKnownLocation(app)
+            } else {
+                com.example.util.AndroidGpsTracker.getLastKnownLocation(app)
+                    ?: com.example.util.AndroidGpsTracker.getCurrentFreshLocation(app, timeoutMs = 3500L)
+            }
+
+            if (gpsLoc != null) {
+                _uiState.update { it.copy(isGpsEnabled = isGpsOn, currentGpsLocation = gpsLoc) }
+                updateGpsLocation(gpsLoc)
+                if (forceRefresh && gpsLoc.cityName.isNotBlank()) {
+                    updateCityFromGps(gpsLoc.cityName, forceSync = true)
+                }
+            } else {
+                _uiState.update { it.copy(isGpsEnabled = isGpsOn) }
+            }
 
             delay(600)
 

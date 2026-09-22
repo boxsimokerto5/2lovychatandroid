@@ -990,7 +990,7 @@ fun EditProfileDialog(
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Lokasi domisili Anda terdeteksi otomatis dari GPS peta agar pengguna lain dapat melihat kota posisi Anda (misal Kediri, Blitar, dsb).",
+                    text = "Lokasi domisili Anda terdeteksi otomatis dari GPS peta hingga tingkat kecamatan & kota (misal Kec. Depok, Sleman atau Kec. Gondomanan, Yogyakarta).",
                     fontSize = 11.sp,
                     lineHeight = 15.sp,
                     color = NeutralMedium

@@ -7,9 +7,14 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
 import android.os.Looper
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.coroutines.resume
 import java.util.Locale
 
 data class UserGpsLocation(
@@ -66,6 +71,84 @@ object AndroidGpsTracker {
         } catch (_: Throwable) {
             null
         }
+    }
+
+    /**
+     * Meminta koordinat GPS aktif langsung dari sensor perangkat (Single Fresh Fix).
+     * Sensor GPS hardware/jaringan dinyalakan sesaat, lalu otomatis dimatikan begitu lokasi pertama didapat,
+     * sehingga sangat hemat baterai dan data tidak macet pada cache lama.
+     */
+    @SuppressLint("MissingPermission")
+    suspend fun getCurrentFreshLocation(
+        context: Context?,
+        timeoutMs: Long = 4000L
+    ): UserGpsLocation? = withContext(Dispatchers.Main) {
+        if (context == null) return@withContext null
+        val lm = try {
+            context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
+        } catch (_: Throwable) {
+            null
+        } ?: return@withContext null
+
+        withTimeoutOrNull(timeoutMs) {
+            suspendCancellableCoroutine<UserGpsLocation?> { cont ->
+                val listener = object : LocationListener {
+                    override fun onLocationChanged(location: Location) {
+                        try {
+                            lm.removeUpdates(this)
+                        } catch (_: Throwable) {}
+                        if (cont.isActive) {
+                            cont.resume(toUserGpsLocation(location, context))
+                        }
+                    }
+
+                    @Deprecated("Deprecated in Java")
+                    override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
+                    override fun onProviderEnabled(provider: String) {}
+                    override fun onProviderDisabled(provider: String) {}
+                }
+
+                var requested = false
+                try {
+                    // Coba NETWORK_PROVIDER dulu karena sangat cepat (Cell/WiFi fix < 500ms)
+                    if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                        lm.requestLocationUpdates(
+                            LocationManager.NETWORK_PROVIDER,
+                            0L,
+                            0f,
+                            listener,
+                            Looper.getMainLooper()
+                        )
+                        requested = true
+                    }
+                    // Juga aktifkan GPS_PROVIDER untuk presisi satelit
+                    if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                        lm.requestLocationUpdates(
+                            LocationManager.GPS_PROVIDER,
+                            0L,
+                            0f,
+                            listener,
+                            Looper.getMainLooper()
+                        )
+                        requested = true
+                    }
+                } catch (_: Throwable) {
+                    // SecurityException jika izin belum lengkap
+                }
+
+                if (!requested) {
+                    val fallback = getLastKnownLocation(context)
+                    cont.resume(fallback)
+                    return@suspendCancellableCoroutine
+                }
+
+                cont.invokeOnCancellation {
+                    try {
+                        lm.removeUpdates(listener)
+                    } catch (_: Throwable) {}
+                }
+            }
+        } ?: getLastKnownLocation(context)
     }
 
     /**
@@ -151,7 +234,7 @@ object AndroidGpsTracker {
     }
 
     /**
-     * Mengubah koordinat Latitude/Longitude menjadi nama kota/wilayah nyata menggunakan Geocoder dan Fallback
+     * Mengubah koordinat Latitude/Longitude menjadi nama kota dan kecamatan nyata menggunakan Geocoder dan Fallback
      */
     fun getCityName(context: Context?, latitude: Double, longitude: Double): String {
         if (context != null) {
@@ -162,27 +245,36 @@ object AndroidGpsTracker {
                     val addresses = geocoder.getFromLocation(latitude, longitude, 1)
                     val address = addresses?.firstOrNull()
                     if (address != null) {
-                        val subAdmin = address.subAdminArea // e.g. "Kota Surabaya", "Jakarta Selatan"
-                        val locality = address.locality     // e.g. "Surabaya", "Gubeng"
-                        val admin = address.adminArea       // e.g. "Jawa Timur"
+                        val subAdmin = address.subAdminArea // e.g. "Kabupaten Sleman", "Kota Yogyakarta", "Kota Kediri"
+                        val locality = address.locality     // e.g. "Kecamatan Depok", "Depok", "Mojoroto"
+                        val subLocality = address.subLocality // e.g. "Depok", "Condongcatur", "Gubeng"
+                        val admin = address.adminArea       // e.g. "Daerah Istimewa Yogyakarta", "Jawa Timur"
 
-                        val raw = when {
-                            !subAdmin.isNullOrBlank() -> subAdmin
-                            !locality.isNullOrBlank() -> locality
-                            !admin.isNullOrBlank() -> admin
+                        // 1. Ekstrak dan bersihkan nama Kota / Kabupaten
+                        val cleanCity = when {
+                            !subAdmin.isNullOrBlank() -> cleanAdminName(subAdmin)
+                            !admin.isNullOrBlank() -> cleanAdminName(admin)
+                            else -> ""
+                        }
+
+                        // 2. Ekstrak dan bersihkan nama Kecamatan (District)
+                        val rawDistrict = when {
+                            !subLocality.isNullOrBlank() && !subLocality.equals(subAdmin, ignoreCase = true) -> subLocality
+                            !locality.isNullOrBlank() && !locality.equals(subAdmin, ignoreCase = true) -> locality
                             else -> null
                         }
 
-                        if (!raw.isNullOrBlank()) {
-                            val clean = raw
-                                .replace("Kota ", "", ignoreCase = true)
-                                .replace("Kotamadya ", "", ignoreCase = true)
-                                .replace("Kabupaten ", "", ignoreCase = true)
-                                .replace("Kab. ", "", ignoreCase = true)
-                                .replace("Daerah Khusus Ibukota ", "", ignoreCase = true)
-                                .replace("DKI ", "", ignoreCase = true)
-                                .trim()
-                            if (clean.isNotBlank()) return clean
+                        val cleanDistrict = rawDistrict?.let { cleanDistrictName(it) }?.takeIf {
+                            it.isNotBlank() && !it.equals(cleanCity, ignoreCase = true)
+                        }
+
+                        // 3. Susun format komprehensif: "Kec. [Kecamatan], [Kota]"
+                        if (!cleanDistrict.isNullOrBlank() && cleanCity.isNotBlank()) {
+                            return "Kec. $cleanDistrict, $cleanCity"
+                        } else if (cleanCity.isNotBlank()) {
+                            return cleanCity
+                        } else if (!cleanDistrict.isNullOrBlank()) {
+                            return "Kec. $cleanDistrict"
                         }
                     }
                 }
@@ -191,13 +283,64 @@ object AndroidGpsTracker {
             }
         }
 
-        // Fallback cerdas berbasis jarak terdekat ke pusat kota-kota besar di Indonesia
+        // Fallback cerdas berbasis jarak terdekat ke pusat kecamatan / kota di Indonesia
         return resolveClosestIndonesianCity(latitude, longitude)
+    }
+
+    private fun cleanAdminName(name: String): String {
+        return name
+            .replace("Kota Administrasi ", "", ignoreCase = true)
+            .replace("Kotamadya ", "", ignoreCase = true)
+            .replace("Kota ", "", ignoreCase = true)
+            .replace("Kabupaten ", "", ignoreCase = true)
+            .replace("Kab. ", "", ignoreCase = true)
+            .replace("Daerah Khusus Ibukota ", "", ignoreCase = true)
+            .replace("DKI ", "", ignoreCase = true)
+            .trim()
+    }
+
+    private fun cleanDistrictName(name: String): String {
+        return name
+            .replace("Kecamatan ", "", ignoreCase = true)
+            .replace("Kec. ", "", ignoreCase = true)
+            .replace("Distrik ", "", ignoreCase = true)
+            .trim()
     }
 
     private fun resolveClosestIndonesianCity(lat: Double, lon: Double): String {
         data class CityCoordinate(val name: String, val lat: Double, val lon: Double)
         val cities = listOf(
+            // Yogyakarta & Sekitarnya (Kecamatan detail)
+            CityCoordinate("Kec. Gondomanan, Yogyakarta", -7.8000, 110.3680),
+            CityCoordinate("Kec. Depok, Sleman", -7.7680, 110.3950),
+            CityCoordinate("Kec. Mlati, Sleman", -7.7450, 110.3550),
+            CityCoordinate("Kec. Umbulharjo, Yogyakarta", -7.8150, 110.3880),
+            CityCoordinate("Kec. Danurejan, Yogyakarta", -7.7940, 110.3730),
+            CityCoordinate("Kec. Sewon, Bantul", -7.8500, 110.3600),
+            CityCoordinate("Kec. Banguntapan, Bantul", -7.8100, 110.4100),
+            CityCoordinate("Kec. Kasihan, Bantul", -7.8180, 110.3320),
+            CityCoordinate("Kec. Ngaglik, Sleman", -7.7100, 110.3900),
+            CityCoordinate("Kec. Gamping, Sleman", -7.7990, 110.3200),
+            CityCoordinate("Kec. Kalasan, Sleman", -7.7680, 110.4700),
+            CityCoordinate("Yogyakarta", -7.7956, 110.3695),
+            CityCoordinate("Sleman", -7.7167, 110.3556),
+            CityCoordinate("Bantul", -7.8878, 110.3289),
+            CityCoordinate("Gunungkidul", -7.9625, 110.6033),
+            CityCoordinate("Kulon Progo", -7.8286, 110.1583),
+            CityCoordinate("Klaten", -7.7058, 110.6067),
+            CityCoordinate("Solo (Surakarta)", -7.5666, 110.8167),
+            CityCoordinate("Magelang", -7.4705, 110.2178),
+            CityCoordinate("Purworejo", -7.7144, 110.0078),
+            CityCoordinate("Kebumen", -7.6698, 109.6515),
+            CityCoordinate("Salatiga", -7.3305, 110.5084),
+            CityCoordinate("Semarang", -6.9667, 110.4167),
+
+            // Jawa Timur - Kediri & Sekitarnya (Kecamatan detail)
+            CityCoordinate("Kec. Kota, Kediri", -7.8200, 112.0150),
+            CityCoordinate("Kec. Mojoroto, Kediri", -7.8100, 111.9950),
+            CityCoordinate("Kec. Pesantren, Kediri", -7.8400, 112.0400),
+            CityCoordinate("Kec. Gampengrejo, Kediri", -7.7750, 112.0300),
+            CityCoordinate("Kec. Pare, Kediri", -7.7700, 112.1900),
             CityCoordinate("Kediri", -7.8480, 112.0178),
             CityCoordinate("Blitar", -8.0983, 112.1681),
             CityCoordinate("Tulungagung", -8.0658, 111.9015),
@@ -212,10 +355,8 @@ object AndroidGpsTracker {
             CityCoordinate("Probolinggo", -7.7543, 113.2159),
             CityCoordinate("Jember", -8.1724, 113.7007),
             CityCoordinate("Banyuwangi", -8.2192, 114.3691),
-            CityCoordinate("Semarang", -6.9667, 110.4167),
-            CityCoordinate("Yogyakarta", -7.7956, 110.3695),
-            CityCoordinate("Solo (Surakarta)", -7.5666, 110.8167),
-            CityCoordinate("Magelang", -7.4705, 110.2178),
+
+            // Wilayah Lainnya di Indonesia
             CityCoordinate("Cirebon", -6.7320, 108.5523),
             CityCoordinate("Bandung", -6.9175, 107.6191),
             CityCoordinate("Jakarta Selatan", -6.2615, 106.8106),
