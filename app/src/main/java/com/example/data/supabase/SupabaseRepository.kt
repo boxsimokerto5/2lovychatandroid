@@ -62,7 +62,9 @@ class SupabaseRepository {
                         distanceMeters = dto.distanceMeters ?: 100,
                         bio = dto.bio ?: "",
                         avatarColorHex = dto.avatarHex ?: 0xFF2E7D32,
-                        isOnline = dto.isOnline ?: true
+                        isOnline = dto.isOnline ?: true,
+                        city = dto.city?.takeIf { it.isNotBlank() } ?: "Indonesia",
+                        avatarUrl = dto.avatarUrl
                     )
                 }
             } else {
@@ -369,7 +371,8 @@ class SupabaseRepository {
         gender: Gender,
         bio: String,
         avatarHex: Long = 0xFFFB8C00,
-        avatarUrl: String? = null
+        avatarUrl: String? = null,
+        city: String? = null
     ): Boolean = withContext(Dispatchers.IO) {
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
@@ -385,14 +388,15 @@ class SupabaseRepository {
                 avatarHex = avatarHex,
                 isOnline = true,
                 lastActiveAt = System.currentTimeMillis(),
-                avatarUrl = avatarUrl
+                avatarUrl = avatarUrl,
+                city = city
             )
             val response = api.upsertNearbyUser(apiKey, auth, dto)
             if (response.isSuccessful) {
                 return@withContext true
             }
 
-            // Fallback jika database Supabase belum memiliki kolom last_active_at / avatar_url
+            // Fallback jika database Supabase belum memiliki kolom city / last_active_at / avatar_url
             val coreDto = SupabaseUserDto(
                 id = id,
                 name = name,
@@ -402,7 +406,8 @@ class SupabaseRepository {
                 avatarHex = avatarHex,
                 isOnline = true,
                 lastActiveAt = null,
-                avatarUrl = null
+                avatarUrl = null,
+                city = null
             )
             val retry = api.upsertNearbyUser(apiKey, auth, coreDto)
             retry.isSuccessful

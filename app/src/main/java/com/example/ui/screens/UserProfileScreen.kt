@@ -64,6 +64,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -93,6 +95,11 @@ fun UserProfileScreen(
     isUploadingPhoto: Boolean = false,
     uploadProgressText: String? = null,
     onUploadPhoto: ((android.net.Uri) -> Unit)? = null,
+    currentGpsLocation: com.example.util.UserGpsLocation? = null,
+    hasLocationPermission: Boolean = false,
+    isGpsEnabled: Boolean = true,
+    onRefreshLocation: (() -> Unit)? = null,
+    onPermissionResult: ((Boolean) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var showEditDialog by remember { mutableStateOf(false) }
@@ -102,6 +109,18 @@ fun UserProfileScreen(
     ) { uri: android.net.Uri? ->
         if (uri != null) {
             onUploadPhoto?.invoke(uri)
+        }
+    }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val fineGranted = permissions[android.Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+        val coarseGranted = permissions[android.Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+        val granted = fineGranted || coarseGranted
+        onPermissionResult?.invoke(granted)
+        if (granted) {
+            onRefreshLocation?.invoke()
         }
     }
 
@@ -378,11 +397,99 @@ fun UserProfileScreen(
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
 
-                    ProfileDetailRow(
-                        icon = Icons.Default.LocationOn,
-                        label = "Kota / Domisili",
-                        value = userProfile.city
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("row_profile_city_location")
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(EmeraldGreen.copy(alpha = 0.12f))
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = null,
+                                tint = EmeraldGreen,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = "Kota Domisili",
+                                    fontSize = 11.5.sp,
+                                    color = NeutralMedium
+                                )
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = EmeraldGreen.copy(alpha = 0.12f)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(5.dp)
+                                                .clip(CircleShape)
+                                                .background(EmeraldGreen)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = "Otomatis Peta",
+                                            fontSize = 9.5.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = EmeraldGreen
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = userProfile.city.ifBlank { "Mendeteksi posisi GPS..." },
+                                fontSize = 14.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeutralDark,
+                                modifier = Modifier.testTag("text_profile_city")
+                            )
+                            Text(
+                                text = "Dilihat oleh pengguna lain di radar & obrolan",
+                                fontSize = 11.sp,
+                                color = NeutralMedium
+                            )
+                        }
+
+                        IconButton(
+                            onClick = {
+                                if (!hasLocationPermission) {
+                                    locationPermissionLauncher.launch(
+                                        arrayOf(
+                                            android.Manifest.permission.ACCESS_FINE_LOCATION,
+                                            android.Manifest.permission.ACCESS_COARSE_LOCATION
+                                        )
+                                    )
+                                } else {
+                                    onRefreshLocation?.invoke()
+                                }
+                            },
+                            modifier = Modifier.testTag("btn_refresh_profile_city")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MyLocation,
+                                contentDescription = "Sinkronkan Lokasi Peta",
+                                tint = EmeraldGreen,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
 
                     HorizontalDivider(color = NeutralBorder, thickness = 0.6.dp, modifier = Modifier.padding(vertical = 8.dp))
 
@@ -451,6 +558,7 @@ fun UserProfileScreen(
             },
             isUploadingPhoto = isUploadingPhoto,
             uploadProgressText = uploadProgressText,
+            currentGpsCity = currentGpsLocation?.cityName,
             onSave = { updatedProfile ->
                 onSaveProfile(updatedProfile)
                 showEditDialog = false
@@ -499,6 +607,7 @@ fun EditProfileDialog(
     onPickPhotoFromGallery: () -> Unit,
     isUploadingPhoto: Boolean = false,
     uploadProgressText: String? = null,
+    currentGpsCity: String? = null,
     onSave: (UserProfile) -> Unit
 ) {
     var displayName by remember { mutableStateOf(currentProfile.displayName) }
@@ -655,11 +764,72 @@ fun EditProfileDialog(
                 OutlinedTextField(
                     value = city,
                     onValueChange = { city = it },
-                    label = { Text("Kota / Lokasi") },
+                    label = { Text("Kota / Lokasi Domisili") },
                     singleLine = true,
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = EmeraldGreen
+                        )
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("input_edit_city")
+                )
+
+                if (!currentGpsCity.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = EmeraldGreen.copy(alpha = 0.08f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldGreen.copy(alpha = 0.3f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                city = currentGpsCity
+                            }
+                            .testTag("btn_use_gps_city")
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MyLocation,
+                                contentDescription = null,
+                                tint = EmeraldGreen,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Gunakan Lokasi GPS Terdeteksi",
+                                    fontSize = 11.sp,
+                                    color = NeutralMedium
+                                )
+                                Text(
+                                    text = currentGpsCity,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = EmeraldGreen
+                                )
+                            }
+                            Text(
+                                text = "Terapkan",
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = EmeraldGreen
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Lokasi domisili Anda terdeteksi otomatis dari GPS peta agar pengguna lain dapat melihat kota posisi Anda (misal Kediri, Blitar, dsb).",
+                    fontSize = 11.sp,
+                    lineHeight = 15.sp,
+                    color = NeutralMedium
                 )
             }
         },

@@ -176,8 +176,11 @@ object AndroidGpsTracker {
                         if (!raw.isNullOrBlank()) {
                             val clean = raw
                                 .replace("Kota ", "", ignoreCase = true)
+                                .replace("Kotamadya ", "", ignoreCase = true)
                                 .replace("Kabupaten ", "", ignoreCase = true)
+                                .replace("Kab. ", "", ignoreCase = true)
                                 .replace("Daerah Khusus Ibukota ", "", ignoreCase = true)
+                                .replace("DKI ", "", ignoreCase = true)
                                 .trim()
                             if (clean.isNotBlank()) return clean
                         }
@@ -195,13 +198,25 @@ object AndroidGpsTracker {
     private fun resolveClosestIndonesianCity(lat: Double, lon: Double): String {
         data class CityCoordinate(val name: String, val lat: Double, val lon: Double)
         val cities = listOf(
+            CityCoordinate("Kediri", -7.8480, 112.0178),
+            CityCoordinate("Blitar", -8.0983, 112.1681),
+            CityCoordinate("Tulungagung", -8.0658, 111.9015),
+            CityCoordinate("Malang", -7.9797, 112.6304),
             CityCoordinate("Surabaya", -7.2575, 112.7521),
             CityCoordinate("Sidoarjo", -7.4478, 112.7183),
             CityCoordinate("Gresik", -7.1566, 112.6555),
-            CityCoordinate("Malang", -7.9797, 112.6304),
+            CityCoordinate("Mojokerto", -7.4726, 112.4385),
+            CityCoordinate("Jombang", -7.5460, 112.2331),
+            CityCoordinate("Madiun", -7.6298, 111.5239),
+            CityCoordinate("Pasuruan", -7.6453, 112.9075),
+            CityCoordinate("Probolinggo", -7.7543, 113.2159),
+            CityCoordinate("Jember", -8.1724, 113.7007),
+            CityCoordinate("Banyuwangi", -8.2192, 114.3691),
             CityCoordinate("Semarang", -6.9667, 110.4167),
             CityCoordinate("Yogyakarta", -7.7956, 110.3695),
             CityCoordinate("Solo (Surakarta)", -7.5666, 110.8167),
+            CityCoordinate("Magelang", -7.4705, 110.2178),
+            CityCoordinate("Cirebon", -6.7320, 108.5523),
             CityCoordinate("Bandung", -6.9175, 107.6191),
             CityCoordinate("Jakarta Selatan", -6.2615, 106.8106),
             CityCoordinate("Jakarta Pusat", -6.1818, 106.8223),

@@ -215,7 +215,12 @@ fun MainAppScreen(
                 uploadProgressText = uiState.uploadProgressText,
                 onUploadPhoto = { uri ->
                     viewModel.uploadProfilePhoto(uri)
-                }
+                },
+                currentGpsLocation = uiState.currentGpsLocation,
+                hasLocationPermission = uiState.hasLocationPermission,
+                isGpsEnabled = uiState.isGpsEnabled,
+                onRefreshLocation = { viewModel.refreshLocationFromGps() },
+                onPermissionResult = { granted -> viewModel.updateLocationPermission(granted) }
             )
         }
         is CurrentScreen.Main -> {

@@ -13,7 +13,8 @@ data class SupabaseUserDto(
     @Json(name = "avatar_hex") val avatarHex: Long? = 0xFF2E7D32,
     @Json(name = "is_online") val isOnline: Boolean? = true,
     @Json(name = "last_active_at") val lastActiveAt: Long? = null,
-    @Json(name = "avatar_url") val avatarUrl: String? = null
+    @Json(name = "avatar_url") val avatarUrl: String? = null,
+    @Json(name = "city") val city: String? = null
 )
 
 @JsonClass(generateAdapter = true)

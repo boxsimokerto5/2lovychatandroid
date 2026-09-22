@@ -100,10 +100,12 @@ create table if not exists nearby_users (
     avatar_hex bigint default 3046706,
     is_online boolean default true,
     last_active_at bigint default 0,
-    avatar_url text
+    avatar_url text,
+    city text default 'Indonesia'
 );
 alter table nearby_users add column if not exists last_active_at bigint default 0;
 alter table nearby_users add column if not exists avatar_url text;
+alter table nearby_users add column if not exists city text;
 
 create table if not exists ocean_bottles (
     id text primary key,

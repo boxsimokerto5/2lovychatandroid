@@ -165,6 +165,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         refreshSupabaseState()
         refreshR2State()
         detectAndApplyGeoLanguage()
+        checkInitialGpsLocation()
         observeUserProfile()
         observeChatFriends()
         updateUserActivity()
@@ -646,14 +647,20 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                                 myLovyId = profile.lovyId
                             )
                         }
+                        // Jika kota GPS nyata sudah terdeteksi dan profil masih default, sinkronkan otomatis
+                        val detectedCity = _uiState.value.currentGpsLocation?.cityName
+                        if (!detectedCity.isNullOrBlank() && (profile.city.isBlank() || profile.city.equals("Jakarta Selatan", ignoreCase = true))) {
+                            updateCityFromGps(detectedCity)
+                        }
                     } else {
-                        // Seed initial profile in Room database
+                        // Seed initial profile in Room database dengan kota GPS jika sudah terdeteksi
+                        val initialCity = _uiState.value.currentGpsLocation?.cityName?.takeIf { it.isNotBlank() } ?: "Jakarta Selatan"
                         val initialProfile = UserProfile(
                             id = "current_user",
                             displayName = _uiState.value.myName,
                             bio = _uiState.value.myBio,
                             lovyId = _uiState.value.myLovyId,
-                            city = "Jakarta Selatan"
+                            city = initialCity
                         )
                         userProfileRepo.saveProfile(initialProfile)
                     }
@@ -697,7 +704,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 gender = userGender,
                 bio = profile.bio,
                 avatarHex = 0xFF4CAF50,
-                avatarUrl = profile.profilePicture?.takeIf { it.isNotBlank() }
+                avatarUrl = profile.profilePicture?.takeIf { it.isNotBlank() },
+                city = profile.city
             )
         }
     }
@@ -1127,6 +1135,75 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         _uiState.update { it.copy(nearbyOnlyOnlineFilter = onlyOnline) }
     }
 
+    private fun checkInitialGpsLocation() {
+        val app = try { getApplication<Application>() } catch (_: Throwable) { null } ?: return
+        val hasFine = androidx.core.content.ContextCompat.checkSelfPermission(
+            app,
+            android.Manifest.permission.ACCESS_FINE_LOCATION
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        val hasCoarse = androidx.core.content.ContextCompat.checkSelfPermission(
+            app,
+            android.Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        val hasPermission = hasFine || hasCoarse
+        _uiState.update { it.copy(hasLocationPermission = hasPermission) }
+        if (hasPermission) {
+            val isEnabled = com.example.util.AndroidGpsTracker.isLocationEnabled(app)
+            val lastLoc = com.example.util.AndroidGpsTracker.getLastKnownLocation(app)
+            _uiState.update {
+                it.copy(
+                    isGpsEnabled = isEnabled,
+                    currentGpsLocation = lastLoc
+                )
+            }
+            if (lastLoc != null && lastLoc.cityName.isNotBlank()) {
+                updateCityFromGps(lastLoc.cityName)
+            }
+        }
+    }
+
+    fun updateCityFromGps(detectedCity: String, forceSync: Boolean = false) {
+        val cleanCity = detectedCity.trim()
+        if (cleanCity.isBlank()) return
+
+        val currentProfile = _uiState.value.userProfile
+        if (currentProfile.city != cleanCity || forceSync) {
+            val updatedProfile = currentProfile.copy(
+                city = cleanCity,
+                updatedAt = System.currentTimeMillis()
+            )
+            _uiState.update { it.copy(userProfile = updatedProfile) }
+            viewModelScope.launch {
+                try {
+                    userProfileRepo.saveProfile(updatedProfile)
+                } catch (e: Throwable) {
+                    android.util.Log.e("LovyChatViewModel", "Gagal menyimpan kota profil ke Room: ${e.message}")
+                }
+                syncUserProfileToSupabase()
+            }
+        }
+    }
+
+    fun refreshLocationFromGps() {
+        val app = try { getApplication<Application>() } catch (_: Throwable) { null } ?: return
+        val isEnabled = com.example.util.AndroidGpsTracker.isLocationEnabled(app)
+        val loc = com.example.util.AndroidGpsTracker.getLastKnownLocation(app)
+        if (loc != null) {
+            _uiState.update {
+                it.copy(
+                    isGpsEnabled = isEnabled,
+                    currentGpsLocation = loc
+                )
+            }
+            if (loc.cityName.isNotBlank()) {
+                updateCityFromGps(loc.cityName, forceSync = true)
+            }
+            refreshNearbyScan(forceRefresh = true)
+        } else {
+            _uiState.update { it.copy(isGpsEnabled = isEnabled) }
+        }
+    }
+
     fun updateLocationPermission(granted: Boolean) {
         _uiState.update { it.copy(hasLocationPermission = granted) }
         if (granted) {
@@ -1139,12 +1216,18 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     currentGpsLocation = lastLoc
                 ) 
             }
+            if (lastLoc != null && lastLoc.cityName.isNotBlank()) {
+                updateCityFromGps(lastLoc.cityName)
+            }
             refreshNearbyScan(forceRefresh = false)
         }
     }
 
     fun updateGpsLocation(location: com.example.util.UserGpsLocation) {
         _uiState.update { it.copy(currentGpsLocation = location) }
+        if (location.cityName.isNotBlank()) {
+            updateCityFromGps(location.cityName)
+        }
 
         // --- GPS Throttling: Hanya sinkronkan ke cloud jika berpindah > 500 meter atau > 10 menit ---
         val now = System.currentTimeMillis()
@@ -1165,6 +1248,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             lastSyncedLon = location.longitude
             lastGpsUpdateTimestamp = now
             updateUserActivity()
+            syncUserProfileToSupabase()
         }
     }
 
@@ -1212,6 +1296,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             } else {
                 // Mode Tamu: Gunakan data demo simulasi (MockDataSource)
                 val currentLoc = _uiState.value.currentGpsLocation
+                val detectedCity = currentLoc?.cityName?.takeIf { it.isNotBlank() }
                 val sourceList = if (_uiState.value.nearbyUsers.isNotEmpty()) _uiState.value.nearbyUsers else MockDataSource.initialNearbyUsers
                 val updated = sourceList
                     .filterNot { isUserBlocked(it.id, it.name) }
@@ -1230,7 +1315,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                         val variation = (-20..30).random()
                         (user.distanceMeters + variation).coerceAtLeast(40)
                     }
-                    user.copy(distanceMeters = calculatedDistance)
+                    val userCity = if (detectedCity != null) detectedCity else user.city
+                    user.copy(distanceMeters = calculatedDistance, city = userCity)
                 }.shuffled() // Diacak posisinya dalam radius (400m, 1.2km, 200m, dst)
                 _uiState.update { it.copy(isScanningNearby = false, nearbyUsers = updated) }
             }
