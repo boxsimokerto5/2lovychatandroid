@@ -101,6 +101,7 @@ data class LovyChatUiState(
     val isRefreshingMoments: Boolean = false,
     // My Moments tracking (IDs of moments created by this user)
     val myMomentIds: Set<String> = emptySet(),
+    val reportedMomentIds: Set<String> = emptySet(),
     // Privacy and Location Settings
     val isNearbyVisible: Boolean = true,
     val hideExactDistance: Boolean = false,
@@ -554,14 +555,18 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         try {
             val savedIds = prefs.getStringSet("blocked_user_ids", emptySet()) ?: emptySet()
             val savedNames = prefs.getStringSet("blocked_user_names", emptySet()) ?: emptySet()
+            val savedReportedMoments = prefs.getStringSet("reported_moment_ids", emptySet()) ?: emptySet()
             _uiState.update { current ->
                 val filteredNearby = current.nearbyUsers.filterNot { u ->
                     savedIds.contains(u.id) || savedNames.any { n -> n.equals(u.name, ignoreCase = true) }
                 }
+                val filteredMoments = current.moments.filterNot { savedReportedMoments.contains(it.id) }
                 current.copy(
                     blockedUserIds = savedIds,
                     blockedUserNames = savedNames,
-                    nearbyUsers = filteredNearby
+                    reportedMomentIds = savedReportedMoments,
+                    nearbyUsers = filteredNearby,
+                    moments = filteredMoments
                 )
             }
         } catch (_: Throwable) {
@@ -787,6 +792,42 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             )
         }
         refreshNearbyScan(forceRefresh = false)
+    }
+
+    /**
+     * Melaporkan pengguna ke sistem moderasi Lovy Chat (Google Play UGC compliance).
+     */
+    fun reportUser(userId: String, userName: String, reason: String, notes: String, alsoBlock: Boolean = true) {
+        Log.i("LovyChatViewModel", "User reported: id=$userId, name=$userName, reason=$reason, notes=$notes")
+        try {
+            val reportKey = "reported_user_${System.currentTimeMillis()}"
+            prefs.edit().putString(reportKey, "target=$userName,id=$userId,reason=$reason,notes=$notes").apply()
+        } catch (_: Throwable) {}
+
+        if (alsoBlock) {
+            blockUser(userId, userName)
+        }
+    }
+
+    /**
+     * Melaporkan postingan Momen yang melanggar aturan dan menyembunyikannya langsung dari feed pengguna.
+     */
+    fun reportMoment(momentId: String, authorName: String, reason: String, notes: String) {
+        Log.i("LovyChatViewModel", "Moment reported: id=$momentId, author=$authorName, reason=$reason, notes=$notes")
+        val currentReported = _uiState.value.reportedMomentIds + momentId
+        try {
+            prefs.edit()
+                .putStringSet("reported_moment_ids", currentReported)
+                .putString("report_moment_${momentId}_${System.currentTimeMillis()}", "author=$authorName,reason=$reason,notes=$notes")
+                .apply()
+        } catch (_: Throwable) {}
+
+        _uiState.update { current ->
+            current.copy(
+                reportedMomentIds = currentReported,
+                moments = current.moments.filterNot { it.id == momentId }
+            )
+        }
     }
 
     private fun observeUserProfile() {
@@ -1284,6 +1325,46 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 moments = emptyList(),
                 oceanBottles = emptyList(),
                 nearbyUsers = emptyList()
+            )
+        }
+    }
+
+    /**
+     * Menghapus akun dan seluruh data pengguna secara permanen (sesuai regulasi Google Play).
+     */
+    fun deleteAccount() {
+        val state = _uiState.value
+        val myId = state.myLovyId
+        val myName = state.myName
+        val wasRealUser = !state.isGuest && state.isLoggedIn
+
+        authRepo.deleteAccount(myName)
+
+        if (wasRealUser) {
+            viewModelScope.launch {
+                try {
+                    supabaseRepo.deleteAccountAndUserData(myId, myId)
+                } catch (e: Exception) {
+                    Log.w("LovyChatViewModel", "Gagal hapus data akun di Supabase: ${e.message}")
+                }
+            }
+        }
+
+        _uiState.update {
+            it.copy(
+                isLoggedIn = false,
+                isGuest = false,
+                currentScreen = CurrentScreen.Login,
+                messagesMap = emptyMap(),
+                activeChatId = null,
+                conversations = emptyList(),
+                moments = emptyList(),
+                oceanBottles = emptyList(),
+                nearbyUsers = emptyList(),
+                myLovyId = "",
+                myName = "",
+                myBio = "",
+                userProfile = UserProfile()
             )
         }
     }

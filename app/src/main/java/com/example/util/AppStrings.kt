@@ -445,6 +445,55 @@ object AppStrings {
         else -> "Switch account or return to login screen"
     }
 
+    fun menuDeleteAccount(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "注销账号"
+        AppLanguage.JAPANESE -> "アカウント削除"
+        AppLanguage.KOREAN -> "계정 삭제"
+        AppLanguage.ARABIC -> "حذف الحساب"
+        AppLanguage.SPANISH -> "Eliminar cuenta"
+        AppLanguage.FRENCH -> "Supprimer le compte"
+        AppLanguage.GERMAN -> "Konto löschen"
+        AppLanguage.RUSSIAN -> "Удалить аккаунт"
+        AppLanguage.PORTUGUESE -> "Excluir conta"
+        AppLanguage.INDONESIAN -> "Hapus Akun"
+        else -> "Delete Account"
+    }
+
+    fun menuDeleteAccountSub(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "永久删除个人资料、聊天记录与所有数据"
+        AppLanguage.JAPANESE -> "プロフィール、チャット、全データを完全削除"
+        AppLanguage.INDONESIAN -> "Hapus profil, pesan, dan data akun permanen"
+        else -> "Permanently delete your profile, chats, and data"
+    }
+
+    fun deleteAccountDialogTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "永久注销账号？"
+        AppLanguage.JAPANESE -> "アカウントを完全に削除しますか？"
+        AppLanguage.INDONESIAN -> "Hapus Akun Permanen?"
+        else -> "Delete Account Permanently?"
+    }
+
+    fun deleteAccountDialogDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "此操作不可撤销。您的个人资料、聊天记录、好友关系和已发布的动态都将从服务器永久删除，符合 Google Play 隐私安全规范。"
+        AppLanguage.JAPANESE -> "この操作は元に戻せません。プロフィール、チャット履歴、友達リスト、投稿したモーメントはサーバーから完全に削除されます。"
+        AppLanguage.INDONESIAN -> "Tindakan ini tidak dapat dibatalkan. Seluruh data profil, riwayat percakapan, dan momen Anda akan dihapus secara permanen dari server Lovy Chat sesuai standar kebijakan privasi Google Play."
+        else -> "This action cannot be undone. All your profile data, chat history, and moments will be permanently deleted from Lovy Chat servers in compliance with Google Play privacy policies."
+    }
+
+    fun deleteAccountConfirmButton(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "确认注销"
+        AppLanguage.JAPANESE -> "削除する"
+        AppLanguage.INDONESIAN -> "Hapus Akun Saya"
+        else -> "Delete My Account"
+    }
+
+    fun deleteAccountCancelButton(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "取消"
+        AppLanguage.JAPANESE -> "キャンセル"
+        AppLanguage.INDONESIAN -> "Batal"
+        else -> "Cancel"
+    }
+
     fun languageSetting(lang: AppLanguage): String = when (resolveLang(lang)) {
         AppLanguage.CHINESE -> "语言设置 (LO - 本地自动 / EN)"
         AppLanguage.JAPANESE -> "言語設定 (LO - 現地自動 / EN)"

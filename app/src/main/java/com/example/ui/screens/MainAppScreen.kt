@@ -95,6 +95,9 @@ fun MainAppScreen(
                 isUserBlocked = { id, name -> viewModel.isUserBlocked(id, name) },
                 onBlockUser = { viewModel.blockUser(it.id, it.name) },
                 onUnblockUser = { viewModel.unblockUser(it.id, it.name) },
+                onReportUser = { user, reason, notes, alsoBlock ->
+                    viewModel.reportUser(user.id, user.name, reason, notes, alsoBlock)
+                },
                 moments = uiState.moments,
                 onPermissionResult = { granted -> viewModel.updateLocationPermission(granted) },
                 onBack = { viewModel.navigateBack() },
@@ -142,6 +145,9 @@ fun MainAppScreen(
                 },
                 onDeleteMoment = { momentId ->
                     viewModel.deleteMoment(momentId)
+                },
+                onReportMoment = { momentId, authorName, reason, notes ->
+                    viewModel.reportMoment(momentId, authorName, reason, notes)
                 },
                 onRefresh = {
                     viewModel.refreshMoments(force = true)
@@ -208,6 +214,22 @@ fun MainAppScreen(
                     viewModel.onUserTyping(screen.conversationId, partnerId, isTyping)
                 },
                 isFriend = uiState.chattedFriends.any { it.id == (conv?.partnerId ?: viewModel.extractPartnerIdFromConvId(screen.conversationId, uiState.myLovyId)) },
+                isPartnerBlocked = viewModel.isUserBlocked(
+                    conv?.partnerId ?: viewModel.extractPartnerIdFromConvId(screen.conversationId, uiState.myLovyId),
+                    screen.partnerName
+                ),
+                onBlockPartner = {
+                    val partnerId = conv?.partnerId ?: viewModel.extractPartnerIdFromConvId(screen.conversationId, uiState.myLovyId)
+                    viewModel.blockUser(partnerId, screen.partnerName)
+                },
+                onUnblockPartner = {
+                    val partnerId = conv?.partnerId ?: viewModel.extractPartnerIdFromConvId(screen.conversationId, uiState.myLovyId)
+                    viewModel.unblockUser(partnerId, screen.partnerName)
+                },
+                onReportPartner = { reason, notes, alsoBlock ->
+                    val partnerId = conv?.partnerId ?: viewModel.extractPartnerIdFromConvId(screen.conversationId, uiState.myLovyId)
+                    viewModel.reportUser(partnerId, screen.partnerName, reason, notes, alsoBlock)
+                },
                 onAddFriend = {
                     val partnerId = conv?.partnerId ?: viewModel.extractPartnerIdFromConvId(screen.conversationId, uiState.myLovyId)
                     val partnerUser = uiState.nearbyUsers.find { it.id == partnerId } ?: User(
@@ -396,6 +418,9 @@ fun MainAppScreen(
                             },
                             onLogout = {
                                 viewModel.logout()
+                            },
+                            onDeleteAccount = {
+                                viewModel.deleteAccount()
                             }
                         )
                     }

@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Female
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.FormatQuote
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.LocationOn
@@ -87,11 +88,13 @@ fun UserProfileBottomSheet(
     onSayHi: (User) -> Unit,
     onBlockUser: (() -> Unit)? = null,
     onUnblockUser: (() -> Unit)? = null,
+    onReportUser: ((reason: String, notes: String, alsoBlock: Boolean) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var previewMoment by remember { mutableStateOf<MomentItem?>(null) }
     var showBlockConfirmDialog by remember { mutableStateOf(false) }
+    var showReportDialog by remember { mutableStateOf(false) }
 
     // Dapatkan momen pengguna (baik dari daftar asli ataupun foto momen yang dipersonalisasi)
     val userMoments = remember(user, existingMoments) {
@@ -450,8 +453,41 @@ fun UserProfileBottomSheet(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Blokir Pengguna Ini", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                 }
+
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedButton(
+                    onClick = { showReportDialog = true },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFC62828)),
+                    border = BorderStroke(1.dp, Color(0xFFFFCDD2)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp)
+                        .testTag("btn_report_user_${user.id}")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Flag,
+                        contentDescription = null,
+                        tint = Color(0xFFC62828),
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Laporkan Pengguna Ini", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                }
             }
         }
+    }
+
+    if (showReportDialog) {
+        ReportDialog(
+            targetName = user.name,
+            reportType = ReportType.USER,
+            onDismiss = { showReportDialog = false },
+            onSubmitReport = { reason, notes, alsoBlock ->
+                onReportUser?.invoke(reason, notes, alsoBlock)
+                onDismiss()
+            }
+        )
     }
 
     // Dialog Konfirmasi Blokir

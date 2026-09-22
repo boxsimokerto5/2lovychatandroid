@@ -138,6 +138,38 @@ class AuthRepository(
         prefs.edit().remove(KEY_SAVED_SESSION).apply()
     }
 
+    fun deleteAccount(username: String) {
+        clearSession()
+        try {
+            val rawUsers = prefs.getString(KEY_REGISTERED_USERS, null)
+            if (!rawUsers.isNullOrBlank()) {
+                val json = JSONObject(rawUsers)
+                json.remove(username.lowercase())
+                prefs.edit().putString(KEY_REGISTERED_USERS, json.toString()).apply()
+            }
+            val rawGoogle = prefs.getString(KEY_GOOGLE_USERS, null)
+            if (!rawGoogle.isNullOrBlank()) {
+                val json = JSONObject(rawGoogle)
+                val keysToRemove = mutableListOf<String>()
+                val iter = json.keys()
+                while (iter.hasNext()) {
+                    val key = iter.next()
+                    val userObj = json.optJSONObject(key)
+                    if (userObj?.optString("username")?.equals(username, ignoreCase = true) == true ||
+                        userObj?.optString("lovy_id")?.equals(username, ignoreCase = true) == true ||
+                        key.equals(username, ignoreCase = true)
+                    ) {
+                        keysToRemove.add(key)
+                    }
+                }
+                keysToRemove.forEach { json.remove(it) }
+                prefs.edit().putString(KEY_GOOGLE_USERS, json.toString()).apply()
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Gagal menghapus akun lokal: ${e.message}")
+        }
+    }
+
     fun updateAvatarUrl(newAvatarUrl: String?) {
         val current = getSavedSession() ?: return
         saveSession(current.copy(avatarUrl = newAvatarUrl))

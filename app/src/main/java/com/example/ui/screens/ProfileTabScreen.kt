@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.GpsFixed
 import androidx.compose.material.icons.filled.GpsOff
 import androidx.compose.material.icons.filled.Info
@@ -113,11 +114,14 @@ fun ProfileTabScreen(
     blockedUserNames: Set<String> = emptySet(),
     onUnblockUser: (String) -> Unit = {},
     onLogout: () -> Unit,
+    onDeleteAccount: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     var showLanguagePicker by remember { mutableStateOf(false) }
     var showPrivacyDialog by remember { mutableStateOf(false) }
     var showBlockedUsersDialog by remember { mutableStateOf(false) }
+    var showDeleteAccountDialog by remember { mutableStateOf(false) }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -310,10 +314,77 @@ fun ProfileTabScreen(
                     subtitle = com.example.util.AppStrings.menuLogoutSub(language),
                     onClick = onLogout
                 )
+                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
+                ProfileMenuItem(
+                    icon = Icons.Default.DeleteForever,
+                    iconTint = Color(0xFFD32F2F),
+                    title = com.example.util.AppStrings.menuDeleteAccount(language),
+                    subtitle = com.example.util.AppStrings.menuDeleteAccountSub(language),
+                    onClick = { showDeleteAccountDialog = true }
+                )
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+    }
+
+    if (showDeleteAccountDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAccountDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.DeleteForever,
+                    contentDescription = null,
+                    tint = Color(0xFFD32F2F),
+                    modifier = Modifier.size(32.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = com.example.util.AppStrings.deleteAccountDialogTitle(language),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp,
+                    color = Color(0xFFD32F2F)
+                )
+            },
+            text = {
+                Text(
+                    text = com.example.util.AppStrings.deleteAccountDialogDesc(language),
+                    fontSize = 13.5.sp,
+                    color = NeutralDark,
+                    lineHeight = 20.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteAccountDialog = false
+                        Toast.makeText(context, "Akun dan seluruh data Anda telah berhasil dihapus.", Toast.LENGTH_LONG).show()
+                        onDeleteAccount()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = com.example.util.AppStrings.deleteAccountConfirmButton(language),
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteAccountDialog = false }
+                ) {
+                    Text(
+                        text = com.example.util.AppStrings.deleteAccountCancelButton(language),
+                        color = NeutralMedium
+                    )
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = Color.White
+        )
     }
 
     if (showBlockedUsersDialog) {

@@ -175,4 +175,18 @@ interface SupabaseRestApi {
         @Query("id") idFilter: String,
         @Body updates: Map<String, Long>
     ): Response<Unit>
+
+    @DELETE("rest/v1/app_accounts")
+    suspend fun deleteAccount(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("id") idFilter: String
+    ): Response<Unit>
+
+    @DELETE("rest/v1/moments")
+    suspend fun deleteMomentsByAuthor(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("author_id") authorIdFilter: String
+    ): Response<Unit>
 }

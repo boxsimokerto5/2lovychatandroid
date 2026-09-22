@@ -554,4 +554,38 @@ class SupabaseRepository {
             false
         }
     }
+
+    /**
+     * Menghapus seluruh data pengguna dari database Supabase:
+     * - Akun di tabel app_accounts
+     * - Momen yang dibuat pengguna di tabel moments
+     * - Menandai semua pesan obrolan terhapus di tabel chat_messages
+     */
+    suspend fun deleteAccountAndUserData(accountId: String, lovyId: String): Boolean = withContext(Dispatchers.IO) {
+        val api = SupabaseClient.getApi() ?: return@withContext false
+        val apiKey = SupabaseClient.getSupabaseAnonKey()
+        val auth = SupabaseClient.getAuthHeader()
+
+        var success = true
+        try {
+            if (accountId.isNotBlank()) {
+                api.deleteAccount(apiKey, auth, "eq.$accountId")
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "deleteAccount error: ${e.message}")
+            success = false
+        }
+
+        val targetId = lovyId.ifBlank { accountId }
+        try {
+            if (targetId.isNotBlank()) {
+                api.deleteMomentsByAuthor(apiKey, auth, "eq.$targetId")
+                api.markAllSenderMessagesDeleted(apiKey, auth, "eq.$targetId", mapOf("deleted_for_sender" to true, "deleted_for_receiver" to true))
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "deleteUserMoments/Messages error: ${e.message}")
+        }
+
+        success
+    }
 }

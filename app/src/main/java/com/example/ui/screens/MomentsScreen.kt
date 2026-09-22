@@ -12,6 +12,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -46,6 +47,7 @@ import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.LocationOn
@@ -103,6 +105,8 @@ import com.example.model.MomentComment
 import com.example.ui.components.IronSourceBannerView
 import com.example.ui.components.LevelPlayNativeAdCard
 import com.example.ui.components.LovyAvatar
+import com.example.ui.components.ReportDialog
+import com.example.ui.components.ReportType
 import com.example.ui.theme.EmeraldGreen
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -130,6 +134,7 @@ fun MomentsScreen(
     onPostMomentWithDetails: ((content: String, imageUrl: String?, locationTag: String?) -> Unit)? = null,
     onPostMomentWithPhotoUri: ((content: String, uri: android.net.Uri?, locationTag: String?) -> Unit)? = null,
     onDeleteMoment: ((String) -> Unit)? = null,
+    onReportMoment: ((momentId: String, authorName: String, reason: String, notes: String) -> Unit)? = null,
     onRefresh: (() -> Unit)? = null,
     isRefreshing: Boolean = false,
     isUploadingPhoto: Boolean = false,
@@ -138,6 +143,7 @@ fun MomentsScreen(
 ) {
     val context = LocalContext.current
     var showPostDialog by remember { mutableStateOf(false) }
+    var reportingMoment by remember { mutableStateOf<MomentItem?>(null) }
     var postText by remember { mutableStateOf("") }
     
     // Otomatis deteksi nama kota dari GPS map
@@ -348,34 +354,12 @@ fun MomentsScreen(
                         onToggleLike = { onToggleLike(item.id) },
                         onPhotoClick = { url -> fullscreenPhotoUrl = url },
                         onCommentClick = { activeMomentIdForComments = item.id },
-                        onShareClick = {
-                            try {
-                                val shareText = buildString {
-                                    append("📸 Cerita seru dari ${item.authorName} di Lovy Chat:\n")
-                                    append("\"${item.content}\"\n")
-                                    if (!item.locationTag.isNullOrBlank()) {
-                                        append("📍 ${item.locationTag}\n")
-                                    }
-                                    append("\nYuk lihat foto & kenalan di Lovy Chat:\n")
-                                    append("👉 https://lovychat.my.id\n\n")
-                                    append("Unduh aplikasi Lovy Chat di: https://lovychat.my.id")
-                                }
-                                val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                                    type = "text/plain"
-                                    putExtra(Intent.EXTRA_TEXT, shareText)
-                                    putExtra(Intent.EXTRA_SUBJECT, "Momen Lovy Chat - ${item.authorName}")
-                                }
-                                val chooser = Intent.createChooser(sendIntent, "Bagikan Momen Lovy Chat via")
-                                context.startActivity(chooser)
-                            } catch (_: Throwable) {
-                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
-                                val clip = ClipData.newPlainText("Lovy Chat Momen", "https://lovychat.my.id")
-                                clipboard?.setPrimaryClip(clip)
-                                Toast.makeText(context, "Tautan disalin: https://lovychat.my.id", Toast.LENGTH_SHORT).show()
-                            }
-                        },
+                        onShareClick = null,
                         onDeleteClick = if (isMyMoment && onDeleteMoment != null) {
                             { onDeleteMoment(item.id) }
+                        } else null,
+                        onReportClick = if (!isMyMoment && onReportMoment != null) {
+                            { reportingMoment = item }
                         } else null
                     )
                 }
@@ -395,6 +379,19 @@ fun MomentsScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
         }
+    }
+
+    if (reportingMoment != null) {
+        val target = reportingMoment!!
+        ReportDialog(
+            targetName = "Momen oleh ${target.authorName}",
+            reportType = ReportType.MOMENT,
+            onDismiss = { reportingMoment = null },
+            onSubmitReport = { reason, notes, _ ->
+                onReportMoment?.invoke(target.id, target.authorName, reason, notes)
+                reportingMoment = null
+            }
+        )
     }
 
     // Dialog posting moment dengan opsi foto & lokasi
@@ -902,9 +899,10 @@ fun MomentCard(
     isMyMoment: Boolean = false,
     onToggleLike: () -> Unit,
     onPhotoClick: (String) -> Unit,
-    onShareClick: () -> Unit,
+    onShareClick: (() -> Unit)? = null,
     onCommentClick: () -> Unit = {},
     onDeleteClick: (() -> Unit)? = null,
+    onReportClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var showDeleteConfirm by remember { mutableStateOf(false) }
@@ -1036,6 +1034,25 @@ fun MomentCard(
                             )
                         }
                     }
+                } else if (!isMyMoment && onReportClick != null) {
+                    Surface(
+                        onClick = onReportClick,
+                        shape = RoundedCornerShape(10.dp),
+                        color = Color(0xFFF8FAFC),
+                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                        modifier = Modifier
+                            .size(36.dp)
+                            .testTag("btn_report_moment_${item.id}")
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Flag,
+                                contentDescription = "Laporkan Momen",
+                                tint = Color(0xFF94A3B8),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
                 }
             }
 
@@ -1157,27 +1174,29 @@ fun MomentCard(
                     )
                 }
 
-                // Share Button
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable(onClick = onShareClick)
-                        .padding(horizontal = 8.dp, vertical = 6.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Share,
-                        contentDescription = "Bagikan",
-                        tint = NeutralMedium,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "Bagikan",
-                        fontSize = 12.5.sp,
-                        color = NeutralMedium,
-                        fontWeight = FontWeight.Medium
-                    )
+                // Share Button (hanya tampil jika onShareClick aktif)
+                if (onShareClick != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable(onClick = onShareClick)
+                            .padding(horizontal = 8.dp, vertical = 6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "Bagikan",
+                            tint = NeutralMedium,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Bagikan",
+                            fontSize = 12.5.sp,
+                            color = NeutralMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
 
                 // Delete Button (if my moment)

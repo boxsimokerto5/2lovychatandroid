@@ -124,6 +124,7 @@ fun NearbyScreen(
     isUserBlocked: (String, String) -> Boolean = { _, _ -> false },
     onBlockUser: (User) -> Unit = {},
     onUnblockUser: (User) -> Unit = {},
+    onReportUser: ((User, String, String, Boolean) -> Unit)? = null,
     moments: List<com.example.model.MomentItem> = emptyList(),
     onPermissionResult: (Boolean) -> Unit = {},
     onBack: () -> Unit,
@@ -892,7 +893,10 @@ fun NearbyScreen(
             onDismiss = { selectedUserForProfile = null },
             onSayHi = onSayHi,
             onBlockUser = { onBlockUser(user) },
-            onUnblockUser = { onUnblockUser(user) }
+            onUnblockUser = { onUnblockUser(user) },
+            onReportUser = { reason, notes, alsoBlock ->
+                onReportUser?.invoke(user, reason, notes, alsoBlock)
+            }
         )
     }
 }
