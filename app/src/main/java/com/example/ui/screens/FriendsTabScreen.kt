@@ -270,7 +270,8 @@ fun FriendsTabScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
                                     text = user.name,
@@ -278,7 +279,8 @@ fun FriendsTabScreen(
                                     fontWeight = FontWeight.Bold,
                                     color = NeutralDark,
                                     maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false)
                                 )
 
                                 // Badge Gender & Usia
@@ -303,7 +305,9 @@ fun FriendsTabScreen(
                                             text = "${user.age}",
                                             color = Color.White,
                                             fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            softWrap = false
                                         )
                                     }
                                 }

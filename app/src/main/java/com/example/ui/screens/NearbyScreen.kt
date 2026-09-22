@@ -67,6 +67,8 @@ import com.example.ui.components.IronSourceBannerView
 import com.example.ui.components.LevelPlayNativeAdCard
 import com.example.ui.components.LovyAvatar
 import com.example.ui.components.NearbyRadarView
+import com.example.ui.components.UserProfileBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -818,6 +820,18 @@ fun NearbyScreen(
             }
         }
     }
+
+    selectedUserForProfile?.let { user ->
+        UserProfileBottomSheet(
+            user = user,
+            existingMoments = moments,
+            isBlocked = isUserBlocked(user.id, user.name),
+            onDismiss = { selectedUserForProfile = null },
+            onSayHi = onSayHi,
+            onBlockUser = { onBlockUser(user) },
+            onUnblockUser = { onUnblockUser(user) }
+        )
+    }
 }
 }
 
@@ -860,7 +874,8 @@ fun NearbyUserCard(
             Column(modifier = Modifier.weight(1f)) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
                         text = user.name,
@@ -868,30 +883,34 @@ fun NearbyUserCard(
                         fontWeight = FontWeight.Bold,
                         color = NeutralDark,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
 
-                    // Gender & Age tag
-                    val badgeColor = if (user.gender == Gender.FEMALE) Color(0xFFFF4081) else Color(0xFF2196F3)
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(badgeColor)
-                            .padding(horizontal = 5.dp, vertical = 1.dp)
+                    // Gender & Age tag (rapi, proporsional, tidak terjepit)
+                    val badgeColor = if (user.gender == Gender.FEMALE) Color(0xFFFF4081) else Color(0xFF1976D2)
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = badgeColor
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp),
+                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                        ) {
                             Icon(
                                 imageVector = if (user.gender == Gender.FEMALE) Icons.Default.Female else Icons.Default.Male,
                                 contentDescription = null,
                                 tint = Color.White,
                                 modifier = Modifier.size(11.dp)
                             )
-                            Spacer(modifier = Modifier.width(2.dp))
                             Text(
                                 text = "${user.age}",
                                 color = Color.White,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                     }
@@ -913,7 +932,8 @@ fun NearbyUserCard(
                 // Distance & Location
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(
                         imageVector = Icons.Default.LocationOn,
@@ -925,7 +945,9 @@ fun NearbyUserCard(
                         text = if (hideExactDistance) user.city else "${user.formattedDistance} • ${user.city}",
                         fontSize = 11.5.sp,
                         color = EmeraldGreen,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }

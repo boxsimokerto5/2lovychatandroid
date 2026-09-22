@@ -286,7 +286,9 @@ fun ChatConversationItem(
                                 text = "${conversation.partnerAge}",
                                 color = Color.White,
                                 fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                     }
