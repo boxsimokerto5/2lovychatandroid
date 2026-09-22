@@ -14,7 +14,8 @@ data class User(
     val avatarColorHex: Long,
     val isOnline: Boolean = true,
     val city: String = "Jakarta Selatan",
-    val avatarUrl: String? = null
+    val avatarUrl: String? = null,
+    val isFavorite: Boolean = false
 ) {
     val formattedDistance: String
         get() = if (distanceMeters < 1000) {

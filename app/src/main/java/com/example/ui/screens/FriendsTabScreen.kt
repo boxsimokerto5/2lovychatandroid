@@ -26,6 +26,8 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonSearch
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -67,19 +69,24 @@ fun FriendsTabScreen(
     onNavigateToNearby: () -> Unit,
     onDeleteFriend: (User) -> Unit = {},
     onClearAllFriends: () -> Unit = {},
+    onToggleFavorite: (User) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var friendToDelete by remember { mutableStateOf<User?>(null) }
     var showClearAllDialog by remember { mutableStateOf(false) }
 
-    // Urutkan daftar teman: pengguna yang sedang ONLINE berada di paling atas!
+    // Urutkan daftar teman:
+    // 1. Teman Favorit (⭐) SELALU berada di paling atas (bahkan di atas teman online)!
+    // 2. Teman yang sedang ONLINE
+    // 3. Nama alfabetis
     val sortedAndFiltered = remember(friends, searchQuery) {
         val baseList = if (searchQuery.isBlank()) friends
         else friends.filter { it.name.contains(searchQuery, ignoreCase = true) }
 
         baseList.sortedWith(
-            compareByDescending<User> { it.isOnline }
+            compareByDescending<User> { it.isFavorite }
+                .thenByDescending { it.isOnline }
                 .thenBy { it.name.lowercase() }
         )
     }
@@ -234,13 +241,14 @@ fun FriendsTabScreen(
                 }
             } else {
                 items(sortedAndFiltered, key = { it.id }) { user ->
+                    val itemBg = if (user.isFavorite) Color(0xFFFFFDE7).copy(alpha = 0.45f) else Color.White
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onSelectFriend(user) }
-                            .background(Color.White)
-                            .padding(start = 16.dp, end = 8.dp, top = 10.dp, bottom = 10.dp)
+                            .background(itemBg)
+                            .padding(start = 16.dp, end = 6.dp, top = 10.dp, bottom = 10.dp)
                             .testTag("friend_item_${user.id}")
                     ) {
                         LovyAvatar(
@@ -262,6 +270,32 @@ fun FriendsTabScreen(
                                     fontWeight = FontWeight.Bold,
                                     color = NeutralDark
                                 )
+                                if (user.isFavorite) {
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Surface(
+                                        color = Color(0xFFFFF8E1),
+                                        shape = RoundedCornerShape(6.dp)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.Star,
+                                                contentDescription = null,
+                                                tint = Color(0xFFFFB300),
+                                                modifier = Modifier.size(11.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(2.dp))
+                                            Text(
+                                                text = "Favorit",
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFFE65100)
+                                            )
+                                        }
+                                    }
+                                }
                                 if (user.isOnline) {
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Surface(
@@ -287,16 +321,32 @@ fun FriendsTabScreen(
                             )
                         }
 
+                        // Tombol Bintang Favorit (Pin ke paling atas)
+                        IconButton(
+                            onClick = { onToggleFavorite(user) },
+                            modifier = Modifier
+                                .size(40.dp)
+                                .testTag("favorite_button_${user.id}")
+                        ) {
+                            Icon(
+                                imageVector = if (user.isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                                contentDescription = if (user.isFavorite) "Hapus dari Favorit" else "Jadikan Favorit",
+                                tint = if (user.isFavorite) Color(0xFFFFB300) else NeutralMedium.copy(alpha = 0.45f),
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+
+                        // Tombol Hapus Kontak
                         IconButton(
                             onClick = { friendToDelete = user },
                             modifier = Modifier
-                                .size(44.dp)
+                                .size(40.dp)
                                 .testTag("delete_friend_${user.id}")
                         ) {
                             Icon(
                                 imageVector = Icons.Default.DeleteOutline,
                                 contentDescription = "Hapus Kontak Teman",
-                                tint = NeutralMedium.copy(alpha = 0.65f),
+                                tint = NeutralMedium.copy(alpha = 0.55f),
                                 modifier = Modifier.size(20.dp)
                             )
                         }

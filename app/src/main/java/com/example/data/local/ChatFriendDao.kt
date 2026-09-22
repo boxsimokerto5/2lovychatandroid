@@ -18,6 +18,9 @@ interface ChatFriendDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdateFriend(friend: ChatFriendEntity)
 
+    @Query("UPDATE chat_friends SET isFavorite = :isFavorite WHERE id = :id")
+    suspend fun updateFavoriteStatus(id: String, isFavorite: Boolean)
+
     @Query("DELETE FROM chat_friends WHERE id = :id")
     suspend fun deleteFriendById(id: String)
 

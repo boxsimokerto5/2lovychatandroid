@@ -270,7 +270,8 @@ fun MainAppScreen(
                                             friend.name.lowercase() in onlineNames
                                     if (isNowOnline != friend.isOnline) friend.copy(isOnline = isNowOnline) else friend
                                 }.sortedWith(
-                                    compareByDescending<User> { it.isOnline }
+                                    compareByDescending<User> { it.isFavorite }
+                                        .thenByDescending { it.isOnline }
                                         .thenBy { it.name.lowercase() }
                                 )
                             }
@@ -288,6 +289,9 @@ fun MainAppScreen(
                                 },
                                 onClearAllFriends = {
                                     viewModel.clearAllFriends()
+                                },
+                                onToggleFavorite = { user ->
+                                    viewModel.toggleFavoriteFriend(user)
                                 }
                             )
                         }

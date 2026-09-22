@@ -21,7 +21,8 @@ data class ChatFriendEntity(
     val isOnline: Boolean = true,
     val city: String = "Jakarta Selatan",
     val avatarUrl: String? = null,
-    val lastChattedAt: Long = System.currentTimeMillis()
+    val lastChattedAt: Long = System.currentTimeMillis(),
+    val isFavorite: Boolean = false
 ) {
     fun toUser(): User = User(
         id = id,
@@ -33,7 +34,8 @@ data class ChatFriendEntity(
         avatarColorHex = avatarColorHex,
         isOnline = isOnline,
         city = city,
-        avatarUrl = avatarUrl
+        avatarUrl = avatarUrl,
+        isFavorite = isFavorite
     )
 
     companion object {
@@ -49,7 +51,8 @@ data class ChatFriendEntity(
                 isOnline = user.isOnline,
                 city = user.city,
                 avatarUrl = user.avatarUrl,
-                lastChattedAt = timestamp
+                lastChattedAt = timestamp,
+                isFavorite = user.isFavorite
             )
     }
 }

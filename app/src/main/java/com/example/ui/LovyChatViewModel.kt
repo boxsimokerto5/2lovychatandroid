@@ -227,10 +227,40 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                chatFriendDao.insertOrUpdateFriend(ChatFriendEntity.fromUser(user))
+                // Pertahankan status isFavorite jika teman sudah ditandai favorit sebelumnya
+                val currentFriend = _uiState.value.chattedFriends.find { it.id == user.id }
+                val isFav = user.isFavorite || (currentFriend?.isFavorite == true)
+                chatFriendDao.insertOrUpdateFriend(ChatFriendEntity.fromUser(user.copy(isFavorite = isFav)))
             } catch (e: Exception) {
                 Log.w("LovyChatViewModel", "Gagal menyimpan teman mengobrol", e)
             }
+        }
+    }
+
+    fun toggleFavoriteFriend(user: User) {
+        val newFavorite = !user.isFavorite
+        recordFeatureClick()
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                chatFriendDao.updateFavoriteStatus(user.id, newFavorite)
+                val allFriends = chatFriendDao.getAllFriends()
+                if (allFriends.none { it.id == user.id }) {
+                    chatFriendDao.insertOrUpdateFriend(ChatFriendEntity.fromUser(user.copy(isFavorite = newFavorite)))
+                }
+            } catch (e: Exception) {
+                Log.w("LovyChatViewModel", "Gagal update status favorit teman", e)
+            }
+        }
+        _uiState.update { state ->
+            val updated = state.chattedFriends.map { f ->
+                if (f.id == user.id) f.copy(isFavorite = newFavorite) else f
+            }
+            val finalFriends = if (updated.any { it.id == user.id }) {
+                updated
+            } else {
+                updated + user.copy(isFavorite = newFavorite)
+            }
+            state.copy(chattedFriends = finalFriends)
         }
     }
 
