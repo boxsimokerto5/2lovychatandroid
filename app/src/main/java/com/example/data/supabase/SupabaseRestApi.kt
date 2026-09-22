@@ -105,6 +105,23 @@ interface SupabaseRestApi {
         @Body updates: Map<String, Boolean>
     ): Response<Unit>
 
+    @PATCH("rest/v1/chat_messages")
+    suspend fun markMessagesAsRead(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("conversation_id") conversationFilter: String,
+        @Query("sender_id") senderFilter: String,
+        @Body updates: Map<String, Boolean>
+    ): Response<Unit>
+
+    @PATCH("rest/v1/chat_messages")
+    suspend fun markMessageReadById(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("id") idFilter: String,
+        @Body updates: Map<String, Boolean>
+    ): Response<Unit>
+
     @GET("rest/v1/moments?select=*&order=created_at.desc")
     suspend fun getMoments(
         @Header("apikey") apiKey: String,

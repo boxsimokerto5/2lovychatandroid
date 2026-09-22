@@ -38,7 +38,8 @@ data class SupabaseMessageDto(
     @Json(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
     @Json(name = "deleted_for_sender") val deletedForSender: Boolean? = null,
     @Json(name = "deleted_for_receiver") val deletedForReceiver: Boolean? = null,
-    @Json(name = "image_url") val imageUrl: String? = null
+    @Json(name = "image_url") val imageUrl: String? = null,
+    @Json(name = "is_read") val isRead: Boolean? = false
 )
 
 @JsonClass(generateAdapter = true)

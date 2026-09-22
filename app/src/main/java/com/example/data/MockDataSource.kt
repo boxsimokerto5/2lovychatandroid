@@ -638,19 +638,19 @@ object MockDataSource {
 
     val initialMessages = mapOf(
         "conv_u1" to listOf(
-            ChatMessage("m1", "conv_u1", "Halo Siti, salam kenal dari Lovy Chat!", System.currentTimeMillis() - 1000 * 60 * 15, isFromMe = true),
-            ChatMessage("m2", "conv_u1", "Halo juga! Salam kenal ya 😊", System.currentTimeMillis() - 1000 * 60 * 10, isFromMe = false),
-            ChatMessage("m3", "conv_u1", "Tadi lihat kamu di fitur Pengguna Sekitar, jaraknya deket banget hehe", System.currentTimeMillis() - 1000 * 60 * 8, isFromMe = true),
-            ChatMessage("m4", "conv_u1", "Hai juga! Kamu tinggal daerah mana nih?", System.currentTimeMillis() - 1000 * 60 * 5, isFromMe = false)
+            ChatMessage("m1", "conv_u1", "Halo Siti, salam kenal dari Lovy Chat!", System.currentTimeMillis() - 1000 * 60 * 15, isFromMe = true, isRead = true),
+            ChatMessage("m2", "conv_u1", "Halo juga! Salam kenal ya 😊", System.currentTimeMillis() - 1000 * 60 * 10, isFromMe = false, isRead = true),
+            ChatMessage("m3", "conv_u1", "Tadi lihat kamu di fitur Pengguna Sekitar, jaraknya deket banget hehe", System.currentTimeMillis() - 1000 * 60 * 8, isFromMe = true, isRead = true),
+            ChatMessage("m4", "conv_u1", "Hai juga! Kamu tinggal daerah mana nih?", System.currentTimeMillis() - 1000 * 60 * 5, isFromMe = false, isRead = true)
         ),
         "conv_u2" to listOf(
-            ChatMessage("m21", "conv_u2", "Bro, kameramu pakai mirrorless apa?", System.currentTimeMillis() - 1000 * 60 * 90, isFromMe = true),
-            ChatMessage("m22", "conv_u2", "Gua pakai Sony A6400 nih, asik buat street photography", System.currentTimeMillis() - 1000 * 60 * 70, isFromMe = false),
-            ChatMessage("m23", "conv_u2", "Besok ada rencana hunting foto gak?", System.currentTimeMillis() - 1000 * 60 * 45, isFromMe = false)
+            ChatMessage("m21", "conv_u2", "Bro, kameramu pakai mirrorless apa?", System.currentTimeMillis() - 1000 * 60 * 90, isFromMe = true, isRead = true),
+            ChatMessage("m22", "conv_u2", "Gua pakai Sony A6400 nih, asik buat street photography", System.currentTimeMillis() - 1000 * 60 * 70, isFromMe = false, isRead = true),
+            ChatMessage("m23", "conv_u2", "Besok ada rencana hunting foto gak?", System.currentTimeMillis() - 1000 * 60 * 45, isFromMe = false, isRead = true)
         ),
         "conv_u5" to listOf(
-            ChatMessage("m51", "conv_u5", "Halo! Aku barusan mancing botolmu di laut Lovy Chat 🌊", System.currentTimeMillis() - 1000 * 60 * 60 * 4, isFromMe = true),
-            ChatMessage("m52", "conv_u5", "Makasih udah nemu botolku yaa! Seneng banget bisa kenalan.", System.currentTimeMillis() - 1000 * 60 * 60 * 3, isFromMe = false)
+            ChatMessage("m51", "conv_u5", "Halo! Aku barusan mancing botolmu di laut Lovy Chat 🌊", System.currentTimeMillis() - 1000 * 60 * 60 * 4, isFromMe = true, isRead = true),
+            ChatMessage("m52", "conv_u5", "Makasih udah nemu botolku yaa! Seneng banget bisa kenalan.", System.currentTimeMillis() - 1000 * 60 * 60 * 3, isFromMe = false, isRead = true)
         )
     )
 

@@ -119,6 +119,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         val db = AppDatabase.getInstance(app)
         db.chatFriendDao()
     }
+    private val localChatRepo by lazy {
+        com.example.data.local.LocalChatRepository.getInstance(getApplication<Application>())
+    }
     private val authRepo by lazy {
         AuthRepository(getApplication<Application>(), supabaseRepo)
     }
@@ -1352,10 +1355,70 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             )
         }
 
+        val partnerId = conv?.partnerId ?: extractPartnerIdFromConvId(conversationId, _uiState.value.myLovyId)
+        markConversationAsRead(conversationId, partnerId)
+
         // Sinkronisasi pesan obrolan 2 arah secara langsung untuk pengguna asli
         if (!_uiState.value.isGuest) {
-            val partnerId = conv?.partnerId ?: extractPartnerIdFromConvId(conversationId, _uiState.value.myLovyId)
             pollChatMessages(conversationId, partnerId)
+        }
+    }
+
+    fun markConversationAsRead(conversationId: String, partnerId: String = "") {
+        val pid = partnerId.ifBlank {
+            val conv = _uiState.value.conversations.find { it.id == conversationId }
+            conv?.partnerId ?: extractPartnerIdFromConvId(conversationId, _uiState.value.myLovyId)
+        }
+
+        // 1. Update status pesan masuk di memori UI menjadi terbaca
+        _uiState.update { state ->
+            val updatedConvs = state.conversations.map { c ->
+                if (c.id == conversationId) c.copy(unreadCount = 0) else c
+            }
+            val msgs = state.messagesMap[conversationId]
+            val updatedMsgsMap = if (!msgs.isNullOrEmpty()) {
+                val updatedList = msgs.map { m ->
+                    if (!m.isFromMe && !m.isRead) m.copy(isRead = true) else m
+                }
+                state.messagesMap + (conversationId to updatedList)
+            } else {
+                state.messagesMap
+            }
+            state.copy(conversations = updatedConvs, messagesMap = updatedMsgsMap)
+        }
+
+        // 2. Tandai terbaca di database lokal Room
+        viewModelScope.launch(Dispatchers.IO) {
+            localChatRepo?.markIncomingMessagesAsRead(conversationId)
+        }
+
+        // 3. Beri tahu server Supabase bahwa pesan dari partner telah dibaca (penerima melihat pesan)
+        if (!_uiState.value.isGuest && SupabaseClient.isConfigured() && pid.isNotBlank()) {
+            viewModelScope.launch(Dispatchers.IO) {
+                supabaseRepo.markMessagesAsRead(conversationId, pid)
+            }
+        }
+    }
+
+    fun markSentMessagesAsReadLocal(conversationId: String) {
+        _uiState.update { state ->
+            val msgs = state.messagesMap[conversationId] ?: return@update state
+            val updated = msgs.map { m ->
+                if (m.isFromMe && !m.isRead) m.copy(isRead = true) else m
+            }
+            val lastMsg = updated.lastOrNull()
+            val updatedConvs = state.conversations.map { c ->
+                if (c.id == conversationId && lastMsg != null) {
+                    c.copy(
+                        lastMessageIsFromMe = lastMsg.isFromMe,
+                        lastMessageIsRead = lastMsg.isRead
+                    )
+                } else c
+            }
+            state.copy(
+                conversations = updatedConvs,
+                messagesMap = state.messagesMap + (conversationId to updated)
+            )
         }
     }
 
@@ -1365,8 +1428,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
         val myId = _uiState.value.myLovyId
         val currentMsgs = _uiState.value.messagesMap[conversationId] ?: emptyList()
-        // Jika sudah ada pesan dan bukan forceFullSync, minta hanya pesan baru setelah pesan terakhir
-        val sinceTimestamp = if (forceFullSync || currentMsgs.isEmpty()) 0L else (currentMsgs.maxOfOrNull { it.timestamp } ?: 0L)
+        // Cek jika ada pesan kita yang belum dibaca agar sinkronisasi mengambil status is_read terbaru dari Supabase
+        val hasUnreadSent = currentMsgs.any { it.isFromMe && !it.isRead }
+        val sinceTimestamp = if (forceFullSync || currentMsgs.isEmpty() || hasUnreadSent) 0L else (currentMsgs.maxOfOrNull { it.timestamp } ?: 0L)
 
         viewModelScope.launch(Dispatchers.IO) {
             val remoteMsgs = supabaseRepo.fetchChatMessages(
@@ -1402,16 +1466,31 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     }
 
                     if (actualChatMsgs.isNotEmpty()) {
+                        val isViewing = _uiState.value.activeChatId == conversationId
+                        val processedMsgs = if (isViewing) {
+                            actualChatMsgs.map { if (!it.isFromMe) it.copy(isRead = true) else it }
+                        } else {
+                            actualChatMsgs
+                        }
+
                         val current = _uiState.value.messagesMap[conversationId] ?: emptyList()
-                        val merged = (current + actualChatMsgs)
+                        val msgMap = current.associateBy { it.id }.toMutableMap()
+                        for (m in processedMsgs) {
+                            msgMap[m.id] = m
+                        }
+                        val merged = msgMap.values
                             .filterNot { it.deletedForSender && it.isFromMe }
-                            .distinctBy { it.id }
                             .sortedBy { it.timestamp }
 
                         val lastMsg = merged.lastOrNull()
                         val updatedConvs = _uiState.value.conversations.map { c ->
                             if (c.id == conversationId && lastMsg != null) {
-                                c.copy(lastMessage = lastMsg.text, lastTimestamp = lastMsg.timestamp)
+                                c.copy(
+                                    lastMessage = lastMsg.text,
+                                    lastTimestamp = lastMsg.timestamp,
+                                    lastMessageIsFromMe = lastMsg.isFromMe,
+                                    lastMessageIsRead = lastMsg.isRead
+                                )
                             } else c
                         }
 
@@ -1420,6 +1499,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                                 conversations = updatedConvs,
                                 messagesMap = it.messagesMap + (conversationId to merged)
                             )
+                        }
+
+                        if (isViewing && actualChatMsgs.any { !it.isFromMe && !it.isRead }) {
+                            viewModelScope.launch(Dispatchers.IO) {
+                                supabaseRepo.markMessagesAsRead(conversationId, partnerId)
+                                localChatRepo?.markIncomingMessagesAsRead(conversationId)
+                            }
                         }
                     }
                 }
@@ -1532,8 +1618,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun sendMessage(conversationId: String, text: String, partnerName: String) {
-        if (text.isBlank()) return
+    fun sendMessage(conversationId: String, text: String, partnerName: String, imageUrl: String? = null) {
+        if (text.isBlank() && imageUrl.isNullOrBlank()) return
         if (isUserBlocked(userName = partnerName)) return
         updateUserActivity()
         val newMsg = ChatMessage(
@@ -1541,13 +1627,22 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             conversationId = conversationId,
             text = text.trim(),
             timestamp = System.currentTimeMillis(),
-            isFromMe = true
+            isFromMe = true,
+            isRead = false,
+            imageUrl = imageUrl
         )
+
+        val previewText = if (imageUrl != null && text.isBlank()) "📷 [Foto]" else text.trim()
 
         val updatedMessages = (_uiState.value.messagesMap[conversationId] ?: emptyList()) + newMsg
         val updatedConversations = _uiState.value.conversations.map {
             if (it.id == conversationId) {
-                it.copy(lastMessage = text.trim(), lastTimestamp = System.currentTimeMillis())
+                it.copy(
+                    lastMessage = previewText,
+                    lastTimestamp = System.currentTimeMillis(),
+                    lastMessageIsFromMe = true,
+                    lastMessageIsRead = false
+                )
             } else it
         }
 
@@ -1582,8 +1677,11 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         if (!_uiState.value.isGuest) return
 
         viewModelScope.launch {
-            delay(1000)
+            delay(1200)
             if (isUserBlocked(userName = partnerName)) return@launch
+            // Tandai pesan terkirim sebagai telah dibaca oleh teman bicara (centang 2 menyala biru!)
+            markSentMessagesAsReadLocal(conversationId)
+            delay(400)
             // Tampilkan animasi indikator mengetik yang hidup & realistis
             setPartnerTyping(conversationId, true)
             delay(2200)
@@ -1610,7 +1708,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     it.copy(
                         lastMessage = replyMsg.text,
                         lastTimestamp = replyMsg.timestamp,
-                        unreadCount = if (_uiState.value.activeChatId == conversationId) 0 else it.unreadCount + 1
+                        unreadCount = if (_uiState.value.activeChatId == conversationId) 0 else it.unreadCount + 1,
+                        lastMessageIsFromMe = false,
+                        lastMessageIsRead = false
                     )
                 } else it
             }
@@ -1972,13 +2072,19 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                         text = displayText,
                         timestamp = System.currentTimeMillis(),
                         isFromMe = true,
+                        isRead = false,
                         imageUrl = photoUrl
                     )
 
                     val updatedMessages = (_uiState.value.messagesMap[conversationId] ?: emptyList()) + newMsg
                     val updatedConversations = _uiState.value.conversations.map {
                         if (it.id == conversationId) {
-                            it.copy(lastMessage = "📷 Foto", lastTimestamp = System.currentTimeMillis())
+                            it.copy(
+                                lastMessage = "📷 Foto",
+                                lastTimestamp = System.currentTimeMillis(),
+                                lastMessageIsFromMe = true,
+                                lastMessageIsRead = false
+                            )
                         } else it
                     }
 
@@ -2019,8 +2125,11 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         if (!_uiState.value.isGuest) return
 
         viewModelScope.launch {
-            delay(2500)
+            delay(1200)
             if (isUserBlocked(userName = partnerName)) return@launch
+            // Tandai pesan foto saya sebagai telah dibaca (centang 2 biru menyala!)
+            markSentMessagesAsReadLocal(conversationId)
+            delay(1300)
             val photoReplies = listOf(
                 "Wah fotonya bagus banget! 😍📸",
                 "Keren banget fotonya! Suka deh liatnya ✨",
@@ -2042,7 +2151,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     it.copy(
                         lastMessage = replyMsg.text,
                         lastTimestamp = replyMsg.timestamp,
-                        unreadCount = if (_uiState.value.activeChatId == conversationId) 0 else it.unreadCount + 1
+                        unreadCount = if (_uiState.value.activeChatId == conversationId) 0 else it.unreadCount + 1,
+                        lastMessageIsFromMe = false,
+                        lastMessageIsRead = false
                     )
                 } else it
             }
@@ -2088,6 +2199,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     text = dto.text,
                     timestamp = dto.createdAt,
                     isFromMe = dto.senderId.equals(myId, ignoreCase = true) || (dto.senderId.equals("me", ignoreCase = true) && !dto.receiverId.equals(myId, ignoreCase = true)),
+                    isRead = dto.isRead ?: false,
                     deletedForSender = dto.deletedForSender ?: false,
                     deletedForReceiver = dto.deletedForReceiver ?: false,
                     imageUrl = dto.imageUrl
@@ -2095,7 +2207,11 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             }
 
             val existingMsgs = currentMessages[convId] ?: emptyList()
-            val mergedMsgs = (existingMsgs + sortedMsgs).distinctBy { it.id }.sortedBy { it.timestamp }
+            val msgMap = existingMsgs.associateBy { it.id }.toMutableMap()
+            for (m in sortedMsgs) {
+                msgMap[m.id] = m
+            }
+            val mergedMsgs = msgMap.values.sortedBy { it.timestamp }
             currentMessages[convId] = mergedMsgs
 
             val lastMsg = mergedMsgs.lastOrNull() ?: continue
@@ -2105,7 +2221,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 currentConversations[existingConvIndex] = old.copy(
                     id = convId,
                     lastMessage = lastMsg.text,
-                    lastTimestamp = lastMsg.timestamp
+                    lastTimestamp = lastMsg.timestamp,
+                    lastMessageIsFromMe = lastMsg.isFromMe,
+                    lastMessageIsRead = lastMsg.isRead
                 )
             } else {
                 val partnerUser = _uiState.value.nearbyUsers.find { it.id == partnerId }
@@ -2119,7 +2237,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     lastTimestamp = lastMsg.timestamp,
                     unreadCount = if (!lastMsg.isFromMe && _uiState.value.activeChatId != convId) 1 else 0,
                     isOnline = partnerUser?.isOnline ?: true,
-                    partnerAvatarUrl = partnerUser?.avatarUrl
+                    partnerAvatarUrl = partnerUser?.avatarUrl,
+                    lastMessageIsFromMe = lastMsg.isFromMe,
+                    lastMessageIsRead = lastMsg.isRead
                 )
                 currentConversations.add(0, newConv)
             }

@@ -31,7 +31,7 @@ data class ChatMessage(
     val text: String,
     val timestamp: Long,
     val isFromMe: Boolean,
-    val isRead: Boolean = true,
+    val isRead: Boolean = false,
     val deletedForSender: Boolean = false,
     val deletedForReceiver: Boolean = false,
     val imageUrl: String? = null
@@ -47,7 +47,9 @@ data class ChatConversation(
     val lastTimestamp: Long,
     val unreadCount: Int = 0,
     val isOnline: Boolean = true,
-    val partnerAvatarUrl: String? = null
+    val partnerAvatarUrl: String? = null,
+    val lastMessageIsFromMe: Boolean = false,
+    val lastMessageIsRead: Boolean = false
 )
 
 data class BottleMessage(

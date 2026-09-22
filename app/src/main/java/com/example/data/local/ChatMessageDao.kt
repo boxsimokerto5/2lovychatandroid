@@ -30,6 +30,12 @@ interface ChatMessageDao {
     @Query("UPDATE local_chat_messages SET deletedForSender = 1 WHERE id = :messageId")
     suspend fun markDeletedForSender(messageId: String)
 
+    @Query("UPDATE local_chat_messages SET isRead = 1 WHERE conversationId = :conversationId AND isFromMe = 0")
+    suspend fun markIncomingMessagesAsRead(conversationId: String)
+
+    @Query("UPDATE local_chat_messages SET isRead = 1 WHERE id = :messageId")
+    suspend fun markMessageAsRead(messageId: String)
+
     @Query("DELETE FROM local_chat_messages WHERE id = :messageId")
     suspend fun deleteMessageById(messageId: String)
 

@@ -254,6 +254,7 @@ class SupabaseRepository {
                         text = dto.text,
                         timestamp = dto.createdAt,
                         isFromMe = isSenderMe(dto.senderId, dto.receiverId, currentUserId),
+                        isRead = dto.isRead ?: false,
                         deletedForSender = dto.deletedForSender ?: false,
                         deletedForReceiver = dto.deletedForReceiver ?: false,
                         imageUrl = dto.imageUrl
@@ -298,7 +299,8 @@ class SupabaseRepository {
                 createdAt = message.timestamp,
                 deletedForSender = message.deletedForSender,
                 deletedForReceiver = message.deletedForReceiver,
-                imageUrl = message.imageUrl
+                imageUrl = message.imageUrl,
+                isRead = message.isRead
             )
             val response = api.insertChatMessage(apiKey, auth, dto)
             if (response.isSuccessful) {
@@ -434,6 +436,34 @@ class SupabaseRepository {
             response.isSuccessful
         } catch (e: Exception) {
             Log.w(TAG, "Gagal menandai seluruh pesan terhapus di Supabase saat logout", e)
+            false
+        }
+    }
+
+    suspend fun markMessagesAsRead(conversationId: String, senderId: String): Boolean = withContext(Dispatchers.IO) {
+        val api = SupabaseClient.getApi() ?: return@withContext false
+        val apiKey = SupabaseClient.getSupabaseAnonKey()
+        val auth = SupabaseClient.getAuthHeader()
+
+        try {
+            val response = api.markMessagesAsRead(apiKey, auth, "eq.$conversationId", "eq.$senderId", mapOf("is_read" to true))
+            response.isSuccessful
+        } catch (e: Exception) {
+            Log.w(TAG, "Gagal menandai pesan terbaca di Supabase", e)
+            false
+        }
+    }
+
+    suspend fun markMessageReadById(messageId: String): Boolean = withContext(Dispatchers.IO) {
+        val api = SupabaseClient.getApi() ?: return@withContext false
+        val apiKey = SupabaseClient.getSupabaseAnonKey()
+        val auth = SupabaseClient.getAuthHeader()
+
+        try {
+            val response = api.markMessageReadById(apiKey, auth, "eq.$messageId", mapOf("is_read" to true))
+            response.isSuccessful
+        } catch (e: Exception) {
+            Log.w(TAG, "Gagal menandai pesan $messageId terbaca di Supabase", e)
             false
         }
     }

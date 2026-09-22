@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddComment
+import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Badge
@@ -264,15 +265,30 @@ fun ChatConversationItem(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = conversation.lastMessage,
-                    fontSize = 13.sp,
-                    color = if (conversation.unreadCount > 0) NeutralDark else NeutralMedium,
-                    fontWeight = if (conversation.unreadCount > 0) FontWeight.Medium else FontWeight.Normal,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.weight(1f)
-                )
+                ) {
+                    if (conversation.lastMessageIsFromMe) {
+                        val tickColor = if (conversation.lastMessageIsRead) Color(0xFF34B7F1) else NeutralMedium
+                        Icon(
+                            imageVector = Icons.Default.DoneAll,
+                            contentDescription = if (conversation.lastMessageIsRead) "Dibaca" else "Terkirim",
+                            tint = tickColor,
+                            modifier = Modifier
+                                .size(15.dp)
+                                .padding(end = 4.dp)
+                        )
+                    }
+                    Text(
+                        text = conversation.lastMessage,
+                        fontSize = 13.sp,
+                        color = if (conversation.unreadCount > 0) NeutralDark else NeutralMedium,
+                        fontWeight = if (conversation.unreadCount > 0) FontWeight.Medium else FontWeight.Normal,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
 
                 if (conversation.unreadCount > 0) {
                     Spacer(modifier = Modifier.width(8.dp))

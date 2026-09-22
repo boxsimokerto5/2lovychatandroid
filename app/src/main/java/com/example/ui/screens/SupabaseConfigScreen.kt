@@ -125,12 +125,14 @@ create table if not exists chat_messages (
     created_at bigint not null,
     deleted_for_sender boolean default false,
     deleted_for_receiver boolean default false,
-    image_url text
+    image_url text,
+    is_read boolean default false
 );
 alter table chat_messages add column if not exists receiver_id text;
 alter table chat_messages add column if not exists deleted_for_sender boolean default false;
 alter table chat_messages add column if not exists deleted_for_receiver boolean default false;
 alter table chat_messages add column if not exists image_url text;
+alter table chat_messages add column if not exists is_read boolean default false;
 
 create table if not exists moments (
     id text primary key,

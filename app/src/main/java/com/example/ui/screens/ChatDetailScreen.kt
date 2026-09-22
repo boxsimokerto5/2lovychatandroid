@@ -1706,11 +1706,16 @@ fun ChatBubble(
                     )
 
                     if (message.isFromMe) {
+                        val tickColor by animateColorAsState(
+                            targetValue = if (message.isRead) Color(0xFF34B7F1) else NeutralMedium.copy(alpha = 0.7f),
+                            animationSpec = tween(durationMillis = 350),
+                            label = "tickColorAnim"
+                        )
                         Icon(
                             imageVector = Icons.Default.DoneAll,
-                            contentDescription = null,
-                            tint = EmeraldGreen,
-                            modifier = Modifier.size(13.dp)
+                            contentDescription = if (message.isRead) "Pesan dibaca (Centang dua biru)" else "Pesan terkirim (Centang dua abu-abu)",
+                            tint = tickColor,
+                            modifier = Modifier.size(14.dp)
                         )
                     }
                 }

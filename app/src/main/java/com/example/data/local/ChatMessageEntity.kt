@@ -23,7 +23,7 @@ data class ChatMessageEntity(
     val text: String,
     val timestamp: Long,
     val isFromMe: Boolean,
-    val isRead: Boolean = true,
+    val isRead: Boolean = false,
     val deletedForSender: Boolean = false,
     val deletedForReceiver: Boolean = false,
     val imageUrl: String? = null

@@ -82,6 +82,22 @@ class LocalChatRepository(context: Context) {
         }
     }
 
+    suspend fun markIncomingMessagesAsRead(conversationId: String) = withContext(Dispatchers.IO) {
+        try {
+            chatMessageDao.markIncomingMessagesAsRead(conversationId)
+        } catch (e: Exception) {
+            Log.e(TAG, "Gagal menandai pesan terbaca untuk $conversationId", e)
+        }
+    }
+
+    suspend fun markMessageAsRead(messageId: String) = withContext(Dispatchers.IO) {
+        try {
+            chatMessageDao.markMessageAsRead(messageId)
+        } catch (e: Exception) {
+            Log.e(TAG, "Gagal menandai pesan terbaca untuk $messageId", e)
+        }
+    }
+
     suspend fun deleteMessage(messageId: String) = withContext(Dispatchers.IO) {
         try {
             chatMessageDao.deleteMessageById(messageId)
