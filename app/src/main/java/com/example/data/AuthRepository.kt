@@ -138,6 +138,11 @@ class AuthRepository(
         prefs.edit().remove(KEY_SAVED_SESSION).apply()
     }
 
+    fun updateAvatarUrl(newAvatarUrl: String?) {
+        val current = getSavedSession() ?: return
+        saveSession(current.copy(avatarUrl = newAvatarUrl))
+    }
+
     // ==================== Register (Daftar) ====================
 
     suspend fun register(

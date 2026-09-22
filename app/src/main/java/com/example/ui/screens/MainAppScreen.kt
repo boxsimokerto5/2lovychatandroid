@@ -216,6 +216,9 @@ fun MainAppScreen(
                 onUploadPhoto = { uri ->
                     viewModel.uploadProfilePhoto(uri)
                 },
+                onClearPhoto = {
+                    viewModel.clearProfilePhoto()
+                },
                 currentGpsLocation = uiState.currentGpsLocation,
                 hasLocationPermission = uiState.hasLocationPermission,
                 isGpsEnabled = uiState.isGpsEnabled,

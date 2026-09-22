@@ -6,7 +6,10 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.ui.res.painterResource
+import com.example.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -152,11 +155,13 @@ fun ProfileTabScreen(
                                 .clip(CircleShape)
                         )
                     } else {
-                        Text(
-                            text = myName.take(1).uppercase(),
-                            color = EmeraldGreen,
-                            fontSize = 30.sp,
-                            fontWeight = FontWeight.Bold
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_lovy_logo),
+                            contentDescription = "Logo Lovy Chat",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
                         )
                     }
                 }

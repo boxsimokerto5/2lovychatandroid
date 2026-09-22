@@ -76,6 +76,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.material.icons.filled.NoPhotography
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
+import com.example.R
 import coil.compose.AsyncImage
 import com.example.model.UserProfile
 import com.example.ui.theme.EmeraldGreen
@@ -95,6 +103,7 @@ fun UserProfileScreen(
     isUploadingPhoto: Boolean = false,
     uploadProgressText: String? = null,
     onUploadPhoto: ((android.net.Uri) -> Unit)? = null,
+    onClearPhoto: (() -> Unit)? = null,
     currentGpsLocation: com.example.util.UserGpsLocation? = null,
     hasLocationPermission: Boolean = false,
     isGpsEnabled: Boolean = true,
@@ -103,6 +112,7 @@ fun UserProfileScreen(
     modifier: Modifier = Modifier
 ) {
     var showEditDialog by remember { mutableStateOf(false) }
+    var showPhotoOptionsDialog by remember { mutableStateOf(false) }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -209,9 +219,7 @@ fun UserProfileScreen(
                                     )
                                 )
                                 .clickable {
-                                    photoPickerLauncher.launch(
-                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                    )
+                                    showPhotoOptionsDialog = true
                                 }
                         ) {
                             if (!userProfile.profilePicture.isNullOrBlank()) {
@@ -224,11 +232,13 @@ fun UserProfileScreen(
                                         .clip(CircleShape)
                                 )
                             } else {
-                                Text(
-                                    text = userProfile.displayName.take(1).uppercase(),
-                                    color = Color.White,
-                                    fontSize = 42.sp,
-                                    fontWeight = FontWeight.Bold
+                                Image(
+                                    painter = painterResource(id = R.drawable.ic_lovy_logo),
+                                    contentDescription = "Logo Lovy Chat",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(CircleShape)
                                 )
                             }
 
@@ -257,9 +267,7 @@ fun UserProfileScreen(
                                 .background(EmeraldGreen)
                                 .border(2.dp, Color.White, CircleShape)
                                 .clickable {
-                                    photoPickerLauncher.launch(
-                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                    )
+                                    showPhotoOptionsDialog = true
                                 }
                                 .testTag("btn_avatar_edit")
                         ) {
@@ -546,6 +554,109 @@ fun UserProfileScreen(
         }
     }
 
+    // Photo Options Dialog (Pilih Galeri atau Kosongkan Foto)
+    if (showPhotoOptionsDialog) {
+        val context = LocalContext.current
+        AlertDialog(
+            onDismissRequest = { showPhotoOptionsDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.CameraAlt,
+                    contentDescription = null,
+                    tint = EmeraldGreen,
+                    modifier = Modifier.size(30.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Foto Profil",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    textAlign = TextAlign.Center
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "Kelola foto profil Anda. Anda dapat mengunggah foto baru atau mengosongkan foto profil untuk menggunakan logo resmi Lovy Chat sebagai profil default.",
+                        fontSize = 13.sp,
+                        color = NeutralMedium,
+                        lineHeight = 18.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Opsi 1: Pilih dari Galeri
+                    Button(
+                        onClick = {
+                            showPhotoOptionsDialog = false
+                            photoPickerLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("btn_option_pick_gallery")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AddPhotoAlternate,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Pilih Foto Baru dari Galeri",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp
+                        )
+                    }
+
+                    // Opsi 2: Kosongkan Foto Profil (Gunakan Logo Lovy Chat)
+                    OutlinedButton(
+                        onClick = {
+                            showPhotoOptionsDialog = false
+                            onClearPhoto?.invoke()
+                            Toast.makeText(
+                                context,
+                                "Foto profil dikosongkan. Logo Lovy Chat aktif sebagai foto profil Anda.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        },
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = EmeraldGreen),
+                        border = BorderStroke(1.dp, EmeraldGreen.copy(alpha = 0.6f)),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("btn_option_clear_photo")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.NoPhotography,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Kosongkan (Gunakan Logo Lovy Chat)",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 12.5.sp
+                        )
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showPhotoOptionsDialog = false }) {
+                    Text("Tutup", color = NeutralDark)
+                }
+            }
+        )
+    }
+
     // Edit Profile Dialog
     if (showEditDialog) {
         EditProfileDialog(
@@ -670,11 +781,11 @@ fun EditProfileDialog(
                                 modifier = Modifier.fillMaxSize()
                             )
                         } else {
-                            Text(
-                                text = displayName.take(1).uppercase().ifBlank { "U" },
-                                color = EmeraldGreen,
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.Bold
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_lovy_logo),
+                                contentDescription = "Logo Lovy Chat",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
                             )
                         }
 
@@ -738,6 +849,59 @@ fun EditProfileDialog(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Pilih Foto Galeri (Cloudflare R2)", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                if (profilePictureUrl.isNotBlank()) {
+                    OutlinedButton(
+                        onClick = { profilePictureUrl = "" },
+                        enabled = !isUploadingPhoto,
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFD32F2F)),
+                        border = BorderStroke(1.dp, Color(0xFFFFCDD2)),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("btn_clear_photo_edit_dialog")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.NoPhotography,
+                            contentDescription = null,
+                            tint = Color(0xFFD32F2F),
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Kosongkan Foto Profil (Gunakan Logo Lovy Chat)",
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFFD32F2F)
+                        )
+                    }
+                } else {
+                    Surface(
+                        color = Color(0xFFE8F5E9),
+                        shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(1.dp, Color(0xFFC8E6C9)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = EmeraldGreen,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Logo Resmi Lovy Chat aktif sebagai foto profil Anda",
+                                fontSize = 12.sp,
+                                color = EmeraldGreen,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
                 }
 

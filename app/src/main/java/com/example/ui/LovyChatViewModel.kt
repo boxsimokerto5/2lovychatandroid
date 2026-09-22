@@ -2054,6 +2054,21 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
+     * Kosongkan foto profil pengguna sehingga kembali ke logo default Lovy Chat.
+     */
+    fun clearProfilePhoto(onComplete: ((Boolean) -> Unit)? = null) {
+        recordFeatureClick()
+        val updatedProfile = _uiState.value.userProfile.copy(profilePicture = null)
+        saveUserProfile(updatedProfile)
+        try {
+            authRepo.updateAvatarUrl(null)
+        } catch (e: Exception) {
+            Log.w("LovyChatViewModel", "Gagal update session avatar", e)
+        }
+        onComplete?.invoke(true)
+    }
+
+    /**
      * Post a moment with an optional photo uploaded to Cloudflare R2.
      */
     fun postMomentWithPhoto(
