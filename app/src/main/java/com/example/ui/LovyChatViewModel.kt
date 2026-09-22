@@ -48,19 +48,20 @@ data class LovyChatUiState(
     val isLoggedIn: Boolean = false,
     val isGuest: Boolean = false,
     val userProfile: UserProfile = UserProfile(),
-    val nearbyUsers: List<User> = emptyList(),
+    val nearbyUsers: List<User> = MockDataSource.initialNearbyUsers,
     val chattedFriends: List<User> = emptyList(),
 
     val nearbyGenderFilter: Gender? = null,
+    val nearbyOnlyOnlineFilter: Boolean = false,
     val isScanningNearby: Boolean = false,
-    val conversations: List<ChatConversation> = emptyList(),
-    val messagesMap: Map<String, List<ChatMessage>> = emptyMap(),
-    val oceanBottles: List<BottleMessage> = emptyList(),
+    val conversations: List<ChatConversation> = MockDataSource.initialConversations,
+    val messagesMap: Map<String, List<ChatMessage>> = MockDataSource.initialMessages,
+    val oceanBottles: List<BottleMessage> = MockDataSource.oceanBottles,
     val myBottles: List<BottleMessage> = emptyList(),
     val fishedBottles: List<BottleMessage> = emptyList(),
     val fishedBottle: BottleMessage? = null,
     val isFishing: Boolean = false,
-    val moments: List<MomentItem> = emptyList(),
+    val moments: List<MomentItem> = MockDataSource.initialMoments,
     val activeChatId: String? = null,
     val myName: String = "Pengguna Lovy",
     val myBio: String = "Menjelajahi dunia dan mencari teman baru di Lovy Chat ✨",
@@ -969,6 +970,11 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     fun setNearbyGenderFilter(gender: Gender?) {
         recordFeatureClick()
         _uiState.update { it.copy(nearbyGenderFilter = gender) }
+    }
+
+    fun setNearbyOnlyOnlineFilter(onlyOnline: Boolean) {
+        recordFeatureClick()
+        _uiState.update { it.copy(nearbyOnlyOnlineFilter = onlyOnline) }
     }
 
     fun updateLocationPermission(granted: Boolean) {

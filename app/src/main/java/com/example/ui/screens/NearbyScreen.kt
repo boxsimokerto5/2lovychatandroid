@@ -110,6 +110,7 @@ private fun Context.findActivity(): Activity? {
 fun NearbyScreen(
     users: List<User>,
     selectedGenderFilter: Gender?,
+    selectedOnlyOnlineFilter: Boolean = false,
     isScanning: Boolean,
     isExpanded: Boolean = false,
     nearbyExpansionTier: Int = 0,
@@ -125,6 +126,7 @@ fun NearbyScreen(
     onPermissionResult: (Boolean) -> Unit = {},
     onBack: () -> Unit,
     onFilterChange: (Gender?) -> Unit,
+    onOnlyOnlineFilterChange: (Boolean) -> Unit = {},
     onRefreshScan: () -> Unit,
     onSayHi: (User) -> Unit,
     onExpandNearby: () -> Unit = {},
@@ -141,10 +143,15 @@ fun NearbyScreen(
         }
     }
 
-    val filteredUsers = remember(users, selectedGenderFilter, isUserBlocked) {
+    val filteredUsers = remember(users, selectedGenderFilter, selectedOnlyOnlineFilter, isUserBlocked) {
         val unblocked = users.filterNot { isUserBlocked(it.id, it.name) }
-        if (selectedGenderFilter == null) unblocked
+        val genderFiltered = if (selectedGenderFilter == null) unblocked
         else unblocked.filter { it.gender == selectedGenderFilter }
+        if (selectedOnlyOnlineFilter) {
+            genderFiltered.filter { it.isOnline }
+        } else {
+            genderFiltered
+        }
     }
 
     val displayedLimit = when (nearbyExpansionTier) {
@@ -394,6 +401,32 @@ fun NearbyScreen(
                     ),
                     modifier = Modifier.testTag("filter_male")
                 )
+
+                Box(
+                    modifier = Modifier
+                        .height(20.dp)
+                        .width(1.dp)
+                        .background(Color(0xFFE0E0E0))
+                )
+
+                FilterChip(
+                    selected = selectedOnlyOnlineFilter,
+                    onClick = { onOnlyOnlineFilterChange(!selectedOnlyOnlineFilter) },
+                    label = { 
+                        Text(
+                            text = if (language == com.example.util.AppLanguage.INDONESIAN) "🟢 Hanya Online" else "🟢 Online Only",
+                            maxLines = 1,
+                            softWrap = false,
+                            fontSize = 11.5.sp,
+                            fontWeight = if (selectedOnlyOnlineFilter) FontWeight.Bold else FontWeight.Medium
+                        ) 
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Color(0xFF2E7D32),
+                        selectedLabelColor = Color.White
+                    ),
+                    modifier = Modifier.testTag("filter_online_only")
+                )
             }
 
             if (isRadarView) {
@@ -419,7 +452,21 @@ fun NearbyScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    val radarInfo = if (hasHiddenUsers) {
+                    val radarInfo = if (selectedOnlyOnlineFilter) {
+                        if (hasHiddenUsers) {
+                            if (language == com.example.util.AppLanguage.INDONESIAN) {
+                                "Menampilkan ${displayedUsers.size} dari ${filteredUsers.size} orang online dalam radar sekitarmu 🟢"
+                            } else {
+                                "Showing ${displayedUsers.size} of ${filteredUsers.size} online people in your nearby radar 🟢"
+                            }
+                        } else {
+                            if (language == com.example.util.AppLanguage.INDONESIAN) {
+                                "Ditemukan ${displayedUsers.size} orang yang sedang online di sekitarmu 🟢"
+                            } else {
+                                "Found ${displayedUsers.size} online people in your area 🟢"
+                            }
+                        }
+                    } else if (hasHiddenUsers) {
                         if (language == com.example.util.AppLanguage.INDONESIAN) {
                             "Menampilkan ${displayedUsers.size} dari ${filteredUsers.size} orang dalam radar sekitarmu"
                         } else {
@@ -440,6 +487,63 @@ fun NearbyScreen(
                 }
 
                 // User list
+                if (displayedUsers.isEmpty()) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .padding(24.dp)
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(text = "📡", fontSize = 48.sp)
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = if (selectedOnlyOnlineFilter) {
+                                    if (language == com.example.util.AppLanguage.INDONESIAN) "Belum Ada Pengguna Online di Sekitar" else "No Online Users Nearby"
+                                } else {
+                                    if (language == com.example.util.AppLanguage.INDONESIAN) "Belum Ada Pengguna di Sekitar" else "No Users Nearby Yet"
+                                },
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeutralDark
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = if (selectedOnlyOnlineFilter) {
+                                    if (language == com.example.util.AppLanguage.INDONESIAN)
+                                        "Saat ini belum ada teman di sekitar yang sedang online. Anda dapat mematikan filter 'Hanya Online' atau pindai ulang nanti."
+                                    else
+                                        "No friends nearby are currently online. You can turn off the 'Online Only' filter or scan again later."
+                                } else if (language == com.example.util.AppLanguage.INDONESIAN) {
+                                    "Tekan tombol 'Pindai Ulang' di atas untuk mencari teman baru atau perluas radius pencarian."
+                                } else {
+                                    "Tap 'Refresh' above to scan for new friends or expand your search area."
+                                },
+                                fontSize = 13.sp,
+                                color = NeutralMedium,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = onRefreshScan,
+                                colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(imageVector = Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = if (language == com.example.util.AppLanguage.INDONESIAN) "Pindai Sekarang" else "Scan Now",
+                                    fontSize = 13.5.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                } else {
                 LazyColumn(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -463,17 +567,27 @@ fun NearbyScreen(
                             )
                             Spacer(modifier = Modifier.height(14.dp))
                             Text(
-                                text = if (language == com.example.util.AppLanguage.INDONESIAN) "Belum Ada Pengguna di Sekitar" else "No Nearby Users Found",
+                                text = if (selectedOnlyOnlineFilter) {
+                                    if (language == com.example.util.AppLanguage.INDONESIAN) "Belum Ada Pengguna Online di Sekitar" else "No Online Users Nearby"
+                                } else {
+                                    if (language == com.example.util.AppLanguage.INDONESIAN) "Belum Ada Pengguna di Sekitar" else "No Nearby Users Found"
+                                },
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = NeutralDark
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = if (language == com.example.util.AppLanguage.INDONESIAN)
+                                text = if (selectedOnlyOnlineFilter) {
+                                    if (language == com.example.util.AppLanguage.INDONESIAN)
+                                        "Saat ini tidak ada pengguna yang sedang online. Coba nonaktifkan filter 'Hanya Online' untuk melihat semua pengguna di sekitar."
+                                    else
+                                        "No users are currently online nearby. Try disabling the 'Online Only' filter to see all nearby friends."
+                                } else if (language == com.example.util.AppLanguage.INDONESIAN) {
                                     "Belum ada pengguna aktif lain di sekitar lokasi Anda saat ini. Pastikan GPS aktif dan coba pindai ulang!"
-                                else
-                                    "No other active users found near your location right now. Ensure GPS is enabled and try scanning again!",
+                                } else {
+                                    "No other active users found near your location right now. Ensure GPS is enabled and try scanning again!"
+                                },
                                 fontSize = 13.sp,
                                 color = NeutralMedium,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -700,6 +814,7 @@ fun NearbyScreen(
                 item {
                     Spacer(modifier = Modifier.height(24.dp))
                 }
+            }
             }
         }
     }

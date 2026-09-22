@@ -82,6 +82,7 @@ fun MainAppScreen(
             NearbyScreen(
                 users = uiState.nearbyUsers,
                 selectedGenderFilter = uiState.nearbyGenderFilter,
+                selectedOnlyOnlineFilter = uiState.nearbyOnlyOnlineFilter,
                 isScanning = uiState.isScanningNearby,
                 isExpanded = uiState.isNearbyExpanded,
                 nearbyExpansionTier = uiState.nearbyExpansionTier,
@@ -90,9 +91,14 @@ fun MainAppScreen(
                 isGpsEnabled = uiState.isGpsEnabled,
                 hideExactDistance = uiState.hideExactDistance,
                 language = uiState.language,
+                isUserBlocked = { id, name -> viewModel.isUserBlocked(id, name) },
+                onBlockUser = { viewModel.blockUser(it.id, it.name) },
+                onUnblockUser = { viewModel.unblockUser(it.id, it.name) },
+                moments = uiState.moments,
                 onPermissionResult = { granted -> viewModel.updateLocationPermission(granted) },
                 onBack = { viewModel.navigateBack() },
                 onFilterChange = { viewModel.setNearbyGenderFilter(it) },
+                onOnlyOnlineFilterChange = { viewModel.setNearbyOnlyOnlineFilter(it) },
                 onRefreshScan = { viewModel.refreshNearbyScan(forceRefresh = true) },
                 onSayHi = { viewModel.sayHiToUser(it) },
                 onExpandNearby = { viewModel.expandNearbyUsers() }

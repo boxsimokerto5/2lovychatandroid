@@ -86,6 +86,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
@@ -95,6 +96,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -1599,20 +1601,20 @@ fun ChatBubble(
 
                     if (message.text.isNotBlank() && message.text != "📷 Foto") {
                         Spacer(modifier = Modifier.height(6.dp))
-                        Text(
+                        MessageTextWithLinks(
                             text = message.text,
+                            isFromMe = message.isFromMe,
                             fontSize = 14.sp,
-                            color = NeutralDark,
-                            lineHeight = 19.sp,
+                            textColor = NeutralDark,
                             modifier = Modifier.padding(horizontal = 4.dp)
                         )
                     }
                 } else {
-                    Text(
+                    MessageTextWithLinks(
                         text = message.text,
+                        isFromMe = message.isFromMe,
                         fontSize = 14.sp,
-                        color = NeutralDark,
-                        lineHeight = 19.sp,
+                        textColor = NeutralDark,
                         modifier = Modifier.padding(horizontal = 4.dp)
                     )
                 }
@@ -1642,4 +1644,107 @@ fun ChatBubble(
             }
         }
     }
+}
+
+private val URL_PATTERN = Regex("""(https?://[^\s]+|www\.[^\s]+)""", RegexOption.IGNORE_CASE)
+
+/**
+ * Komponen teks dengan deteksi URL otomatis (Clickable Links).
+ * Memungkinkan pengguna membuka tautan langsung ke browser dengan sekali ketuk.
+ */
+@Composable
+fun MessageTextWithLinks(
+    text: String,
+    modifier: Modifier = Modifier,
+    isFromMe: Boolean = false,
+    fontSize: TextUnit = 14.sp,
+    textColor: Color = NeutralDark
+) {
+    val uriHandler = LocalUriHandler.current
+    val context = LocalContext.current
+    val matches = remember(text) { URL_PATTERN.findAll(text).toList() }
+
+    if (matches.isEmpty()) {
+        Text(
+            text = text,
+            fontSize = fontSize,
+            color = textColor,
+            lineHeight = 19.sp,
+            modifier = modifier
+        )
+        return
+    }
+
+    val linkColor = if (isFromMe) Color(0xFF0D47A1) else Color(0xFF1565C0)
+
+    val annotatedString = remember(text, matches, linkColor) {
+        buildAnnotatedString {
+            var lastIndex = 0
+            for (match in matches) {
+                val start = match.range.first
+                val end = match.range.last + 1
+
+                if (start > lastIndex) {
+                    append(text.substring(lastIndex, start))
+                }
+
+                val urlMatch = match.value
+                val tag = "URL"
+                pushStringAnnotation(tag = tag, annotation = urlMatch)
+                pushStyle(
+                    SpanStyle(
+                        color = linkColor,
+                        textDecoration = TextDecoration.Underline,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                )
+                append(urlMatch)
+                pop()
+                pop()
+
+                lastIndex = end
+            }
+            if (lastIndex < text.length) {
+                append(text.substring(lastIndex))
+            }
+        }
+    }
+
+    ClickableText(
+        text = annotatedString,
+        style = androidx.compose.ui.text.TextStyle(
+            fontSize = fontSize,
+            color = textColor,
+            lineHeight = 19.sp
+        ),
+        modifier = modifier,
+        onClick = { offset ->
+            annotatedString.getStringAnnotations(tag = "URL", start = offset, end = offset)
+                .firstOrNull()?.let { annotation ->
+                    var rawUrl = annotation.item.trim()
+                    while (rawUrl.isNotEmpty() && (rawUrl.endsWith(".") || rawUrl.endsWith(",") || rawUrl.endsWith(")") || rawUrl.endsWith("!"))) {
+                        rawUrl = rawUrl.dropLast(1)
+                    }
+                    val finalUrl = if (!rawUrl.startsWith("http://", ignoreCase = true) &&
+                        !rawUrl.startsWith("https://", ignoreCase = true)
+                    ) {
+                        "https://$rawUrl"
+                    } else {
+                        rawUrl
+                    }
+                    try {
+                        uriHandler.openUri(finalUrl)
+                    } catch (_: Exception) {
+                        try {
+                            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(finalUrl)).apply {
+                                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            context.startActivity(intent)
+                        } catch (t: Throwable) {
+                            android.widget.Toast.makeText(context, "Tidak dapat membuka tautan: $finalUrl", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+        }
+    )
 }
