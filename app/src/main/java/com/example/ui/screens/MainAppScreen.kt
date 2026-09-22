@@ -146,6 +146,7 @@ fun MainAppScreen(
                 onRefresh = {
                     viewModel.refreshMoments(force = true)
                 },
+                isRefreshing = uiState.isRefreshingMoments,
                 isUploadingPhoto = uiState.isUploadingPhoto,
                 uploadProgressText = uiState.uploadProgressText
             )

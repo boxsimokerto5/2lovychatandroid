@@ -1,7 +1,17 @@
 package com.example.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
 import android.widget.Toast
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -75,6 +85,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -120,6 +131,7 @@ fun MomentsScreen(
     onPostMomentWithPhotoUri: ((content: String, uri: android.net.Uri?, locationTag: String?) -> Unit)? = null,
     onDeleteMoment: ((String) -> Unit)? = null,
     onRefresh: (() -> Unit)? = null,
+    isRefreshing: Boolean = false,
     isUploadingPhoto: Boolean = false,
     uploadProgressText: String? = null,
     modifier: Modifier = Modifier
@@ -203,14 +215,29 @@ fun MomentsScreen(
                 },
                 actions = {
                     if (onRefresh != null) {
+                        val infiniteTransition = rememberInfiniteTransition(label = "moment_refresh_anim")
+                        val rotation by infiniteTransition.animateFloat(
+                            initialValue = 0f,
+                            targetValue = 360f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(700, easing = LinearEasing),
+                                repeatMode = RepeatMode.Restart
+                            ),
+                            label = "moment_refresh_rot"
+                        )
                         IconButton(
-                            onClick = onRefresh,
+                            onClick = {
+                                Toast.makeText(context, "Memperbarui momen terbaru...", Toast.LENGTH_SHORT).show()
+                                onRefresh()
+                            },
+                            enabled = !isRefreshing,
                             modifier = Modifier.testTag("moments_btn_refresh")
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
                                 contentDescription = "Muat Ulang Momen",
-                                tint = Color.White
+                                tint = Color.White,
+                                modifier = if (isRefreshing) Modifier.rotate(rotation) else Modifier
                             )
                         }
                     }
@@ -322,7 +349,30 @@ fun MomentsScreen(
                         onPhotoClick = { url -> fullscreenPhotoUrl = url },
                         onCommentClick = { activeMomentIdForComments = item.id },
                         onShareClick = {
-                            Toast.makeText(context, "Tautan momen disalin!", Toast.LENGTH_SHORT).show()
+                            try {
+                                val shareText = buildString {
+                                    append("📸 Cerita seru dari ${item.authorName} di Lovy Chat:\n")
+                                    append("\"${item.content}\"\n")
+                                    if (!item.locationTag.isNullOrBlank()) {
+                                        append("📍 ${item.locationTag}\n")
+                                    }
+                                    append("\nYuk lihat foto & kenalan di Lovy Chat:\n")
+                                    append("👉 https://lovychat.my.id\n\n")
+                                    append("Unduh aplikasi Lovy Chat di: https://lovychat.my.id")
+                                }
+                                val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, shareText)
+                                    putExtra(Intent.EXTRA_SUBJECT, "Momen Lovy Chat - ${item.authorName}")
+                                }
+                                val chooser = Intent.createChooser(sendIntent, "Bagikan Momen Lovy Chat via")
+                                context.startActivity(chooser)
+                            } catch (_: Throwable) {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                                val clip = ClipData.newPlainText("Lovy Chat Momen", "https://lovychat.my.id")
+                                clipboard?.setPrimaryClip(clip)
+                                Toast.makeText(context, "Tautan disalin: https://lovychat.my.id", Toast.LENGTH_SHORT).show()
+                            }
                         },
                         onDeleteClick = if (isMyMoment && onDeleteMoment != null) {
                             { onDeleteMoment(item.id) }

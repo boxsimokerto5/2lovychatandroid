@@ -98,6 +98,7 @@ data class LovyChatUiState(
     val r2PublicDomain: String = "",
     val isUploadingPhoto: Boolean = false,
     val uploadProgressText: String? = null,
+    val isRefreshingMoments: Boolean = false,
     // My Moments tracking (IDs of moments created by this user)
     val myMomentIds: Set<String> = emptySet(),
     // Privacy and Location Settings
@@ -975,14 +976,40 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun refreshMoments(force: Boolean = false) {
-        if (_uiState.value.isGuest) return
         val now = System.currentTimeMillis()
         if (!force && now - lastMomentsSyncTime < CACHE_DURATION_MS) return
         viewModelScope.launch {
-            val remoteMoments = supabaseRepo.fetchMoments()
-            if (remoteMoments != null) {
-                _uiState.update { it.copy(moments = remoteMoments) }
-                lastMomentsSyncTime = System.currentTimeMillis()
+            _uiState.update { it.copy(isRefreshingMoments = true) }
+            try {
+                // Memberikan delay minimal agar animasi perputaran tombol refresh tampak jelas
+                kotlinx.coroutines.delay(650)
+
+                var fetched = false
+                if (!_uiState.value.isGuest && SupabaseClient.isConfigured()) {
+                    val remoteMoments = supabaseRepo.fetchMoments()
+                    if (remoteMoments != null && remoteMoments.isNotEmpty()) {
+                        val myLocal = _uiState.value.moments.filter { it.id in _uiState.value.myMomentIds }
+                        val merged = (myLocal + remoteMoments).distinctBy { it.id }
+                        _uiState.update { it.copy(moments = merged) }
+                        lastMomentsSyncTime = System.currentTimeMillis()
+                        fetched = true
+                    }
+                }
+
+                if (!fetched) {
+                    val currentMoments = _uiState.value.moments
+                    val resolvedMoments = if (currentMoments.isEmpty()) {
+                        MockDataSource.initialMoments
+                    } else {
+                        currentMoments
+                    }
+                    _uiState.update { it.copy(moments = resolvedMoments) }
+                    lastMomentsSyncTime = System.currentTimeMillis()
+                }
+            } catch (e: Throwable) {
+                android.util.Log.w("LovyChatViewModel", "Gagal menyegarkan momen: ${e.message}")
+            } finally {
+                _uiState.update { it.copy(isRefreshingMoments = false) }
             }
         }
     }
