@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -52,6 +53,8 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -82,6 +85,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.example.model.MomentItem
+import com.example.model.MomentComment
 import com.example.ui.components.IronSourceBannerView
 import com.example.ui.components.LevelPlayNativeAdCard
 import com.example.ui.components.LovyAvatar
@@ -101,11 +105,13 @@ import com.example.ui.theme.ScreenBackground
 fun MomentsScreen(
     moments: List<MomentItem>,
     myMomentIds: Set<String> = emptySet(),
+    momentComments: Map<String, List<MomentComment>> = emptyMap(),
     currentUserId: String = "",
     currentUserName: String = "",
     currentGpsLocation: com.example.util.UserGpsLocation? = null,
     onBack: () -> Unit,
     onToggleLike: (String) -> Unit,
+    onAddComment: ((momentId: String, text: String) -> Unit)? = null,
     onPostMoment: (String) -> Unit,
     onPostMomentWithDetails: ((content: String, imageUrl: String?, locationTag: String?) -> Unit)? = null,
     onPostMomentWithPhotoUri: ((content: String, uri: android.net.Uri?, locationTag: String?) -> Unit)? = null,
@@ -156,6 +162,11 @@ fun MomentsScreen(
     
     // State for viewing photos fullscreen
     var fullscreenPhotoUrl by remember { mutableStateOf<String?>(null) }
+
+    // State for viewing & adding comments
+    var activeMomentForComments by remember { mutableStateOf<MomentItem?>(null) }
+    var commentInputText by remember { mutableStateOf("") }
+    val commentSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(
         topBar = {

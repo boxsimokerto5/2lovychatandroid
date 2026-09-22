@@ -816,4 +816,71 @@ object MockDataSource {
             locationTag = "Universitas Indonesia, Depok"
         )
     )
+
+    val initialMomentComments: Map<String, List<com.example.model.MomentComment>> = mapOf(
+        "mom1" to listOf(
+            com.example.model.MomentComment(
+                id = "c1_1",
+                momentId = "mom1",
+                authorId = "u2",
+                authorName = "Rian Pratama",
+                authorAvatarHex = 0xFF42A5F5,
+                authorAvatarUrl = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80",
+                text = "Kafenya cozy banget ya Rahma! Kapan-kapan mau coba mampir juga ☕",
+                timeAgo = "8 menit yang lalu"
+            ),
+            com.example.model.MomentComment(
+                id = "c1_2",
+                momentId = "mom1",
+                authorId = "u4",
+                authorName = "Dimas Anggara",
+                authorAvatarHex = 0xFF26A69A,
+                authorAvatarUrl = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80",
+                text = "Tebet emang surganya kafe santai buat ngadem sore-sore haha 🙌",
+                timeAgo = "6 menit yang lalu"
+            ),
+            com.example.model.MomentComment(
+                id = "c1_3",
+                momentId = "mom1",
+                authorId = "u5",
+                authorName = "Alya Zahra",
+                authorAvatarHex = 0xFFFF7043,
+                authorAvatarUrl = "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80",
+                text = "Suasananya hangat banget fotonya ✨ Semangat istirahat yaa!",
+                timeAgo = "5 menit yang lalu"
+            ),
+            com.example.model.MomentComment(
+                id = "c1_4",
+                momentId = "mom1",
+                authorId = "u3",
+                authorName = "Clara Monica",
+                authorAvatarHex = 0xFF26C6DA,
+                authorAvatarUrl = "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80",
+                text = "Playlist apa tuh yang lagi diputar? Bagi rekomendasinya dong 🎶",
+                timeAgo = "3 menit yang lalu"
+            ),
+            com.example.model.MomentComment(
+                id = "c1_5",
+                momentId = "mom1",
+                authorId = "u1",
+                authorName = "Siti Rahma",
+                authorAvatarHex = 0xFFEC407A,
+                authorAvatarUrl = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80",
+                text = "@Clara Monica Indie pop akustik santai, nanti aku share yaa! 🌸",
+                timeAgo = "1 menit yang lalu"
+            )
+        ),
+        "mom2" to listOf(
+            com.example.model.MomentComment(
+                id = "c2_1",
+                momentId = "mom2",
+                authorId = "u1",
+                authorName = "Siti Rahma",
+                authorAvatarHex = 0xFFEC407A,
+                authorAvatarUrl = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80",
+                text = "Keren banget tone warnanya mas Rian! 📸✨",
+                timeAgo = "1 jam yang lalu"
+            )
+        )
+    )
 }

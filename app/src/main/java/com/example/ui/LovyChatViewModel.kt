@@ -65,6 +65,7 @@ data class LovyChatUiState(
     val fishedBottle: BottleMessage? = null,
     val isFishing: Boolean = false,
     val moments: List<MomentItem> = MockDataSource.initialMoments,
+    val momentComments: Map<String, List<com.example.model.MomentComment>> = MockDataSource.initialMomentComments,
     val activeChatId: String? = null,
     val myName: String = "Pengguna Lovy",
     val myBio: String = "Menjelajahi dunia dan mencari teman baru di Lovy Chat ✨",
@@ -2082,6 +2083,41 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 } else item
             }
             state.copy(moments = updated)
+        }
+    }
+
+    fun addMomentComment(momentId: String, text: String) {
+        if (text.isBlank()) return
+        recordFeatureClick()
+        val state = _uiState.value
+        val myId = state.myLovyId.ifBlank { "me" }
+        val newComment = com.example.model.MomentComment(
+            id = UUID.randomUUID().toString(),
+            momentId = momentId,
+            authorId = myId,
+            authorName = state.myName,
+            authorAvatarHex = 0xFF00A86B,
+            authorAvatarUrl = null,
+            text = text.trim(),
+            timestamp = System.currentTimeMillis(),
+            timeAgo = "Baru saja"
+        )
+
+        val existingComments = state.momentComments[momentId] ?: emptyList()
+        val updatedComments = existingComments + newComment
+        val updatedMap = state.momentComments + (momentId to updatedComments)
+
+        val updatedMoments = state.moments.map { item ->
+            if (item.id == momentId) {
+                item.copy(commentsCount = updatedComments.size)
+            } else item
+        }
+
+        _uiState.update {
+            it.copy(
+                moments = updatedMoments,
+                momentComments = updatedMap
+            )
         }
     }
 

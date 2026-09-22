@@ -92,6 +92,18 @@ data class MomentItem(
     val authorId: String = ""
 )
 
+data class MomentComment(
+    val id: String,
+    val momentId: String,
+    val authorId: String,
+    val authorName: String,
+    val authorAvatarHex: Long,
+    val authorAvatarUrl: String? = null,
+    val text: String,
+    val timestamp: Long = System.currentTimeMillis(),
+    val timeAgo: String = "Baru saja"
+)
+
 data class NewFriendRequest(
     val id: String,
     val user: User,
