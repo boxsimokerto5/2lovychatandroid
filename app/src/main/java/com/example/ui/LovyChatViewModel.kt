@@ -1381,7 +1381,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     lastTimestamp = System.currentTimeMillis(),
                     unreadCount = 0,
                     isOnline = user.isOnline,
-                    partnerAvatarUrl = user.avatarUrl
+                    partnerAvatarUrl = user.avatarUrl,
+                    partnerAge = user.age,
+                    partnerDistanceMeters = user.distanceMeters,
+                    partnerCity = user.city
                 )
             ) + _uiState.value.conversations
         }
@@ -1420,12 +1423,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     id = conv.partnerId,
                     name = conv.partnerName,
                     gender = conv.partnerGender,
-                    age = 22,
-                    distanceMeters = 100,
+                    age = conv.partnerAge,
+                    distanceMeters = conv.partnerDistanceMeters,
                     bio = "Teman obrolan di Lovy Chat",
                     avatarColorHex = conv.partnerAvatarHex,
                     isOnline = conv.isOnline,
-                    avatarUrl = conv.partnerAvatarUrl
+                    avatarUrl = conv.partnerAvatarUrl,
+                    city = conv.partnerCity ?: "Jakarta Selatan"
                 )
             )
         }
@@ -2312,7 +2316,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     lastMessageIsRead = lastMsg.isRead
                 )
             } else {
-                val partnerUser = _uiState.value.nearbyUsers.find { it.id == partnerId }
+                val partnerUser = _uiState.value.nearbyUsers.find { it.id == partnerId } 
+                    ?: _uiState.value.chattedFriends.find { it.id == partnerId }
                 val newConv = ChatConversation(
                     id = convId,
                     partnerId = partnerId,
@@ -2325,7 +2330,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     isOnline = partnerUser?.isOnline ?: true,
                     partnerAvatarUrl = partnerUser?.avatarUrl,
                     lastMessageIsFromMe = lastMsg.isFromMe,
-                    lastMessageIsRead = lastMsg.isRead
+                    lastMessageIsRead = lastMsg.isRead,
+                    partnerAge = partnerUser?.age ?: 22,
+                    partnerDistanceMeters = partnerUser?.distanceMeters ?: 350,
+                    partnerCity = partnerUser?.city
                 )
                 currentConversations.add(0, newConv)
             }

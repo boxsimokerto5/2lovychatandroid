@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,6 +23,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddComment
 import androidx.compose.material.icons.filled.DoneAll
+import androidx.compose.material.icons.filled.Female
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Male
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Badge
@@ -32,6 +36,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -48,6 +53,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.model.ChatConversation
+import com.example.model.Gender
 import com.example.ui.components.LovyAvatar
 import com.example.ui.theme.EmeraldGreen
 import com.example.ui.theme.NeutralBorder
@@ -243,14 +249,77 @@ fun ChatConversationItem(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = conversation.partnerName,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = NeutralDark,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.weight(1f, fill = false)
+                ) {
+                    Text(
+                        text = conversation.partnerName,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = NeutralDark,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+
+                    // Badge Gender & Usia (misal: ♀ 22 atau ♂ 25)
+                    val badgeColor = if (conversation.partnerGender == Gender.FEMALE) Color(0xFFFF4081) else Color(0xFF1976D2)
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(badgeColor)
+                            .padding(horizontal = 4.5.dp, vertical = 1.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(1.5.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (conversation.partnerGender == Gender.FEMALE) Icons.Default.Female else Icons.Default.Male,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(10.dp)
+                            )
+                            Text(
+                                text = "${conversation.partnerAge}",
+                                color = Color.White,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    // Badge Jarak (misal: 📍 95m / 📍 1.2 km)
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = EmeraldGreen.copy(alpha = 0.10f),
+                        border = BorderStroke(0.6.dp, EmeraldGreen.copy(alpha = 0.25f))
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 4.5.dp, vertical = 1.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = null,
+                                tint = EmeraldGreen,
+                                modifier = Modifier.size(10.dp)
+                            )
+                            Spacer(modifier = Modifier.width(1.5.dp))
+                            Text(
+                                text = conversation.formattedDistance,
+                                color = EmeraldGreen,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
                 Text(
                     text = formattedTime,
                     fontSize = 11.sp,

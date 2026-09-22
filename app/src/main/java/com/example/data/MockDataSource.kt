@@ -608,7 +608,10 @@ object MockDataSource {
             lastTimestamp = System.currentTimeMillis() - 1000 * 60 * 5,
             unreadCount = 1,
             isOnline = true,
-            partnerAvatarUrl = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80"
+            partnerAvatarUrl = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80",
+            partnerAge = 22,
+            partnerDistanceMeters = 95,
+            partnerCity = "Tebet, Jaksel"
         ),
         ChatConversation(
             id = "conv_u2",
@@ -620,7 +623,10 @@ object MockDataSource {
             lastTimestamp = System.currentTimeMillis() - 1000 * 60 * 45,
             unreadCount = 0,
             isOnline = true,
-            partnerAvatarUrl = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80"
+            partnerAvatarUrl = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80",
+            partnerAge = 25,
+            partnerDistanceMeters = 230,
+            partnerCity = "Pancoran, Jaksel"
         ),
         ChatConversation(
             id = "conv_u5",
@@ -632,7 +638,10 @@ object MockDataSource {
             lastTimestamp = System.currentTimeMillis() - 1000 * 60 * 60 * 3,
             unreadCount = 0,
             isOnline = true,
-            partnerAvatarUrl = "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80"
+            partnerAvatarUrl = "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80",
+            partnerAge = 23,
+            partnerDistanceMeters = 920,
+            partnerCity = "Setiabudi, Jaksel"
         )
     )
 

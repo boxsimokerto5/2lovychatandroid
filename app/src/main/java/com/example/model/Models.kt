@@ -49,8 +49,18 @@ data class ChatConversation(
     val isOnline: Boolean = true,
     val partnerAvatarUrl: String? = null,
     val lastMessageIsFromMe: Boolean = false,
-    val lastMessageIsRead: Boolean = false
-)
+    val lastMessageIsRead: Boolean = false,
+    val partnerAge: Int = 22,
+    val partnerDistanceMeters: Int = 120,
+    val partnerCity: String? = null
+) {
+    val formattedDistance: String
+        get() = if (partnerDistanceMeters < 1000) {
+            "${partnerDistanceMeters}m"
+        } else {
+            String.format(java.util.Locale.US, "%.1f km", partnerDistanceMeters / 1000.0)
+        }
+}
 
 data class BottleMessage(
     val id: String,
