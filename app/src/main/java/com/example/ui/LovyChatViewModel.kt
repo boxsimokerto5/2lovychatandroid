@@ -205,6 +205,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         syncFromSupabase()
         refreshNewFriendRequests()
         syncFcmTokenToSupabase()
+        if (!_uiState.value.isGuest && _uiState.value.myLovyId.isNotBlank()) {
+            startIncomingChatPeriodicSync()
+        }
     }
 
     fun isDummyFriend(userId: String, userName: String): Boolean {
@@ -1228,6 +1231,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             updateUserActivity()
             syncFromSupabase(forceRefresh = true)
             syncUserProfileToSupabase()
+            startIncomingChatPeriodicSync()
         }
         return result
     }
@@ -1264,6 +1268,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             updateUserActivity()
             syncFromSupabase(forceRefresh = true)
             syncUserProfileToSupabase()
+            startIncomingChatPeriodicSync()
         }
         return result
     }
@@ -1300,11 +1305,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             updateUserActivity()
             syncFromSupabase(forceRefresh = true)
             syncUserProfileToSupabase()
+            startIncomingChatPeriodicSync()
         }
         return result
     }
 
     fun loginAsGuest() {
+        periodicIncomingChatJob?.cancel()
         _uiState.update {
             it.copy(
                 isLoggedIn = true,
@@ -1322,6 +1329,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun logout() {
+        periodicIncomingChatJob?.cancel()
         authRepo.clearSession()
         val wasRealUser = !_uiState.value.isGuest && _uiState.value.isLoggedIn
         if (wasRealUser) {
@@ -1355,6 +1363,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
      * Menghapus akun dan seluruh data pengguna secara permanen (sesuai regulasi Google Play).
      */
     fun deleteAccount() {
+        periodicIncomingChatJob?.cancel()
         val state = _uiState.value
         val myId = state.myLovyId
         val myName = state.myName
@@ -1638,15 +1647,48 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         if (clean1.isEmpty()) return "conv_$clean2"
         if (clean2.isEmpty()) return "conv_$clean1"
         val sorted = if (clean1 <= clean2) listOf(clean1, clean2) else listOf(clean2, clean1)
-        return "conv_${sorted[0]}_${sorted[1]}"
+        return "conv_${sorted[0]}__${sorted[1]}"
     }
 
     fun extractPartnerIdFromConvId(convId: String, myId: String): String {
         if (!convId.startsWith("conv_")) return convId
         val content = convId.removePrefix("conv_")
+        val cleanMyId = myId.trim()
+
+        // 1. Format separator ganda '__' (sangat presisi untuk ID yang mengandung underscore)
+        if (content.contains("__")) {
+            val parts = content.split("__")
+            val partner = parts.firstOrNull { !it.equals(cleanMyId, ignoreCase = true) }
+            if (!partner.isNullOrBlank()) return partner
+        }
+
+        // 2. Format single '_' jika myId berada di awal atau di akhir
+        if (cleanMyId.isNotBlank()) {
+            if (content.startsWith("${cleanMyId}__", ignoreCase = true)) {
+                return content.substring(cleanMyId.length + 2)
+            }
+            if (content.startsWith("${cleanMyId}_", ignoreCase = true)) {
+                return content.substring(cleanMyId.length + 1)
+            }
+            if (content.endsWith("__${cleanMyId}", ignoreCase = true)) {
+                return content.substring(0, content.length - cleanMyId.length - 2)
+            }
+            if (content.endsWith("_${cleanMyId}", ignoreCase = true)) {
+                return content.substring(0, content.length - cleanMyId.length - 1)
+            }
+        }
+
+        // 3. Deteksi pola lovy ID: lovy_XXXXXX
+        val lovyMatches = Regex("(lovy_[0-9a-zA-Z]+)").findAll(content).map { it.value }.toList()
+        if (lovyMatches.size >= 2) {
+            val partner = lovyMatches.firstOrNull { !it.equals(cleanMyId, ignoreCase = true) }
+            if (!partner.isNullOrBlank()) return partner
+        }
+
+        // 4. Fallback legacy jika split 2 bagian
         val parts = content.split("_")
-        if (parts.size >= 2) {
-            return parts.firstOrNull { !it.equals(myId, ignoreCase = true) } ?: parts[0]
+        if (parts.size == 2) {
+            return parts.firstOrNull { !it.equals(cleanMyId, ignoreCase = true) } ?: parts[0]
         }
         return content
     }
@@ -1671,6 +1713,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             timestamp = System.currentTimeMillis(),
             isFromMe = true
         )
+
+        viewModelScope.launch(Dispatchers.IO) {
+            localChatRepo.saveMessage(newMsg)
+        }
 
         val updatedMessages = (_uiState.value.messagesMap[convId] ?: emptyList()) + newMsg
         val updatedConversations = if (existing != null) {
@@ -1881,15 +1927,42 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                             .sortedBy { it.timestamp }
 
                         val lastMsg = merged.lastOrNull()
-                        val updatedConvs = _uiState.value.conversations.map { c ->
-                            if (c.id == conversationId && lastMsg != null) {
-                                c.copy(
+                        val convExists = _uiState.value.conversations.any { it.id == conversationId }
+                        val updatedConvs = if (convExists) {
+                            _uiState.value.conversations.map { c ->
+                                if (c.id == conversationId && lastMsg != null) {
+                                    c.copy(
+                                        lastMessage = lastMsg.text,
+                                        lastTimestamp = lastMsg.timestamp,
+                                        lastMessageIsFromMe = lastMsg.isFromMe,
+                                        lastMessageIsRead = lastMsg.isRead
+                                    )
+                                } else c
+                            }
+                        } else if (lastMsg != null) {
+                            val partnerUser = _uiState.value.nearbyUsers.find { it.id == partnerId }
+                                ?: _uiState.value.chattedFriends.find { it.id == partnerId }
+                            listOf(
+                                ChatConversation(
+                                    id = conversationId,
+                                    partnerId = partnerId,
+                                    partnerName = partnerUser?.name ?: "Pengguna Lovy",
+                                    partnerAvatarHex = partnerUser?.avatarColorHex ?: 0xFF4CAF50,
+                                    partnerGender = partnerUser?.gender ?: Gender.FEMALE,
                                     lastMessage = lastMsg.text,
                                     lastTimestamp = lastMsg.timestamp,
+                                    unreadCount = 0,
+                                    isOnline = partnerUser?.isOnline ?: true,
+                                    partnerAvatarUrl = partnerUser?.avatarUrl,
                                     lastMessageIsFromMe = lastMsg.isFromMe,
-                                    lastMessageIsRead = lastMsg.isRead
+                                    lastMessageIsRead = lastMsg.isRead,
+                                    partnerAge = partnerUser?.age ?: 22,
+                                    partnerDistanceMeters = partnerUser?.distanceMeters ?: 300,
+                                    partnerCity = partnerUser?.city
                                 )
-                            } else c
+                            ) + _uiState.value.conversations
+                        } else {
+                            _uiState.value.conversations
                         }
 
                         _uiState.update {
@@ -1897,6 +1970,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                                 conversations = updatedConvs,
                                 messagesMap = it.messagesMap + (conversationId to merged)
                             )
+                        }
+
+                        viewModelScope.launch(Dispatchers.IO) {
+                            actualChatMsgs.forEach { localChatRepo.saveMessage(it) }
                         }
 
                         if (isViewing && actualChatMsgs.any { !it.isFromMe && !it.isRead }) {
@@ -2049,6 +2126,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 conversations = updatedConversations,
                 messagesMap = it.messagesMap + (conversationId to updatedMessages)
             )
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            localChatRepo.saveMessage(newMsg)
         }
 
         if (_uiState.value.isGuest) {
@@ -2617,6 +2698,40 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    private var periodicIncomingChatJob: kotlinx.coroutines.Job? = null
+
+    private fun startIncomingChatPeriodicSync() {
+        periodicIncomingChatJob?.cancel()
+        periodicIncomingChatJob = viewModelScope.launch(Dispatchers.IO) {
+            while (true) {
+                kotlinx.coroutines.delay(4500L)
+                try {
+                    val state = _uiState.value
+                    if (!state.isGuest && SupabaseClient.isConfigured() && state.myLovyId.isNotBlank()) {
+                        val recent = supabaseRepo.fetchRecentMessagesForUser(state.myLovyId)
+                        if (!recent.isNullOrEmpty()) {
+                            withContext(Dispatchers.Main) {
+                                processIncomingRecentMessages(recent, state.myLovyId)
+                            }
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
+        }
+    }
+
+    private fun isSenderMe(senderId: String, receiverId: String?, myId: String): Boolean {
+        if (myId.isBlank()) return false
+        val cleanMy = myId.trim()
+        val s = senderId.trim()
+        val r = receiverId?.trim()
+        if (s.equals(cleanMy, ignoreCase = true)) return true
+        if (r != null && r.equals(cleanMy, ignoreCase = true)) return false
+        if (s.isNotBlank() && !s.equals("me", ignoreCase = true) && !s.equals(cleanMy, ignoreCase = true)) return false
+        if (s.equals("me", ignoreCase = true) && r != null && !r.equals(cleanMy, ignoreCase = true)) return true
+        return false
+    }
+
     fun syncIncomingChats() {
         if (_uiState.value.isGuest) return
         if (!SupabaseClient.isConfigured()) return
@@ -2646,12 +2761,16 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     conversationId = convId,
                     text = dto.text,
                     timestamp = dto.createdAt,
-                    isFromMe = dto.senderId.equals(myId, ignoreCase = true) || (dto.senderId.equals("me", ignoreCase = true) && !dto.receiverId.equals(myId, ignoreCase = true)),
+                    isFromMe = isSenderMe(dto.senderId, dto.receiverId, myId),
                     isRead = dto.isRead ?: false,
                     deletedForSender = dto.deletedForSender ?: false,
                     deletedForReceiver = dto.deletedForReceiver ?: false,
                     imageUrl = dto.imageUrl
                 )
+            }
+
+            viewModelScope.launch(Dispatchers.IO) {
+                sortedMsgs.forEach { localChatRepo.saveMessage(it) }
             }
 
             val existingMsgs = currentMessages[convId] ?: emptyList()
@@ -2676,10 +2795,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             } else {
                 val partnerUser = _uiState.value.nearbyUsers.find { it.id == partnerId } 
                     ?: _uiState.value.chattedFriends.find { it.id == partnerId }
+                if (partnerUser != null) {
+                    saveChatFriend(partnerUser)
+                }
                 val newConv = ChatConversation(
                     id = convId,
                     partnerId = partnerId,
-                    partnerName = partnerUser?.name ?: "Pengguna $partnerId",
+                    partnerName = partnerUser?.name ?: "Teman Lovy",
                     partnerAvatarHex = partnerUser?.avatarColorHex ?: 0xFF4CAF50,
                     partnerGender = partnerUser?.gender ?: Gender.FEMALE,
                     lastMessage = lastMsg.text,

@@ -62,14 +62,14 @@ interface SupabaseRestApi {
     suspend fun getChatMessages(
         @Header("apikey") apiKey: String,
         @Header("Authorization") authHeader: String,
-        @Query("conversation_id") conversationFilter: String
+        @Query(value = "conversation_id", encoded = true) conversationFilter: String
     ): Response<List<SupabaseMessageDto>>
 
     @GET("rest/v1/chat_messages?select=*&order=created_at.asc")
     suspend fun getDeltaChatMessages(
         @Header("apikey") apiKey: String,
         @Header("Authorization") authHeader: String,
-        @Query("conversation_id") conversationFilter: String,
+        @Query(value = "conversation_id", encoded = true) conversationFilter: String,
         @Query("created_at") createdAfterFilter: String
     ): Response<List<SupabaseMessageDto>>
 

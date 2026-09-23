@@ -215,13 +215,15 @@ class SupabaseRepository {
         try {
             // Dukung conversation_id 2 arah simetris maupun legacy format
             val filter = if (partnerId.isNotBlank() && currentUserId.isNotBlank()) {
+                val clean1 = currentUserId.trim()
+                val clean2 = partnerId.trim()
+                val sorted = if (clean1 <= clean2) listOf(clean1, clean2) else listOf(clean2, clean1)
+                val formatDouble = "conv_${sorted[0]}__${sorted[1]}"
+                val formatSingle = "conv_${sorted[0]}_${sorted[1]}"
                 val legacy1 = "conv_$partnerId"
                 val legacy2 = "conv_$currentUserId"
-                if (conversationId != legacy1 && conversationId != legacy2) {
-                    "in.($conversationId,$legacy1,$legacy2)"
-                } else {
-                    "in.($conversationId)"
-                }
+                val list = listOf(conversationId, formatDouble, formatSingle, legacy1, legacy2).filter { it.isNotBlank() }.distinct()
+                "in.(${list.joinToString(",")})"
             } else {
                 "eq.$conversationId"
             }
@@ -272,13 +274,27 @@ class SupabaseRepository {
     }
 
     private fun isSenderMe(senderId: String, receiverId: String?, currentUserId: String): Boolean {
-        if (currentUserId.isNotBlank()) {
-            if (senderId.equals(currentUserId, ignoreCase = true)) return true
-            if (receiverId != null && receiverId.equals(currentUserId, ignoreCase = true)) return false
+        if (currentUserId.isBlank()) return false
+        val myId = currentUserId.trim()
+        val sId = senderId.trim()
+        val rId = receiverId?.trim()
+
+        // 1. Jika sender_id sama dengan ID saya -> pasti pesan yang saya kirim
+        if (sId.equals(myId, ignoreCase = true)) return true
+
+        // 2. Jika receiver_id adalah ID saya -> pasti pesan yang saya terima (bukan dari saya)
+        if (rId != null && rId.equals(myId, ignoreCase = true)) return false
+
+        // 3. Jika sender_id adalah ID pengguna lain (bukan "me" dan bukan ID saya) -> pasti bukan dari saya
+        if (sId.isNotBlank() && !sId.equals("me", ignoreCase = true) && !sId.equals(myId, ignoreCase = true)) {
+            return false
         }
-        if (senderId.equals("me", ignoreCase = true)) {
-            return receiverId == null || !receiverId.equals(currentUserId, ignoreCase = true)
+
+        // 4. Fallback legacy jika sender_id tersimpan sebagai "me"
+        if (sId.equals("me", ignoreCase = true)) {
+            if (rId != null && !rId.equals(myId, ignoreCase = true)) return true
         }
+
         return false
     }
 
@@ -344,14 +360,14 @@ class SupabaseRepository {
             val orResp = api.getRecentMessagesOr(
                 apiKey,
                 auth,
-                "(sender_id.eq.$userId,receiver_id.eq.$userId,conversation_id.ilike.%25$userId%25)"
+                "(sender_id.eq.$userId,receiver_id.eq.$userId,conversation_id.ilike.*$userId*)"
             )
             if (orResp.isSuccessful && orResp.body() != null) {
                 return@withContext orResp.body()
             }
 
-            // Fallback 1: ilike dengan URL wildcard SQL %
-            val ilikeResp = api.getRecentMessages(apiKey, auth, "ilike.%25$userId%25")
+            // Fallback 1: ilike dengan wildcard PostgREST *
+            val ilikeResp = api.getRecentMessages(apiKey, auth, "ilike.*$userId*")
             if (ilikeResp.isSuccessful && ilikeResp.body() != null) {
                 return@withContext ilikeResp.body()
             }
