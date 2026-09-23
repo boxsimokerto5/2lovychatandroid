@@ -146,8 +146,10 @@ create table if not exists moments (
     comments_count int default 0,
     created_at bigint not null,
     author_avatar_hex bigint default 4222123520,
-    image_url text
+    image_url text,
+    author_avatar_url text
 );
+alter table moments add column if not exists author_avatar_url text;
 
 create table if not exists app_accounts (
     id text primary key,

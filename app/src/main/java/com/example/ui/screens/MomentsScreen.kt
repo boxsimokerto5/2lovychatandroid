@@ -129,6 +129,7 @@ fun MomentsScreen(
     momentComments: Map<String, List<MomentComment>> = emptyMap(),
     currentUserId: String = "",
     currentUserName: String = "",
+    currentUserAvatarUrl: String? = null,
     currentGpsLocation: com.example.util.UserGpsLocation? = null,
     onBack: () -> Unit,
     onToggleLike: (String) -> Unit,
@@ -354,6 +355,7 @@ fun MomentsScreen(
                     MomentCard(
                         item = item,
                         isMyMoment = isMyMoment,
+                        currentUserAvatarUrl = currentUserAvatarUrl,
                         onToggleLike = { onToggleLike(item.id) },
                         onPhotoClick = { url -> fullscreenPhotoUrl = url },
                         onCommentClick = { activeMomentIdForComments = item.id },
@@ -423,6 +425,36 @@ fun MomentsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
+                    // Header Pembuat Momen (Avatar & Nama)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 2.dp)
+                    ) {
+                        LovyAvatar(
+                            name = currentUserName.ifBlank { "Saya" },
+                            avatarColorHex = 0xFF00A86B,
+                            avatarUrl = currentUserAvatarUrl,
+                            size = 44.dp,
+                            fontSize = 17.sp
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = currentUserName.ifBlank { "Saya" },
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp,
+                                color = NeutralDark
+                            )
+                            Text(
+                                text = "Berbagi momen ke linimasa",
+                                fontSize = 12.sp,
+                                color = NeutralMedium
+                            )
+                        }
+                    }
+
                     OutlinedTextField(
                         value = postText,
                         onValueChange = { postText = it },
@@ -900,6 +932,7 @@ fun MomentsScreen(
 fun MomentCard(
     item: MomentItem,
     isMyMoment: Boolean = false,
+    currentUserAvatarUrl: String? = null,
     onToggleLike: () -> Unit,
     onPhotoClick: (String) -> Unit,
     onShareClick: (() -> Unit)? = null,
@@ -966,10 +999,13 @@ fun MomentCard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
+                val displayAvatarUrl = item.authorAvatarUrl?.takeIf { it.isNotBlank() }
+                    ?: if (isMyMoment) currentUserAvatarUrl?.takeIf { it.isNotBlank() } else null
+
                 LovyAvatar(
                     name = item.authorName,
                     avatarColorHex = item.authorAvatarHex,
-                    avatarUrl = item.authorAvatarUrl,
+                    avatarUrl = displayAvatarUrl,
                     size = 46.dp,
                     fontSize = 18.sp
                 )

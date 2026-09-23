@@ -181,6 +181,7 @@ class SupabaseRepository {
                         commentsCount = dto.commentsCount ?: 0,
                         isLiked = false,
                         imageUrl = dto.imageUrl,
+                        authorAvatarUrl = dto.authorAvatarUrl,
                         authorId = dto.authorId
                     )
                 }
@@ -208,10 +209,20 @@ class SupabaseRepository {
                 commentsCount = moment.commentsCount,
                 createdAt = System.currentTimeMillis(),
                 authorAvatarHex = moment.authorAvatarHex,
-                imageUrl = moment.imageUrl
+                imageUrl = moment.imageUrl,
+                authorAvatarUrl = moment.authorAvatarUrl
             )
             val response = api.insertMoment(apiKey, auth, dto)
-            response.isSuccessful
+            if (response.isSuccessful) {
+                true
+            } else if (dto.authorAvatarUrl != null) {
+                // Fallback jika database Supabase belum memiliki kolom author_avatar_url
+                val fallbackDto = dto.copy(authorAvatarUrl = null)
+                val retry = api.insertMoment(apiKey, auth, fallbackDto)
+                retry.isSuccessful
+            } else {
+                false
+            }
         } catch (e: Exception) {
             Log.w(TAG, "Gagal menyimpan moment ke Supabase", e)
             false

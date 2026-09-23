@@ -778,18 +778,45 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    private fun enrichMomentsWithAvatars(
+        moments: List<MomentItem>,
+        overrideMyAvatar: String? = null
+    ): List<MomentItem> {
+        val myId = _uiState.value.myLovyId
+        val myName = _uiState.value.myName
+        val myAvatar = overrideMyAvatar?.takeIf { it.isNotBlank() }
+            ?: _uiState.value.userProfile.profilePicture?.takeIf { it.isNotBlank() }
+        val nearbyMap = _uiState.value.nearbyUsers.associateBy { it.id }
+
+        return moments.map { moment ->
+            if (!moment.authorAvatarUrl.isNullOrBlank()) {
+                moment
+            } else if ((myId.isNotBlank() && moment.authorId == myId) || (myName.isNotBlank() && moment.authorName == myName)) {
+                if (!myAvatar.isNullOrBlank()) moment.copy(authorAvatarUrl = myAvatar) else moment
+            } else {
+                val user = nearbyMap[moment.authorId]
+                if (user != null && !user.avatarUrl.isNullOrBlank()) {
+                    moment.copy(authorAvatarUrl = user.avatarUrl)
+                } else {
+                    moment
+                }
+            }
+        }
+    }
+
     private fun observeUserProfile() {
         viewModelScope.launch {
             try {
                 userProfileRepo.currentProfile.collect { profile ->
                     if (profile != null) {
                         _uiState.update {
-                            it.copy(
+                            val updated = it.copy(
                                 userProfile = profile,
                                 myName = profile.displayName,
                                 myBio = profile.bio,
                                 myLovyId = profile.lovyId
                             )
+                            updated.copy(moments = enrichMomentsWithAvatars(updated.moments, profile.profilePicture))
                         }
                         // Jika kota GPS nyata sudah terdeteksi dan profil masih default, sinkronkan otomatis
                         val detectedCity = _uiState.value.currentGpsLocation?.cityName
@@ -818,12 +845,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     fun saveUserProfile(profile: UserProfile) {
         recordFeatureClick()
         _uiState.update {
-            it.copy(
+            val updated = it.copy(
                 userProfile = profile,
                 myName = profile.displayName,
                 myBio = profile.bio,
                 myLovyId = profile.lovyId
             )
+            updated.copy(moments = enrichMomentsWithAvatars(updated.moments, profile.profilePicture))
         }
         viewModelScope.launch {
             try {
@@ -956,7 +984,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             if (forceRefresh || now - lastMomentsSyncTime >= CACHE_DURATION_MS) {
                 val remoteMoments = supabaseRepo.fetchMoments()
                 if (remoteMoments != null) {
-                    _uiState.update { it.copy(moments = remoteMoments) }
+                    val enriched = enrichMomentsWithAvatars(remoteMoments)
+                    _uiState.update { it.copy(moments = enriched) }
                     lastMomentsSyncTime = System.currentTimeMillis()
                 }
             }
@@ -980,7 +1009,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     if (remoteMoments != null && remoteMoments.isNotEmpty()) {
                         val myLocal = _uiState.value.moments.filter { it.id in _uiState.value.myMomentIds }
                         val merged = (myLocal + remoteMoments).distinctBy { it.id }
-                        _uiState.update { it.copy(moments = merged) }
+                        val enriched = enrichMomentsWithAvatars(merged)
+                        _uiState.update { it.copy(moments = enriched) }
                         lastMomentsSyncTime = System.currentTimeMillis()
                         fetched = true
                     }

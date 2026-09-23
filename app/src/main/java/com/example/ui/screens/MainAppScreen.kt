@@ -129,6 +129,7 @@ fun MainAppScreen(
                 momentComments = uiState.momentComments,
                 currentUserId = uiState.myLovyId,
                 currentUserName = uiState.myName,
+                currentUserAvatarUrl = uiState.userProfile.profilePicture,
                 currentGpsLocation = uiState.currentGpsLocation,
                 onBack = { viewModel.navigateBack() },
                 onToggleLike = { viewModel.toggleLikeMoment(it) },
