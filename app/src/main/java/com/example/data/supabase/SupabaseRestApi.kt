@@ -35,6 +35,14 @@ interface SupabaseRestApi {
         @Body updates: Map<String, Long>
     ): Response<Unit>
 
+    @PATCH("rest/v1/nearby_users")
+    suspend fun updateUserFcmToken(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("id") idFilter: String,
+        @Body updates: Map<String, String>
+    ): Response<Unit>
+
     @GET("rest/v1/ocean_bottles?select=*&order=created_at.desc")
     suspend fun getOceanBottles(
         @Header("apikey") apiKey: String,
@@ -174,6 +182,14 @@ interface SupabaseRestApi {
         @Header("Authorization") authHeader: String,
         @Query("id") idFilter: String,
         @Body updates: Map<String, Long>
+    ): Response<Unit>
+
+    @PATCH("rest/v1/app_accounts")
+    suspend fun updateAccountFcmToken(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("id") idFilter: String,
+        @Body updates: Map<String, String>
     ): Response<Unit>
 
     @DELETE("rest/v1/app_accounts")

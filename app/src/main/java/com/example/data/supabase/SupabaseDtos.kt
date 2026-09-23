@@ -14,7 +14,8 @@ data class SupabaseUserDto(
     @Json(name = "is_online") val isOnline: Boolean? = true,
     @Json(name = "last_active_at") val lastActiveAt: Long? = null,
     @Json(name = "avatar_url") val avatarUrl: String? = null,
-    @Json(name = "city") val city: String? = null
+    @Json(name = "city") val city: String? = null,
+    @Json(name = "fcm_token") val fcmToken: String? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -68,5 +69,6 @@ data class SupabaseAccountDto(
     @Json(name = "google_id") val googleId: String? = null,
     @Json(name = "google_email") val googleEmail: String? = null,
     @Json(name = "created_at") val createdAt: Long? = System.currentTimeMillis(),
-    @Json(name = "last_login_at") val lastLoginAt: Long? = System.currentTimeMillis()
+    @Json(name = "last_login_at") val lastLoginAt: Long? = System.currentTimeMillis(),
+    @Json(name = "fcm_token") val fcmToken: String? = null
 )

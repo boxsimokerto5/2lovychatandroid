@@ -13,6 +13,7 @@ import com.example.MainActivity
 import com.example.R
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import kotlinx.coroutines.launch
 
 class LovyFirebaseMessagingService : FirebaseMessagingService() {
 
@@ -45,6 +46,29 @@ class LovyFirebaseMessagingService : FirebaseMessagingService() {
         // Simpan token ke preferensi lokal
         val prefs = getSharedPreferences("lovy_fcm_prefs", Context.MODE_PRIVATE)
         prefs.edit().putString("fcm_token", token).apply()
+
+        // Sinkronisasi otomatis ke Supabase jika user telah login
+        try {
+            val authPrefs = getSharedPreferences("lovy_auth_store", Context.MODE_PRIVATE)
+            val sessionJson = authPrefs.getString("current_active_session", null)
+            if (!sessionJson.isNullOrBlank()) {
+                val json = org.json.JSONObject(sessionJson)
+                val lovyId = json.optString("lovy_id", "")
+                val isGuest = json.optBoolean("is_guest", false)
+                if (lovyId.isNotBlank() && !isGuest && com.example.data.supabase.SupabaseClient.isConfigured()) {
+                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                        try {
+                            com.example.data.supabase.SupabaseRepository().updateUserFcmToken(lovyId, token)
+                            Log.d(TAG, "onNewToken: Berhasil sinkronisasi token baru ke Supabase untuk $lovyId")
+                        } catch (e: Exception) {
+                            Log.w(TAG, "onNewToken: Gagal sinkronisasi token ke Supabase", e)
+                        }
+                    }
+                }
+            }
+        } catch (e: Throwable) {
+            Log.w(TAG, "Error checking session in onNewToken", e)
+        }
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
@@ -90,7 +114,12 @@ class LovyFirebaseMessagingService : FirebaseMessagingService() {
         )
 
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-        val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
+        val channelId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CHANNEL_ID
+        } else {
+            CHANNEL_ID
+        }
+        val notificationBuilder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
             .setContentText(body)

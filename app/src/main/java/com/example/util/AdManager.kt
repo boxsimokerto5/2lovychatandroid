@@ -73,6 +73,12 @@ object AdManager {
             IronSource.init(
                 activity,
                 IRONSOURCE_APP_KEY,
+                {
+                    Log.d(TAG, "IronSource initialization completed via listener")
+                    isInitialized = true
+                    // Automatically load interstitial once initialized
+                    loadInterstitial()
+                },
                 IronSource.AD_UNIT.BANNER,
                 IronSource.AD_UNIT.INTERSTITIAL,
                 IronSource.AD_UNIT.REWARDED_VIDEO,
@@ -92,12 +98,17 @@ object AdManager {
     /**
      * Create and load a Banner ad view for the given Activity.
      */
-    fun createBanner(activity: Activity, onBannerLoaded: () -> Unit = {}, onBannerFailed: (String) -> Unit = {}): IronSourceBannerLayout? {
+    fun createBanner(
+        activity: Activity,
+        placementName: String? = null,
+        onBannerLoaded: () -> Unit = {},
+        onBannerFailed: (String) -> Unit = {}
+    ): IronSourceBannerLayout? {
         return try {
             val bannerLayout = IronSource.createBanner(activity, ISBannerSize.BANNER)
             bannerLayout.levelPlayBannerListener = object : LevelPlayBannerListener {
                 override fun onAdLoaded(adInfo: AdInfo) {
-                    Log.d(TAG, "Banner ad loaded successfully")
+                    Log.d(TAG, "Banner ad loaded successfully: ${adInfo.adNetwork}")
                     onBannerLoaded()
                 }
 
@@ -123,7 +134,11 @@ object AdManager {
                 }
             }
 
-            IronSource.loadBanner(bannerLayout)
+            if (!placementName.isNullOrBlank() && placementName != AD_UNIT_BANNER_ID) {
+                IronSource.loadBanner(bannerLayout, placementName)
+            } else {
+                IronSource.loadBanner(bannerLayout)
+            }
             bannerLayout
         } catch (e: Exception) {
             Log.e(TAG, "Error creating banner: ${e.message}", e)

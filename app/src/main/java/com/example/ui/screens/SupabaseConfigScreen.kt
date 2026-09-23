@@ -106,6 +106,7 @@ create table if not exists nearby_users (
 alter table nearby_users add column if not exists last_active_at bigint default 0;
 alter table nearby_users add column if not exists avatar_url text;
 alter table nearby_users add column if not exists city text;
+alter table nearby_users add column if not exists fcm_token text;
 
 create table if not exists ocean_bottles (
     id text primary key,
@@ -159,8 +160,10 @@ create table if not exists app_accounts (
     google_id text unique,
     google_email text,
     created_at bigint not null,
-    last_login_at bigint not null
+    last_login_at bigint not null,
+    fcm_token text
 );
+alter table app_accounts add column if not exists fcm_token text;
 
 -- Buka policy CRUD untuk public (anon)
 alter table nearby_users enable row level security;

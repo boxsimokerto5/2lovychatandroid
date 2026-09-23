@@ -372,7 +372,8 @@ class SupabaseRepository {
         bio: String,
         avatarHex: Long = 0xFFFB8C00,
         avatarUrl: String? = null,
-        city: String? = null
+        city: String? = null,
+        fcmToken: String? = null
     ): Boolean = withContext(Dispatchers.IO) {
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
@@ -389,14 +390,15 @@ class SupabaseRepository {
                 isOnline = true,
                 lastActiveAt = System.currentTimeMillis(),
                 avatarUrl = avatarUrl,
-                city = city
+                city = city,
+                fcmToken = fcmToken
             )
             val response = api.upsertNearbyUser(apiKey, auth, dto)
             if (response.isSuccessful) {
                 return@withContext true
             }
 
-            // Fallback jika database Supabase belum memiliki kolom city / last_active_at / avatar_url
+            // Fallback jika database Supabase belum memiliki kolom city / last_active_at / avatar_url / fcm_token
             val coreDto = SupabaseUserDto(
                 id = id,
                 name = name,
@@ -407,7 +409,8 @@ class SupabaseRepository {
                 isOnline = true,
                 lastActiveAt = null,
                 avatarUrl = null,
-                city = null
+                city = null,
+                fcmToken = null
             )
             val retry = api.upsertNearbyUser(apiKey, auth, coreDto)
             retry.isSuccessful
@@ -483,6 +486,22 @@ class SupabaseRepository {
             response.isSuccessful
         } catch (e: Exception) {
             Log.w(TAG, "Gagal memperbarui last_active_at pengguna", e)
+            false
+        }
+    }
+
+    suspend fun updateUserFcmToken(userId: String, token: String): Boolean = withContext(Dispatchers.IO) {
+        if (userId.isBlank() || token.isBlank()) return@withContext false
+        val api = SupabaseClient.getApi() ?: return@withContext false
+        val apiKey = SupabaseClient.getSupabaseAnonKey()
+        val auth = SupabaseClient.getAuthHeader()
+
+        try {
+            val res1 = api.updateUserFcmToken(apiKey, auth, "eq.$userId", mapOf("fcm_token" to token))
+            api.updateAccountFcmToken(apiKey, auth, "eq.$userId", mapOf("fcm_token" to token))
+            res1.isSuccessful
+        } catch (e: Exception) {
+            Log.w(TAG, "Gagal memperbarui fcm_token pengguna di Supabase", e)
             false
         }
     }

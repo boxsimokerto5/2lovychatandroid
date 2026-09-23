@@ -204,6 +204,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         // Coba sinkronisasi data awal jika Supabase sudah terkonfigurasi
         syncFromSupabase()
         refreshNewFriendRequests()
+        syncFcmTokenToSupabase()
     }
 
     fun isDummyFriend(userId: String, userName: String): Boolean {
@@ -535,19 +536,39 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     private fun initFirebaseMessaging() {
         try {
             com.example.util.LovyFirebaseMessagingService.createNotificationChannel(getApplication())
+            val fcmPrefs = getApplication<Application>()
+                .getSharedPreferences("lovy_fcm_prefs", android.content.Context.MODE_PRIVATE)
+            val cachedToken = fcmPrefs.getString("fcm_token", null)
+            if (!cachedToken.isNullOrBlank()) {
+                _uiState.update { it.copy(fcmToken = cachedToken) }
+                syncFcmTokenToSupabase(cachedToken)
+            }
             com.google.firebase.messaging.FirebaseMessaging.getInstance().token
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful && !task.result.isNullOrBlank()) {
                         val token = task.result
                         _uiState.update { it.copy(fcmToken = token) }
-                        val fcmPrefs = getApplication<Application>()
-                            .getSharedPreferences("lovy_fcm_prefs", android.content.Context.MODE_PRIVATE)
                         fcmPrefs.edit().putString("fcm_token", token).apply()
                         Log.d("LovyFCM", "Current FCM Token fetched: $token")
+                        syncFcmTokenToSupabase(token)
                     }
                 }
         } catch (e: Throwable) {
             Log.w("LovyFCM", "Inisialisasi FCM dilewati atau belum tersedia: ${e.message}")
+        }
+    }
+
+    fun syncFcmTokenToSupabase(token: String = _uiState.value.fcmToken) {
+        if (token.isBlank() || _uiState.value.isGuest || !SupabaseClient.isConfigured()) return
+        val myId = _uiState.value.myLovyId
+        if (myId.isBlank()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                supabaseRepo.updateUserFcmToken(myId, token)
+                Log.d("LovyFCM", "FCM token berhasil diperbarui di Supabase untuk: $myId")
+            } catch (e: Exception) {
+                Log.w("LovyFCM", "Gagal memperbarui FCM token di Supabase", e)
+            }
         }
     }
 
@@ -901,7 +922,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 bio = profile.bio,
                 avatarHex = 0xFF4CAF50,
                 avatarUrl = profile.profilePicture?.takeIf { it.isNotBlank() },
-                city = profile.city
+                city = profile.city,
+                fcmToken = _uiState.value.fcmToken.takeIf { it.isNotBlank() }
             )
         }
     }

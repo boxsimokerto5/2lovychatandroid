@@ -56,21 +56,32 @@ fun IronSourceBannerView(
 
     var bannerLayout by remember { mutableStateOf<IronSourceBannerLayout?>(null) }
     var isLoaded by remember { mutableStateOf(false) }
+    var retryTrigger by remember { mutableStateOf(0) }
+
+    androidx.compose.runtime.LaunchedEffect(activity, retryTrigger) {
+        if (!isLoaded) {
+            val banner = AdManager.createBanner(
+                activity = activity,
+                onBannerLoaded = {
+                    isLoaded = true
+                },
+                onBannerFailed = { error ->
+                    isLoaded = false
+                    android.util.Log.w("IronSourceBannerView", "Banner failed: $error, retrying in 10s...")
+                }
+            )
+            bannerLayout = banner
+            // Jika dalam 10 detik belum load, coba request ulang
+            kotlinx.coroutines.delay(10000L)
+            if (!isLoaded) {
+                retryTrigger++
+            }
+        }
+    }
 
     DisposableEffect(activity) {
-        val banner = AdManager.createBanner(
-            activity = activity,
-            onBannerLoaded = {
-                isLoaded = true
-            },
-            onBannerFailed = { _ ->
-                isLoaded = false
-            }
-        )
-        bannerLayout = banner
-
         onDispose {
-            AdManager.destroyBanner(banner)
+            AdManager.destroyBanner(bannerLayout)
             bannerLayout = null
         }
     }
