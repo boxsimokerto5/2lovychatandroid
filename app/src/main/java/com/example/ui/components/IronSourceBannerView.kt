@@ -22,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,9 +58,14 @@ fun IronSourceBannerView(
     var bannerLayout by remember { mutableStateOf<IronSourceBannerLayout?>(null) }
     var isLoaded by remember { mutableStateOf(false) }
     var retryTrigger by remember { mutableStateOf(0) }
+    val isSdkInitialized by AdManager.isSdkInitialized.collectAsState()
 
-    androidx.compose.runtime.LaunchedEffect(activity, retryTrigger) {
+    androidx.compose.runtime.LaunchedEffect(activity, isSdkInitialized, retryTrigger) {
         if (!isLoaded) {
+            // Berikan jeda kecil untuk memastikan handshake ironSource SDK tuntas
+            if (!isSdkInitialized) {
+                kotlinx.coroutines.delay(1200L)
+            }
             bannerLayout?.let {
                 AdManager.destroyBanner(it)
                 bannerLayout = null
@@ -71,12 +77,12 @@ fun IronSourceBannerView(
                 },
                 onBannerFailed = { error ->
                     isLoaded = false
-                    android.util.Log.w("IronSourceBannerView", "Banner failed: $error, retrying in 10s...")
+                    android.util.Log.w("IronSourceBannerView", "Banner failed: $error, retrying in 12s...")
                 }
             )
             bannerLayout = banner
-            // Jika dalam 10 detik belum load, coba request ulang secara bersih
-            kotlinx.coroutines.delay(10000L)
+            // Jika dalam 12 detik belum load, coba request ulang secara bersih
+            kotlinx.coroutines.delay(12000L)
             if (!isLoaded) {
                 retryTrigger++
             }

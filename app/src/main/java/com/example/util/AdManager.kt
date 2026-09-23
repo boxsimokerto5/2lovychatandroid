@@ -37,6 +37,9 @@ object AdManager {
     const val AD_UNIT_REWARDED_ID = "gyh6pbj3hekz8bku"
 
     private var isInitialized = false
+    private val _isSdkInitialized = MutableStateFlow(false)
+    val isSdkInitialized: StateFlow<Boolean> = _isSdkInitialized.asStateFlow()
+
     private var currentActivityRef: java.lang.ref.WeakReference<Activity>? = null
 
     private val _isInterstitialReady = MutableStateFlow(false)
@@ -69,6 +72,14 @@ object AdManager {
             setupInterstitialListener()
             setupRewardedVideoListener()
 
+            // Set metadata flags to assist ad fill
+            try {
+                IronSource.setMetaData("is_child_directed", "false")
+                IronSource.setMetaData("is_deviceid_optout", "false")
+            } catch (e: Throwable) {
+                Log.w(TAG, "Could not set metadata: ${e.message}")
+            }
+
             // Initialize IronSource with Banner, Interstitial, Rewarded Video, and Native Ad
             IronSource.init(
                 activity,
@@ -76,6 +87,7 @@ object AdManager {
                 {
                     Log.d(TAG, "IronSource initialization completed via listener")
                     isInitialized = true
+                    _isSdkInitialized.value = true
                     // Automatically load interstitial once initialized
                     loadInterstitial()
                 },
@@ -85,8 +97,15 @@ object AdManager {
                 IronSource.AD_UNIT.NATIVE_AD
             )
 
+            // Tandai initialized secara internal agar tidak dipanggil berulang
             isInitialized = true
-            Log.d(TAG, "ironSource SDK initialized successfully")
+
+            // Validasi integrasi adapter dan manifest untuk membantu diagnosa logcat
+            try {
+                com.ironsource.mediationsdk.integration.IntegrationHelper.validateIntegration(activity)
+            } catch (e: Throwable) {
+                Log.d(TAG, "IntegrationHelper validation skipped: ${e.message}")
+            }
 
             // Automatically load interstitial in the background
             loadInterstitial()
@@ -134,8 +153,9 @@ object AdManager {
                 }
             }
 
-            if (!placementName.isNullOrBlank() && placementName != AD_UNIT_BANNER_ID) {
-                IronSource.loadBanner(bannerLayout, placementName)
+            val targetPlacement = placementName?.takeIf { it.isNotBlank() }
+            if (targetPlacement != null) {
+                IronSource.loadBanner(bannerLayout, targetPlacement)
             } else {
                 IronSource.loadBanner(bannerLayout)
             }
