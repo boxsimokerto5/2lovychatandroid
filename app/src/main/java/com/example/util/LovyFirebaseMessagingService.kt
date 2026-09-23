@@ -19,24 +19,11 @@ class LovyFirebaseMessagingService : FirebaseMessagingService() {
 
     companion object {
         private const val TAG = "LovyFCM"
-        const val CHANNEL_ID = "lovy_chat_messages"
-        const val CHANNEL_NAME = "Pesan & Notifikasi Lovy Chat"
+        const val CHANNEL_ID = LovyNotificationHelper.CHANNEL_ID
+        const val CHANNEL_NAME = LovyNotificationHelper.CHANNEL_NAME
 
         fun createNotificationChannel(context: Context) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val channel = NotificationChannel(
-                    CHANNEL_ID,
-                    CHANNEL_NAME,
-                    NotificationManager.IMPORTANCE_HIGH
-                ).apply {
-                    description = "Notifikasi pesan obrolan dan momen masuk"
-                    enableLights(true)
-                    enableVibration(true)
-                }
-                val notificationManager =
-                    context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
-                notificationManager?.createNotificationChannel(channel)
-            }
+            LovyNotificationHelper.createNotificationChannel(context)
         }
     }
 
@@ -82,55 +69,14 @@ class LovyFirebaseMessagingService : FirebaseMessagingService() {
         val body = remoteMessage.data["body"]
             ?: remoteMessage.notification?.body
             ?: "Anda menerima pesan baru"
-        val conversationId = remoteMessage.data["conversationId"]
-        val senderName = remoteMessage.data["senderName"]
+        val conversationId = remoteMessage.data["conversationId"] ?: "chat_default"
+        val senderName = remoteMessage.data["senderName"] ?: title
 
-        sendNotification(title, body, conversationId, senderName)
-    }
-
-    private fun sendNotification(
-        title: String,
-        body: String,
-        conversationId: String?,
-        senderName: String?
-    ) {
-        createNotificationChannel(this)
-
-        val intent = Intent(this, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            if (!conversationId.isNullOrBlank()) {
-                putExtra("extra_conversation_id", conversationId)
-            }
-            if (!senderName.isNullOrBlank()) {
-                putExtra("extra_sender_name", senderName)
-            }
-        }
-
-        val pendingIntent = PendingIntent.getActivity(
-            this,
-            (conversationId?.hashCode() ?: 0),
-            intent,
-            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+        LovyNotificationHelper.showChatNotification(
+            context = this,
+            conversationId = conversationId,
+            senderName = senderName,
+            messageText = body
         )
-
-        val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-        val channelId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CHANNEL_ID
-        } else {
-            CHANNEL_ID
-        }
-        val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle(title)
-            .setContentText(body)
-            .setAutoCancel(true)
-            .setSound(defaultSoundUri)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(pendingIntent)
-
-        val notificationManager =
-            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        notificationManager.notify((System.currentTimeMillis() % 10000).toInt(), notificationBuilder.build())
     }
 }

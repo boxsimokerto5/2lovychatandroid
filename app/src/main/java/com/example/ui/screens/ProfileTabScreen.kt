@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LocationOff
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Security
@@ -297,6 +298,22 @@ fun ProfileTabScreen(
                     title = com.example.util.AppStrings.languageSetting(language),
                     subtitle = if (isLocalMode) "LO (Lokal: ${language.displayName}) • $detectedGeoArea" else "EN (English Global)",
                     onClick = { showLanguagePicker = true }
+                )
+                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
+                ProfileMenuItem(
+                    icon = Icons.Default.Notifications,
+                    iconTint = EmeraldGreen,
+                    title = "Uji Notifikasi & Getar",
+                    subtitle = "Tekan untuk tes suara pop-up & getaran perangkat",
+                    onClick = {
+                        com.example.util.LovyNotificationHelper.showChatNotification(
+                            context = context,
+                            conversationId = "test_notification_id",
+                            senderName = "Lovy Chat 💬",
+                            messageText = "Notifikasi & efek getar berhasil berfungsi optimal! 📳✨"
+                        )
+                        Toast.makeText(context, "Memicu notifikasi & efek getar pesan baru 🔔📳", Toast.LENGTH_SHORT).show()
+                    }
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
                 ProfileMenuItem(

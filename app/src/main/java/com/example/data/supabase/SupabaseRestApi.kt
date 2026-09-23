@@ -27,6 +27,13 @@ interface SupabaseRestApi {
         @Query("limit") limit: Int = 30
     ): Response<List<SupabaseUserDto>>
 
+    @GET("rest/v1/nearby_users?select=*")
+    suspend fun getNearbyUserById(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("id") idFilter: String
+    ): Response<List<SupabaseUserDto>>
+
     @PATCH("rest/v1/nearby_users")
     suspend fun updateUserActive(
         @Header("apikey") apiKey: String,

@@ -76,6 +76,36 @@ class SupabaseRepository {
         }
     }
 
+    suspend fun fetchNearbyUserById(userId: String): User? = withContext(Dispatchers.IO) {
+        val api = SupabaseClient.getApi() ?: return@withContext null
+        val apiKey = SupabaseClient.getSupabaseAnonKey()
+        val auth = SupabaseClient.getAuthHeader()
+
+        try {
+            val response = api.getNearbyUserById(apiKey, auth, "eq.$userId")
+            if (response.isSuccessful) {
+                val dto = response.body()?.firstOrNull() ?: return@withContext null
+                User(
+                    id = dto.id,
+                    name = dto.name,
+                    gender = if (dto.gender.equals("male", ignoreCase = true)) Gender.MALE else Gender.FEMALE,
+                    age = 22,
+                    distanceMeters = dto.distanceMeters ?: 100,
+                    bio = dto.bio ?: "",
+                    avatarColorHex = dto.avatarHex ?: 0xFF2E7D32,
+                    isOnline = dto.isOnline ?: true,
+                    city = dto.city?.takeIf { it.isNotBlank() } ?: "Indonesia",
+                    avatarUrl = dto.avatarUrl
+                )
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Gagal mengambil nearby user by id", e)
+            null
+        }
+    }
+
     suspend fun fetchOceanBottles(): List<BottleMessage>? = withContext(Dispatchers.IO) {
         val api = SupabaseClient.getApi() ?: return@withContext null
         val apiKey = SupabaseClient.getSupabaseAnonKey()

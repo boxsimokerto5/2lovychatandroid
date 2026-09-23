@@ -385,6 +385,19 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 newFriendRequests = listOf(newReq) + it.newFriendRequests.filterNot { r -> r.user.id == candidate.id }
             )
         }
+
+        val appCtx = getApplication<Application>()
+        if (_uiState.value.activeChatId != convId) {
+            com.example.util.LovyNotificationHelper.showChatNotification(
+                context = appCtx,
+                conversationId = convId,
+                senderName = candidate.name,
+                messageText = greetingText,
+                partnerAvatarHex = candidate.avatarColorHex
+            )
+        } else {
+            com.example.util.LovyNotificationHelper.vibrateSubtle(appCtx)
+        }
     }
 
     fun saveChatFriend(user: User) {
@@ -1704,6 +1717,11 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             getCanonicalConversationId(_uiState.value.myLovyId, user.id)
         }
         val existing = _uiState.value.conversations.find { it.id == convId || it.partnerId == user.id }
+        val currentMsgs = _uiState.value.messagesMap[convId] ?: emptyList()
+        if (existing != null && currentMsgs.isNotEmpty()) {
+            openChat(convId, user.name, user.avatarColorHex)
+            return
+        }
         
         val greetingText = "Halo ${user.name}! Salam kenal dari fitur Teman Sekitar ya 👋"
         val newMsg = ChatMessage(
@@ -1801,6 +1819,23 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
         val partnerId = conv?.partnerId ?: extractPartnerIdFromConvId(conversationId, _uiState.value.myLovyId)
         markConversationAsRead(conversationId, partnerId)
+
+        // Muat pesan dari cache lokal Room jika state di memori masih kosong agar instan
+        if ((_uiState.value.messagesMap[conversationId] ?: emptyList()).isEmpty()) {
+            viewModelScope.launch(Dispatchers.IO) {
+                val cached = localChatRepo.getMessagesForConversation(conversationId)
+                if (cached.isNotEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        _uiState.update { state ->
+                            val current = state.messagesMap[conversationId] ?: emptyList()
+                            if (current.isEmpty()) {
+                                state.copy(messagesMap = state.messagesMap + (conversationId to cached))
+                            } else state
+                        }
+                    }
+                }
+            }
+        }
 
         // Sinkronisasi pesan obrolan 2 arah secara langsung untuk pengguna asli
         if (!_uiState.value.isGuest) {
@@ -1918,6 +1953,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                         }
 
                         val current = _uiState.value.messagesMap[conversationId] ?: emptyList()
+                        val currentIds = current.map { it.id }.toSet()
+                        val newPartnerMsgs = actualChatMsgs.filter { !it.isFromMe && !currentIds.contains(it.id) }
+
                         val msgMap = current.associateBy { it.id }.toMutableMap()
                         for (m in processedMsgs) {
                             msgMap[m.id] = m
@@ -1963,6 +2001,24 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                             ) + _uiState.value.conversations
                         } else {
                             _uiState.value.conversations
+                        }
+
+                        if (newPartnerMsgs.isNotEmpty()) {
+                            val appCtx = getApplication<Application>()
+                            if (isViewing) {
+                                com.example.util.LovyNotificationHelper.vibrateSubtle(appCtx)
+                            } else {
+                                val partnerName = updatedConvs.find { it.id == conversationId }?.partnerName ?: "Teman Lovy"
+                                val latest = newPartnerMsgs.maxByOrNull { it.timestamp }
+                                if (latest != null) {
+                                    com.example.util.LovyNotificationHelper.showChatNotification(
+                                        context = appCtx,
+                                        conversationId = conversationId,
+                                        senderName = partnerName,
+                                        messageText = latest.text
+                                    )
+                                }
+                            }
                         }
 
                         _uiState.update {
@@ -2018,6 +2074,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             timestamp = System.currentTimeMillis(),
             isFromMe = true
         )
+        viewModelScope.launch(Dispatchers.IO) {
+            localChatRepo.saveMessage(newMsg)
+        }
         val updatedMessages = (_uiState.value.messagesMap[convId] ?: emptyList()) + newMsg
         val updatedConversations = if (existing != null) {
             _uiState.value.conversations.map {
@@ -2128,6 +2187,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             )
         }
 
+        com.example.util.LovyNotificationHelper.vibrateSubtle(getApplication())
+
         viewModelScope.launch(Dispatchers.IO) {
             localChatRepo.saveMessage(newMsg)
         }
@@ -2199,6 +2260,18 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     conversations = updatedConvs,
                     messagesMap = it.messagesMap + (conversationId to (curMsgs + replyMsg))
                 )
+            }
+
+            val appCtx = getApplication<Application>()
+            if (_uiState.value.activeChatId != conversationId) {
+                com.example.util.LovyNotificationHelper.showChatNotification(
+                    context = appCtx,
+                    conversationId = conversationId,
+                    senderName = partnerName,
+                    messageText = replyMsg.text
+                )
+            } else {
+                com.example.util.LovyNotificationHelper.vibrateSubtle(appCtx)
             }
 
             // PENTING: Mode Tamu tidak pernah mengirim balasan simulasi ke Supabase
@@ -2605,6 +2678,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                         imageUrl = photoUrl
                     )
 
+                    viewModelScope.launch(Dispatchers.IO) {
+                        localChatRepo.saveMessage(newMsg)
+                    }
+
                     val updatedMessages = (_uiState.value.messagesMap[conversationId] ?: emptyList()) + newMsg
                     val updatedConversations = _uiState.value.conversations.map {
                         if (it.id == conversationId) {
@@ -2694,6 +2771,18 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 )
             }
 
+            val appCtx = getApplication<Application>()
+            if (_uiState.value.activeChatId != conversationId) {
+                com.example.util.LovyNotificationHelper.showChatNotification(
+                    context = appCtx,
+                    conversationId = conversationId,
+                    senderName = partnerName,
+                    messageText = replyMsg.text
+                )
+            } else {
+                com.example.util.LovyNotificationHelper.vibrateSubtle(appCtx)
+            }
+
             // PENTING: Mode Tamu tidak mengirim balasan foto simulasi ke Supabase
         }
     }
@@ -2755,7 +2844,11 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             val partnerId = extractPartnerIdFromConvId(convId, myId)
             if (partnerId.isBlank()) continue
 
-            val sortedMsgs = dtoList.sortedBy { it.createdAt }.map { dto ->
+            // Abaikan sinyal ephemeral mengetik agar tidak muncul sebagai pesan riwayat teks
+            val chatDtos = dtoList.filterNot { it.text.startsWith("__TYPING_") }
+            if (chatDtos.isEmpty()) continue
+
+            val sortedMsgs = chatDtos.sortedBy { it.createdAt }.map { dto ->
                 ChatMessage(
                     id = dto.id,
                     conversationId = convId,
@@ -2774,6 +2867,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             }
 
             val existingMsgs = currentMessages[convId] ?: emptyList()
+            val existingIds = existingMsgs.map { it.id }.toSet()
+            val newIncomingMsgs = sortedMsgs.filter { !it.isFromMe && !existingIds.contains(it.id) }
+
             val msgMap = existingMsgs.associateBy { it.id }.toMutableMap()
             for (m in sortedMsgs) {
                 msgMap[m.id] = m
@@ -2783,8 +2879,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
             val lastMsg = mergedMsgs.lastOrNull() ?: continue
             val existingConvIndex = currentConversations.indexOfFirst { it.id == convId || it.partnerId == partnerId }
+            var resolvedPartnerName: String? = null
             if (existingConvIndex >= 0) {
                 val old = currentConversations[existingConvIndex]
+                resolvedPartnerName = old.partnerName
                 currentConversations[existingConvIndex] = old.copy(
                     id = convId,
                     lastMessage = lastMsg.text,
@@ -2795,8 +2893,32 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             } else {
                 val partnerUser = _uiState.value.nearbyUsers.find { it.id == partnerId } 
                     ?: _uiState.value.chattedFriends.find { it.id == partnerId }
+                resolvedPartnerName = partnerUser?.name
                 if (partnerUser != null) {
                     saveChatFriend(partnerUser)
+                } else {
+                    viewModelScope.launch(Dispatchers.IO) {
+                        val cloudUser = supabaseRepo.fetchNearbyUserById(partnerId)
+                        if (cloudUser != null) {
+                            saveChatFriend(cloudUser)
+                            withContext(Dispatchers.Main) {
+                                _uiState.update { state ->
+                                    val updated = state.conversations.map { c ->
+                                        if (c.partnerId == partnerId) {
+                                            c.copy(
+                                                partnerName = cloudUser.name,
+                                                partnerAvatarUrl = cloudUser.avatarUrl,
+                                                partnerGender = cloudUser.gender,
+                                                partnerAvatarHex = cloudUser.avatarColorHex,
+                                                partnerCity = cloudUser.city
+                                            )
+                                        } else c
+                                    }
+                                    state.copy(conversations = updated)
+                                }
+                            }
+                        }
+                    }
                 }
                 val newConv = ChatConversation(
                     id = convId,
@@ -2816,6 +2938,25 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     partnerCity = partnerUser?.city
                 )
                 currentConversations.add(0, newConv)
+            }
+
+            if (newIncomingMsgs.isNotEmpty()) {
+                val latest = newIncomingMsgs.maxByOrNull { it.timestamp }
+                if (latest != null) {
+                    val appCtx = getApplication<Application>()
+                    val isViewing = _uiState.value.activeChatId == convId
+                    if (isViewing) {
+                        com.example.util.LovyNotificationHelper.vibrateSubtle(appCtx)
+                    } else {
+                        val senderName = resolvedPartnerName ?: "Teman Lovy"
+                        com.example.util.LovyNotificationHelper.showChatNotification(
+                            context = appCtx,
+                            conversationId = convId,
+                            senderName = senderName,
+                            messageText = latest.text
+                        )
+                    }
+                }
             }
         }
 
