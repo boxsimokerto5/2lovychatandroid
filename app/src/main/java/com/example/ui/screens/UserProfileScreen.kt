@@ -22,10 +22,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Female
 import androidx.compose.material.icons.filled.FormatQuote
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Male
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Storage
@@ -501,10 +504,11 @@ fun UserProfileScreen(
 
                     HorizontalDivider(color = NeutralBorder, thickness = 0.6.dp, modifier = Modifier.padding(vertical = 8.dp))
 
+                    val genderLabel = if (userProfile.gender.equals("MALE", ignoreCase = true) || userProfile.gender.equals("Laki-laki", ignoreCase = true)) "Laki-laki" else "Perempuan"
                     ProfileDetailRow(
                         icon = Icons.Default.Wc,
                         label = "Jenis Kelamin & Usia",
-                        value = "${userProfile.gender} • ${userProfile.age} tahun"
+                        value = "$genderLabel • ${userProfile.age} tahun"
                     )
 
                     HorizontalDivider(color = NeutralBorder, thickness = 0.6.dp, modifier = Modifier.padding(vertical = 8.dp))
@@ -725,6 +729,12 @@ fun EditProfileDialog(
     var bio by remember { mutableStateOf(currentProfile.bio) }
     var profilePictureUrl by remember { mutableStateOf(currentProfile.profilePicture ?: "") }
     var city by remember { mutableStateOf(currentProfile.city) }
+    var gender by remember {
+        mutableStateOf(
+            if (currentProfile.gender.equals("MALE", ignoreCase = true) || currentProfile.gender.equals("Laki-laki", ignoreCase = true)) "MALE" else "FEMALE"
+        )
+    }
+    var ageText by remember { mutableStateOf(currentProfile.age.toString()) }
 
     androidx.compose.runtime.LaunchedEffect(currentProfile.profilePicture) {
         if (!currentProfile.profilePicture.isNullOrBlank()) {
@@ -915,6 +925,108 @@ fun EditProfileDialog(
                         .testTag("input_edit_display_name")
                 )
 
+                // Gender Selection (Jenis Kelamin)
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Jenis Kelamin",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = NeutralDark
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        val isMale = gender == "MALE"
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (isMale) EmeraldGreen.copy(alpha = 0.15f) else Color(0xFFF5F5F5),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, if (isMale) EmeraldGreen else Color(0xFFE0E0E0)),
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { gender = "MALE" }
+                                .testTag("btn_select_gender_male")
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Male,
+                                    contentDescription = "Laki-laki",
+                                    tint = if (isMale) EmeraldGreen else NeutralMedium,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Laki-laki",
+                                    fontSize = 13.sp,
+                                    fontWeight = if (isMale) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isMale) EmeraldGreen else NeutralDark
+                                )
+                            }
+                        }
+
+                        val isFemale = gender == "FEMALE"
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (isFemale) EmeraldGreen.copy(alpha = 0.15f) else Color(0xFFF5F5F5),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, if (isFemale) EmeraldGreen else Color(0xFFE0E0E0)),
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { gender = "FEMALE" }
+                                .testTag("btn_select_gender_female")
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Female,
+                                    contentDescription = "Perempuan",
+                                    tint = if (isFemale) EmeraldGreen else NeutralMedium,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Perempuan",
+                                    fontSize = 13.sp,
+                                    fontWeight = if (isFemale) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isFemale) EmeraldGreen else NeutralDark
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Age Input Field (Usia)
+                OutlinedTextField(
+                    value = ageText,
+                    onValueChange = { input ->
+                        if (input.all { it.isDigit() } && input.length <= 3) {
+                            ageText = input
+                        }
+                    },
+                    label = { Text("Usia (Tahun)") },
+                    singleLine = true,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                    ),
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = null,
+                            tint = EmeraldGreen
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("input_edit_age")
+                )
+
                 OutlinedTextField(
                     value = bio,
                     onValueChange = { bio = it },
@@ -1000,11 +1112,14 @@ fun EditProfileDialog(
         confirmButton = {
             Button(
                 onClick = {
+                    val parsedAge = ageText.trim().toIntOrNull()?.coerceIn(12, 120) ?: currentProfile.age
                     val updated = currentProfile.copy(
                         displayName = displayName.trim().ifBlank { currentProfile.displayName },
                         bio = bio.trim(),
                         profilePicture = profilePictureUrl.trim().ifBlank { null },
                         city = city.trim().ifBlank { currentProfile.city },
+                        gender = if (gender.equals("MALE", ignoreCase = true)) "MALE" else "FEMALE",
+                        age = parsedAge,
                         updatedAt = System.currentTimeMillis()
                     )
                     onSave(updated)

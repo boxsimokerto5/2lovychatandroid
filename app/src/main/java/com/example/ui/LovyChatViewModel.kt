@@ -93,7 +93,7 @@ data class LovyChatUiState(
     // Cloudflare R2 State
     val isR2Configured: Boolean = false,
     val r2AccountId: String = "",
-    val r2BucketName: String = "Backend_lovychat_api_token",
+    val r2BucketName: String = "lovychat",
     val r2PublicDomain: String = "",
     val isUploadingPhoto: Boolean = false,
     val uploadProgressText: String? = null,
@@ -2382,12 +2382,17 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                         folder = "moments",
                         fileName = fileName
                     )
-                    uploadedUrl = result.getOrNull()
+                    if (result.isSuccess) {
+                        uploadedUrl = result.getOrNull()
+                    } else {
+                        Log.e("LovyChatViewModel", "Gagal upload gambar momen ke R2: ${result.exceptionOrNull()?.message}")
+                    }
                 }
 
                 postMoment(content, uploadedUrl, locationTag)
                 _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
-                onComplete?.invoke(true)
+                val isSuccess = !uploadedUrl.isNullOrBlank()
+                onComplete?.invoke(isSuccess)
             } catch (e: Exception) {
                 Log.e("LovyChatViewModel", "Error posting moment with photo", e)
                 // Fallback to text moment if image upload fails

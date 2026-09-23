@@ -71,10 +71,10 @@ object R2StorageClient {
 
     fun getBucketName(): String {
         val stored = sharedPrefs?.getString(PREF_BUCKET_NAME, null)?.takeIf { it.isNotBlank() }
-        if (stored != null) return stored
+        if (stored != null && stored != "Backend_lovychat_api_token") return stored
         val build = BuildConfig.R2_BUCKET_NAME
-        if (build.isNotBlank() && !build.startsWith("default_")) return build
-        return "Backend_lovychat_api_token"
+        if (build.isNotBlank() && !build.startsWith("default_") && build != "Backend_lovychat_api_token") return build
+        return "lovychat"
     }
 
     fun getPublicDomain(): String {
@@ -107,11 +107,12 @@ object R2StorageClient {
         publicDomain: String
     ) {
         init(context)
+        val validBucket = if (bucketName.isBlank() || bucketName == "Backend_lovychat_api_token") "lovychat" else bucketName.trim()
         sharedPrefs?.edit()?.apply {
             putString(PREF_ACCOUNT_ID, accountId.trim())
             putString(PREF_ACCESS_KEY, accessKeyId.trim())
             putString(PREF_SECRET_KEY, secretAccessKey.trim())
-            putString(PREF_BUCKET_NAME, bucketName.trim())
+            putString(PREF_BUCKET_NAME, validBucket)
             putString(PREF_PUBLIC_DOMAIN, publicDomain.trim())
             apply()
         }
