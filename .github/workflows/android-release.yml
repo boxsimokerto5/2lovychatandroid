@@ -36,17 +36,42 @@ jobs:
           fi
 
       - name: Prepare Environment File (.env)
+        env:
+          SEC_SUPABASE_URL: ${{ secrets.SUPABASE_URL || vars.SUPABASE_URL }}
+          SEC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || vars.SUPABASE_ANON_KEY }}
+          SEC_R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID || vars.R2_ACCOUNT_ID }}
+          SEC_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID || vars.R2_ACCESS_KEY_ID }}
+          SEC_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY || vars.R2_SECRET_ACCESS_KEY }}
+          SEC_R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME }}
+          SEC_R2_PUBLIC_DOMAIN: ${{ secrets.R2_PUBLIC_DOMAIN || vars.R2_PUBLIC_DOMAIN }}
         run: |
-          cat << 'EOF' > .env
-          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
-          R2_ACCOUNT_ID=${{ secrets.R2_ACCOUNT_ID }}
-          R2_ACCESS_KEY_ID=${{ secrets.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY=${{ secrets.R2_SECRET_ACCESS_KEY }}
-          R2_BUCKET_NAME=${{ secrets.R2_BUCKET_NAME }}
-          R2_PUBLIC_DOMAIN=${{ secrets.R2_PUBLIC_DOMAIN }}
-          EOF
-          echo "Environment file (.env) prepared from GitHub secrets."
+          cp .env.example .env
+
+          if [ -n "$SEC_SUPABASE_URL" ]; then
+            sed -i "s|^SUPABASE_URL=.*|SUPABASE_URL=$SEC_SUPABASE_URL|" .env
+          fi
+          if [ -n "$SEC_SUPABASE_ANON_KEY" ]; then
+            sed -i "s|^SUPABASE_ANON_KEY=.*|SUPABASE_ANON_KEY=$SEC_SUPABASE_ANON_KEY|" .env
+          fi
+          if [ -n "$SEC_R2_ACCOUNT_ID" ]; then
+            sed -i "s|^R2_ACCOUNT_ID=.*|R2_ACCOUNT_ID=$SEC_R2_ACCOUNT_ID|" .env
+          fi
+          if [ -n "$SEC_R2_ACCESS_KEY_ID" ]; then
+            sed -i "s|^R2_ACCESS_KEY_ID=.*|R2_ACCESS_KEY_ID=$SEC_R2_ACCESS_KEY_ID|" .env
+          fi
+          if [ -n "$SEC_R2_SECRET_ACCESS_KEY" ]; then
+            sed -i "s|^R2_SECRET_ACCESS_KEY=.*|R2_SECRET_ACCESS_KEY=$SEC_R2_SECRET_ACCESS_KEY|" .env
+          fi
+          if [ -n "$SEC_R2_BUCKET_NAME" ]; then
+            sed -i "s|^R2_BUCKET_NAME=.*|R2_BUCKET_NAME=$SEC_R2_BUCKET_NAME|" .env
+          fi
+          if [ -n "$SEC_R2_PUBLIC_DOMAIN" ]; then
+            sed -i "s|^R2_PUBLIC_DOMAIN=.*|R2_PUBLIC_DOMAIN=$SEC_R2_PUBLIC_DOMAIN|" .env
+          fi
+
+          # Ensure no key is left empty to prevent Java 'String KEY = ;' syntax error
+          sed -i 's/=\s*$/="default"/' .env
+          echo "Environment file (.env) prepared safely."
 
       - name: Build Release Bundle (AAB for Play Store)
         run: gradle :app:bundleRelease -x lint
