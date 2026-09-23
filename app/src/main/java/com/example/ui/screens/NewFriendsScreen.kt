@@ -121,20 +121,6 @@ fun NewFriendsScreen(
                         )
                     }
                 },
-                actions = {
-                    if (onSimulateIncomingChat != null) {
-                        IconButton(
-                            onClick = onSimulateIncomingChat,
-                            modifier = Modifier.testTag("btn_simulate_incoming_chat")
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.AddComment,
-                                contentDescription = "Simulasi Chat Masuk",
-                                tint = Color.White
-                            )
-                        }
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = EmeraldGreen)
             )
         },

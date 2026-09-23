@@ -60,6 +60,10 @@ fun IronSourceBannerView(
 
     androidx.compose.runtime.LaunchedEffect(activity, retryTrigger) {
         if (!isLoaded) {
+            bannerLayout?.let {
+                AdManager.destroyBanner(it)
+                bannerLayout = null
+            }
             val banner = AdManager.createBanner(
                 activity = activity,
                 onBannerLoaded = {
@@ -71,7 +75,7 @@ fun IronSourceBannerView(
                 }
             )
             bannerLayout = banner
-            // Jika dalam 10 detik belum load, coba request ulang
+            // Jika dalam 10 detik belum load, coba request ulang secara bersih
             kotlinx.coroutines.delay(10000L)
             if (!isLoaded) {
                 retryTrigger++

@@ -91,7 +91,7 @@ fun LoginScreen(
     onPerformLogin: suspend (username: String, password: String) -> com.example.data.AuthResult,
     onPerformRegister: suspend (username: String, password: String, gender: com.example.model.Gender) -> com.example.data.AuthResult,
     onPerformGoogleLogin: suspend (googleUser: com.example.util.GoogleAuthHelper.GoogleUserResult) -> com.example.data.AuthResult,
-    onGuestLogin: () -> Unit,
+    onGuestLogin: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var usernameInput by remember { mutableStateOf("") }
@@ -597,26 +597,7 @@ fun LoginScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    // Quick Guest / Explore Button
-                    OutlinedButton(
-                        onClick = onGuestLogin,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = EmeraldGreen),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(38.dp)
-                            .testTag("btn_guest_login")
-                    ) {
-                        Text(
-                            text = com.example.util.AppStrings.btnGuest(language),
-                            fontSize = 12.5.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
 
                     // Toggle Login / Sign Up
                     Row(

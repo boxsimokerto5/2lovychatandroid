@@ -75,8 +75,7 @@ fun MainAppScreen(
                 onLanguageChange = { viewModel.setLanguage(it) },
                 onPerformLogin = { username, password -> viewModel.performLogin(username, password) },
                 onPerformRegister = { username, password, gender -> viewModel.performRegister(username, password, gender) },
-                onPerformGoogleLogin = { googleUser -> viewModel.performGoogleLogin(googleUser) },
-                onGuestLogin = { viewModel.loginAsGuest() }
+                onPerformGoogleLogin = { googleUser -> viewModel.performGoogleLogin(googleUser) }
             )
         }
         is CurrentScreen.Nearby -> {
@@ -277,11 +276,10 @@ fun MainAppScreen(
                 onAcceptFriend = { user -> viewModel.acceptNewFriend(user) },
                 onIgnoreFriend = { userId -> viewModel.ignoreNewFriend(userId) },
                 onOpenChat = { user ->
-                    val convId = if (uiState.isGuest) "conv_${user.id}" else viewModel.getCanonicalConversationId(uiState.myLovyId, user.id)
+                    val convId = viewModel.getCanonicalConversationId(uiState.myLovyId, user.id)
                     viewModel.openChat(convId, user.name, user.avatarColorHex)
                 },
-                onNavigateToNearby = { viewModel.navigateTo(CurrentScreen.Nearby) },
-                onSimulateIncomingChat = { viewModel.simulateIncomingChatFromNewUser() }
+                onNavigateToNearby = { viewModel.navigateTo(CurrentScreen.Nearby) }
             )
         }
         is CurrentScreen.Main -> {
@@ -319,14 +317,8 @@ fun MainAppScreen(
                             }
                         )
                         1 -> {
-                            val friendsList = remember(uiState.isGuest, uiState.chattedFriends, uiState.nearbyUsers, uiState.conversations) {
-                                val baseList = if (uiState.isGuest) {
-                                    // Mode Tamu: Tampilkan daftar kontak teman resmi yang sudah ditambahkan
-                                    uiState.chattedFriends
-                                } else {
-                                    // Mode Asli: HANYA tampilkan kontak nyata yang pernah diajak mengobrol atau berteman (tanpa user dummy)
-                                    uiState.chattedFriends.filterNot { viewModel.isDummyFriend(it.id, it.name) }
-                                }
+                            val friendsList = remember(uiState.chattedFriends, uiState.nearbyUsers, uiState.conversations) {
+                                val baseList = uiState.chattedFriends.filterNot { viewModel.isDummyFriend(it.id, it.name) }
                                 // Sinkronkan status online terkini dari radar pengguna sekitar dan obrolan
                                 val onlineIds = uiState.nearbyUsers.filter { it.isOnline }.map { it.id }.toSet()
                                 val onlinePartnerIds = uiState.conversations.filter { it.isOnline }.map { it.partnerId }.toSet()

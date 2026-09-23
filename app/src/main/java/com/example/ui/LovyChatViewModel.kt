@@ -3,7 +3,6 @@ package com.example.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.data.MockDataSource
 import com.example.data.local.AppDatabase
 import com.example.data.local.ChatFriendEntity
 import com.example.data.local.UserProfileRepository
@@ -49,7 +48,7 @@ data class LovyChatUiState(
     val isLoggedIn: Boolean = false,
     val isGuest: Boolean = false,
     val userProfile: UserProfile = UserProfile(),
-    val nearbyUsers: List<User> = MockDataSource.initialNearbyUsers,
+    val nearbyUsers: List<User> = emptyList(),
     val chattedFriends: List<User> = emptyList(),
     val newFriendRequests: List<com.example.model.NewFriendRequest> = emptyList(),
     val ignoredNewFriendIds: Set<String> = emptySet(),
@@ -57,15 +56,15 @@ data class LovyChatUiState(
     val nearbyGenderFilter: Gender? = null,
     val nearbyOnlyOnlineFilter: Boolean = false,
     val isScanningNearby: Boolean = false,
-    val conversations: List<ChatConversation> = MockDataSource.initialConversations,
-    val messagesMap: Map<String, List<ChatMessage>> = MockDataSource.initialMessages,
-    val oceanBottles: List<BottleMessage> = MockDataSource.oceanBottles,
+    val conversations: List<ChatConversation> = emptyList(),
+    val messagesMap: Map<String, List<ChatMessage>> = emptyMap(),
+    val oceanBottles: List<BottleMessage> = emptyList(),
     val myBottles: List<BottleMessage> = emptyList(),
     val fishedBottles: List<BottleMessage> = emptyList(),
     val fishedBottle: BottleMessage? = null,
     val isFishing: Boolean = false,
-    val moments: List<MomentItem> = MockDataSource.initialMoments,
-    val momentComments: Map<String, List<com.example.model.MomentComment>> = MockDataSource.initialMomentComments,
+    val moments: List<MomentItem> = emptyList(),
+    val momentComments: Map<String, List<com.example.model.MomentComment>> = emptyMap(),
     val activeChatId: String? = null,
     val myName: String = "Pengguna Lovy",
     val myBio: String = "Menjelajahi dunia dan mencari teman baru di Lovy Chat ✨",
@@ -179,24 +178,23 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         // Pulihkan sesi login jika sebelumnya pengguna sudah masuk
         try {
             val savedSession = authRepo.getSavedSession()
-            if (savedSession != null && savedSession.isLoggedIn) {
-                val isGuestUser = savedSession.isGuest
-                if (!isGuestUser) {
-                    clearDummyFriends()
-                }
+            if (savedSession != null && savedSession.isLoggedIn && !savedSession.isGuest) {
+                clearDummyFriends()
                 _uiState.update {
                     it.copy(
                         isLoggedIn = true,
-                        isGuest = isGuestUser,
+                        isGuest = false,
                         myName = savedSession.displayName.ifBlank { savedSession.username },
                         myLovyId = savedSession.lovyId,
-                        conversations = if (isGuestUser) MockDataSource.initialConversations else emptyList(),
-                        messagesMap = if (isGuestUser) MockDataSource.initialMessages else emptyMap(),
-                        oceanBottles = if (isGuestUser) MockDataSource.oceanBottles else emptyList(),
-                        moments = if (isGuestUser) MockDataSource.initialMoments else emptyList(),
-                        nearbyUsers = if (isGuestUser) MockDataSource.initialNearbyUsers else emptyList()
+                        conversations = emptyList(),
+                        messagesMap = emptyMap(),
+                        oceanBottles = emptyList(),
+                        moments = emptyList(),
+                        nearbyUsers = emptyList()
                     )
                 }
+            } else if (savedSession != null && savedSession.isGuest) {
+                authRepo.clearSession()
             }
         } catch (e: Exception) {
             Log.w("LovyChatViewModel", "Gagal memulihkan sesi login: ${e.message}")
@@ -257,7 +255,6 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             if (!conv.lastMessageIsFromMe || conv.unreadCount > 0) {
                 if (!requestsMap.containsKey(partnerId)) {
                     val candidateUser = state.nearbyUsers.find { it.id == partnerId }
-                        ?: MockDataSource.initialNearbyUsers.find { it.id == partnerId }
                         ?: User(
                             id = partnerId,
                             name = conv.partnerName,
@@ -311,93 +308,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun simulateIncomingChatFromNewUser() {
-        val state = _uiState.value
-        val friendIds = state.chattedFriends.map { it.id }.toSet()
-        val pendingIds = state.newFriendRequests.map { it.user.id }.toSet()
-        val candidate = state.nearbyUsers.firstOrNull { it.id !in friendIds && it.id !in pendingIds }
-            ?: MockDataSource.initialNearbyUsers.firstOrNull { it.id !in friendIds && it.id !in pendingIds }
-            ?: return
-
-        val convId = if (state.isGuest) "conv_${candidate.id}" else getCanonicalConversationId(state.myLovyId, candidate.id)
-        val greetings = listOf(
-            "Hai ${state.myName}! Salam kenal ya dari Teman Sekitar, boleh ngobrol bareng? 😊👋",
-            "Halo! Kebetulan lagi santai di sekitar sini nih, senang bisa menemukan profilmu di Lovy Chat ✨",
-            "Hai! Lagi cari temen ngobrol asik gak nih? Sapa balik ya ☕",
-            "Halo salam kenal ya! Boleh kenalan lebih dekat? 🌟"
-        )
-        val greetingText = greetings.random()
-        val now = System.currentTimeMillis()
-        val incomingMsg = ChatMessage(
-            id = java.util.UUID.randomUUID().toString(),
-            conversationId = convId,
-            text = greetingText,
-            timestamp = now,
-            isFromMe = false
-        )
-
-        val existingConv = state.conversations.find { it.id == convId || it.partnerId == candidate.id }
-        val updatedConvs = if (existingConv != null) {
-            state.conversations.map {
-                if (it.id == convId || it.partnerId == candidate.id) {
-                    it.copy(
-                        lastMessage = greetingText,
-                        lastTimestamp = now,
-                        lastMessageIsFromMe = false,
-                        unreadCount = it.unreadCount + 1
-                    )
-                } else it
-            }
-        } else {
-            listOf(
-                ChatConversation(
-                    id = convId,
-                    partnerId = candidate.id,
-                    partnerName = candidate.name,
-                    partnerAvatarHex = candidate.avatarColorHex,
-                    partnerGender = candidate.gender,
-                    lastMessage = greetingText,
-                    lastTimestamp = now,
-                    unreadCount = 1,
-                    isOnline = candidate.isOnline,
-                    partnerAvatarUrl = candidate.avatarUrl,
-                    lastMessageIsFromMe = false,
-                    partnerAge = candidate.age,
-                    partnerDistanceMeters = candidate.distanceMeters,
-                    partnerCity = candidate.city
-                )
-            ) + state.conversations
-        }
-
-        val curMsgs = state.messagesMap[convId] ?: emptyList()
-        val updatedMsgs = state.messagesMap + (convId to (curMsgs + incomingMsg))
-
-        val newReq = com.example.model.NewFriendRequest(
-            id = candidate.id,
-            user = candidate,
-            greetingMessage = greetingText,
-            timestamp = now
-        )
-
-        _uiState.update {
-            it.copy(
-                conversations = updatedConvs,
-                messagesMap = updatedMsgs,
-                newFriendRequests = listOf(newReq) + it.newFriendRequests.filterNot { r -> r.user.id == candidate.id }
-            )
-        }
-
-        val appCtx = getApplication<Application>()
-        if (_uiState.value.activeChatId != convId) {
-            com.example.util.LovyNotificationHelper.showChatNotification(
-                context = appCtx,
-                conversationId = convId,
-                senderName = candidate.name,
-                messageText = greetingText,
-                partnerAvatarHex = candidate.avatarColorHex
-            )
-        } else {
-            com.example.util.LovyNotificationHelper.vibrateSubtle(appCtx)
-        }
+        // Simulasi bot dihapus - hanya obrolan nyata 2 arah dari pengguna asli
     }
 
     fun saveChatFriend(user: User) {
@@ -1076,13 +987,6 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 }
 
                 if (!fetched) {
-                    val currentMoments = _uiState.value.moments
-                    val resolvedMoments = if (currentMoments.isEmpty()) {
-                        MockDataSource.initialMoments
-                    } else {
-                        currentMoments
-                    }
-                    _uiState.update { it.copy(moments = resolvedMoments) }
                     lastMomentsSyncTime = System.currentTimeMillis()
                 }
             } catch (e: Throwable) {
@@ -1324,21 +1228,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun loginAsGuest() {
-        periodicIncomingChatJob?.cancel()
-        _uiState.update {
-            it.copy(
-                isLoggedIn = true,
-                isGuest = true,
-                myName = "Tamu Lovy",
-                currentScreen = CurrentScreen.Main,
-                // Mode Tamu: Memuat percakapan dan pesan simulasi demo lokal (sandbox)
-                conversations = MockDataSource.initialConversations,
-                messagesMap = MockDataSource.initialMessages,
-                oceanBottles = MockDataSource.oceanBottles,
-                moments = MockDataSource.initialMoments,
-                nearbyUsers = MockDataSource.initialNearbyUsers
-            )
-        }
+        // Mode Tamu dihapus
     }
 
     fun logout() {
@@ -1613,43 +1503,15 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
             delay(600)
 
-            if (!_uiState.value.isGuest) {
-                // Mode Pengguna Asli: HANYA gunakan pengguna nyata dari Supabase
-                val remoteUsers = if (!isCacheValid || forceRefresh) supabaseRepo.fetchNearbyUsers() else _uiState.value.nearbyUsers
-                lastNearbyScanTime = System.currentTimeMillis()
-                val myId = _uiState.value.myLovyId
-                val filtered = (remoteUsers ?: emptyList())
-                    .filterNot { it.id == myId || it.id == "current_user" }
-                    .filterNot { isUserBlocked(it.id, it.name) }
-                    .shuffled() // Diacak agar penemuan teman dalam jangkauan terasa dinamis (misal 400m, 1km, 200m)
-                _uiState.update { it.copy(isScanningNearby = false, nearbyUsers = filtered) }
-            } else {
-                // Mode Tamu: Gunakan data demo simulasi (MockDataSource)
-                val currentLoc = _uiState.value.currentGpsLocation
-                val detectedCity = currentLoc?.cityName?.takeIf { it.isNotBlank() }
-                val sourceList = if (_uiState.value.nearbyUsers.isNotEmpty()) _uiState.value.nearbyUsers else MockDataSource.initialNearbyUsers
-                val updated = sourceList
-                    .filterNot { isUserBlocked(it.id, it.name) }
-                    .mapIndexed { index, user ->
-                    val calculatedDistance = if (currentLoc != null) {
-                        // Hitung jarak dinamis berbasis koordinat GPS nyata pengguna
-                        val targetLat = currentLoc.latitude + (index * 0.0018) + ((-5..5).random() * 0.0002)
-                        val targetLon = currentLoc.longitude + (index * 0.0015) + ((-5..5).random() * 0.0002)
-                        com.example.util.AndroidGpsTracker.calculateDistanceMeters(
-                            currentLoc.latitude,
-                            currentLoc.longitude,
-                            targetLat,
-                            targetLon
-                        ).coerceAtLeast(35)
-                    } else {
-                        val variation = (-20..30).random()
-                        (user.distanceMeters + variation).coerceAtLeast(40)
-                    }
-                    val userCity = if (detectedCity != null) detectedCity else user.city
-                    user.copy(distanceMeters = calculatedDistance, city = userCity)
-                }.shuffled() // Diacak posisinya dalam radius (400m, 1.2km, 200m, dst)
-                _uiState.update { it.copy(isScanningNearby = false, nearbyUsers = updated) }
-            }
+            // HANYA gunakan pengguna nyata dari Supabase
+            val remoteUsers = if (!isCacheValid || forceRefresh) supabaseRepo.fetchNearbyUsers() else _uiState.value.nearbyUsers
+            lastNearbyScanTime = System.currentTimeMillis()
+            val myId = _uiState.value.myLovyId
+            val filtered = (remoteUsers ?: emptyList())
+                .filterNot { it.id == myId || it.id == "current_user" }
+                .filterNot { isUserBlocked(it.id, it.name) }
+                .filterNot { isDummyFriend(it.id, it.name) }
+            _uiState.update { it.copy(isScanningNearby = false, nearbyUsers = filtered) }
         }
     }
 
@@ -1711,11 +1573,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         recordFeatureClick()
         saveChatFriend(user)
         updateUserActivity()
-        val convId = if (_uiState.value.isGuest) {
-            "conv_${user.id}"
-        } else {
-            getCanonicalConversationId(_uiState.value.myLovyId, user.id)
-        }
+        val convId = getCanonicalConversationId(_uiState.value.myLovyId, user.id)
         val existing = _uiState.value.conversations.find { it.id == convId || it.partnerId == user.id }
         val currentMsgs = _uiState.value.messagesMap[convId] ?: emptyList()
         if (existing != null && currentMsgs.isNotEmpty()) {
@@ -1768,18 +1626,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             )
         }
 
-        if (_uiState.value.isGuest) {
-            // Mode Tamu: Tidak pernah kirim ke Supabase, gunakan auto reply lokal
-            scheduleAutoReply(convId, user.name)
-        } else {
-            // Mode Pengguna Asli: Kirim ke Supabase dengan sender_id dan receiver_id
-            viewModelScope.launch {
-                supabaseRepo.sendChatMessage(
-                    message = newMsg,
-                    senderId = _uiState.value.myLovyId,
-                    receiverId = user.id
-                )
-            }
+        // Kirim ke Supabase dengan sender_id dan receiver_id asli
+        viewModelScope.launch {
+            supabaseRepo.sendChatMessage(
+                message = newMsg,
+                senderId = _uiState.value.myLovyId,
+                receiverId = user.id
+            )
         }
 
         // Open chat directly
@@ -2060,11 +1913,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         saveChatFriend(friendUser)
         updateUserActivity()
 
-        val convId = if (_uiState.value.isGuest) {
-            "conv_${bottle.senderId}"
-        } else {
-            getCanonicalConversationId(_uiState.value.myLovyId, bottle.senderId)
-        }
+        val convId = getCanonicalConversationId(_uiState.value.myLovyId, bottle.senderId)
         val existing = _uiState.value.conversations.find { it.id == convId || it.partnerId == bottle.senderId }
         val greetingText = "Halo ${bottle.senderName}! Aku menemukan pesan botolmu: \"${bottle.content.take(30)}...\" 🍾🌊"
         val newMsg = ChatMessage(
@@ -2107,16 +1956,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             )
         }
 
-        if (_uiState.value.isGuest) {
-            scheduleAutoReply(convId, bottle.senderName)
-        } else {
-            viewModelScope.launch {
-                supabaseRepo.sendChatMessage(
-                    message = newMsg,
-                    senderId = _uiState.value.myLovyId,
-                    receiverId = bottle.senderId
-                )
-            }
+        // Kirim langsung ke Supabase untuk pesan balasan botol
+        viewModelScope.launch {
+            supabaseRepo.sendChatMessage(
+                message = newMsg,
+                senderId = _uiState.value.myLovyId,
+                receiverId = bottle.senderId
+            )
         }
 
         openChat(convId, bottle.senderName, bottle.avatarHex)
@@ -2193,88 +2039,16 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             localChatRepo.saveMessage(newMsg)
         }
 
-        if (_uiState.value.isGuest) {
-            // Mode Tamu: HANYA lokal, JANGAN pernah kirim ke Supabase!
-            // Mesin generator jawab otomatis hanya melayani mode tamu untuk simulasi interaktif
-            scheduleAutoReply(conversationId, partnerName)
-        } else {
-            // Mode Pengguna Asli: Sinkronisasi ke Supabase untuk obrolan 2 arah
-            val conv = _uiState.value.conversations.find { it.id == conversationId }
-            val partnerId = conv?.partnerId ?: extractPartnerIdFromConvId(conversationId, _uiState.value.myLovyId)
-            onUserTyping(conversationId, partnerId, false)
-            viewModelScope.launch {
-                supabaseRepo.sendChatMessage(
-                    message = newMsg,
-                    senderId = _uiState.value.myLovyId,
-                    receiverId = partnerId
-                )
-            }
-        }
-    }
-
-    private fun scheduleAutoReply(conversationId: String, partnerName: String) {
-        // Hanya aktif untuk Mode Tamu
-        if (!_uiState.value.isGuest) return
-
+        // Sinkronisasi ke Supabase untuk obrolan 2 arah nyata
+        val conv = _uiState.value.conversations.find { it.id == conversationId }
+        val partnerId = conv?.partnerId ?: extractPartnerIdFromConvId(conversationId, _uiState.value.myLovyId)
+        onUserTyping(conversationId, partnerId, false)
         viewModelScope.launch {
-            delay(1200)
-            if (isUserBlocked(userName = partnerName)) return@launch
-            // Tandai pesan terkirim sebagai telah dibaca oleh teman bicara (centang 2 menyala biru!)
-            markSentMessagesAsReadLocal(conversationId)
-            delay(400)
-            // Tampilkan animasi indikator mengetik yang hidup & realistis
-            setPartnerTyping(conversationId, true)
-            delay(2200)
-            setPartnerTyping(conversationId, false)
-            if (isUserBlocked(userName = partnerName)) return@launch
-            val replyTexts = listOf(
-                "Halo! Senang bisa terhubung denganmu di Lovy Chat 😊",
-                "Salam kenal juga ya! Kamu lagi ada kegiatan apa hari ini?",
-                "Wah asyik! Semoga harimu menyenangkan dan ceria selalu ya!",
-                "Halo! Baru buka Lovy Chat nih, makasih udah menyapa ya 🙏",
-                "Keren banget! Senang berkenalan denganmu!"
+            supabaseRepo.sendChatMessage(
+                message = newMsg,
+                senderId = _uiState.value.myLovyId,
+                receiverId = partnerId
             )
-            val replyMsg = ChatMessage(
-                id = UUID.randomUUID().toString(),
-                conversationId = conversationId,
-                text = replyTexts.random(),
-                timestamp = System.currentTimeMillis(),
-                isFromMe = false
-            )
-
-            val curMsgs = _uiState.value.messagesMap[conversationId] ?: emptyList()
-            val updatedConvs = _uiState.value.conversations.map {
-                if (it.id == conversationId) {
-                    it.copy(
-                        lastMessage = replyMsg.text,
-                        lastTimestamp = replyMsg.timestamp,
-                        unreadCount = if (_uiState.value.activeChatId == conversationId) 0 else it.unreadCount + 1,
-                        lastMessageIsFromMe = false,
-                        lastMessageIsRead = false
-                    )
-                } else it
-            }
-
-            _uiState.update {
-                it.copy(
-                    conversations = updatedConvs,
-                    messagesMap = it.messagesMap + (conversationId to (curMsgs + replyMsg))
-                )
-            }
-
-            val appCtx = getApplication<Application>()
-            if (_uiState.value.activeChatId != conversationId) {
-                com.example.util.LovyNotificationHelper.showChatNotification(
-                    context = appCtx,
-                    conversationId = conversationId,
-                    senderName = partnerName,
-                    messageText = replyMsg.text
-                )
-            } else {
-                com.example.util.LovyNotificationHelper.vibrateSubtle(appCtx)
-            }
-
-            // PENTING: Mode Tamu tidak pernah mengirim balasan simulasi ke Supabase
         }
     }
 
@@ -2337,7 +2111,6 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             val chosen = when {
                 unfished.isNotEmpty() -> unfished.random()
                 allOcean.isNotEmpty() -> allOcean.random()
-                _uiState.value.isGuest -> MockDataSource.oceanBottles.first()
                 else -> null
             }
 
@@ -2703,19 +2476,14 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                         )
                     }
 
-                    if (_uiState.value.isGuest) {
-                        // Mode Tamu: auto-reply lokal untuk foto
-                        schedulePhotoAutoReply(conversationId, partnerName)
-                    } else {
-                        // Mode Pengguna Asli: Sinkronisasi ke Supabase
-                        val conv = _uiState.value.conversations.find { it.id == conversationId }
-                        val partnerId = conv?.partnerId ?: extractPartnerIdFromConvId(conversationId, _uiState.value.myLovyId)
-                        supabaseRepo.sendChatMessage(
-                            message = newMsg,
-                            senderId = _uiState.value.myLovyId,
-                            receiverId = partnerId
-                        )
-                    }
+                    // Sinkronisasi ke Supabase untuk pesan foto
+                    val conv = _uiState.value.conversations.find { it.id == conversationId }
+                    val partnerId = conv?.partnerId ?: extractPartnerIdFromConvId(conversationId, _uiState.value.myLovyId)
+                    supabaseRepo.sendChatMessage(
+                        message = newMsg,
+                        senderId = _uiState.value.myLovyId,
+                        receiverId = partnerId
+                    )
                 } else {
                     _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
                 }
@@ -2723,67 +2491,6 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 Log.e("LovyChatViewModel", "Error sending photo message", e)
                 _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
             }
-        }
-    }
-
-    private fun schedulePhotoAutoReply(conversationId: String, partnerName: String) {
-        // Hanya aktif untuk Mode Tamu
-        if (!_uiState.value.isGuest) return
-
-        viewModelScope.launch {
-            delay(1200)
-            if (isUserBlocked(userName = partnerName)) return@launch
-            // Tandai pesan foto saya sebagai telah dibaca (centang 2 biru menyala!)
-            markSentMessagesAsReadLocal(conversationId)
-            delay(1300)
-            val photoReplies = listOf(
-                "Wah fotonya bagus banget! 😍📸",
-                "Keren banget fotonya! Suka deh liatnya ✨",
-                "Makasih udah berbagi fotonya ya! Bagus banget! 😊",
-                "Wah menarik banget! Diambil di mana tuh fotonya? 🌸",
-                "Foto yang cantik! Senang ngobrol sama kamu 👍"
-            )
-            val replyMsg = ChatMessage(
-                id = UUID.randomUUID().toString(),
-                conversationId = conversationId,
-                text = photoReplies.random(),
-                timestamp = System.currentTimeMillis(),
-                isFromMe = false
-            )
-
-            val curMsgs = _uiState.value.messagesMap[conversationId] ?: emptyList()
-            val updatedConvs = _uiState.value.conversations.map {
-                if (it.id == conversationId) {
-                    it.copy(
-                        lastMessage = replyMsg.text,
-                        lastTimestamp = replyMsg.timestamp,
-                        unreadCount = if (_uiState.value.activeChatId == conversationId) 0 else it.unreadCount + 1,
-                        lastMessageIsFromMe = false,
-                        lastMessageIsRead = false
-                    )
-                } else it
-            }
-
-            _uiState.update {
-                it.copy(
-                    conversations = updatedConvs,
-                    messagesMap = it.messagesMap + (conversationId to (curMsgs + replyMsg))
-                )
-            }
-
-            val appCtx = getApplication<Application>()
-            if (_uiState.value.activeChatId != conversationId) {
-                com.example.util.LovyNotificationHelper.showChatNotification(
-                    context = appCtx,
-                    conversationId = conversationId,
-                    senderName = partnerName,
-                    messageText = replyMsg.text
-                )
-            } else {
-                com.example.util.LovyNotificationHelper.vibrateSubtle(appCtx)
-            }
-
-            // PENTING: Mode Tamu tidak mengirim balasan foto simulasi ke Supabase
         }
     }
 

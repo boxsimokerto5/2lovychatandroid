@@ -181,21 +181,6 @@ fun ProfileTabScreen(
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
-                        if (isGuest) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Surface(
-                                color = Color.White.copy(alpha = 0.25f),
-                                shape = RoundedCornerShape(10.dp)
-                            ) {
-                                Text(
-                                    text = "Mode Tamu (Lokal)",
-                                    fontSize = 10.5.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color.White,
-                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
                     }
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
