@@ -139,6 +139,46 @@ fun NearbyScreen(
     var selectedUserForProfile by remember { mutableStateOf<User?>(null) }
     var viewingAvatarPhoto by remember { mutableStateOf<Pair<String, String>?>(null) }
 
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val fineGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+        val coarseGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+        val granted = fineGranted || coarseGranted
+        onPermissionResult(granted)
+        if (granted) {
+            onRefreshScan()
+        }
+    }
+
+    val isPermissionGrantedInitially = remember {
+        val fineCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+        val coarseCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
+        fineCheck == PackageManager.PERMISSION_GRANTED || coarseCheck == PackageManager.PERMISSION_GRANTED
+    }
+
+    var showLocationDisclosure by remember {
+        mutableStateOf(!hasLocationPermission && !isPermissionGrantedInitially)
+    }
+
+    if (showLocationDisclosure) {
+        com.example.ui.components.PermissionDisclosureDialog(
+            type = com.example.ui.components.DisclosureType.LOCATION,
+            onConfirm = {
+                showLocationDisclosure = false
+                locationPermissionLauncher.launch(
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    )
+                )
+            },
+            onDismiss = {
+                showLocationDisclosure = false
+            }
+        )
+    }
+
     LaunchedEffect(Unit) {
         val fineCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
         val coarseCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -260,7 +300,15 @@ fun NearbyScreen(
                 color = Color(0xFFF1F8E9),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onRefreshScan() }
+                    .clickable {
+                        val fineCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+                        val coarseCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
+                        if (fineCheck != PackageManager.PERMISSION_GRANTED && coarseCheck != PackageManager.PERMISSION_GRANTED) {
+                            showLocationDisclosure = true
+                        } else {
+                            onRefreshScan()
+                        }
+                    }
                     .testTag("bar_nearby_current_gps")
             ) {
                 Row(

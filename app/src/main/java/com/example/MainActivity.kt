@@ -42,9 +42,6 @@ class MainActivity : ComponentActivity() {
     // Inisialisasi channel notifikasi lengkap dengan getar & suara
     com.example.util.LovyNotificationHelper.createNotificationChannel(this)
 
-    // Minta izin notifikasi untuk Android 13+ (API 33+)
-    checkAndRequestNotificationPermission()
-
     // Cek jika intent berasal dari notifikasi push chat
     handleNotificationIntent(intent)
 

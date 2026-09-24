@@ -147,10 +147,19 @@ fun QrCodeScannerDialog(
         }
     }
 
-    LaunchedEffect(Unit) {
-        if (!hasCameraPermission) {
-            permissionLauncher.launch(Manifest.permission.CAMERA)
-        }
+    var showCameraDisclosure by remember { mutableStateOf(!hasCameraPermission) }
+
+    if (showCameraDisclosure && !hasCameraPermission) {
+        PermissionDisclosureDialog(
+            type = DisclosureType.CAMERA,
+            onConfirm = {
+                showCameraDisclosure = false
+                permissionLauncher.launch(Manifest.permission.CAMERA)
+            },
+            onDismiss = {
+                showCameraDisclosure = false
+            }
+        )
     }
 
     var camera by remember { mutableStateOf<Camera?>(null) }
@@ -354,7 +363,7 @@ fun QrCodeScannerDialog(
                             Spacer(modifier = Modifier.height(20.dp))
 
                             Button(
-                                onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) },
+                                onClick = { showCameraDisclosure = true },
                                 colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier

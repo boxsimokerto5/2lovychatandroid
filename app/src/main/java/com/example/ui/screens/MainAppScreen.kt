@@ -1,6 +1,12 @@
 package com.example.ui.screens
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,24 +31,31 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.R
 import com.example.model.User
 import com.example.ui.CurrentScreen
 import com.example.ui.LovyChatViewModel
+import com.example.ui.components.DisclosureType
 import com.example.ui.components.IronSourceBannerView
+import com.example.ui.components.PermissionDisclosureDialog
 import com.example.ui.theme.EmeraldGreen
 import com.example.ui.theme.NeutralBorder
 import com.example.ui.theme.NeutralMedium
@@ -52,7 +65,54 @@ fun MainAppScreen(
     viewModel: LovyChatViewModel,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // Launcher izin notifikasi dengan alur deklarasi terkemuka
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        android.util.Log.d("MainAppScreen", "POST_NOTIFICATIONS granted: $granted")
+    }
+
+    var showNotificationDisclosure by remember { mutableStateOf(false) }
+
+    LaunchedEffect(uiState.currentScreen) {
+        if (uiState.currentScreen is CurrentScreen.Main && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val isGranted = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+            val prefs = context.getSharedPreferences("lovy_prefs", Context.MODE_PRIVATE)
+            val hasSeenDisclosure = prefs.getBoolean("seen_notif_disclosure", false)
+            if (!isGranted && !hasSeenDisclosure) {
+                showNotificationDisclosure = true
+            }
+        }
+    }
+
+    if (showNotificationDisclosure) {
+        PermissionDisclosureDialog(
+            type = DisclosureType.NOTIFICATION,
+            onConfirm = {
+                showNotificationDisclosure = false
+                context.getSharedPreferences("lovy_prefs", Context.MODE_PRIVATE)
+                    .edit()
+                    .putBoolean("seen_notif_disclosure", true)
+                    .apply()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            },
+            onDismiss = {
+                showNotificationDisclosure = false
+                context.getSharedPreferences("lovy_prefs", Context.MODE_PRIVATE)
+                    .edit()
+                    .putBoolean("seen_notif_disclosure", true)
+                    .apply()
+            }
+        )
+    }
 
     // Handle back button when on child screens
     BackHandler(enabled = uiState.currentScreen !is CurrentScreen.Main && uiState.currentScreen !is CurrentScreen.Login && uiState.currentScreen !is CurrentScreen.Splash) {

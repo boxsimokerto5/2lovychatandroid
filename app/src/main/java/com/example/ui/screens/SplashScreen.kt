@@ -57,28 +57,11 @@ fun SplashScreen(
     val alpha = remember { Animatable(0f) }
     val pulse = remember { Animatable(1f) }
 
-    // Launcher izin lokasi saat pertama kali aplikasi dibuka
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val fineGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
-        val coarseGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
-        onPermissionResult(fineGranted || coarseGranted)
-    }
-
     LaunchedEffect(Unit) {
         val fineCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
         val coarseCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
         if (fineCheck == PackageManager.PERMISSION_GRANTED || coarseCheck == PackageManager.PERMISSION_GRANTED) {
             onPermissionResult(true)
-        } else {
-            // Minta izin lokasi otomatis saat baru membuka aplikasi
-            permissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
         }
     }
 

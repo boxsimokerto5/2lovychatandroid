@@ -140,6 +140,26 @@ fun UserProfileScreen(
         }
     }
 
+    var showLocationDisclosure by remember { mutableStateOf(false) }
+
+    if (showLocationDisclosure) {
+        com.example.ui.components.PermissionDisclosureDialog(
+            type = com.example.ui.components.DisclosureType.LOCATION,
+            onConfirm = {
+                showLocationDisclosure = false
+                locationPermissionLauncher.launch(
+                    arrayOf(
+                        android.Manifest.permission.ACCESS_FINE_LOCATION,
+                        android.Manifest.permission.ACCESS_COARSE_LOCATION
+                    )
+                )
+            },
+            onDismiss = {
+                showLocationDisclosure = false
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -509,12 +529,7 @@ fun UserProfileScreen(
                         IconButton(
                             onClick = {
                                 if (!hasLocationPermission) {
-                                    locationPermissionLauncher.launch(
-                                        arrayOf(
-                                            android.Manifest.permission.ACCESS_FINE_LOCATION,
-                                            android.Manifest.permission.ACCESS_COARSE_LOCATION
-                                        )
-                                    )
+                                    showLocationDisclosure = true
                                 } else {
                                     onRefreshLocation?.invoke()
                                 }

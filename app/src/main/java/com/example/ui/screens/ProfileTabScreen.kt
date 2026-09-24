@@ -728,6 +728,21 @@ fun PrivacyLocationDialog(
         }
     }
 
+    var showLocationDisclosure by remember { mutableStateOf(false) }
+
+    if (showLocationDisclosure) {
+        com.example.ui.components.PermissionDisclosureDialog(
+            type = com.example.ui.components.DisclosureType.LOCATION,
+            onConfirm = {
+                showLocationDisclosure = false
+                permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            },
+            onDismiss = {
+                showLocationDisclosure = false
+            }
+        )
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -936,7 +951,7 @@ fun PrivacyLocationDialog(
                             Spacer(modifier = Modifier.height(8.dp))
                             Button(
                                 onClick = {
-                                    permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                                    showLocationDisclosure = true
                                 },
                                 shape = RoundedCornerShape(8.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
