@@ -69,6 +69,7 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -116,6 +117,7 @@ fun UserProfileScreen(
 ) {
     var showEditDialog by remember { mutableStateOf(false) }
     var showPhotoOptionsDialog by remember { mutableStateOf(false) }
+    var showMyQrCodeDialog by remember { mutableStateOf(false) }
     var viewingPhotoUrl by remember { mutableStateOf<String?>(null) }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -162,6 +164,16 @@ fun UserProfileScreen(
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = { showMyQrCodeDialog = true },
+                        modifier = Modifier.testTag("btn_qr_code_top")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.QrCode,
+                            contentDescription = "Kode QR Profil Saya",
+                            tint = Color.White
+                        )
+                    }
                     IconButton(
                         onClick = { showEditDialog = true },
                         modifier = Modifier.testTag("btn_edit_profile_top")
@@ -319,19 +331,34 @@ fun UserProfileScreen(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    // Lovy ID Tag
+                    // Lovy ID Tag - Klik untuk melihat Kode QR
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = NeutralLight,
-                        modifier = Modifier.padding(top = 2.dp)
+                        modifier = Modifier
+                            .padding(top = 2.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { showMyQrCodeDialog = true }
+                            .testTag("tag_lovy_id_click")
                     ) {
-                        Text(
-                            text = "ID: ${userProfile.lovyId}",
-                            fontSize = 12.5.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = NeutralMedium,
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                        )
+                        ) {
+                            Text(
+                                text = "ID: ${userProfile.lovyId}",
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = NeutralMedium
+                            )
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Icon(
+                                imageVector = Icons.Default.QrCode,
+                                contentDescription = "Lihat Kode QR",
+                                tint = EmeraldGreen,
+                                modifier = Modifier.size(15.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -716,6 +743,16 @@ fun UserProfileScreen(
                 onSaveProfile(updatedProfile)
                 showEditDialog = false
             }
+        )
+    }
+
+    // Dialog Kode QR Profil Pengguna (Berisi ID Lovy asli dan scannable)
+    if (showMyQrCodeDialog) {
+        com.example.ui.components.MyQrCodeDialog(
+            name = userProfile.displayName,
+            lovyId = userProfile.lovyId,
+            avatarUrl = userProfile.profilePicture,
+            onDismiss = { showMyQrCodeDialog = false }
         )
     }
 }

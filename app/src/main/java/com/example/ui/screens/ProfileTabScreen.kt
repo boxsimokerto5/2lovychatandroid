@@ -125,6 +125,7 @@ fun ProfileTabScreen(
     var showPrivacyDialog by remember { mutableStateOf(false) }
     var showBlockedUsersDialog by remember { mutableStateOf(false) }
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
+    var showMyQrCodeDialog by remember { mutableStateOf(false) }
     var viewingPhotoUrl by remember { mutableStateOf<String?>(null) }
     var secretDevClickCount by remember { mutableIntStateOf(0) }
     var lastSecretClickTime by remember { mutableLongStateOf(0L) }
@@ -215,12 +216,23 @@ fun ProfileTabScreen(
                     )
                 }
 
-                Icon(
-                    imageVector = Icons.Default.QrCode,
-                    contentDescription = "QR Code",
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
+                // Tombol Kode QR Profil Saya
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.2f))
+                        .clickable { showMyQrCodeDialog = true }
+                        .testTag("btn_my_qr_code")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.QrCode,
+                        contentDescription = "Buka Kode QR Saya",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         }
 
@@ -616,6 +628,16 @@ fun ProfileTabScreen(
             photoUrl = photoUrl,
             title = "Foto Profil $myName",
             onDismiss = { viewingPhotoUrl = null }
+        )
+    }
+
+    // Dialog Kode QR Profil Pengguna (Berisi ID Lovy asli dan scannable)
+    if (showMyQrCodeDialog) {
+        com.example.ui.components.MyQrCodeDialog(
+            name = myName,
+            lovyId = myLovyId,
+            avatarUrl = profilePicture,
+            onDismiss = { showMyQrCodeDialog = false }
         )
     }
 }
