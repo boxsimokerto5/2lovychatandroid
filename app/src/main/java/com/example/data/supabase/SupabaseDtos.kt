@@ -59,7 +59,8 @@ data class SupabaseMomentDto(
     @Json(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
     @Json(name = "author_avatar_hex") val authorAvatarHex: Long? = 0xFFFB8C00,
     @Json(name = "image_url") val imageUrl: String? = null,
-    @Json(name = "author_avatar_url") val authorAvatarUrl: String? = null
+    @Json(name = "author_avatar_url") val authorAvatarUrl: String? = null,
+    @Json(name = "location_tag") val locationTag: String? = null
 )
 
 @JsonClass(generateAdapter = true)

@@ -431,9 +431,28 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         if (com.example.data.supabase.SupabaseClient.isConfigured() && !_uiState.value.isGuest) {
             viewModelScope.launch(Dispatchers.IO) {
                 val cloudUser = supabaseRepo.fetchNearbyUserById(cleanId)
+                val accountUser = if (cloudUser == null) {
+                    val acc = supabaseRepo.findAccountById(cleanId) ?: supabaseRepo.findAccountByUsername(cleanId)
+                    if (acc != null) {
+                        User(
+                            id = acc.id,
+                            name = acc.displayName?.ifBlank { acc.username } ?: acc.username,
+                            gender = if (acc.gender.equals("male", true)) Gender.MALE else Gender.FEMALE,
+                            age = 22,
+                            distanceMeters = 100,
+                            bio = acc.bio ?: "Pengguna Lovy Chat",
+                            avatarColorHex = 0xFF00A86B,
+                            isOnline = true,
+                            city = "Indonesia",
+                            avatarUrl = acc.avatarUrl
+                        )
+                    } else null
+                } else null
+
+                val foundUser = cloudUser ?: accountUser
                 withContext(Dispatchers.Main) {
-                    if (cloudUser != null) {
-                        onResult(cloudUser)
+                    if (foundUser != null) {
+                        onResult(foundUser)
                     } else {
                         val fallbackUser = User(
                             id = cleanId,

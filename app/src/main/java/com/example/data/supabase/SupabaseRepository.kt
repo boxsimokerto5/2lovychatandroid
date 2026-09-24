@@ -201,6 +201,7 @@ class SupabaseRepository {
                         isLiked = false,
                         imageUrl = dto.imageUrl,
                         authorAvatarUrl = dto.authorAvatarUrl,
+                        locationTag = dto.locationTag,
                         authorId = dto.authorId
                     )
                 }
@@ -229,14 +230,15 @@ class SupabaseRepository {
                 createdAt = System.currentTimeMillis(),
                 authorAvatarHex = moment.authorAvatarHex,
                 imageUrl = moment.imageUrl,
-                authorAvatarUrl = moment.authorAvatarUrl
+                authorAvatarUrl = moment.authorAvatarUrl,
+                locationTag = moment.locationTag
             )
             val response = api.insertMoment(apiKey, auth, dto)
             if (response.isSuccessful) {
                 true
-            } else if (dto.authorAvatarUrl != null) {
-                // Fallback jika database Supabase belum memiliki kolom author_avatar_url
-                val fallbackDto = dto.copy(authorAvatarUrl = null)
+            } else if (dto.locationTag != null || dto.authorAvatarUrl != null) {
+                // Fallback jika database Supabase versi lama belum memiliki kolom location_tag / author_avatar_url
+                val fallbackDto = dto.copy(locationTag = null, authorAvatarUrl = null)
                 val retry = api.insertMoment(apiKey, auth, fallbackDto)
                 retry.isSuccessful
             } else {

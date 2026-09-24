@@ -177,7 +177,8 @@ create table if not exists moments (
     created_at bigint not null,
     author_avatar_hex bigint default 4222123520,
     image_url text,
-    author_avatar_url text
+    author_avatar_url text,
+    location_tag text
 );
 alter table moments add column if not exists author_id text;
 alter table moments add column if not exists author_name text;
@@ -188,6 +189,7 @@ alter table moments add column if not exists created_at bigint;
 alter table moments add column if not exists author_avatar_hex bigint default 4222123520;
 alter table moments add column if not exists image_url text;
 alter table moments add column if not exists author_avatar_url text;
+alter table moments add column if not exists location_tag text;
 
 -- 5. TABEL AKUN PENGGUNA (app_accounts)
 create table if not exists app_accounts (
@@ -216,7 +218,26 @@ alter table app_accounts add column if not exists created_at bigint;
 alter table app_accounts add column if not exists last_login_at bigint;
 alter table app_accounts add column if not exists fcm_token text;
 
--- 6. HAK AKSES PERIZINAN (GRANTS & RLS)
+-- 6. TABEL LAPORAN PENGGUNA & MOMEN (user_reports)
+create table if not exists user_reports (
+    id text primary key,
+    reporter_id text,
+    target_id text,
+    target_name text,
+    report_type text not null, -- 'USER' atau 'MOMENT'
+    reason text not null,
+    notes text,
+    created_at bigint not null
+);
+alter table user_reports add column if not exists reporter_id text;
+alter table user_reports add column if not exists target_id text;
+alter table user_reports add column if not exists target_name text;
+alter table user_reports add column if not exists report_type text;
+alter table user_reports add column if not exists reason text;
+alter table user_reports add column if not exists notes text;
+alter table user_reports add column if not exists created_at bigint;
+
+-- 7. HAK AKSES PERIZINAN (GRANTS & RLS)
 grant usage on schema public to anon, authenticated;
 grant all on all tables in schema public to anon, authenticated;
 grant all on all sequences in schema public to anon, authenticated;
@@ -241,7 +262,11 @@ alter table app_accounts enable row level security;
 drop policy if exists "Allow anon all accounts" on app_accounts;
 create policy "Allow anon all accounts" on app_accounts for all using (true) with check (true);
 
--- 7. INDEKS PERFORMA CEPAT (INDEXES)
+alter table user_reports enable row level security;
+drop policy if exists "Allow anon all reports" on user_reports;
+create policy "Allow anon all reports" on user_reports for all using (true) with check (true);
+
+-- 8. INDEKS PERFORMA CEPAT (INDEXES)
 create index if not exists idx_accounts_username on app_accounts (username);
 create index if not exists idx_accounts_google on app_accounts (google_email);
 create index if not exists idx_chat_messages_conv on chat_messages (conversation_id, created_at asc);
@@ -249,8 +274,9 @@ create index if not exists idx_chat_messages_sender on chat_messages (sender_id)
 create index if not exists idx_chat_messages_receiver on chat_messages (receiver_id);
 create index if not exists idx_ocean_bottles_created on ocean_bottles (created_at desc);
 create index if not exists idx_moments_created on moments (created_at desc);
+create index if not exists idx_user_reports_created on user_reports (created_at desc);
 
--- 8. AKTIFKAN SUPABASE REALTIME (INSTANT WEBSOCKET SUBSCRIPTION)
+-- 9. AKTIFKAN SUPABASE REALTIME (INSTANT WEBSOCKET SUBSCRIPTION)
 alter publication supabase_realtime add table chat_messages;
     """.trimIndent()
 
