@@ -345,6 +345,9 @@ fun MainAppScreen(
                             onOpenChat = { conv ->
                                 viewModel.openChat(conv.id, conv.partnerName, conv.partnerAvatarHex)
                             },
+                            onDeleteConversations = { convIds ->
+                                viewModel.deleteConversations(convIds)
+                            },
                             onStartNewChat = {
                                 viewModel.refreshNearbyScan(forceRefresh = false)
                                 viewModel.navigateTo(CurrentScreen.Nearby)

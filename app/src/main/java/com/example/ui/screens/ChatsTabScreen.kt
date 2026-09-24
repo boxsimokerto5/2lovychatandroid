@@ -1,9 +1,16 @@
 package com.example.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,13 +29,21 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddComment
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Female
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Male
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SelectAll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -38,6 +53,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,6 +63,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -69,10 +87,15 @@ fun ChatsTabScreen(
     conversations: List<ChatConversation>,
     onOpenChat: (ChatConversation) -> Unit,
     onStartNewChat: () -> Unit,
+    onDeleteConversations: ((Set<String>) -> Unit)? = null,
     onRefresh: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
+    var selectedConversationIds by remember { mutableStateOf(emptySet<String>()) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+
+    val isSelectionMode = selectedConversationIds.isNotEmpty()
 
     val filtered = remember(conversations, searchQuery) {
         if (searchQuery.isBlank()) conversations
@@ -84,79 +107,149 @@ fun ChatsTabScreen(
 
     Scaffold(
         topBar = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(EmeraldGreen)
-                    .padding(horizontal = 14.dp, vertical = 10.dp)
-            ) {
+            if (isSelectionMode) {
+                // Top Action Bar saat mode seleksi aktif (Mirip WhatsApp)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(EmeraldGreen)
+                        .padding(horizontal = 8.dp, vertical = 8.dp)
                 ) {
+                    // Tombol Batal Seleksi (X)
+                    IconButton(
+                        onClick = { selectedConversationIds = emptySet() },
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Batal",
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    // Jumlah obrolan yang dipilih
                     Text(
-                        text = "Obrolan",
+                        text = "${selectedConversationIds.size}",
                         color = Color.White,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f)
                     )
-                    if (onRefresh != null) {
-                        IconButton(
-                            onClick = onRefresh,
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = "Perbarui Obrolan",
-                                tint = Color.White,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
+
+                    // Tombol Pilih Semua / Hapus Centang Semua
+                    IconButton(
+                        onClick = {
+                            selectedConversationIds = if (selectedConversationIds.size == filtered.size) {
+                                emptySet()
+                            } else {
+                                filtered.map { it.id }.toSet()
+                            }
+                        },
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.SelectAll,
+                            contentDescription = "Pilih Semua",
+                            tint = Color.White,
+                            modifier = Modifier.size(21.dp)
+                        )
+                    }
+
+                    // Tombol Tong Sampah untuk Hapus
+                    IconButton(
+                        onClick = { showDeleteConfirmDialog = true },
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Hapus Obrolan",
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
+                        )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                // Search Bar (Compact & Sleek)
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text("Cari percakapan...", fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f)) },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = null,
-                            tint = Color.White.copy(alpha = 0.8f),
-                            modifier = Modifier.size(16.dp)
-                        )
-                    },
-                    singleLine = true,
-                    shape = RoundedCornerShape(10.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color.White.copy(alpha = 0.2f),
-                        unfocusedContainerColor = Color.White.copy(alpha = 0.15f),
-                        focusedBorderColor = Color.White.copy(alpha = 0.4f),
-                        unfocusedBorderColor = Color.Transparent,
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
-                    ),
+            } else {
+                // Header normal dengan Search Bar
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(42.dp)
-                        .testTag("chats_search_input")
-                )
+                        .background(EmeraldGreen)
+                        .padding(horizontal = 14.dp, vertical = 10.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Obrolan",
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f)
+                        )
+                        if (onRefresh != null) {
+                            IconButton(
+                                onClick = onRefresh,
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = "Perbarui Obrolan",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // Search Bar (Compact & Sleek)
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("Cari percakapan...", fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f)) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = null,
+                                tint = Color.White.copy(alpha = 0.8f),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color.White.copy(alpha = 0.2f),
+                            unfocusedContainerColor = Color.White.copy(alpha = 0.15f),
+                            focusedBorderColor = Color.White.copy(alpha = 0.4f),
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(42.dp)
+                            .testTag("chats_search_input")
+                    )
+                }
             }
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onStartNewChat,
-                containerColor = EmeraldGreen,
-                contentColor = Color.White,
-                shape = CircleShape,
-                modifier = Modifier.testTag("fab_new_chat")
-            ) {
-                Icon(imageVector = Icons.Default.AddComment, contentDescription = "Mulai Chat")
+            if (!isSelectionMode) {
+                FloatingActionButton(
+                    onClick = onStartNewChat,
+                    containerColor = EmeraldGreen,
+                    contentColor = Color.White,
+                    shape = CircleShape,
+                    modifier = Modifier.testTag("fab_new_chat")
+                ) {
+                    Icon(imageVector = Icons.Default.AddComment, contentDescription = "Mulai Chat")
+                }
             }
         },
         containerColor = Color.White,
@@ -196,9 +289,33 @@ fun ChatsTabScreen(
                     .padding(paddingValues)
             ) {
                 items(filtered, key = { it.id }) { conv ->
+                    val isSelected = selectedConversationIds.contains(conv.id)
                     ChatConversationItem(
                         conversation = conv,
-                        onClick = { onOpenChat(conv) }
+                        isSelected = isSelected,
+                        isSelectionMode = isSelectionMode,
+                        onClick = {
+                            if (isSelectionMode) {
+                                selectedConversationIds = if (isSelected) {
+                                    selectedConversationIds - conv.id
+                                } else {
+                                    selectedConversationIds + conv.id
+                                }
+                            } else {
+                                onOpenChat(conv)
+                            }
+                        },
+                        onLongClick = {
+                            if (!isSelectionMode) {
+                                selectedConversationIds = setOf(conv.id)
+                            } else {
+                                selectedConversationIds = if (isSelected) {
+                                    selectedConversationIds - conv.id
+                                } else {
+                                    selectedConversationIds + conv.id
+                                }
+                            }
+                        }
                     )
                     HorizontalDivider(
                         modifier = Modifier.padding(start = 68.dp, end = 14.dp),
@@ -209,25 +326,103 @@ fun ChatsTabScreen(
             }
         }
     }
+
+    // Dialog Konfirmasi Hapus Obrolan yang Dipilih
+    if (showDeleteConfirmDialog) {
+        val count = selectedConversationIds.size
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.DeleteOutline,
+                    contentDescription = null,
+                    tint = Color(0xFFE53935),
+                    modifier = Modifier.size(28.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = if (count == 1) "Hapus 1 obrolan?" else "Hapus $count obrolan terpilih?",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.5.sp,
+                    color = NeutralDark
+                )
+            },
+            text = {
+                Text(
+                    text = "Riwayat pesan dengan pengguna ini akan dihapus dari perangkat Anda.",
+                    fontSize = 13.5.sp,
+                    color = NeutralMedium,
+                    lineHeight = 18.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onDeleteConversations?.invoke(selectedConversationIds)
+                        selectedConversationIds = emptySet()
+                        showDeleteConfirmDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935)),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "Hapus Obrolan",
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.5.sp
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteConfirmDialog = false }
+                ) {
+                    Text(
+                        text = "Batal",
+                        color = NeutralMedium,
+                        fontSize = 13.5.sp
+                    )
+                }
+            }
+        )
+    }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ChatConversationItem(
     conversation: ChatConversation,
+    isSelected: Boolean = false,
+    isSelectionMode: Boolean = false,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    val haptic = LocalHapticFeedback.current
     val timeFormat = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
     val formattedTime = remember(conversation.lastTimestamp) {
         timeFormat.format(Date(conversation.lastTimestamp))
+    }
+
+    val itemBackgroundColor = if (isSelected) {
+        EmeraldGreen.copy(alpha = 0.12f)
+    } else {
+        Color.White
     }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .background(Color.White)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onLongClick?.invoke()
+                }
+            )
+            .background(itemBackgroundColor)
             .padding(horizontal = 14.dp, vertical = 8.dp)
             .testTag("conversation_${conversation.id}")
     ) {
@@ -362,7 +557,7 @@ fun ChatConversationItem(
                     )
                 }
 
-                if (conversation.unreadCount > 0) {
+                if (!isSelectionMode && conversation.unreadCount > 0) {
                     Spacer(modifier = Modifier.width(8.dp))
                     Box(
                         contentAlignment = Alignment.Center,
@@ -381,5 +576,36 @@ fun ChatConversationItem(
                 }
             }
         }
+
+        // Kolom centang kecil di sebelah kanan (Muncul saat Mode Seleksi)
+        AnimatedVisibility(
+            visible = isSelectionMode,
+            enter = fadeIn() + scaleIn(),
+            exit = fadeOut() + scaleOut()
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .padding(start = 10.dp)
+                    .size(22.dp)
+                    .clip(CircleShape)
+                    .background(if (isSelected) EmeraldGreen else Color.Transparent)
+                    .border(
+                        width = 1.5.dp,
+                        color = if (isSelected) EmeraldGreen else NeutralBorder,
+                        shape = CircleShape
+                    )
+            ) {
+                if (isSelected) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "Terpilih",
+                        tint = Color.White,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+            }
+        }
     }
 }
+

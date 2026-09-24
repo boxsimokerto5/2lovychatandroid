@@ -2409,6 +2409,30 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    /**
+     * Hapus obrolan terpilih dari daftar (multi-delete conversation).
+     * Menghapus riwayat percakapan dari Room database lokal dan daftar obrolan di UI.
+     */
+    fun deleteConversations(conversationIds: Set<String>) {
+        if (conversationIds.isEmpty()) return
+
+        val remainingConvs = _uiState.value.conversations.filterNot { conversationIds.contains(it.id) }
+        val remainingMessagesMap = _uiState.value.messagesMap.filterKeys { !conversationIds.contains(it) }
+
+        _uiState.update {
+            it.copy(
+                conversations = remainingConvs,
+                messagesMap = remainingMessagesMap
+            )
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            conversationIds.forEach { convId ->
+                localChatRepo.clearConversation(convId)
+            }
+        }
+    }
+
     fun sendMessage(
         conversationId: String,
         text: String,
