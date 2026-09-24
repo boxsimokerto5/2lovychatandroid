@@ -3,23 +3,34 @@ package com.example.ui.screens
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -38,6 +49,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Block
@@ -88,18 +100,30 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -139,6 +163,7 @@ fun ChatDetailScreen(
     messages: List<ChatMessage>,
     onBack: () -> Unit,
     onSendMessage: (String) -> Unit,
+    onSendMessageWithReply: ((String, ChatMessage?) -> Unit)? = null,
     partnerAvatarUrl: String? = null,
     partnerBio: String = "Senang berteman dan mencari cerita seru di Lovy Chat ✨",
     partnerCity: String = "Jakarta Selatan",
@@ -154,6 +179,7 @@ fun ChatDetailScreen(
     onPartnerProfileClick: (() -> Unit)? = null,
     onDeleteMessageForSender: ((String) -> Unit)? = null,
     onSendPhotoMessage: ((android.net.Uri, String) -> Unit)? = null,
+    onSendPhotoMessageWithReply: ((android.net.Uri, String, ChatMessage?) -> Unit)? = null,
     isUploadingPhoto: Boolean = false,
     uploadProgressText: String? = null,
     onPollMessages: (() -> Unit)? = null,
@@ -164,10 +190,22 @@ fun ChatDetailScreen(
     modifier: Modifier = Modifier
 ) {
     var inputText by remember { mutableStateOf("") }
+    var replyingToMessage by remember { mutableStateOf<ChatMessage?>(null) }
+    val focusRequester = remember { FocusRequester() }
+    val coroutineScope = rememberCoroutineScope()
     var showPartnerProfileSheet by remember { mutableStateOf(false) }
     var messageToDelete by remember { mutableStateOf<ChatMessage?>(null) }
     var pendingPhotoUri by remember { mutableStateOf<android.net.Uri?>(null) }
     var viewingPhotoUrl by remember { mutableStateOf<String?>(null) }
+
+    // Otomatis fokuskan keyboard ke kolom input saat pesan digeser untuk dibalas (Swipe to Reply)
+    LaunchedEffect(replyingToMessage) {
+        if (replyingToMessage != null) {
+            try {
+                focusRequester.requestFocus()
+            } catch (_: Throwable) {}
+        }
+    }
 
     // Debounce status mengetik pengguna saat mengetik di kolom input pesan
     LaunchedEffect(inputText) {
@@ -432,8 +470,11 @@ fun ChatDetailScreen(
                     .fillMaxWidth()
             ) {
                 items(messages.filterNot { it.deletedForSender && it.isFromMe }, key = { it.id }) { msg ->
-                    ChatBubble(
+                    SwipeableChatBubble(
                         message = msg,
+                        onReply = { targetMsg ->
+                            replyingToMessage = targetMsg
+                        },
                         onClick = {
                             if (msg.isFromMe) {
                                 messageToDelete = msg
@@ -441,6 +482,14 @@ fun ChatDetailScreen(
                         },
                         onPhotoClick = { url ->
                             viewingPhotoUrl = url
+                        },
+                        onQuotedMessageClick = { quotedId ->
+                            val targetIndex = messages.indexOfFirst { it.id == quotedId }
+                            if (targetIndex >= 0) {
+                                coroutineScope.launch {
+                                    listState.animateScrollToItem(targetIndex)
+                                }
+                            }
                         }
                     )
                 }
@@ -534,7 +583,13 @@ fun ChatDetailScreen(
                         suggestions.forEach { suggestion ->
                             SuggestionChip(
                                 onClick = {
-                                    onSendMessage(suggestion)
+                                    val replyTarget = replyingToMessage
+                                    replyingToMessage = null
+                                    if (onSendMessageWithReply != null) {
+                                        onSendMessageWithReply(suggestion, replyTarget)
+                                    } else {
+                                        onSendMessage(suggestion)
+                                    }
                                 },
                                 label = { Text(suggestion, fontSize = 11.5.sp, color = NeutralDark) },
                                 colors = SuggestionChipDefaults.suggestionChipColors(
@@ -594,6 +649,99 @@ fun ChatDetailScreen(
                             }
                         }
                     } else {
+                        // Replying To Preview Bar (WhatsApp Style)
+                        AnimatedVisibility(
+                            visible = replyingToMessage != null,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
+                        ) {
+                            if (replyingToMessage != null) {
+                                val target = replyingToMessage!!
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = Color(0xFFF1F8E9),
+                                    border = BorderStroke(1.dp, Color(0xFFC8E6C9)),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 6.dp)
+                                        .testTag("chat_replying_to_preview_bar")
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+                                    ) {
+                                        // Left vertical accent stripe
+                                        Box(
+                                            modifier = Modifier
+                                                .width(4.dp)
+                                                .height(36.dp)
+                                                .clip(RoundedCornerShape(2.dp))
+                                                .background(EmeraldGreen)
+                                        )
+
+                                        Spacer(modifier = Modifier.width(8.dp))
+
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.Reply,
+                                            contentDescription = null,
+                                            tint = EmeraldGreen,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+
+                                        Spacer(modifier = Modifier.width(6.dp))
+
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = "Membalas ${if (target.isFromMe) "Anda" else partnerName}",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = EmeraldGreen
+                                            )
+                                            Spacer(modifier = Modifier.height(2.dp))
+                                            Text(
+                                                text = if (!target.imageUrl.isNullOrBlank() && target.text.isBlank()) "📷 Foto" else target.text,
+                                                fontSize = 11.5.sp,
+                                                color = NeutralDark.copy(alpha = 0.85f),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+
+                                        if (!target.imageUrl.isNullOrBlank()) {
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(36.dp)
+                                                    .clip(RoundedCornerShape(6.dp))
+                                                    .background(Color.LightGray)
+                                            ) {
+                                                AsyncImage(
+                                                    model = target.imageUrl,
+                                                    contentDescription = "Thumbnail pesan dibalas",
+                                                    contentScale = ContentScale.Crop,
+                                                    modifier = Modifier.fillMaxSize()
+                                                )
+                                            }
+                                        }
+
+                                        IconButton(
+                                            onClick = { replyingToMessage = null },
+                                            modifier = Modifier
+                                                .size(28.dp)
+                                                .testTag("btn_cancel_reply")
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = "Batal Balas",
+                                                tint = NeutralMedium,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         // Pending Photo Preview Bar
                         if (pendingPhotoUri != null) {
                             Surface(
@@ -718,6 +866,7 @@ fun ChatDetailScreen(
                                 ),
                                 modifier = Modifier
                                     .weight(1f)
+                                    .focusRequester(focusRequester)
                                     .testTag("chat_input_field")
                             )
 
@@ -726,18 +875,28 @@ fun ChatDetailScreen(
                             IconButton(
                                 onClick = {
                                     lastActivityTime = System.currentTimeMillis()
-                                    if (pendingPhotoUri != null && onSendPhotoMessage != null) {
+                                    val replyTarget = replyingToMessage
+                                    replyingToMessage = null
+                                    if (pendingPhotoUri != null) {
                                         val uriToSend = pendingPhotoUri!!
                                         val caption = inputText
                                         pendingPhotoUri = null
                                         inputText = ""
                                         onUserTyping?.invoke(false)
-                                        onSendPhotoMessage(uriToSend, caption)
+                                        if (onSendPhotoMessageWithReply != null) {
+                                            onSendPhotoMessageWithReply(uriToSend, caption, replyTarget)
+                                        } else {
+                                            onSendPhotoMessage?.invoke(uriToSend, caption)
+                                        }
                                     } else if (inputText.isNotBlank()) {
                                         val textToSend = inputText
                                         inputText = ""
                                         onUserTyping?.invoke(false)
-                                        onSendMessage(textToSend)
+                                        if (onSendMessageWithReply != null) {
+                                            onSendMessageWithReply(textToSend, replyTarget)
+                                        } else {
+                                            onSendMessage(textToSend)
+                                        }
                                     }
                                 },
                                 enabled = !isUploadingPhoto && (pendingPhotoUri != null || inputText.isNotBlank()),
@@ -1724,12 +1883,123 @@ fun PartnerPhotoPreviewDialog(
     }
 }
 
+/**
+ * WhatsApp-style Swipe to Reply wrapper component.
+ * Allows swiping any message bubble horizontally to the right to trigger a reply.
+ * Displays an animated reply icon on the left with haptic feedback when reaching threshold.
+ */
+@Composable
+fun SwipeableChatBubble(
+    message: ChatMessage,
+    onReply: (ChatMessage) -> Unit,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    onPhotoClick: ((String) -> Unit)? = null,
+    onQuotedMessageClick: ((String) -> Unit)? = null
+) {
+    val haptic = LocalHapticFeedback.current
+    val density = LocalDensity.current
+    val swipeThresholdDp = 52.dp
+    val swipeThresholdPx = with(density) { swipeThresholdDp.toPx() }
+    val maxDragPx = with(density) { 88.dp.toPx() }
+
+    var dragOffset by remember { mutableFloatStateOf(0f) }
+    var hasHapticTriggered by remember { mutableStateOf(false) }
+
+    val animatedOffset by animateFloatAsState(
+        targetValue = dragOffset,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "chat_bubble_swipe"
+    )
+
+    val swipeProgress = (animatedOffset / swipeThresholdPx).coerceIn(0f, 1f)
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .pointerInput(message.id) {
+                detectHorizontalDragGestures(
+                    onHorizontalDrag = { change, dragAmount ->
+                        // Swipe to the right (WhatsApp standard)
+                        val newOffset = (dragOffset + dragAmount).coerceIn(0f, maxDragPx)
+                        if (newOffset != dragOffset) {
+                            dragOffset = newOffset
+                            change.consume()
+                        }
+                        if (dragOffset >= swipeThresholdPx && !hasHapticTriggered) {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            hasHapticTriggered = true
+                        } else if (dragOffset < swipeThresholdPx) {
+                            hasHapticTriggered = false
+                        }
+                    },
+                    onDragEnd = {
+                        if (dragOffset >= swipeThresholdPx) {
+                            onReply(message)
+                        }
+                        dragOffset = 0f
+                        hasHapticTriggered = false
+                    },
+                    onDragCancel = {
+                        dragOffset = 0f
+                        hasHapticTriggered = false
+                    }
+                )
+            }
+    ) {
+        // WhatsApp Reply Indicator Icon appearing from left
+        if (animatedOffset > 4f) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .offset(x = with(density) { (animatedOffset * 0.35f).coerceAtLeast(6f).toDp() })
+                    .size(34.dp)
+                    .graphicsLayer {
+                        alpha = swipeProgress
+                        scaleX = 0.6f + (0.4f * swipeProgress)
+                        scaleY = 0.6f + (0.4f * swipeProgress)
+                    }
+                    .clip(CircleShape)
+                    .background(
+                        if (swipeProgress >= 0.95f) EmeraldGreen else EmeraldGreen.copy(alpha = 0.25f)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Reply,
+                    contentDescription = "Balas Pesan",
+                    tint = if (swipeProgress >= 0.95f) Color.White else EmeraldGreen,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+
+        // The Sliding Chat Bubble
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset { IntOffset(animatedOffset.roundToInt(), 0) }
+        ) {
+            ChatBubble(
+                message = message,
+                onClick = onClick,
+                onPhotoClick = onPhotoClick,
+                onQuotedMessageClick = onQuotedMessageClick
+            )
+        }
+    }
+}
+
 @Composable
 fun ChatBubble(
     message: ChatMessage,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
-    onPhotoClick: ((String) -> Unit)? = null
+    onPhotoClick: ((String) -> Unit)? = null,
+    onQuotedMessageClick: ((String) -> Unit)? = null
 ) {
     val timeFormat = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
     val formattedTime = remember(message.timestamp) {
@@ -1758,6 +2028,60 @@ fun ChatBubble(
                 .padding(horizontal = 10.dp, vertical = 8.dp)
         ) {
             Column(horizontalAlignment = if (message.isFromMe) Alignment.End else Alignment.Start) {
+                // Quoted Reply Preview inside bubble (WhatsApp Style)
+                if (!message.replyToText.isNullOrBlank() || !message.replyToSender.isNullOrBlank()) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (message.isFromMe) Color(0xFFC8E6C9).copy(alpha = 0.55f) else Color(0xFFE8ECEF),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 6.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .then(
+                                if (onQuotedMessageClick != null && !message.replyToId.isNullOrBlank()) {
+                                    Modifier.clickable { onQuotedMessageClick(message.replyToId) }
+                                } else Modifier
+                            )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(IntrinsicSize.Min)
+                        ) {
+                            // Left vertical accent stripe
+                            Box(
+                                modifier = Modifier
+                                    .width(4.dp)
+                                    .fillMaxHeight()
+                                    .background(if (message.isFromMe) EmeraldGreen else Color(0xFF00897B))
+                            )
+
+                            Column(
+                                modifier = Modifier
+                                    .padding(horizontal = 8.dp, vertical = 5.dp)
+                                    .weight(1f)
+                            ) {
+                                Text(
+                                    text = message.replyToSender ?: "Pesan",
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (message.isFromMe) Color(0xFF1B5E20) else Color(0xFF00695C),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = message.replyToText ?: "",
+                                    fontSize = 11.5.sp,
+                                    color = NeutralDark.copy(alpha = 0.85f),
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                }
+
                 // If message has photo attachment
                 if (!message.imageUrl.isNullOrBlank()) {
                     Box(

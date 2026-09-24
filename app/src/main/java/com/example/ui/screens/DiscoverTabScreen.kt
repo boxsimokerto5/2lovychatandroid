@@ -62,17 +62,17 @@ fun DiscoverTabScreen(
             .background(ScreenBackground)
             .verticalScroll(rememberScrollState())
     ) {
-        // Top Bar - Temukan
+        // Top Bar - Temukan (Compact & Elegant)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(EmeraldGreen)
-                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             Text(
                 text = com.example.util.AppStrings.tabDiscover(language),
                 color = Color.White,
-                fontSize = 20.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
         }
@@ -80,11 +80,11 @@ fun DiscoverTabScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(horizontal = 12.dp, vertical = 10.dp)
         ) {
-            // Hero Banner matching user screenshot
+            // Hero Banner matching user screenshot (Rapi & Lebih Ringkas)
             Card(
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                 modifier = Modifier
@@ -102,7 +102,7 @@ fun DiscoverTabScreen(
                                 )
                             )
                         )
-                        .padding(20.dp)
+                        .padding(horizontal = 16.dp, vertical = 14.dp)
                 ) {
                     // Faint compass watermark
                     Icon(
@@ -110,7 +110,7 @@ fun DiscoverTabScreen(
                         contentDescription = null,
                         tint = Color.White,
                         modifier = Modifier
-                            .size(110.dp)
+                            .size(90.dp)
                             .align(Alignment.BottomEnd)
                             .alpha(0.18f)
                     )
@@ -121,46 +121,46 @@ fun DiscoverTabScreen(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(50.dp))
                                 .background(Color.White.copy(alpha = 0.22f))
-                                .padding(horizontal = 12.dp, vertical = 4.dp)
+                                .padding(horizontal = 10.dp, vertical = 3.dp)
                         ) {
                             Text(
                                 text = stringResource(R.string.banner_tag),
                                 color = Color.White,
-                                fontSize = 10.sp,
+                                fontSize = 9.5.sp,
                                 fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp
+                                letterSpacing = 0.8.sp
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
 
                         // Title
                         Text(
                             text = stringResource(R.string.banner_title),
                             color = Color.White,
-                            fontSize = 17.sp,
+                            fontSize = 15.5.sp,
                             fontWeight = FontWeight.Bold,
-                            lineHeight = 22.sp
+                            lineHeight = 20.sp
                         )
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
 
                         // Desc
                         Text(
                             text = stringResource(R.string.banner_desc),
                             color = Color.White.copy(alpha = 0.9f),
-                            fontSize = 12.5.sp,
-                            lineHeight = 17.sp
+                            fontSize = 11.5.sp,
+                            lineHeight = 15.sp
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Action Menu Card matching screenshot
             Card(
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                 modifier = Modifier
@@ -235,40 +235,40 @@ fun DiscoverMenuItem(
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .testTag(testTag)
-            .padding(horizontal = 16.dp, vertical = 18.dp)
+            .padding(horizontal = 14.dp, vertical = 12.dp)
     ) {
         // Icon Container
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .size(42.dp)
+                .clip(RoundedCornerShape(12.dp))
                 .background(iconBgColor)
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = title,
                 tint = iconTint,
-                modifier = Modifier.size(26.dp)
+                modifier = Modifier.size(22.dp)
             )
         }
 
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(14.dp))
 
         // Titles
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                fontSize = 15.sp,
+                fontSize = 14.5.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = NeutralDark
             )
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(1.dp))
             Text(
                 text = description,
-                fontSize = 12.5.sp,
+                fontSize = 11.5.sp,
                 color = NeutralMedium,
-                lineHeight = 16.sp
+                lineHeight = 15.sp
             )
         }
 
@@ -277,7 +277,7 @@ fun DiscoverMenuItem(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null,
             tint = Color(0xFFB0BEC5),
-            modifier = Modifier.size(22.dp)
+            modifier = Modifier.size(20.dp)
         )
     }
 }

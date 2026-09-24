@@ -162,6 +162,9 @@ alter table chat_messages add column if not exists deleted_for_sender boolean de
 alter table chat_messages add column if not exists deleted_for_receiver boolean default false;
 alter table chat_messages add column if not exists image_url text;
 alter table chat_messages add column if not exists is_read boolean default false;
+alter table chat_messages add column if not exists reply_to_id text;
+alter table chat_messages add column if not exists reply_to_sender text;
+alter table chat_messages add column if not exists reply_to_text text;
 
 -- 4. TABEL MOMEN SOSIAL (moments)
 create table if not exists moments (

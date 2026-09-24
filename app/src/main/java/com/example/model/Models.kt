@@ -34,7 +34,10 @@ data class ChatMessage(
     val isRead: Boolean = false,
     val deletedForSender: Boolean = false,
     val deletedForReceiver: Boolean = false,
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    val replyToId: String? = null,
+    val replyToSender: String? = null,
+    val replyToText: String? = null
 )
 
 data class ChatConversation(

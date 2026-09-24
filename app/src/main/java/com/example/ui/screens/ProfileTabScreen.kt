@@ -133,24 +133,24 @@ fun ProfileTabScreen(
             .background(ScreenBackground)
             .verticalScroll(rememberScrollState())
     ) {
-        // Top Profile Card with Emerald Background (Clickable to open UserProfileScreen)
+        // Top Profile Card with Emerald Background (Compact & Neat)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(EmeraldGreen)
                 .clickable { onNavigateToUserProfile() }
-                .padding(top = 32.dp, bottom = 24.dp, start = 20.dp, end = 20.dp)
+                .padding(top = 20.dp, bottom = 16.dp, start = 16.dp, end = 16.dp)
                 .testTag("banner_profile_header")
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Avatar
+                // Avatar (Compact 58dp)
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(68.dp)
+                        .size(58.dp)
                         .clip(CircleShape)
                         .background(Color.White)
                 ) {
@@ -175,34 +175,34 @@ fun ProfileTabScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(14.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = myName,
-                            fontSize = 19.sp,
+                            fontSize = 17.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
                     }
-                    Spacer(modifier = Modifier.height(3.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "ID Lovy: $myLovyId",
-                        fontSize = 12.sp,
+                        fontSize = 11.5.sp,
                         color = Color.White.copy(alpha = 0.85f)
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = myBio,
-                        fontSize = 11.5.sp,
+                        fontSize = 11.sp,
                         color = Color.White.copy(alpha = 0.75f),
                         maxLines = 1
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(3.dp))
                     Text(
                         text = "Ketuk untuk lihat detail profil →",
-                        fontSize = 11.sp,
+                        fontSize = 10.5.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFFC8E6C9)
                     )
@@ -212,20 +212,20 @@ fun ProfileTabScreen(
                     imageVector = Icons.Default.QrCode,
                     contentDescription = "QR Code",
                     tint = Color.White,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         // Profile Menu Section 1
         Card(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 12.dp)
         ) {
             Column {
                 ProfileMenuItem(
@@ -254,15 +254,15 @@ fun ProfileTabScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         // Profile Menu Section 2
         Card(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 12.dp)
         ) {
             Column {
                 ProfileMenuItem(
@@ -617,27 +617,27 @@ fun ProfileMenuItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp)
+            .padding(horizontal = 14.dp, vertical = 10.dp)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
             tint = iconTint,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(22.dp)
         )
 
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(14.dp))
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                fontSize = 14.5.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = NeutralDark
             )
             Text(
                 text = subtitle,
-                fontSize = 11.5.sp,
+                fontSize = 11.sp,
                 color = NeutralMedium
             )
         }

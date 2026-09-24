@@ -611,8 +611,8 @@ fun NearbyScreen(
                     }
                 } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
@@ -912,7 +912,7 @@ fun NearbyUserCard(
 ) {
     Card(
         onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         modifier = modifier
@@ -922,31 +922,31 @@ fun NearbyUserCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(horizontal = 12.dp, vertical = 9.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar
+            // Avatar (Compact 46dp)
             LovyAvatar(
                 name = user.name,
                 avatarColorHex = user.avatarColorHex,
                 avatarUrl = user.avatarUrl,
-                size = 54.dp,
-                fontSize = 22.sp,
+                size = 46.dp,
+                fontSize = 18.sp,
                 isOnline = user.isOnline
             )
 
-            Spacer(modifier = Modifier.width(14.dp))
+            Spacer(modifier = Modifier.width(10.dp))
 
             // User Info
             Column(modifier = Modifier.weight(1f)) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
                         text = user.name,
-                        fontSize = 15.sp,
+                        fontSize = 14.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeutralDark,
                         maxLines = 1,
@@ -954,7 +954,7 @@ fun NearbyUserCard(
                         modifier = Modifier.weight(1f, fill = false)
                     )
 
-                    // Gender & Age tag (rapi, proporsional, tidak terjepit)
+                    // Gender & Age tag
                     val badgeColor = if (user.gender == Gender.FEMALE) Color(0xFFFF4081) else Color(0xFF1976D2)
                     Surface(
                         shape = RoundedCornerShape(4.dp),
@@ -962,19 +962,19 @@ fun NearbyUserCard(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(2.dp),
-                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                            horizontalArrangement = Arrangement.spacedBy(1.5.dp),
+                            modifier = Modifier.padding(horizontal = 4.5.dp, vertical = 1.dp)
                         ) {
                             Icon(
                                 imageVector = if (user.gender == Gender.FEMALE) Icons.Default.Female else Icons.Default.Male,
                                 contentDescription = null,
                                 tint = Color.White,
-                                modifier = Modifier.size(11.dp)
+                                modifier = Modifier.size(10.dp)
                             )
                             Text(
                                 text = "${user.age}",
                                 color = Color.White,
-                                fontSize = 10.5.sp,
+                                fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
                                 softWrap = false
@@ -983,34 +983,34 @@ fun NearbyUserCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(3.dp))
+                Spacer(modifier = Modifier.height(2.dp))
 
                 // Bio
                 Text(
                     text = user.bio,
-                    fontSize = 12.5.sp,
+                    fontSize = 11.5.sp,
                     color = NeutralMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
 
                 // Distance & Location
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(3.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(
                         imageVector = Icons.Default.LocationOn,
                         contentDescription = null,
                         tint = EmeraldGreen,
-                        modifier = Modifier.size(13.dp)
+                        modifier = Modifier.size(11.dp)
                     )
                     Text(
                         text = if (hideExactDistance) user.city else "${user.formattedDistance} • ${user.city}",
-                        fontSize = 11.5.sp,
+                        fontSize = 11.sp,
                         color = EmeraldGreen,
                         fontWeight = FontWeight.Medium,
                         maxLines = 1,
@@ -1019,31 +1019,31 @@ fun NearbyUserCard(
                 }
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(6.dp))
 
-            // Say Hi button
+            // Say Hi button (Compact & Neat)
             OutlinedButton(
                 onClick = onSayHi,
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = EmeraldGreen
                 ),
                 border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(
                     brush = androidx.compose.ui.graphics.SolidColor(EmeraldGreen)
                 ),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                 modifier = Modifier.testTag("btn_say_hi_${user.id}")
             ) {
                 Icon(
                     imageVector = Icons.Default.WavingHand,
                     contentDescription = "Sapa",
-                    modifier = Modifier.size(15.dp)
+                    modifier = Modifier.size(13.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = "Sapa",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }

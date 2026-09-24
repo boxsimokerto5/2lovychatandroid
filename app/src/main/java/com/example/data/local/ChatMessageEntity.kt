@@ -26,7 +26,10 @@ data class ChatMessageEntity(
     val isRead: Boolean = false,
     val deletedForSender: Boolean = false,
     val deletedForReceiver: Boolean = false,
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    val replyToId: String? = null,
+    val replyToSender: String? = null,
+    val replyToText: String? = null
 ) {
     fun toDomain(): ChatMessage = ChatMessage(
         id = id,
@@ -37,7 +40,10 @@ data class ChatMessageEntity(
         isRead = isRead,
         deletedForSender = deletedForSender,
         deletedForReceiver = deletedForReceiver,
-        imageUrl = imageUrl
+        imageUrl = imageUrl,
+        replyToId = replyToId,
+        replyToSender = replyToSender,
+        replyToText = replyToText
     )
 
     companion object {
@@ -50,7 +56,10 @@ data class ChatMessageEntity(
             isRead = model.isRead,
             deletedForSender = model.deletedForSender,
             deletedForReceiver = model.deletedForReceiver,
-            imageUrl = model.imageUrl
+            imageUrl = model.imageUrl,
+            replyToId = model.replyToId,
+            replyToSender = model.replyToSender,
+            replyToText = model.replyToText
         )
     }
 }

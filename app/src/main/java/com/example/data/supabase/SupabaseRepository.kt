@@ -321,7 +321,10 @@ class SupabaseRepository {
                         isRead = dto.isRead ?: false,
                         deletedForSender = dto.deletedForSender ?: false,
                         deletedForReceiver = dto.deletedForReceiver ?: false,
-                        imageUrl = dto.imageUrl
+                        imageUrl = dto.imageUrl,
+                        replyToId = dto.replyToId,
+                        replyToSender = dto.replyToSender,
+                        replyToText = dto.replyToText
                     )
                 }
             } else {
@@ -378,7 +381,10 @@ class SupabaseRepository {
                 deletedForSender = message.deletedForSender,
                 deletedForReceiver = message.deletedForReceiver,
                 imageUrl = message.imageUrl,
-                isRead = null // Jangan kirim kolom is_read saat insert agar kompatibel dengan tabel database yang belum memiliki kolom is_read
+                isRead = null, // Jangan kirim kolom is_read saat insert agar kompatibel dengan tabel database yang belum memiliki kolom is_read
+                replyToId = message.replyToId,
+                replyToSender = message.replyToSender,
+                replyToText = message.replyToText
             )
             val response = api.insertChatMessage(apiKey, auth, dto)
             // Siarkan secara instan via WebSocket Realtime ke perangkat penerima
@@ -388,7 +394,17 @@ class SupabaseRepository {
                 return@withContext true
             }
 
-            // Fallback jika database Supabase versi lama belum memiliki kolom receiver_id/image_url/deleted flags
+            // Fallback 1: jika kolom reply belum ditambahkan di Supabase, coba kirim tanpa kolom reply
+            if (dto.replyToId != null || dto.replyToSender != null || dto.replyToText != null) {
+                val withoutReplyDto = dto.copy(replyToId = null, replyToSender = null, replyToText = null)
+                val retryWithoutReply = api.insertChatMessage(apiKey, auth, withoutReplyDto)
+                if (retryWithoutReply.isSuccessful) {
+                    SupabaseRealtimeManager.broadcastChatMessage(withoutReplyDto)
+                    return@withContext true
+                }
+            }
+
+            // Fallback 2 jika database Supabase versi lama belum memiliki kolom receiver_id/image_url/deleted flags
             if (!response.isSuccessful) {
                 val coreDto = SupabaseMessageDto(
                     id = message.id,
@@ -400,7 +416,10 @@ class SupabaseRepository {
                     deletedForSender = null,
                     deletedForReceiver = null,
                     imageUrl = null,
-                    isRead = null
+                    isRead = null,
+                    replyToId = null,
+                    replyToSender = null,
+                    replyToText = null
                 )
                 val retryResp = api.insertChatMessage(apiKey, auth, coreDto)
                 SupabaseRealtimeManager.broadcastChatMessage(coreDto)

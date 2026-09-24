@@ -197,8 +197,37 @@ fun MainAppScreen(
                 onSendMessage = { text ->
                     viewModel.sendMessage(screen.conversationId, text, screen.partnerName)
                 },
+                onSendMessageWithReply = { text, replyTarget ->
+                    val senderName = if (replyTarget != null) {
+                        if (replyTarget.isFromMe) "Anda" else screen.partnerName
+                    } else null
+                    val replySnippet = replyTarget?.text?.ifBlank { "📷 Foto" }
+                    viewModel.sendMessage(
+                        conversationId = screen.conversationId,
+                        text = text,
+                        partnerName = screen.partnerName,
+                        replyToId = replyTarget?.id,
+                        replyToSender = senderName,
+                        replyToText = replySnippet
+                    )
+                },
                 onSendPhotoMessage = { uri, caption ->
                     viewModel.sendPhotoMessage(screen.conversationId, uri, screen.partnerName, caption)
+                },
+                onSendPhotoMessageWithReply = { uri, caption, replyTarget ->
+                    val senderName = if (replyTarget != null) {
+                        if (replyTarget.isFromMe) "Anda" else screen.partnerName
+                    } else null
+                    val replySnippet = replyTarget?.text?.ifBlank { "📷 Foto" }
+                    viewModel.sendPhotoMessage(
+                        conversationId = screen.conversationId,
+                        uri = uri,
+                        partnerName = screen.partnerName,
+                        caption = caption,
+                        replyToId = replyTarget?.id,
+                        replyToSender = senderName,
+                        replyToText = replySnippet
+                    )
                 },
                 isUploadingPhoto = uiState.isUploadingPhoto,
                 uploadProgressText = uiState.uploadProgressText,

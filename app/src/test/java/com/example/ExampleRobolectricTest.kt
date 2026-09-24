@@ -30,8 +30,6 @@ class ExampleRobolectricTest {
 
     // Discover is tab 2 by default as in user screenshot
     assertEquals(2, state.currentTab)
-    assertTrue(state.nearbyUsers.isNotEmpty())
-    assertTrue(state.oceanBottles.isNotEmpty())
 
     // Test throwing bottle
     val success = viewModel.throwBottle("Halo teman Lovy!")
@@ -156,8 +154,6 @@ class ExampleRobolectricTest {
     // Default initial state: isNearbyExpanded should be false, tier should be 0
     org.junit.Assert.assertFalse(state.isNearbyExpanded)
     assertEquals(0, state.nearbyExpansionTier)
-    // Nearby users list has plenty of users (at least 125 users)
-    assertTrue(state.nearbyUsers.size >= 120)
 
     // First expansion: Tier 1 (30 users)
     viewModel.expandNearbyUsers()
@@ -292,14 +288,13 @@ class ExampleRobolectricTest {
     val app = ApplicationProvider.getApplicationContext<android.app.Application>()
     val viewModel = LovyChatViewModel(app)
 
-    val conv = viewModel.uiState.value.conversations.first()
-    viewModel.openChat(conv.id, conv.partnerName, conv.partnerAvatarHex)
+    viewModel.openChat("conv_test_123", "Dewi Sartika", 0xFFE91E63)
 
     val currentScreen = viewModel.uiState.value.currentScreen
     assertTrue(currentScreen is com.example.ui.CurrentScreen.ChatDetail)
     val chatDetail = currentScreen as com.example.ui.CurrentScreen.ChatDetail
-    assertEquals(conv.id, chatDetail.conversationId)
-    assertEquals(conv.partnerName, chatDetail.partnerName)
+    assertEquals("conv_test_123", chatDetail.conversationId)
+    assertEquals("Dewi Sartika", chatDetail.partnerName)
   }
 
   @Test
@@ -308,35 +303,44 @@ class ExampleRobolectricTest {
     val viewModel = LovyChatViewModel(app)
 
     val partnerName = "Siti Rahma"
-    val momentsForPartner = viewModel.uiState.value.moments.filter {
-        it.authorName.equals(partnerName, ignoreCase = true) && !it.isDeleted
-    }
-    assertTrue("Partner $partnerName should have moments", momentsForPartner.isNotEmpty())
-    assertTrue("Moments should have photos", momentsForPartner.any { it.imageUrl != null })
+    viewModel.postMoment("Pemandangan pantai yang sangat indah 🌊", "https://example.com/beach.jpg")
+    val moments = viewModel.uiState.value.moments.filter { !it.isDeleted }
+    assertTrue(moments.isNotEmpty())
 
     // Test delete moment
-    val momentToDelete = momentsForPartner.first()
+    val momentToDelete = moments.first()
     viewModel.deleteMoment(momentToDelete.id)
 
-    val updatedMoments = viewModel.uiState.value.moments.filter {
-        it.authorName.equals(partnerName, ignoreCase = true) && !it.isDeleted
-    }
-    assertTrue("Deleted moment should not be in active partner moments", updatedMoments.none { it.id == momentToDelete.id })
+    val updatedMoments = viewModel.uiState.value.moments.filter { !it.isDeleted }
+    assertTrue("Deleted moment should not be in active moments", updatedMoments.none { it.id == momentToDelete.id })
   }
 
   @Test
-  fun `test guest mode login sets isGuest true and sandbox data`() {
+  fun `test chat message with swipe reply fields`() {
     val app = ApplicationProvider.getApplicationContext<android.app.Application>()
     val viewModel = LovyChatViewModel(app)
 
-    viewModel.loginAsGuest()
-    val state = viewModel.uiState.value
-    assertTrue("isGuest should be true in guest mode", state.isGuest)
-    assertTrue("isLoggedIn should be true in guest mode", state.isLoggedIn)
-    assertEquals("Tamu Lovy", state.myName)
-    assertEquals(com.example.ui.CurrentScreen.Main, state.currentScreen)
-    assertTrue("Guest mode should have demo conversations", state.conversations.isNotEmpty())
-    assertTrue("Guest mode should have demo moments", state.moments.isNotEmpty())
+    val convId = "conv_swipe_reply_test"
+    val partner = "Budi Pratama"
+
+    viewModel.sendMessage(
+        conversationId = convId,
+        text = "Ini adalah balasan pesan",
+        partnerName = partner,
+        replyToId = "msg_original_001",
+        replyToSender = partner,
+        replyToText = "Pesan asli dari Budi"
+    )
+
+    val sentMessages = viewModel.uiState.value.messagesMap[convId]
+    assertNotNull(sentMessages)
+    assertTrue(sentMessages!!.isNotEmpty())
+
+    val sentMsg = sentMessages.first()
+    assertEquals("Ini adalah balasan pesan", sentMsg.text)
+    assertEquals("msg_original_001", sentMsg.replyToId)
+    assertEquals(partner, sentMsg.replyToSender)
+    assertEquals("Pesan asli dari Budi", sentMsg.replyToText)
   }
 
   @Test

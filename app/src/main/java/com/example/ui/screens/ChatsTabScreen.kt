@@ -88,7 +88,7 @@ fun ChatsTabScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(EmeraldGreen)
-                    .padding(horizontal = 16.dp, vertical = 14.dp)
+                    .padding(horizontal = 14.dp, vertical = 10.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -97,41 +97,42 @@ fun ChatsTabScreen(
                     Text(
                         text = "Obrolan",
                         color = Color.White,
-                        fontSize = 20.sp,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f)
                     )
                     if (onRefresh != null) {
                         IconButton(
                             onClick = onRefresh,
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
                                 contentDescription = "Perbarui Obrolan",
-                                tint = Color.White
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
-                // Search Bar
+                // Search Bar (Compact & Sleek)
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("Cari percakapan...", fontSize = 13.sp, color = Color.White.copy(alpha = 0.7f)) },
+                    placeholder = { Text("Cari percakapan...", fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f)) },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = null,
                             tint = Color.White.copy(alpha = 0.8f),
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     },
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(10.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Color.White.copy(alpha = 0.2f),
                         unfocusedContainerColor = Color.White.copy(alpha = 0.15f),
@@ -142,7 +143,7 @@ fun ChatsTabScreen(
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp)
+                        .height(42.dp)
                         .testTag("chats_search_input")
                 )
             }
@@ -200,8 +201,8 @@ fun ChatsTabScreen(
                         onClick = { onOpenChat(conv) }
                     )
                     HorizontalDivider(
-                        modifier = Modifier.padding(start = 78.dp, end = 16.dp),
-                        thickness = 0.6.dp,
+                        modifier = Modifier.padding(start = 68.dp, end = 14.dp),
+                        thickness = 0.5.dp,
                         color = NeutralBorder
                     )
                 }
@@ -227,20 +228,20 @@ fun ChatConversationItem(
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .background(Color.White)
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .padding(horizontal = 14.dp, vertical = 8.dp)
             .testTag("conversation_${conversation.id}")
     ) {
-        // Avatar
+        // Avatar (Compact 44dp)
         LovyAvatar(
             name = conversation.partnerName,
             avatarColorHex = conversation.partnerAvatarHex,
             avatarUrl = conversation.partnerAvatarUrl,
-            size = 50.dp,
-            fontSize = 20.sp,
+            size = 44.dp,
+            fontSize = 18.sp,
             isOnline = conversation.isOnline
         )
 
-        Spacer(modifier = Modifier.width(14.dp))
+        Spacer(modifier = Modifier.width(12.dp))
 
         // Content
         Column(modifier = Modifier.weight(1f)) {
@@ -256,7 +257,7 @@ fun ChatConversationItem(
                 ) {
                     Text(
                         text = conversation.partnerName,
-                        fontSize = 15.sp,
+                        fontSize = 14.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeutralDark,
                         maxLines = 1,

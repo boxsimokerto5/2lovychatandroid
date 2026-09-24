@@ -2343,7 +2343,15 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun sendMessage(conversationId: String, text: String, partnerName: String, imageUrl: String? = null) {
+    fun sendMessage(
+        conversationId: String,
+        text: String,
+        partnerName: String,
+        imageUrl: String? = null,
+        replyToId: String? = null,
+        replyToSender: String? = null,
+        replyToText: String? = null
+    ) {
         if (text.isBlank() && imageUrl.isNullOrBlank()) return
         if (isUserBlocked(userName = partnerName)) return
         updateUserActivity()
@@ -2354,7 +2362,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             timestamp = System.currentTimeMillis(),
             isFromMe = true,
             isRead = false,
-            imageUrl = imageUrl
+            imageUrl = imageUrl,
+            replyToId = replyToId,
+            replyToSender = replyToSender,
+            replyToText = replyToText
         )
 
         val previewText = if (imageUrl != null && text.isBlank()) "📷 [Foto]" else text.trim()
@@ -2763,7 +2774,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         uri: android.net.Uri,
         partnerName: String,
         caption: String = "",
-        context: android.content.Context? = null
+        context: android.content.Context? = null,
+        replyToId: String? = null,
+        replyToSender: String? = null,
+        replyToText: String? = null
     ) {
         if (isUserBlocked(userName = partnerName)) return
         updateUserActivity()
@@ -2805,7 +2819,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                         timestamp = System.currentTimeMillis(),
                         isFromMe = true,
                         isRead = false,
-                        imageUrl = photoUrl
+                        imageUrl = photoUrl,
+                        replyToId = replyToId,
+                        replyToSender = replyToSender,
+                        replyToText = replyToText
                     )
 
                     viewModelScope.launch(Dispatchers.IO) {

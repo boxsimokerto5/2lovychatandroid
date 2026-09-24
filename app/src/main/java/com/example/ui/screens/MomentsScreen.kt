@@ -273,8 +273,8 @@ fun MomentsScreen(
         modifier = modifier.fillMaxSize()
     ) { paddingValues ->
         LazyColumn(
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
@@ -995,14 +995,14 @@ fun MomentCard(
     }
 
     Card(
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         modifier = modifier
             .fillMaxWidth()
             .testTag("moment_card_${item.id}")
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(12.dp)) {
             // Header Row: Avatar, Name, Location, Time, Delete button (if my moment)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -1015,16 +1015,16 @@ fun MomentCard(
                     name = item.authorName,
                     avatarColorHex = item.authorAvatarHex,
                     avatarUrl = displayAvatarUrl,
-                    size = 46.dp,
-                    fontSize = 18.sp
+                    size = 40.dp,
+                    fontSize = 16.sp
                 )
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(10.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = item.authorName,
-                        fontSize = 15.sp,
+                        fontSize = 14.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeutralDark,
                         maxLines = 1,
@@ -1033,27 +1033,27 @@ fun MomentCard(
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
                         Text(
                             text = item.timeAgo,
-                            fontSize = 11.5.sp,
+                            fontSize = 11.sp,
                             color = NeutralMedium
                         )
 
                         if (!item.locationTag.isNullOrBlank()) {
-                            Text(text = "•", fontSize = 11.sp, color = NeutralMedium)
+                            Text(text = "•", fontSize = 10.sp, color = NeutralMedium)
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     imageVector = Icons.Default.LocationOn,
                                     contentDescription = null,
                                     tint = EmeraldGreen,
-                                    modifier = Modifier.size(11.dp)
+                                    modifier = Modifier.size(10.dp)
                                 )
                                 Spacer(modifier = Modifier.width(2.dp))
                                 Text(
                                     text = item.locationTag,
-                                    fontSize = 11.sp,
+                                    fontSize = 10.5.sp,
                                     color = EmeraldGreen,
                                     fontWeight = FontWeight.Medium,
                                     maxLines = 1,
@@ -1067,10 +1067,10 @@ fun MomentCard(
                 if (isMyMoment && onDeleteClick != null) {
                     Surface(
                         onClick = { showDeleteConfirm = true },
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(8.dp),
                         color = Color(0xFFFFEBEE),
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(32.dp)
                             .testTag("btn_delete_moment_${item.id}")
                     ) {
                         Box(contentAlignment = Alignment.Center) {
@@ -1078,18 +1078,18 @@ fun MomentCard(
                                 imageVector = Icons.Default.DeleteOutline,
                                 contentDescription = "Hapus Momen",
                                 tint = Color(0xFFD32F2F),
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(17.dp)
                             )
                         }
                     }
                 } else if (!isMyMoment && onReportClick != null) {
                     Surface(
                         onClick = onReportClick,
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(8.dp),
                         color = Color(0xFFF8FAFC),
                         border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(32.dp)
                             .testTag("btn_report_moment_${item.id}")
                     ) {
                         Box(contentAlignment = Alignment.Center) {
@@ -1097,32 +1097,32 @@ fun MomentCard(
                                 imageVector = Icons.Default.Flag,
                                 contentDescription = "Laporkan Momen",
                                 tint = Color(0xFF94A3B8),
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Moment Content Text
             Text(
                 text = item.content,
-                fontSize = 14.5.sp,
+                fontSize = 13.5.sp,
                 color = NeutralDark,
-                lineHeight = 22.sp
+                lineHeight = 19.sp
             )
 
-            // Large Photo Display (Fitur Utama: Tampilan Foto Lebih Besar & Jelas)
+            // Large Photo Display
             if (!item.imageUrl.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(250.dp)
-                        .clip(RoundedCornerShape(14.dp))
+                        .height(210.dp)
+                        .clip(RoundedCornerShape(12.dp))
                         .background(Color(0xFFF1F3F4))
                         .clickable { onPhotoClick(item.imageUrl) }
                         .testTag("moment_image_${item.id}")
