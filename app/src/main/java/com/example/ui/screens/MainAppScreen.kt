@@ -316,7 +316,14 @@ fun MainAppScreen(
                     val convId = viewModel.getCanonicalConversationId(uiState.myLovyId, user.id)
                     viewModel.openChat(convId, user.name, user.avatarColorHex)
                 },
-                onNavigateToNearby = { viewModel.navigateTo(CurrentScreen.Nearby) }
+                onNavigateToNearby = { viewModel.navigateTo(CurrentScreen.Nearby) },
+                searchUserByCode = { code, callback ->
+                    viewModel.searchUserByQrCode(code, callback)
+                },
+                myLovyId = uiState.myLovyId,
+                myName = uiState.myName,
+                myAvatarUrl = uiState.userProfile.profilePicture,
+                myAvatarColorHex = "#00A86B"
             )
         }
         is CurrentScreen.Main -> {
@@ -398,7 +405,17 @@ fun MainAppScreen(
                                 },
                                 onToggleFavorite = { user ->
                                     viewModel.toggleFavoriteFriend(user)
-                                }
+                                },
+                                onAddFriend = { user ->
+                                    viewModel.acceptNewFriend(user)
+                                },
+                                searchUserByCode = { code, callback ->
+                                    viewModel.searchUserByQrCode(code, callback)
+                                },
+                                myLovyId = uiState.myLovyId,
+                                myName = uiState.myName,
+                                myAvatarUrl = uiState.userProfile.profilePicture,
+                                myAvatarColorHex = "#00A86B"
                             )
                         }
                         2 -> DiscoverTabScreen(

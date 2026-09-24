@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MarkChatUnread
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonSearch
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -60,6 +61,7 @@ import com.example.model.Gender
 import com.example.model.NewFriendRequest
 import com.example.model.User
 import com.example.ui.components.LovyAvatar
+import com.example.ui.components.QrCodeScannerDialog
 import com.example.ui.theme.EmeraldGreen
 import com.example.ui.theme.NeutralBorder
 import com.example.ui.theme.NeutralDark
@@ -75,9 +77,33 @@ fun NewFriendsScreen(
     onOpenChat: (User) -> Unit,
     onNavigateToNearby: () -> Unit,
     onSimulateIncomingChat: (() -> Unit)? = null,
+    searchUserByCode: (String, (User?) -> Unit) -> Unit = { _, callback -> callback(null) },
+    myLovyId: String = "",
+    myName: String = "",
+    myAvatarUrl: String? = null,
+    myAvatarColorHex: String? = null,
     modifier: Modifier = Modifier
 ) {
     var viewingAvatarPhoto by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var showQrScanner by remember { mutableStateOf(false) }
+
+    if (showQrScanner) {
+        QrCodeScannerDialog(
+            onDismiss = { showQrScanner = false },
+            onUserFound = { user ->
+                onAcceptFriend(user)
+            },
+            searchUserByCode = searchUserByCode,
+            isAlreadyFriend = { false },
+            myLovyId = myLovyId,
+            myName = myName,
+            myAvatarUrl = myAvatarUrl,
+            myAvatarColorHex = myAvatarColorHex,
+            onOpenChatWithUser = { user ->
+                onOpenChat(user)
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -124,6 +150,18 @@ fun NewFriendsScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali",
+                            tint = Color.White
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = { showQrScanner = true },
+                        modifier = Modifier.testTag("btn_qr_scanner_new_friends")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.QrCodeScanner,
+                            contentDescription = "Pindai Barcode / QR",
                             tint = Color.White
                         )
                     }

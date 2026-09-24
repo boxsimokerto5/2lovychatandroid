@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Female
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Male
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonSearch
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarBorder
@@ -61,6 +63,7 @@ import androidx.compose.ui.unit.sp
 import com.example.model.Gender
 import com.example.model.User
 import com.example.ui.components.LovyAvatar
+import com.example.ui.components.QrCodeScannerDialog
 import com.example.ui.theme.EmeraldGreen
 import com.example.ui.theme.NeutralBorder
 import com.example.ui.theme.NeutralDark
@@ -77,12 +80,37 @@ fun FriendsTabScreen(
     onDeleteFriend: (User) -> Unit = {},
     onClearAllFriends: () -> Unit = {},
     onToggleFavorite: (User) -> Unit = {},
+    onAddFriend: (User) -> Unit = {},
+    searchUserByCode: (String, (User?) -> Unit) -> Unit = { _, callback -> callback(null) },
+    myLovyId: String = "",
+    myName: String = "",
+    myAvatarUrl: String? = null,
+    myAvatarColorHex: String? = null,
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var friendToDelete by remember { mutableStateOf<User?>(null) }
     var showClearAllDialog by remember { mutableStateOf(false) }
     var viewingAvatarPhoto by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var showQrScanner by remember { mutableStateOf(false) }
+
+    if (showQrScanner) {
+        QrCodeScannerDialog(
+            onDismiss = { showQrScanner = false },
+            onUserFound = { user ->
+                onAddFriend(user)
+            },
+            searchUserByCode = searchUserByCode,
+            isAlreadyFriend = { id -> friends.any { it.id.equals(id, ignoreCase = true) } },
+            myLovyId = myLovyId,
+            myName = myName,
+            myAvatarUrl = myAvatarUrl,
+            myAvatarColorHex = myAvatarColorHex,
+            onOpenChatWithUser = { user ->
+                onSelectFriend(user)
+            }
+        )
+    }
 
     // Urutkan daftar teman:
     // 1. Teman Favorit (⭐) SELALU berada di paling atas (bahkan di atas teman online)!
@@ -116,33 +144,73 @@ fun FriendsTabScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text("Cari teman...", fontSize = 13.sp, color = Color.White.copy(alpha = 0.7f)) },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = null,
-                            tint = Color.White.copy(alpha = 0.8f),
-                            modifier = Modifier.size(18.dp)
-                        )
-                    },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color.White.copy(alpha = 0.2f),
-                        unfocusedContainerColor = Color.White.copy(alpha = 0.15f),
-                        focusedBorderColor = Color.White.copy(alpha = 0.4f),
-                        unfocusedBorderColor = Color.Transparent,
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .testTag("friends_search_input")
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // Tombol Scanner Barcode / QR di sebelah kiri kolom pencarian
+                    Surface(
+                        onClick = { showQrScanner = true },
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color.White.copy(alpha = 0.22f),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)),
+                        modifier = Modifier
+                            .size(48.dp)
+                            .testTag("btn_friends_qr_scanner")
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.QrCodeScanner,
+                                contentDescription = "Pindai Barcode / QR Tambah Teman",
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("Cari teman...", fontSize = 13.sp, color = Color.White.copy(alpha = 0.7f)) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = null,
+                                tint = Color.White.copy(alpha = 0.8f),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        trailingIcon = if (searchQuery.isNotBlank()) {
+                            {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Hapus",
+                                        tint = Color.White.copy(alpha = 0.8f),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        } else null,
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color.White.copy(alpha = 0.2f),
+                            unfocusedContainerColor = Color.White.copy(alpha = 0.15f),
+                            focusedBorderColor = Color.White.copy(alpha = 0.4f),
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            cursorColor = Color.White
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp)
+                            .testTag("friends_search_input")
+                    )
+                }
             }
         },
         containerColor = Color.White,

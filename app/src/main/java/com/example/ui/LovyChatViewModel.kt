@@ -378,6 +378,94 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    /**
+     * Mencari pengguna berdasarkan kode QR / Barcode yang dipindai (baik kamera live atau unggah galeri).
+     */
+    fun searchUserByQrCode(rawCode: String, onResult: (User?) -> Unit) {
+        val cleanId = com.example.util.QrCodeDecoder.extractUserId(rawCode)
+        if (cleanId.isBlank()) {
+            onResult(null)
+            return
+        }
+
+        // 1. Cek di daftar teman yang sudah tersimpan
+        val existingFriend = _uiState.value.chattedFriends.find {
+            it.id.equals(cleanId, ignoreCase = true) || it.name.equals(cleanId, ignoreCase = true)
+        }
+        if (existingFriend != null) {
+            onResult(existingFriend)
+            return
+        }
+
+        // 2. Cek di daftar pengguna sekitar
+        val nearbyMatch = _uiState.value.nearbyUsers.find {
+            it.id.equals(cleanId, ignoreCase = true) || it.name.equals(cleanId, ignoreCase = true)
+        }
+        if (nearbyMatch != null) {
+            onResult(nearbyMatch)
+            return
+        }
+
+        // 3. Cek di daftar obrolan aktif
+        val convMatch = _uiState.value.conversations.find {
+            it.partnerId.equals(cleanId, ignoreCase = true) || it.partnerName.equals(cleanId, ignoreCase = true)
+        }
+        if (convMatch != null) {
+            val convUser = User(
+                id = convMatch.partnerId,
+                name = convMatch.partnerName,
+                gender = convMatch.partnerGender,
+                age = convMatch.partnerAge,
+                distanceMeters = convMatch.partnerDistanceMeters,
+                bio = "Teman obrolan Lovy",
+                avatarColorHex = convMatch.partnerAvatarHex,
+                isOnline = convMatch.isOnline,
+                avatarUrl = convMatch.partnerAvatarUrl,
+                city = convMatch.partnerCity ?: "Indonesia"
+            )
+            onResult(convUser)
+            return
+        }
+
+        // 4. Cari dari database Supabase jika tersambung
+        if (com.example.data.supabase.SupabaseClient.isConfigured() && !_uiState.value.isGuest) {
+            viewModelScope.launch(Dispatchers.IO) {
+                val cloudUser = supabaseRepo.fetchNearbyUserById(cleanId)
+                withContext(Dispatchers.Main) {
+                    if (cloudUser != null) {
+                        onResult(cloudUser)
+                    } else {
+                        val fallbackUser = User(
+                            id = cleanId,
+                            name = if (cleanId.startsWith("lovy_")) "Teman Lovy (${cleanId.takeLast(4)})" else cleanId,
+                            gender = Gender.FEMALE,
+                            age = 22,
+                            distanceMeters = 100,
+                            bio = "Teman ditemukan lewat pemindaian barcode",
+                            avatarColorHex = 0xFF00A86B,
+                            isOnline = true,
+                            city = "Indonesia"
+                        )
+                        onResult(fallbackUser)
+                    }
+                }
+            }
+        } else {
+            val fallbackUser = User(
+                id = cleanId,
+                name = if (cleanId.startsWith("lovy_")) "Teman Lovy (${cleanId.takeLast(4)})" else cleanId,
+                gender = Gender.FEMALE,
+                age = 22,
+                distanceMeters = 100,
+                bio = "Teman ditemukan lewat pemindaian barcode",
+                avatarColorHex = 0xFF00A86B,
+                isOnline = true,
+                city = "Indonesia"
+            )
+            onResult(fallbackUser)
+        }
+    }
+
     fun ignoreNewFriend(userId: String) {
         recordFeatureClick()
         _uiState.update { state ->
