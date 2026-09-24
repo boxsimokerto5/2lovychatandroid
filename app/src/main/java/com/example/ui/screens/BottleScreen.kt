@@ -156,7 +156,6 @@ fun BottleScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(230.dp)
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
@@ -166,7 +165,7 @@ fun BottleScreen(
                             )
                         )
                     )
-                    .padding(16.dp)
+                    .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 22.dp)
             ) {
                 // Background Waves decoration
                 Icon(
@@ -197,77 +196,105 @@ fun BottleScreen(
                         textAlign = TextAlign.Center
                     )
 
-                    Spacer(modifier = Modifier.height(18.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     // Floating Bottle Graphic
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
                             .offset(y = waveOffset.dp)
-                            .size(64.dp)
+                            .size(60.dp)
                             .clip(CircleShape)
                             .background(Color.White.copy(alpha = 0.2f))
                             .border(2.dp, Color.White.copy(alpha = 0.4f), CircleShape)
                     ) {
                         Text(
                             text = "🍾",
-                            fontSize = 32.sp
+                            fontSize = 30.sp
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(18.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                    // Action Buttons Row: Lempar & Pancing
+                    // Action Buttons Row: Lempar & Ambil Botol
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier.fillMaxWidth(0.9f)
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        // Throw button
+                        // Throw button (Lempar Botol)
                         Button(
                             onClick = { showThrowDialog = true },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = EmeraldGreen
                             ),
-                            shape = RoundedCornerShape(25.dp),
+                            shape = RoundedCornerShape(24.dp),
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
                             modifier = Modifier
                                 .weight(1f)
+                                .height(48.dp)
                                 .testTag("btn_throw_bottle")
                         ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Send,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Lempar", fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.Send,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(17.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Lempar Botol",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    maxLines = 1
+                                )
+                            }
                         }
 
-                        // Fish button
+                        // Fish / Ambil button (Ambil Botol)
                         Button(
                             onClick = onFishBottle,
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF00BCD4)
                             ),
-                            shape = RoundedCornerShape(25.dp),
+                            shape = RoundedCornerShape(24.dp),
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
                             modifier = Modifier
                                 .weight(1f)
+                                .height(48.dp)
                                 .testTag("btn_fish_bottle")
                         ) {
-                            if (isFishing) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                if (isFishing) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(17.dp),
+                                        color = Color.White,
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Default.Phishing,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(17.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = if (isFishing) "Mengambil..." else "Ambil Botol",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
                                     color = Color.White,
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Default.Phishing,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
+                                    maxLines = 1
                                 )
                             }
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(if (isFishing) "Mancing..." else "Pancing", fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -328,7 +355,7 @@ fun BottleScreen(
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "Lautan Lovy menyimpan ribuan pesan misteri dari berbagai kota. Ketuk tombol 'Pancing' di atas untuk menjaring botol pertamamu!",
+                                text = "Lautan Lovy menyimpan ribuan pesan misteri dari berbagai kota. Ketuk tombol 'Ambil Botol' di atas untuk menjaring botol pertamamu!",
                                 fontSize = 12.5.sp,
                                 color = NeutralMedium,
                                 textAlign = TextAlign.Center,
@@ -347,7 +374,7 @@ fun BottleScreen(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Pancing Sekarang", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                Text("Ambil Botol Sekarang", fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     } else {
