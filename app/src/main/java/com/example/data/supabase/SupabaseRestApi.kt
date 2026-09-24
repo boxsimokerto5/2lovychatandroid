@@ -220,4 +220,11 @@ interface SupabaseRestApi {
         @Header("Authorization") authHeader: String,
         @Query("author_id") authorIdFilter: String
     ): Response<Unit>
+
+    @DELETE("rest/v1/chat_messages")
+    suspend fun deleteChatMessagePermanently(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("id") idFilter: String
+    ): Response<Unit>
 }

@@ -551,6 +551,22 @@ class SupabaseRepository {
         }
     }
 
+    suspend fun deleteMessageForEveryone(messageId: String): Boolean = withContext(Dispatchers.IO) {
+        val api = SupabaseClient.getApi() ?: return@withContext false
+        val apiKey = SupabaseClient.getSupabaseAnonKey()
+        val auth = SupabaseClient.getAuthHeader()
+
+        try {
+            // Tandai deleted_for_sender dan deleted_for_receiver = true, serta hapus record
+            api.markChatMessageDeleted(apiKey, auth, "eq.$messageId", mapOf("deleted_for_sender" to true, "deleted_for_receiver" to true))
+            val response = api.deleteChatMessagePermanently(apiKey, auth, "eq.$messageId")
+            response.isSuccessful
+        } catch (e: Exception) {
+            Log.w(TAG, "Gagal menghapus pesan untuk semua orang di Supabase", e)
+            false
+        }
+    }
+
     suspend fun markAllSenderMessagesDeleted(senderId: String = "me"): Boolean = withContext(Dispatchers.IO) {
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()

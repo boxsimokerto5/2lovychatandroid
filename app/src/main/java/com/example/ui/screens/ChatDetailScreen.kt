@@ -19,8 +19,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -65,6 +67,8 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.FormatQuote
 import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Person
 import com.example.ui.components.ReportDialog
 import com.example.ui.components.ReportType
 import androidx.compose.material.icons.filled.Info
@@ -178,6 +182,8 @@ fun ChatDetailScreen(
     onToggleLikeMoment: ((String) -> Unit)? = null,
     onPartnerProfileClick: (() -> Unit)? = null,
     onDeleteMessageForSender: ((String) -> Unit)? = null,
+    onDeleteMessageForMe: ((String) -> Unit)? = null,
+    onDeleteMessageForEveryone: ((String) -> Unit)? = null,
     onSendPhotoMessage: ((android.net.Uri, String) -> Unit)? = null,
     onSendPhotoMessageWithReply: ((android.net.Uri, String, ChatMessage?) -> Unit)? = null,
     isUploadingPhoto: Boolean = false,
@@ -469,16 +475,24 @@ fun ChatDetailScreen(
                     .weight(1f)
                     .fillMaxWidth()
             ) {
-                items(messages.filterNot { it.deletedForSender && it.isFromMe }, key = { it.id }) { msg ->
+                items(
+                    messages.filterNot { 
+                        (it.deletedForSender && it.isFromMe) || 
+                        (it.deletedForReceiver && !it.isFromMe) 
+                    }, 
+                    key = { it.id }
+                ) { msg ->
                     SwipeableChatBubble(
                         message = msg,
                         onReply = { targetMsg ->
                             replyingToMessage = targetMsg
                         },
                         onClick = {
-                            if (msg.isFromMe) {
-                                messageToDelete = msg
-                            }
+                            // Klik biasa pada bubble
+                        },
+                        onLongClick = {
+                            // Tahan lama (long press) untuk opsi hapus pesan WhatsApp style
+                            messageToDelete = msg
                         },
                         onPhotoClick = { url ->
                             viewingPhotoUrl = url
@@ -505,7 +519,7 @@ fun ChatDetailScreen(
                 }
             }
 
-            // Dialog Hapus Pesan untuk Saya (deleted_for_sender)
+            // Dialog Hapus Pesan (WhatsApp Style: Hapus untuk Saya vs Hapus untuk Semua Orang)
             if (messageToDelete != null) {
                 val msg = messageToDelete!!
                 AlertDialog(
@@ -514,48 +528,131 @@ fun ChatDetailScreen(
                         Icon(
                             imageVector = Icons.Default.DeleteOutline,
                             contentDescription = null,
-                            tint = Color(0xFFD32F2F)
+                            tint = Color(0xFFE53935)
                         )
                     },
                     title = {
                         Text(
-                            text = "Hapus Pesan untuk Saya?",
+                            text = "Hapus pesan?",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 17.sp
+                            fontSize = 18.sp,
+                            color = NeutralDark
                         )
                     },
                     text = {
                         Column {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = NeutralLight.copy(alpha = 0.5f),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                            ) {
+                                Text(
+                                    text = if (msg.text.isNotBlank()) "\"${msg.text}\"" else "📷 Foto",
+                                    fontSize = 13.5.sp,
+                                    color = NeutralDark,
+                                    fontWeight = FontWeight.Medium,
+                                    maxLines = 3,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "\"${msg.text}\"",
-                                fontSize = 13.5.sp,
-                                color = NeutralDark,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Pesan ini akan dihapus dari obrolan Anda (deleted_for_sender) dan tidak akan terlihat lagi oleh Anda.",
+                                text = if (msg.isFromMe) {
+                                    "Anda dapat menghapus pesan ini hanya untuk Anda, atau untuk semua orang di obrolan ini."
+                                } else {
+                                    "Pesan ini akan dihapus dari obrolan Anda dan tidak akan terlihat lagi oleh Anda."
+                                },
                                 fontSize = 12.5.sp,
-                                color = NeutralMedium
+                                color = NeutralMedium,
+                                lineHeight = 17.sp
                             )
                         }
                     },
                     confirmButton = {
-                        Button(
-                            onClick = {
-                                onDeleteMessageForSender?.invoke(msg.id)
-                                messageToDelete = null
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text("Hapus untuk Saya", color = Color.White)
+                            // Opsi 1: Hapus untuk Semua Orang (Hanya jika pesan dikirim oleh kita sendiri)
+                            if (msg.isFromMe) {
+                                Button(
+                                    onClick = {
+                                        onDeleteMessageForEveryone?.invoke(msg.id)
+                                            ?: onDeleteMessageForSender?.invoke(msg.id)
+                                        messageToDelete = null
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Group,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(17.dp)
+                                        )
+                                        Text(
+                                            text = "Hapus untuk Semua Orang",
+                                            color = Color.White,
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 13.5.sp
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Opsi 2: Hapus untuk Saya (Bisa untuk pesan kita maupun pesan teman)
+                            OutlinedButton(
+                                onClick = {
+                                    onDeleteMessageForMe?.invoke(msg.id)
+                                        ?: onDeleteMessageForSender?.invoke(msg.id)
+                                    messageToDelete = null
+                                },
+                                shape = RoundedCornerShape(10.dp),
+                                border = BorderStroke(1.dp, Color(0xFFD32F2F)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Person,
+                                        contentDescription = null,
+                                        tint = Color(0xFFD32F2F),
+                                        modifier = Modifier.size(17.dp)
+                                    )
+                                    Text(
+                                        text = "Hapus untuk Saya",
+                                        color = Color(0xFFD32F2F),
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 13.5.sp
+                                    )
+                                }
+                            }
+
+                            // Opsi 3: Batal
+                            TextButton(
+                                onClick = { messageToDelete = null },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "Batal",
+                                    color = NeutralMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 13.sp
+                                )
+                            }
                         }
                     },
-                    dismissButton = {
-                        TextButton(onClick = { messageToDelete = null }) {
-                            Text("Batal", color = NeutralMedium)
-                        }
-                    }
+                    dismissButton = null
                 )
             }
 
@@ -1894,6 +1991,7 @@ fun SwipeableChatBubble(
     onReply: (ChatMessage) -> Unit,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
     onPhotoClick: ((String) -> Unit)? = null,
     onQuotedMessageClick: ((String) -> Unit)? = null
 ) {
@@ -1986,6 +2084,7 @@ fun SwipeableChatBubble(
             ChatBubble(
                 message = message,
                 onClick = onClick,
+                onLongClick = onLongClick,
                 onPhotoClick = onPhotoClick,
                 onQuotedMessageClick = onQuotedMessageClick
             )
@@ -1993,14 +2092,17 @@ fun SwipeableChatBubble(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ChatBubble(
     message: ChatMessage,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
     onPhotoClick: ((String) -> Unit)? = null,
     onQuotedMessageClick: ((String) -> Unit)? = null
 ) {
+    val haptic = LocalHapticFeedback.current
     val timeFormat = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
     val formattedTime = remember(message.timestamp) {
         timeFormat.format(Date(message.timestamp))
@@ -2022,8 +2124,15 @@ fun ChatBubble(
                 )
                 .background(if (message.isFromMe) ChatBubbleSelf else ChatBubbleOther)
                 .then(
-                    if (onClick != null) Modifier.clickable { onClick() }
-                    else Modifier
+                    if (onClick != null || onLongClick != null) {
+                        Modifier.combinedClickable(
+                            onClick = { onClick?.invoke() },
+                            onLongClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onLongClick?.invoke()
+                            }
+                        )
+                    } else Modifier
                 )
                 .padding(horizontal = 10.dp, vertical = 8.dp)
         ) {

@@ -231,8 +231,14 @@ fun MainAppScreen(
                 },
                 isUploadingPhoto = uiState.isUploadingPhoto,
                 uploadProgressText = uiState.uploadProgressText,
+                onDeleteMessageForMe = { messageId ->
+                    viewModel.deleteMessageForMe(screen.conversationId, messageId)
+                },
+                onDeleteMessageForEveryone = { messageId ->
+                    viewModel.deleteMessageForEveryone(screen.conversationId, messageId)
+                },
                 onDeleteMessageForSender = { messageId ->
-                    viewModel.deleteMessageForSender(screen.conversationId, messageId)
+                    viewModel.deleteMessageForMe(screen.conversationId, messageId)
                 },
                 onPollMessages = {
                     val partnerId = conv?.partnerId ?: viewModel.extractPartnerIdFromConvId(screen.conversationId, uiState.myLovyId)

@@ -2314,12 +2314,23 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun deleteMessageForSender(conversationId: String, messageId: String) {
+        deleteMessageForMe(conversationId, messageId)
+    }
+
+    /**
+     * Hapus Pesan untuk Saya (Delete for Me)
+     * Pesan dihapus dari tampilan pengguna saat ini saja (baik pesan kiriman sendiri maupun pesan dari lawan bicara).
+     */
+    fun deleteMessageForMe(conversationId: String, messageId: String) {
         val currentMsgs = _uiState.value.messagesMap[conversationId] ?: emptyList()
+        val targetMsg = currentMsgs.find { it.id == messageId }
+        
         val updatedMsgs = currentMsgs.map { msg ->
             if (msg.id == messageId) {
-                msg.copy(deletedForSender = true)
+                if (msg.isFromMe) msg.copy(deletedForSender = true)
+                else msg.copy(deletedForReceiver = true)
             } else msg
-        }.filterNot { it.deletedForSender && it.isFromMe }
+        }.filterNot { (it.deletedForSender && it.isFromMe) || (it.deletedForReceiver && !it.isFromMe) }
 
         val lastRemainingText = updatedMsgs.lastOrNull()?.text ?: "Tidak ada pesan"
 
@@ -2336,9 +2347,64 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             )
         }
 
-        if (!_uiState.value.isGuest) {
-            viewModelScope.launch {
-                supabaseRepo.markMessageDeletedForSender(messageId)
+        viewModelScope.launch(Dispatchers.IO) {
+            localChatRepo.deleteMessage(messageId)
+            if (!_uiState.value.isGuest) {
+                if (targetMsg?.isFromMe == true) {
+                    supabaseRepo.markMessageDeletedForSender(messageId)
+                }
+            }
+        }
+    }
+
+    /**
+     * Hapus Pesan untuk Semua Orang (Delete for Everyone)
+     * Hanya berlaku untuk pesan yang dikirim oleh diri sendiri.
+     * Menghapus pesan di HP sendiri dan menyiarkan perintah hapus ke teman lawan bicara sehingga
+     * pesan di HP teman juga otomatis lenyap secara instan (Realtime).
+     */
+    fun deleteMessageForEveryone(conversationId: String, messageId: String) {
+        val currentMsgs = _uiState.value.messagesMap[conversationId] ?: emptyList()
+        val targetMsg = currentMsgs.find { it.id == messageId } ?: return
+
+        // Hanya pesan dari diri sendiri yang dapat dihapus untuk semua orang
+        if (!targetMsg.isFromMe) return
+
+        val updatedMsgs = currentMsgs.filterNot { it.id == messageId }
+        val lastRemainingText = updatedMsgs.lastOrNull()?.text ?: "Tidak ada pesan"
+
+        val updatedConvs = _uiState.value.conversations.map {
+            if (it.id == conversationId) {
+                it.copy(lastMessage = lastRemainingText)
+            } else it
+        }
+
+        _uiState.update {
+            it.copy(
+                messagesMap = it.messagesMap + (conversationId to updatedMsgs),
+                conversations = updatedConvs
+            )
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            // Hapus dari database lokal Room
+            localChatRepo.deleteMessage(messageId)
+
+            if (!_uiState.value.isGuest) {
+                // Siarkan broadcast event Realtime agar HP teman langsung menghapus pesan ini
+                val deleteDto = com.example.data.supabase.SupabaseMessageDto(
+                    id = messageId,
+                    conversationId = conversationId,
+                    senderId = _uiState.value.myLovyId,
+                    text = "__DELETED_FOR_EVERYONE__",
+                    createdAt = targetMsg.timestamp,
+                    deletedForSender = true,
+                    deletedForReceiver = true
+                )
+                com.example.data.supabase.SupabaseRealtimeManager.broadcastChatMessage(deleteDto)
+
+                // Hapus dan tandai di database cloud Supabase
+                supabaseRepo.deleteMessageForEveryone(messageId)
             }
         }
     }
@@ -2892,6 +2958,27 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
                     if (isRelevant) {
                         withContext(Dispatchers.Main) {
+                            // Cek jika pesan ini adalah perintah hapus untuk semua orang
+                            if (messageDto.text == "__DELETED_FOR_EVERYONE__" || 
+                                (messageDto.deletedForSender == true && messageDto.deletedForReceiver == true)) {
+                                val currentMsgs = _uiState.value.messagesMap[convId] ?: emptyList()
+                                val updatedMsgs = currentMsgs.filterNot { it.id == messageDto.id }
+                                val lastRemaining = updatedMsgs.lastOrNull()?.text ?: "Tidak ada pesan"
+                                _uiState.update { state ->
+                                    val updatedConvs = state.conversations.map {
+                                        if (it.id == convId) it.copy(lastMessage = lastRemaining) else it
+                                    }
+                                    state.copy(
+                                        messagesMap = state.messagesMap + (convId to updatedMsgs),
+                                        conversations = updatedConvs
+                                    )
+                                }
+                                viewModelScope.launch(Dispatchers.IO) {
+                                    localChatRepo.deleteMessage(messageDto.id)
+                                }
+                                return@withContext
+                            }
+
                             processIncomingRecentMessages(listOf(messageDto), currentId)
 
                             // Jika user sedang aktif membuka percakapan ini dan pesan dari orang lain, tandai terbaca instan
@@ -2972,9 +3059,24 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             }
             if (partnerId.isBlank()) continue
 
-            // Abaikan sinyal ephemeral mengetik agar tidak muncul sebagai pesan riwayat teks
-            val chatDtos = dtoList.filterNot { it.text.startsWith("__TYPING_") }
-            if (chatDtos.isEmpty()) continue
+            // Abaikan sinyal ephemeral mengetik dan pesan terhapus untuk semua orang
+            val chatDtos = dtoList.filterNot { 
+                it.text.startsWith("__TYPING_") || 
+                it.text == "__DELETED_FOR_EVERYONE__" ||
+                (it.deletedForSender == true && it.deletedForReceiver == true)
+            }
+            if (chatDtos.isEmpty()) {
+                // Jika ada pesan deleted_for_everyone di batch ini, hapus dari list lokal
+                val deletedIds = dtoList.filter { 
+                    it.text == "__DELETED_FOR_EVERYONE__" || 
+                    (it.deletedForSender == true && it.deletedForReceiver == true) 
+                }.map { it.id }.toSet()
+                if (deletedIds.isNotEmpty()) {
+                    val existing = currentMessages[convId] ?: emptyList()
+                    currentMessages[convId] = existing.filterNot { deletedIds.contains(it.id) }
+                }
+                continue
+            }
 
             val sortedMsgs = chatDtos.sortedBy { it.createdAt }.map { dto ->
                 ChatMessage(
