@@ -125,6 +125,7 @@ fun ProfileTabScreen(
     var showPrivacyDialog by remember { mutableStateOf(false) }
     var showBlockedUsersDialog by remember { mutableStateOf(false) }
     var showPrivacyPolicyDialog by remember { mutableStateOf(false) }
+    var showAboutAppDialog by remember { mutableStateOf(false) }
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
     var showMyQrCodeDialog by remember { mutableStateOf(false) }
     var viewingPhotoUrl by remember { mutableStateOf<String?>(null) }
@@ -335,24 +336,10 @@ fun ProfileTabScreen(
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
                 ProfileMenuItem(
                     icon = Icons.Default.Info,
-                    iconTint = Color(0xFF78909C),
+                    iconTint = Color(0xFF00B0FF),
                     title = com.example.util.AppStrings.menuAbout(language),
                     subtitle = "Versi 1.0.0 (${com.example.util.AppStrings.motto(language)})",
-                    onClick = {
-                        // Secret developer trigger: klik 5x cepat untuk membuka konfigurasi cloud pengembang
-                        val now = System.currentTimeMillis()
-                        if (now - lastSecretClickTime < 1000L) {
-                            secretDevClickCount++
-                            if (secretDevClickCount >= 5) {
-                                secretDevClickCount = 0
-                                Toast.makeText(context, "Mode Pengembang: Membuka Pengaturan Cloud ☁️", Toast.LENGTH_SHORT).show()
-                                onNavigateToSupabaseConfig()
-                            }
-                        } else {
-                            secretDevClickCount = 1
-                        }
-                        lastSecretClickTime = now
-                    }
+                    onClick = { showAboutAppDialog = true }
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
                 ProfileMenuItem(
@@ -633,6 +620,20 @@ fun ProfileTabScreen(
 
     if (showPrivacyPolicyDialog) {
         PrivacyPolicyDialog(onDismiss = { showPrivacyPolicyDialog = false })
+    }
+
+    if (showAboutAppDialog) {
+        AboutAppDialog(
+            onDismiss = { showAboutAppDialog = false },
+            onOpenPrivacyPolicy = {
+                showAboutAppDialog = false
+                showPrivacyPolicyDialog = true
+            },
+            onOpenServerConfig = {
+                showAboutAppDialog = false
+                onNavigateToSupabaseConfig()
+            }
+        )
     }
 
     // Zoomable Photo Viewer Dialog untuk foto profil sendiri
@@ -1282,4 +1283,242 @@ fun PrivacyPolicyDialog(
             }
         }
     )
+}
+
+@Composable
+fun AboutAppDialog(
+    onDismiss: () -> Unit,
+    onOpenPrivacyPolicy: () -> Unit,
+    onOpenServerConfig: () -> Unit
+) {
+    val context = LocalContext.current
+    var devClickCount by remember { mutableIntStateOf(0) }
+    var lastDevClick by remember { mutableLongStateOf(0L) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = null,
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // App Logo with Soft Elevation
+                Surface(
+                    shape = RoundedCornerShape(22.dp),
+                    color = Color.White,
+                    shadowElevation = 6.dp,
+                    modifier = Modifier.size(80.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_lovy_logo),
+                        contentDescription = "Logo Lovy Chat",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(22.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
+                // App Title & Tagline
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "Lovy Chat",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = NeutralDark
+                    )
+
+                    // Version Tag with Secret Tap (5x) for server settings
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = EmeraldGreen.copy(alpha = 0.12f),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .clickable {
+                                val now = System.currentTimeMillis()
+                                if (now - lastDevClick < 800L) {
+                                    devClickCount++
+                                    if (devClickCount >= 5) {
+                                        devClickCount = 0
+                                        Toast.makeText(context, "Mode Pengembang: Pengaturan Server ☁️", Toast.LENGTH_SHORT).show()
+                                        onOpenServerConfig()
+                                    }
+                                } else {
+                                    devClickCount = 1
+                                }
+                                lastDevClick = now
+                            }
+                    ) {
+                        Text(
+                            text = "Versi 1.0.0 Resmi (2026)",
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = EmeraldGreen,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
+
+                    Text(
+                        text = "Teman baru, obrolan seru di sekitarmu ✨",
+                        fontSize = 12.5.sp,
+                        color = NeutralMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                // Overview Card
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = ScreenBackground)
+                ) {
+                    Text(
+                        text = "Lovy Chat adalah platform obrolan sosial modern yang memudahkan kamu menemukan teman baru di sekitar, berbagi momen harian, dan bertukar cerita secara cepat, aman, dan menyenangkan.",
+                        fontSize = 12.5.sp,
+                        color = NeutralDark,
+                        lineHeight = 18.sp,
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
+
+                // Core Features List
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Fitur Unggulan",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = NeutralDark
+                    )
+
+                    AboutFeatureRow(
+                        iconEmoji = "📍",
+                        title = "Radar Teman Sekitar",
+                        desc = "Temukan teman terdekat berbasis GPS dengan kendali jarak dan privasi penyamaran."
+                    )
+                    AboutFeatureRow(
+                        iconEmoji = "💬",
+                        title = "Pesan Cepat & Realtime",
+                        desc = "Kirim pesan teks & foto instan dengan tanda centang status pesan terbaca."
+                    )
+                    AboutFeatureRow(
+                        iconEmoji = "📷",
+                        title = "Pindai Barcode & QR Code",
+                        desc = "Tambah teman langsung dalam sekejap tanpa repot mengetik nomor atau ID."
+                    )
+                    AboutFeatureRow(
+                        iconEmoji = "🌊",
+                        title = "Botol Lautan (Drift Bottle)",
+                        desc = "Lempar pesan acak melintasi lautan untuk terhubung dengan teman baru."
+                    )
+                    AboutFeatureRow(
+                        iconEmoji = "📸",
+                        title = "Momen & Cerita",
+                        desc = "Bagikan foto dan status harian dengan suka serta komentar dari teman."
+                    )
+                }
+
+                // Security & Policy Badge
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = EmeraldGreen.copy(alpha = 0.08f))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "🛡️ Privasi & Keamanan Terpercaya",
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = EmeraldGreen
+                        )
+                        Text(
+                            text = "Seluruh koneksi menggunakan enkripsi aman HTTPS/TLS. Dilengkapi sistem pemblokiran pengguna, pelaporan pelanggaran, dan penghapusan akun permanen mandiri.",
+                            fontSize = 11.5.sp,
+                            color = NeutralDark,
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
+
+                // Developer & Copyright
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    modifier = Modifier.padding(top = 2.dp)
+                ) {
+                    Text(
+                        text = "Dikembangkan oleh Geccko Creator",
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = NeutralDark
+                    )
+                    Text(
+                        text = "© 2026 Lovy Chat. Hak cipta dilindungi undang-undang.",
+                        fontSize = 10.5.sp,
+                        color = NeutralMedium
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("Tutup", color = Color.White, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onOpenPrivacyPolicy
+            ) {
+                Text("Kebijakan Privasi", color = EmeraldGreen, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+            }
+        }
+    )
+}
+
+@Composable
+private fun AboutFeatureRow(
+    iconEmoji: String,
+    title: String,
+    desc: String
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(ScreenBackground, RoundedCornerShape(10.dp))
+            .padding(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Text(text = iconEmoji, fontSize = 16.sp)
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = title,
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.Bold,
+                color = NeutralDark
+            )
+            Text(
+                text = desc,
+                fontSize = 11.5.sp,
+                color = NeutralMedium,
+                lineHeight = 16.sp
+            )
+        }
+    }
 }
