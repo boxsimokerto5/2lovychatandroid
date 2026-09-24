@@ -381,6 +381,9 @@ class SupabaseRepository {
                 isRead = null // Jangan kirim kolom is_read saat insert agar kompatibel dengan tabel database yang belum memiliki kolom is_read
             )
             val response = api.insertChatMessage(apiKey, auth, dto)
+            // Siarkan secara instan via WebSocket Realtime ke perangkat penerima
+            SupabaseRealtimeManager.broadcastChatMessage(dto)
+
             if (response.isSuccessful) {
                 return@withContext true
             }
@@ -400,6 +403,7 @@ class SupabaseRepository {
                     isRead = null
                 )
                 val retryResp = api.insertChatMessage(apiKey, auth, coreDto)
+                SupabaseRealtimeManager.broadcastChatMessage(coreDto)
                 if (retryResp.isSuccessful) {
                     return@withContext true
                 }

@@ -7,6 +7,8 @@ import com.example.data.local.AppDatabase
 import com.example.data.local.ChatFriendEntity
 import com.example.data.local.UserProfileRepository
 import com.example.data.supabase.SupabaseClient
+import com.example.data.supabase.SupabaseMessageDto
+import com.example.data.supabase.SupabaseRealtimeManager
 import com.example.data.supabase.SupabaseRepository
 import com.example.model.BottleMessage
 import com.example.model.ChatConversation
@@ -283,6 +285,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         syncFcmTokenToSupabase()
         if (!_uiState.value.isGuest && _uiState.value.myLovyId.isNotBlank()) {
             startIncomingChatPeriodicSync()
+            startRealtimeChatSubscription()
         }
     }
 
@@ -944,6 +947,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
                         if (!_uiState.value.isGuest && profile.lovyId.isNotBlank()) {
                             startIncomingChatPeriodicSync()
+                            startRealtimeChatSubscription()
                         }
 
                         // Jika kota GPS nyata sudah terdeteksi dan profil masih default, sinkronkan otomatis
@@ -1391,6 +1395,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             syncFromSupabase(forceRefresh = true)
             syncUserProfileToSupabase()
             startIncomingChatPeriodicSync()
+            startRealtimeChatSubscription()
         }
         return result
     }
@@ -1430,6 +1435,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             syncFromSupabase(forceRefresh = true)
             syncUserProfileToSupabase()
             startIncomingChatPeriodicSync()
+            startRealtimeChatSubscription()
         }
         return result
     }
@@ -1468,6 +1474,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             syncFromSupabase(forceRefresh = true)
             syncUserProfileToSupabase()
             startIncomingChatPeriodicSync()
+            startRealtimeChatSubscription()
         }
         return result
     }
@@ -1478,6 +1485,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
     fun logout() {
         periodicIncomingChatJob?.cancel()
+        realtimeSubscriptionJob?.cancel()
+        SupabaseRealtimeManager.disconnect()
         authRepo.clearSession()
         val wasRealUser = !_uiState.value.isGuest && _uiState.value.isLoggedIn
         if (wasRealUser) {
@@ -1512,6 +1521,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
      */
     fun deleteAccount() {
         periodicIncomingChatJob?.cancel()
+        realtimeSubscriptionJob?.cancel()
+        SupabaseRealtimeManager.disconnect()
         val state = _uiState.value
         val myId = state.myLovyId
         val myName = state.myName
@@ -2745,6 +2756,47 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     private var periodicIncomingChatJob: kotlinx.coroutines.Job? = null
+    private var realtimeSubscriptionJob: kotlinx.coroutines.Job? = null
+
+    fun startRealtimeChatSubscription() {
+        val myId = _uiState.value.myLovyId
+        if (myId.isBlank() || _uiState.value.isGuest || !SupabaseClient.isConfigured()) return
+
+        SupabaseRealtimeManager.connect(myId)
+
+        realtimeSubscriptionJob?.cancel()
+        realtimeSubscriptionJob = viewModelScope.launch(Dispatchers.IO) {
+            SupabaseRealtimeManager.incomingMessages.collect { messageDto ->
+                try {
+                    val currentId = _uiState.value.myLovyId
+                    val convId = messageDto.conversationId
+                    val senderId = messageDto.senderId
+                    val receiverId = messageDto.receiverId
+
+                    val isRelevant = (receiverId != null && receiverId.equals(currentId, ignoreCase = true)) ||
+                            senderId.equals(currentId, ignoreCase = true) ||
+                            convId.contains(currentId)
+
+                    if (isRelevant) {
+                        withContext(Dispatchers.Main) {
+                            processIncomingRecentMessages(listOf(messageDto), currentId)
+
+                            // Jika user sedang aktif membuka percakapan ini dan pesan dari orang lain, tandai terbaca instan
+                            if (_uiState.value.activeChatId == convId && !isSenderMe(senderId, receiverId, currentId)) {
+                                val partnerId = extractPartnerIdFromConvId(convId, currentId)
+                                viewModelScope.launch(Dispatchers.IO) {
+                                    supabaseRepo.markMessagesAsRead(convId, partnerId)
+                                    localChatRepo?.markIncomingMessagesAsRead(convId)
+                                }
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.w("LovyRealtime", "Error processing realtime chat message: ${e.message}")
+                }
+            }
+        }
+    }
 
     private fun startIncomingChatPeriodicSync() {
         periodicIncomingChatJob?.cancel()

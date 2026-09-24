@@ -246,6 +246,9 @@ create index if not exists idx_chat_messages_sender on chat_messages (sender_id)
 create index if not exists idx_chat_messages_receiver on chat_messages (receiver_id);
 create index if not exists idx_ocean_bottles_created on ocean_bottles (created_at desc);
 create index if not exists idx_moments_created on moments (created_at desc);
+
+-- 8. AKTIFKAN SUPABASE REALTIME (INSTANT WEBSOCKET SUBSCRIPTION)
+alter publication supabase_realtime add table chat_messages;
     """.trimIndent()
 
     Scaffold(
