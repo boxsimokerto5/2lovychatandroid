@@ -124,6 +124,7 @@ fun ProfileTabScreen(
     var showLanguagePicker by remember { mutableStateOf(false) }
     var showPrivacyDialog by remember { mutableStateOf(false) }
     var showBlockedUsersDialog by remember { mutableStateOf(false) }
+    var showPrivacyPolicyDialog by remember { mutableStateOf(false) }
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
     var showMyQrCodeDialog by remember { mutableStateOf(false) }
     var viewingPhotoUrl by remember { mutableStateOf<String?>(null) }
@@ -322,6 +323,14 @@ fun ProfileTabScreen(
                         )
                         Toast.makeText(context, "Memicu notifikasi & efek getar pesan baru 🔔📳", Toast.LENGTH_SHORT).show()
                     }
+                )
+                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
+                ProfileMenuItem(
+                    icon = Icons.Default.Security,
+                    iconTint = Color(0xFF0288D1),
+                    title = "Kebijakan Privasi & Ketentuan",
+                    subtitle = "Panduan izin lokasi, kamera, data iklan & akun",
+                    onClick = { showPrivacyPolicyDialog = true }
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
                 ProfileMenuItem(
@@ -620,6 +629,10 @@ fun ProfileTabScreen(
             onLocationPermissionChanged = onLocationPermissionChanged,
             onDismiss = { showPrivacyDialog = false }
         )
+    }
+
+    if (showPrivacyPolicyDialog) {
+        PrivacyPolicyDialog(onDismiss = { showPrivacyPolicyDialog = false })
     }
 
     // Zoomable Photo Viewer Dialog untuk foto profil sendiri
@@ -1106,6 +1119,166 @@ fun BlockedUsersDialog(
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Text("Tutup", color = Color.White, fontWeight = FontWeight.Bold)
+            }
+        }
+    )
+}
+
+@Composable
+fun PrivacyPolicyDialog(
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = EmeraldGreen.copy(alpha = 0.15f),
+                    modifier = Modifier.size(38.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Security,
+                            contentDescription = null,
+                            tint = EmeraldGreen,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+                Text(
+                    text = "Kebijakan Privasi & Ketentuan",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp,
+                    color = NeutralDark
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Lovy Chat berkomitmen melindungi privasi data dan keamanan pengguna sesuai standar Google Play Developer Policy.",
+                    fontSize = 13.sp,
+                    color = NeutralMedium,
+                    lineHeight = 18.sp
+                )
+
+                Card(
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(containerColor = ScreenBackground)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "📍 1. Penggunaan Izin Lokasi (GPS)",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.5.sp,
+                            color = NeutralDark
+                        )
+                        Text(
+                            text = "• Lokasi hanya diakses saat aplikasi sedang aktif dibuka (Foreground).\n• Digunakan semata-mata untuk fitur 'Pengguna Sekitar' (Radar Teman).\n• Anda dapat mengaktifkan Mode Penyamaran atau menyembunyikan jarak persis kapan saja di menu Privasi & Lokasi.",
+                            fontSize = 12.sp,
+                            color = NeutralDark,
+                            lineHeight = 17.sp
+                        )
+                    }
+                }
+
+                Card(
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(containerColor = ScreenBackground)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "📷 2. Penggunaan Izin Kamera",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.5.sp,
+                            color = NeutralDark
+                        )
+                        Text(
+                            text = "• Digunakan untuk memindai Barcode / QR Code teman secara instan.\n• Digunakan untuk mengambil foto profil atau gambar obrolan secara langsung jika Anda memilih menggunakan kamera.\n• Kamera tidak pernah merekam di latar belakang.",
+                            fontSize = 12.sp,
+                            color = NeutralDark,
+                            lineHeight = 17.sp
+                        )
+                    }
+                }
+
+                Card(
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(containerColor = ScreenBackground)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "📢 3. Layanan Iklan & ID Iklan (AD_ID)",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.5.sp,
+                            color = NeutralDark
+                        )
+                        Text(
+                            text = "• Aplikasi menggunakan Google Play Advertising ID (AD_ID) melalui SDK Unity/ironSource untuk menayangkan banner iklan.\n• Data periklanan dikelola sesuai pedoman privasi Google Play.",
+                            fontSize = 12.sp,
+                            color = NeutralDark,
+                            lineHeight = 17.sp
+                        )
+                    }
+                }
+
+                Card(
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(containerColor = ScreenBackground)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "🛡️ 4. Konten Pengguna & Anti-Pelecehan (UGC)",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.5.sp,
+                            color = NeutralDark
+                        )
+                        Text(
+                            text = "• Lovy Chat melarang segala bentuk spam, pornografi, ujaran kebencian, dan pelecehan.\n• Disediakan tombol Laporkan dan Blokir pada setiap profil teman, obrolan, dan momen.\n• Pengguna yang melanggar akan ditindak tegas.",
+                            fontSize = 12.sp,
+                            color = NeutralDark,
+                            lineHeight = 17.sp
+                        )
+                    }
+                }
+
+                Card(
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(containerColor = ScreenBackground)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "🗑️ 5. Hak Hapus Akun & Data (Account Deletion)",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.5.sp,
+                            color = NeutralDark
+                        )
+                        Text(
+                            text = "• Anda berhak menghapus akun dan seluruh riwayat obrolan serta data profil kapan saja melalui tombol 'Hapus Akun Permanen' di halaman Profil.",
+                            fontSize = 12.sp,
+                            color = NeutralDark,
+                            lineHeight = 17.sp
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("Saya Mengerti", color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
     )
