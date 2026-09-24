@@ -35,8 +35,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -392,7 +394,8 @@ fun QrCodeScannerDialog(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 20.dp)
+                    .statusBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
                     .align(Alignment.TopCenter)
             ) {
                 Surface(
@@ -460,7 +463,8 @@ fun QrCodeScannerDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter)
-                    .padding(horizontal = 20.dp, vertical = 28.dp)
+                    .navigationBarsPadding()
+                    .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp)
             ) {
                 // Status loading jika sedang membaca gambar galeri atau mencari user
                 AnimatedVisibility(
