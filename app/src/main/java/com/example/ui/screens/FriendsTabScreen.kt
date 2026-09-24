@@ -82,6 +82,7 @@ fun FriendsTabScreen(
     var searchQuery by remember { mutableStateOf("") }
     var friendToDelete by remember { mutableStateOf<User?>(null) }
     var showClearAllDialog by remember { mutableStateOf(false) }
+    var viewingAvatarPhoto by remember { mutableStateOf<Pair<String, String>?>(null) }
 
     // Urutkan daftar teman:
     // 1. Teman Favorit (⭐) SELALU berada di paling atas (bahkan di atas teman online)!
@@ -258,13 +259,19 @@ fun FriendsTabScreen(
                             .padding(start = 16.dp, end = 6.dp, top = 10.dp, bottom = 10.dp)
                             .testTag("friend_item_${user.id}")
                     ) {
+                        val hasAvatarPhoto = !user.avatarUrl.isNullOrBlank()
                         LovyAvatar(
                             name = user.name,
                             avatarColorHex = user.avatarColorHex,
                             avatarUrl = user.avatarUrl,
                             size = 46.dp,
                             fontSize = 18.sp,
-                            isOnline = user.isOnline
+                            isOnline = user.isOnline,
+                            modifier = if (hasAvatarPhoto) {
+                                Modifier
+                                    .clip(CircleShape)
+                                    .clickable { viewingAvatarPhoto = Pair(user.name, user.avatarUrl) }
+                            } else Modifier
                         )
 
                         Spacer(modifier = Modifier.width(14.dp))
@@ -493,6 +500,15 @@ fun FriendsTabScreen(
                     Text("Batal", color = NeutralMedium)
                 }
             }
+        )
+    }
+
+    // Zoomable Photo Viewer saat foto avatar teman di daftar kontak diklik
+    viewingAvatarPhoto?.let { (friendName, photoUrl) ->
+        com.example.ui.components.ZoomablePhotoViewerDialog(
+            photoUrl = photoUrl,
+            title = "Foto Profil $friendName",
+            onDismiss = { viewingAvatarPhoto = null }
         )
     }
 }

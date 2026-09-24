@@ -116,6 +116,7 @@ fun UserProfileScreen(
 ) {
     var showEditDialog by remember { mutableStateOf(false) }
     var showPhotoOptionsDialog by remember { mutableStateOf(false) }
+    var viewingPhotoUrl by remember { mutableStateOf<String?>(null) }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -593,15 +594,43 @@ fun UserProfileScreen(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
+                    // Opsi Lihat & Perbesar Foto Profil (Jika ada foto yang dipasang)
+                    if (!userProfile.profilePicture.isNullOrBlank()) {
+                        Button(
+                            onClick = {
+                                showPhotoOptionsDialog = false
+                                viewingPhotoUrl = userProfile.profilePicture
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("btn_option_view_photo")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CameraAlt,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Lihat & Perbesar Foto Profil (Zoom 2 Jari)",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
+
                     // Opsi 1: Pilih dari Galeri
-                    Button(
+                    OutlinedButton(
                         onClick = {
                             showPhotoOptionsDialog = false
                             photoPickerLauncher.launch(
                                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                             )
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = EmeraldGreen),
+                        border = BorderStroke(1.dp, EmeraldGreen),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -658,6 +687,15 @@ fun UserProfileScreen(
                     Text("Tutup", color = NeutralDark)
                 }
             }
+        )
+    }
+
+    // Zoomable Fullscreen Photo Viewer dengan fitur Zoom 2 Jari
+    viewingPhotoUrl?.let { photoUrl ->
+        com.example.ui.components.ZoomablePhotoViewerDialog(
+            photoUrl = photoUrl,
+            title = "Foto Profil ${userProfile.displayName}",
+            onDismiss = { viewingPhotoUrl = null }
         )
     }
 

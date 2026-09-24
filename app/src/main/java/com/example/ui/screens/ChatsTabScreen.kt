@@ -94,6 +94,7 @@ fun ChatsTabScreen(
     var searchQuery by remember { mutableStateOf("") }
     var selectedConversationIds by remember { mutableStateOf(emptySet<String>()) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var viewingAvatarPhoto by remember { mutableStateOf<Pair<String, String>?>(null) } // Pair(name, url)
 
     val isSelectionMode = selectedConversationIds.isNotEmpty()
 
@@ -294,6 +295,19 @@ fun ChatsTabScreen(
                         conversation = conv,
                         isSelected = isSelected,
                         isSelectionMode = isSelectionMode,
+                        onAvatarClick = {
+                            if (!isSelectionMode && !conv.partnerAvatarUrl.isNullOrBlank()) {
+                                viewingAvatarPhoto = Pair(conv.partnerName, conv.partnerAvatarUrl)
+                            } else if (isSelectionMode) {
+                                selectedConversationIds = if (isSelected) {
+                                    selectedConversationIds - conv.id
+                                } else {
+                                    selectedConversationIds + conv.id
+                                }
+                            } else {
+                                onOpenChat(conv)
+                            }
+                        },
                         onClick = {
                             if (isSelectionMode) {
                                 selectedConversationIds = if (isSelected) {
@@ -387,6 +401,15 @@ fun ChatsTabScreen(
             }
         )
     }
+
+    // Zoomable Fullscreen Photo Viewer saat foto avatar teman di list obrolan diklik
+    viewingAvatarPhoto?.let { (partnerName, photoUrl) ->
+        com.example.ui.components.ZoomablePhotoViewerDialog(
+            photoUrl = photoUrl,
+            title = "Foto Profil $partnerName",
+            onDismiss = { viewingAvatarPhoto = null }
+        )
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -395,6 +418,7 @@ fun ChatConversationItem(
     conversation: ChatConversation,
     isSelected: Boolean = false,
     isSelectionMode: Boolean = false,
+    onAvatarClick: (() -> Unit)? = null,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
@@ -426,14 +450,20 @@ fun ChatConversationItem(
             .padding(horizontal = 14.dp, vertical = 8.dp)
             .testTag("conversation_${conversation.id}")
     ) {
-        // Avatar (Compact 44dp)
+        // Avatar (Compact 44dp) - Klik untuk zoom foto jika ada foto profil
+        val hasPhoto = !conversation.partnerAvatarUrl.isNullOrBlank()
         LovyAvatar(
             name = conversation.partnerName,
             avatarColorHex = conversation.partnerAvatarHex,
             avatarUrl = conversation.partnerAvatarUrl,
             size = 44.dp,
             fontSize = 18.sp,
-            isOnline = conversation.isOnline
+            isOnline = conversation.isOnline,
+            modifier = if (hasPhoto && onAvatarClick != null) {
+                Modifier
+                    .clip(CircleShape)
+                    .clickable { onAvatarClick() }
+            } else Modifier
         )
 
         Spacer(modifier = Modifier.width(12.dp))

@@ -125,6 +125,7 @@ fun ProfileTabScreen(
     var showPrivacyDialog by remember { mutableStateOf(false) }
     var showBlockedUsersDialog by remember { mutableStateOf(false) }
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
+    var viewingPhotoUrl by remember { mutableStateOf<String?>(null) }
     var secretDevClickCount by remember { mutableIntStateOf(0) }
     var lastSecretClickTime by remember { mutableLongStateOf(0L) }
     Column(
@@ -147,12 +148,18 @@ fun ProfileTabScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 // Avatar (Compact 58dp)
+                val hasPhoto = !profilePicture.isNullOrBlank()
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .size(58.dp)
                         .clip(CircleShape)
                         .background(Color.White)
+                        .then(
+                            if (hasPhoto) {
+                                Modifier.clickable { viewingPhotoUrl = profilePicture }
+                            } else Modifier
+                        )
                 ) {
                     if (!profilePicture.isNullOrBlank()) {
                         AsyncImage(
@@ -600,6 +607,15 @@ fun ProfileTabScreen(
             onToggleShowOnlineStatus = onToggleShowOnlineStatus,
             onLocationPermissionChanged = onLocationPermissionChanged,
             onDismiss = { showPrivacyDialog = false }
+        )
+    }
+
+    // Zoomable Photo Viewer Dialog untuk foto profil sendiri
+    viewingPhotoUrl?.let { photoUrl ->
+        com.example.ui.components.ZoomablePhotoViewerDialog(
+            photoUrl = photoUrl,
+            title = "Foto Profil $myName",
+            onDismiss = { viewingPhotoUrl = null }
         )
     }
 }

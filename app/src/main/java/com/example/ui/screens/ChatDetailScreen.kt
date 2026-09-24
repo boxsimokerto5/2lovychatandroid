@@ -24,6 +24,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -112,6 +114,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
@@ -307,13 +310,19 @@ fun ChatDetailScreen(
                             .padding(horizontal = 4.dp, vertical = 4.dp)
                             .testTag("chat_header_partner_profile")
                     ) {
+                        val hasPartnerPhoto = !partnerAvatarUrl.isNullOrBlank()
                         LovyAvatar(
                             name = partnerName,
                             avatarColorHex = partnerAvatarHex,
                             avatarUrl = partnerAvatarUrl,
                             size = 38.dp,
                             fontSize = 16.sp,
-                            isOnline = true
+                            isOnline = true,
+                            modifier = if (hasPartnerPhoto) {
+                                Modifier
+                                    .clip(CircleShape)
+                                    .clickable { viewingPhotoUrl = partnerAvatarUrl }
+                            } else Modifier
                         )
 
                         Spacer(modifier = Modifier.width(12.dp))
@@ -1029,42 +1038,13 @@ fun ChatDetailScreen(
         }
     }
 
-    // Fullscreen Chat Photo Dialog
+    // Fullscreen Chat Photo Dialog dengan dukungan Zoom 2 Jari (Pinch-to-zoom)
     viewingPhotoUrl?.let { photoUrl ->
-        Dialog(
-            onDismissRequest = { viewingPhotoUrl = null },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.95f))
-                    .clickable { viewingPhotoUrl = null }
-            ) {
-                AsyncImage(
-                    model = photoUrl,
-                    contentDescription = "Foto Obrolan Penuh",
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.Center)
-                )
-                IconButton(
-                    onClick = { viewingPhotoUrl = null },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(16.dp)
-                        .size(40.dp)
-                        .background(Color.Black.copy(alpha = 0.5f), CircleShape)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Tutup",
-                        tint = Color.White
-                    )
-                }
-            }
-        }
+        com.example.ui.components.ZoomablePhotoViewerDialog(
+            photoUrl = photoUrl,
+            title = "Foto Obrolan",
+            onDismiss = { viewingPhotoUrl = null }
+        )
     }
 
     // Modal Bottom Sheet displaying Partner Profile details
@@ -1115,6 +1095,7 @@ fun PartnerProfileBottomSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var previewMoment by remember { mutableStateOf<MomentItem?>(null) }
+    var viewingAvatarUrl by remember { mutableStateOf<String?>(null) }
     var showBlockConfirmDialog by remember { mutableStateOf(false) }
     var showReportDialog by remember { mutableStateOf(false) }
 
@@ -1191,14 +1172,20 @@ fun PartnerProfileBottomSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Partner Avatar (Large, with online badge)
+            // Partner Avatar (Large, with online badge - Clickable to open zoomable viewer if has photo)
+            val hasPhoto = !partnerAvatarUrl.isNullOrBlank()
             LovyAvatar(
                 name = partnerName,
                 avatarColorHex = partnerAvatarHex,
                 avatarUrl = partnerAvatarUrl,
                 size = 80.dp,
                 fontSize = 32.sp,
-                isOnline = true
+                isOnline = true,
+                modifier = if (hasPhoto) {
+                    Modifier
+                        .clip(CircleShape)
+                        .clickable { viewingAvatarUrl = partnerAvatarUrl }
+                } else Modifier
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -1607,6 +1594,15 @@ fun PartnerProfileBottomSheet(
             }
         )
     }
+
+    // Zoomable Fullscreen Dialog saat foto profil teman diklik
+    viewingAvatarUrl?.let { avatarUrl ->
+        com.example.ui.components.ZoomablePhotoViewerDialog(
+            photoUrl = avatarUrl,
+            title = "Foto Profil $partnerName",
+            onDismiss = { viewingAvatarUrl = null }
+        )
+    }
 }
 
 @Composable
@@ -1873,14 +1869,49 @@ fun PartnerPhotoPreviewDialog(
                     }
                 }
 
-                // Center: High-res photo
+                // Center: High-res photo with 2-finger zoom and double-tap zoom
                 if (!moment.imageUrl.isNullOrBlank()) {
+                    var scale by remember { mutableFloatStateOf(1f) }
+                    var offset by remember { mutableStateOf(Offset.Zero) }
+
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f)
                             .padding(vertical = 12.dp)
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onDoubleTap = { tapOffset ->
+                                        if (scale > 1.2f) {
+                                            scale = 1f
+                                            offset = Offset.Zero
+                                        } else {
+                                            scale = 2.5f
+                                            offset = Offset(
+                                                x = (size.width / 2f - tapOffset.x) * 1.5f,
+                                                y = (size.height / 2f - tapOffset.y) * 1.5f
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+                            .pointerInput(Unit) {
+                                detectTransformGestures { _, pan, zoom, _ ->
+                                    val newScale = (scale * zoom).coerceIn(0.85f, 5f)
+                                    scale = newScale
+                                    if (newScale > 1f) {
+                                        val maxOffsetX = (size.width * (newScale - 1f)) / 1.8f
+                                        val maxOffsetY = (size.height * (newScale - 1f)) / 1.8f
+                                        offset = Offset(
+                                            x = (offset.x + pan.x).coerceIn(-maxOffsetX, maxOffsetX),
+                                            y = (offset.y + pan.y).coerceIn(-maxOffsetY, maxOffsetY)
+                                        )
+                                    } else {
+                                        offset = Offset.Zero
+                                    }
+                                }
+                            }
                     ) {
                         AsyncImage(
                             model = moment.imageUrl,
@@ -1889,6 +1920,12 @@ fun PartnerPhotoPreviewDialog(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
+                                .graphicsLayer(
+                                    scaleX = scale,
+                                    scaleY = scale,
+                                    translationX = offset.x,
+                                    translationY = offset.y
+                                )
                         )
                     }
                 } else {

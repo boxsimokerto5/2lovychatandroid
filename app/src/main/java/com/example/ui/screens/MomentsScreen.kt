@@ -625,44 +625,13 @@ fun MomentsScreen(
         )
     }
 
-    // Fullscreen Photo Modal
+    // Fullscreen Photo Modal dengan Zoom 2 Jari
     fullscreenPhotoUrl?.let { photoUrl ->
-        Dialog(
-            onDismissRequest = { fullscreenPhotoUrl = null },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.95f))
-                    .clickable { fullscreenPhotoUrl = null }
-            ) {
-                AsyncImage(
-                    model = photoUrl,
-                    contentDescription = "Foto Penuh",
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.Center)
-                )
-
-                // Close button
-                IconButton(
-                    onClick = { fullscreenPhotoUrl = null },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(20.dp)
-                        .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.6f))
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Tutup",
-                        tint = Color.White
-                    )
-                }
-            }
-        }
+        com.example.ui.components.ZoomablePhotoViewerDialog(
+            photoUrl = photoUrl,
+            title = "Foto Momen",
+            onDismiss = { fullscreenPhotoUrl = null }
+        )
     }
 
     // Modal Bottom Sheet untuk Melihat & Mengirim Komentar Momen
@@ -1011,12 +980,18 @@ fun MomentCard(
                 val displayAvatarUrl = item.authorAvatarUrl?.takeIf { it.isNotBlank() }
                     ?: if (isMyMoment) currentUserAvatarUrl?.takeIf { it.isNotBlank() } else null
 
+                val hasAvatarPhoto = !displayAvatarUrl.isNullOrBlank()
                 LovyAvatar(
                     name = item.authorName,
                     avatarColorHex = item.authorAvatarHex,
                     avatarUrl = displayAvatarUrl,
                     size = 40.dp,
-                    fontSize = 16.sp
+                    fontSize = 16.sp,
+                    modifier = if (hasAvatarPhoto) {
+                        Modifier
+                            .clip(CircleShape)
+                            .clickable { onPhotoClick(displayAvatarUrl) }
+                    } else Modifier
                 )
 
                 Spacer(modifier = Modifier.width(10.dp))

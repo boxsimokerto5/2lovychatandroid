@@ -137,6 +137,7 @@ fun NearbyScreen(
 ) {
     val context = LocalContext.current
     var selectedUserForProfile by remember { mutableStateOf<User?>(null) }
+    var viewingAvatarPhoto by remember { mutableStateOf<Pair<String, String>?>(null) }
 
     LaunchedEffect(Unit) {
         val fineCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -677,6 +678,13 @@ fun NearbyScreen(
                         NearbyUserCard(
                             user = user,
                             hideExactDistance = hideExactDistance,
+                            onAvatarClick = {
+                                if (!user.avatarUrl.isNullOrBlank()) {
+                                    viewingAvatarPhoto = Pair(user.name, user.avatarUrl)
+                                } else {
+                                    selectedUserForProfile = user
+                                }
+                            },
                             onClick = { selectedUserForProfile = user },
                             onSayHi = { onSayHi(user) }
                         )
@@ -899,6 +907,15 @@ fun NearbyScreen(
             }
         )
     }
+
+    // Zoomable Photo Viewer saat foto avatar pengguna di daftar sekitar diklik
+    viewingAvatarPhoto?.let { (userName, photoUrl) ->
+        com.example.ui.components.ZoomablePhotoViewerDialog(
+            photoUrl = photoUrl,
+            title = "Foto Profil $userName",
+            onDismiss = { viewingAvatarPhoto = null }
+        )
+    }
 }
 }
 
@@ -906,6 +923,7 @@ fun NearbyScreen(
 fun NearbyUserCard(
     user: User,
     hideExactDistance: Boolean = false,
+    onAvatarClick: (() -> Unit)? = null,
     onClick: () -> Unit = {},
     onSayHi: () -> Unit,
     modifier: Modifier = Modifier
@@ -925,14 +943,20 @@ fun NearbyUserCard(
                 .padding(horizontal = 12.dp, vertical = 9.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar (Compact 46dp)
+            // Avatar (Compact 46dp) - Klik untuk zoom jika ada foto profil
+            val hasPhoto = !user.avatarUrl.isNullOrBlank()
             LovyAvatar(
                 name = user.name,
                 avatarColorHex = user.avatarColorHex,
                 avatarUrl = user.avatarUrl,
                 size = 46.dp,
                 fontSize = 18.sp,
-                isOnline = user.isOnline
+                isOnline = user.isOnline,
+                modifier = if (hasPhoto && onAvatarClick != null) {
+                    Modifier
+                        .clip(CircleShape)
+                        .clickable { onAvatarClick() }
+                } else Modifier
             )
 
             Spacer(modifier = Modifier.width(10.dp))

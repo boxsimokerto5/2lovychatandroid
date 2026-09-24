@@ -93,6 +93,7 @@ fun UserProfileBottomSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var previewMoment by remember { mutableStateOf<MomentItem?>(null) }
+    var viewingAvatarPhoto by remember { mutableStateOf<String?>(null) }
     var showBlockConfirmDialog by remember { mutableStateOf(false) }
     var showReportDialog by remember { mutableStateOf(false) }
 
@@ -175,14 +176,20 @@ fun UserProfileBottomSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Avatar Besar dengan Status Online
+            // Avatar Besar dengan Status Online (Bisa diklik untuk zoom jika ada foto)
+            val hasAvatarPhoto = !user.avatarUrl.isNullOrBlank()
             LovyAvatar(
                 name = user.name,
                 avatarColorHex = user.avatarColorHex,
                 avatarUrl = user.avatarUrl,
                 size = 88.dp,
                 fontSize = 36.sp,
-                isOnline = user.isOnline
+                isOnline = user.isOnline,
+                modifier = if (hasAvatarPhoto) {
+                    Modifier
+                        .clip(CircleShape)
+                        .clickable { viewingAvatarPhoto = user.avatarUrl }
+                } else Modifier
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -587,11 +594,21 @@ fun UserProfileBottomSheet(
         )
     }
 
-    // Dialog Lightbox Foto Momen Full-Screen
+    // Dialog Lightbox Foto Momen Full-Screen (dengan zoom 2 jari)
     previewMoment?.let { moment ->
-        UserPhotoPreviewDialog(
-            moment = moment,
+        com.example.ui.components.ZoomablePhotoViewerDialog(
+            photoUrl = moment.imageUrl,
+            title = "Momen ${moment.authorName}",
             onDismiss = { previewMoment = null }
+        )
+    }
+
+    // Dialog Lightbox Foto Profil Full-Screen (dengan zoom 2 jari)
+    viewingAvatarPhoto?.let { photoUrl ->
+        com.example.ui.components.ZoomablePhotoViewerDialog(
+            photoUrl = photoUrl,
+            title = "Foto Profil ${user.name}",
+            onDismiss = { viewingAvatarPhoto = null }
         )
     }
 }

@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +42,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -72,6 +77,8 @@ fun NewFriendsScreen(
     onSimulateIncomingChat: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    var viewingAvatarPhoto by remember { mutableStateOf<Pair<String, String>?>(null) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -240,6 +247,11 @@ fun NewFriendsScreen(
                 items(requests, key = { it.id }) { request ->
                     NewFriendRequestCard(
                         request = request,
+                        onAvatarClick = {
+                            if (!request.user.avatarUrl.isNullOrBlank()) {
+                                viewingAvatarPhoto = Pair(request.user.name, request.user.avatarUrl)
+                            }
+                        },
                         onAccept = { onAcceptFriend(request.user) },
                         onIgnore = { onIgnoreFriend(request.user.id) },
                         onOpenChat = { onOpenChat(request.user) }
@@ -248,11 +260,21 @@ fun NewFriendsScreen(
             }
         }
     }
+
+    // Zoomable Photo Viewer saat avatar teman baru diklik
+    viewingAvatarPhoto?.let { (userName, photoUrl) ->
+        com.example.ui.components.ZoomablePhotoViewerDialog(
+            photoUrl = photoUrl,
+            title = "Foto Profil $userName",
+            onDismiss = { viewingAvatarPhoto = null }
+        )
+    }
 }
 
 @Composable
 private fun NewFriendRequestCard(
     request: NewFriendRequest,
+    onAvatarClick: (() -> Unit)? = null,
     onAccept: () -> Unit,
     onIgnore: () -> Unit,
     onOpenChat: () -> Unit,
@@ -272,13 +294,19 @@ private fun NewFriendRequestCard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // User Avatar
+                // User Avatar - Klik untuk zoom jika ada foto
+                val hasAvatarPhoto = !request.user.avatarUrl.isNullOrBlank()
                 LovyAvatar(
                     avatarUrl = request.user.avatarUrl,
                     avatarColorHex = request.user.avatarColorHex,
                     name = request.user.name,
                     size = 52.dp,
-                    isOnline = request.user.isOnline
+                    isOnline = request.user.isOnline,
+                    modifier = if (hasAvatarPhoto && onAvatarClick != null) {
+                        Modifier
+                            .clip(CircleShape)
+                            .clickable { onAvatarClick() }
+                    } else Modifier
                 )
 
                 Spacer(modifier = Modifier.width(12.dp))
