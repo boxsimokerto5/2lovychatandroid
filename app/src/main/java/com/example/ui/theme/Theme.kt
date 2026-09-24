@@ -16,9 +16,10 @@ private val DarkColorScheme =
     onPrimary = androidx.compose.ui.graphics.Color.White,
     primaryContainer = EmeraldGreenDark,
     secondary = AccentCyan,
-    background = androidx.compose.ui.graphics.Color(0xFF121212),
-    surface = androidx.compose.ui.graphics.Color(0xFF1E1E1E),
-    onSurface = androidx.compose.ui.graphics.Color.White,
+    background = ScreenBackground,
+    surface = androidx.compose.ui.graphics.Color.White,
+    onBackground = NeutralDark,
+    onSurface = NeutralDark,
   )
 
 private val LightColorScheme =
@@ -35,21 +36,12 @@ private val LightColorScheme =
 
 @Composable
 fun LovyChatTheme(
-  darkTheme: Boolean = isSystemInDarkTheme(),
+  darkTheme: Boolean = false, // Tetap gunakan palet terang beraksen zamrud agar teks selalu kontras dan jelas di semua perangkat
   // For Lovy Chat brand identity, default dynamicColor to false so our emerald branding shines
   dynamicColor: Boolean = false,
   content: @Composable () -> Unit,
 ) {
-  val colorScheme =
-    when {
-      dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-        val context = LocalContext.current
-        if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-      }
-
-      darkTheme -> DarkColorScheme
-      else -> LightColorScheme
-    }
+  val colorScheme = LightColorScheme
 
   MaterialTheme(colorScheme = colorScheme, typography = Typography, content = content)
 }

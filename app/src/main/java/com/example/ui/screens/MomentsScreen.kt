@@ -458,11 +458,14 @@ fun MomentsScreen(
                     OutlinedTextField(
                         value = postText,
                         onValueChange = { postText = it },
-                        placeholder = { Text("Apa ceritamu hari ini? Ceritakan aktivitasmu...") },
+                        placeholder = { Text("Apa ceritamu hari ini? Ceritakan aktivitasmu...", color = NeutralMedium) },
                         minLines = 3,
                         maxLines = 5,
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = NeutralDark,
+                            unfocusedTextColor = NeutralDark,
+                            cursorColor = EmeraldGreen,
                             focusedBorderColor = EmeraldGreen,
                             unfocusedBorderColor = NeutralBorder
                         ),
@@ -503,6 +506,9 @@ fun MomentsScreen(
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = NeutralDark,
+                            unfocusedTextColor = NeutralDark,
+                            cursorColor = EmeraldGreen,
                             focusedBorderColor = EmeraldGreen,
                             unfocusedBorderColor = NeutralBorder
                         ),
@@ -884,6 +890,9 @@ fun MomentsScreen(
                             maxLines = 3,
                             shape = RoundedCornerShape(22.dp),
                             colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = NeutralDark,
+                                unfocusedTextColor = NeutralDark,
+                                cursorColor = EmeraldGreen,
                                 focusedBorderColor = EmeraldGreen,
                                 unfocusedBorderColor = NeutralBorder.copy(alpha = 0.8f),
                                 focusedContainerColor = Color(0xFFFAFAFA),

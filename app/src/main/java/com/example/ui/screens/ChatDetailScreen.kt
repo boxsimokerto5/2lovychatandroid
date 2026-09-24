@@ -101,6 +101,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -535,9 +536,10 @@ fun ChatDetailScreen(
                                 onClick = {
                                     onSendMessage(suggestion)
                                 },
-                                label = { Text(suggestion, fontSize = 11.5.sp) },
+                                label = { Text(suggestion, fontSize = 11.5.sp, color = NeutralDark) },
                                 colors = SuggestionChipDefaults.suggestionChipColors(
-                                    containerColor = ScreenBackground
+                                    containerColor = ScreenBackground,
+                                    labelColor = NeutralDark
                                 ),
                                 border = BorderStroke(0.8.dp, NeutralBorder.copy(alpha = 0.7f)),
                                 shape = RoundedCornerShape(16.dp),
@@ -690,19 +692,29 @@ fun ChatDetailScreen(
                             OutlinedTextField(
                                 value = inputText,
                                 onValueChange = { inputText = it },
+                                textStyle = TextStyle(
+                                    color = Color(0xFF111827),
+                                    fontSize = 15.sp
+                                ),
                                 placeholder = {
                                     Text(
                                         text = if (pendingPhotoUri != null) "Tambah keterangan foto..." else "Ketik pesan...",
-                                        fontSize = 14.sp
+                                        fontSize = 14.sp,
+                                        color = Color(0xFF94A3B8)
                                     )
                                 },
                                 maxLines = 4,
                                 shape = RoundedCornerShape(24.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
+                                    focusedTextColor = Color(0xFF111827),
+                                    unfocusedTextColor = Color(0xFF111827),
+                                    focusedPlaceholderColor = Color(0xFF94A3B8),
+                                    unfocusedPlaceholderColor = Color(0xFF94A3B8),
+                                    cursorColor = EmeraldGreen,
                                     focusedBorderColor = EmeraldGreen,
-                                    unfocusedBorderColor = Color(0xFFE0E0E0),
-                                    focusedContainerColor = ScreenBackground,
-                                    unfocusedContainerColor = ScreenBackground
+                                    unfocusedBorderColor = Color(0xFFD1D5DB),
+                                    focusedContainerColor = Color(0xFFF9FAFB),
+                                    unfocusedContainerColor = Color(0xFFF9FAFB)
                                 ),
                                 modifier = Modifier
                                     .weight(1f)

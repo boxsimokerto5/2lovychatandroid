@@ -47,6 +47,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -75,6 +76,7 @@ import androidx.compose.ui.unit.sp
 import com.example.model.BottleMessage
 import com.example.ui.theme.AccentCyan
 import com.example.ui.theme.EmeraldGreen
+import com.example.ui.theme.NeutralBorder
 import com.example.ui.theme.NeutralDark
 import com.example.ui.theme.NeutralMedium
 import com.example.ui.theme.ScreenBackground
@@ -438,9 +440,16 @@ fun BottleScreen(
                     OutlinedTextField(
                         value = throwMessageText,
                         onValueChange = { throwMessageText = it },
-                        placeholder = { Text("Contoh: Semangat buat kamu yang lagi berjuang hari ini!") },
+                        placeholder = { Text("Contoh: Semangat buat kamu yang lagi berjuang hari ini!", color = NeutralMedium) },
                         minLines = 3,
                         maxLines = 5,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = NeutralDark,
+                            unfocusedTextColor = NeutralDark,
+                            cursorColor = EmeraldGreen,
+                            focusedBorderColor = EmeraldGreen,
+                            unfocusedBorderColor = NeutralBorder
+                        ),
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("input_throw_bottle")

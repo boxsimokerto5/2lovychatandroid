@@ -379,6 +379,9 @@ fun LoginScreen(
                             onNext = { focusManager.moveFocus(FocusDirection.Down) }
                         ),
                         colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = NeutralDark,
+                            unfocusedTextColor = NeutralDark,
+                            cursorColor = EmeraldGreen,
                             focusedBorderColor = EmeraldGreen,
                             focusedLabelColor = EmeraldGreen
                         ),
@@ -436,6 +439,9 @@ fun LoginScreen(
                             }
                         ),
                         colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = NeutralDark,
+                            unfocusedTextColor = NeutralDark,
+                            cursorColor = EmeraldGreen,
                             focusedBorderColor = EmeraldGreen,
                             focusedLabelColor = EmeraldGreen
                         ),
