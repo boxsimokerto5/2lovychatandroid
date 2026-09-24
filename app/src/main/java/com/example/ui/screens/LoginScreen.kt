@@ -26,6 +26,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
@@ -92,6 +93,7 @@ fun LoginScreen(
     onPerformRegister: suspend (username: String, password: String, gender: com.example.model.Gender) -> com.example.data.AuthResult,
     onPerformGoogleLogin: suspend (googleUser: com.example.util.GoogleAuthHelper.GoogleUserResult) -> com.example.data.AuthResult,
     onGuestLogin: () -> Unit = {},
+    onNavigateToSupabaseConfig: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var usernameInput by remember { mutableStateOf("") }

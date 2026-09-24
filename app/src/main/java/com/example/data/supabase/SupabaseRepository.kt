@@ -20,23 +20,31 @@ class SupabaseRepository {
         val auth = SupabaseClient.getAuthHeader()
 
         try {
-            val response = api.getNearbyUsers(apiKey, auth, limit = 1)
-            when (response.code()) {
-                in 200..299 -> {
-                    Result.success("Terhubung ke Supabase dengan sukses! (HTTP ${response.code()})")
-                }
-                401 -> {
-                    Result.failure(Exception("Autentikasi gagal (HTTP 401). Periksa kembali token SUPABASE_ANON_KEY Anda."))
-                }
-                403 -> {
-                    Result.failure(Exception("Akses ditolak (HTTP 403). Pastikan RLS Policy tabel diaktifkan di Supabase."))
-                }
-                404 -> {
-                    Result.failure(Exception("Tabel 'nearby_users' belum ada (HTTP 404). Silakan salin & jalankan skrip SQL di SQL Editor Supabase."))
-                }
-                else -> {
-                    Result.failure(Exception("Gagal: HTTP ${response.code()} - ${response.message()}"))
-                }
+            val missingTables = mutableListOf<String>()
+
+            val resNearby = api.getNearbyUsers(apiKey, auth, limit = 1)
+            when (resNearby.code()) {
+                401 -> return@withContext Result.failure(Exception("Autentikasi gagal (HTTP 401). Periksa kembali token SUPABASE_ANON_KEY Anda."))
+                403 -> return@withContext Result.failure(Exception("Akses ditolak (HTTP 403). Pastikan RLS Policy tabel diaktifkan di Supabase."))
+                404 -> missingTables.add("nearby_users")
+            }
+
+            val resChat = api.getRecentMessages(apiKey, auth, "ping", limit = 1)
+            if (resChat.code() == 404) missingTables.add("chat_messages")
+
+            val resBottles = api.getOceanBottles(apiKey, auth, limit = 1)
+            if (resBottles.code() == 404) missingTables.add("ocean_bottles")
+
+            val resMoments = api.getMoments(apiKey, auth, limit = 1)
+            if (resMoments.code() == 404) missingTables.add("moments")
+
+            val resAccounts = api.getAccountByUsername(apiKey, auth, "ping", limit = 1)
+            if (resAccounts.code() == 404) missingTables.add("app_accounts")
+
+            if (missingTables.isNotEmpty()) {
+                Result.failure(Exception("Tabel belum lengkap di Supabase: ${missingTables.joinToString(", ")}. Silakan salin & jalankan skrip SQL di menu Pengaturan Cloud."))
+            } else {
+                Result.success("Terhubung ke Supabase dengan sukses! Semua tabel (pesan, akun, radar, botol, momen) siap beroperasi.")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Koneksi cloud gagal", e)
@@ -125,7 +133,8 @@ class SupabaseRepository {
                         thrownTimestamp = dto.createdAt,
                         locationHint = dto.locationHint ?: "Lautan Nusantara",
                         avatarHex = dto.avatarHex ?: 0xFF00838F,
-                        isFromMe = false
+                        isFromMe = false,
+                        avatarUrl = dto.avatarUrl
                     )
                 }
             } else {
@@ -151,10 +160,20 @@ class SupabaseRepository {
                 content = bottle.content,
                 createdAt = bottle.thrownTimestamp,
                 locationHint = bottle.locationHint,
-                avatarHex = bottle.avatarHex
+                avatarHex = bottle.avatarHex,
+                avatarUrl = bottle.avatarUrl
             )
             val response = api.insertOceanBottle(apiKey, auth, dto)
-            response.isSuccessful
+            if (response.isSuccessful) {
+                true
+            } else if (dto.avatarUrl != null) {
+                // Fallback jika database Supabase versi lama belum memiliki kolom avatar_url
+                val fallbackDto = dto.copy(avatarUrl = null)
+                val retry = api.insertOceanBottle(apiKey, auth, fallbackDto)
+                retry.isSuccessful
+            } else {
+                false
+            }
         } catch (e: Exception) {
             Log.w(TAG, "Gagal menyimpan bottle ke Supabase", e)
             false
@@ -448,7 +467,7 @@ class SupabaseRepository {
                 isOnline = true,
                 lastActiveAt = System.currentTimeMillis(),
                 avatarUrl = avatarUrl,
-                city = null, // Tabel nearby_users di Supabase belum memiliki kolom city, disimpan di Room lokal
+                city = city?.takeIf { it.isNotBlank() },
                 fcmToken = fcmToken
             )
             val response = api.upsertNearbyUser(apiKey, auth, dto)
@@ -456,7 +475,7 @@ class SupabaseRepository {
                 return@withContext true
             }
 
-            // Fallback jika database Supabase versi lama belum memiliki fcm_token / last_active_at
+            // Fallback 1: jika database Supabase belum memiliki fcm_token / city
             val coreDto = SupabaseUserDto(
                 id = id,
                 name = name,
@@ -471,7 +490,24 @@ class SupabaseRepository {
                 fcmToken = null
             )
             val retry = api.upsertNearbyUser(apiKey, auth, coreDto)
-            retry.isSuccessful
+            if (retry.isSuccessful) return@withContext true
+
+            // Fallback 2: minimal DTO untuk skema paling sederhana
+            val minDto = SupabaseUserDto(
+                id = id,
+                name = name,
+                gender = if (gender == Gender.MALE) "male" else "female",
+                distanceMeters = 100,
+                bio = bio,
+                avatarHex = avatarHex,
+                isOnline = true,
+                lastActiveAt = null,
+                avatarUrl = null,
+                city = null,
+                fcmToken = null
+            )
+            val minRetry = api.upsertNearbyUser(apiKey, auth, minDto)
+            minRetry.isSuccessful
         } catch (e: Exception) {
             Log.w(TAG, "Gagal upsert nearby_user di Supabase", e)
             false
@@ -629,7 +665,15 @@ class SupabaseRepository {
 
         try {
             val response = api.upsertAccount(apiKey, auth, account)
-            response.isSuccessful
+            if (response.isSuccessful) return@withContext true
+
+            // Fallback jika database Supabase versi lama belum memiliki fcm_token
+            if (account.fcmToken != null) {
+                val fallback = account.copy(fcmToken = null)
+                val retry = api.upsertAccount(apiKey, auth, fallback)
+                if (retry.isSuccessful) return@withContext true
+            }
+            false
         } catch (e: Exception) {
             Log.w(TAG, "registerOrUpdateAccount error: ${e.message}")
             false

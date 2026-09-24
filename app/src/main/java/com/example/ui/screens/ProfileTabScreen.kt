@@ -66,6 +66,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -123,6 +125,8 @@ fun ProfileTabScreen(
     var showPrivacyDialog by remember { mutableStateOf(false) }
     var showBlockedUsersDialog by remember { mutableStateOf(false) }
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
+    var secretDevClickCount by remember { mutableIntStateOf(0) }
+    var lastSecretClickTime by remember { mutableLongStateOf(0L) }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -306,7 +310,21 @@ fun ProfileTabScreen(
                     iconTint = Color(0xFF78909C),
                     title = com.example.util.AppStrings.menuAbout(language),
                     subtitle = "Versi 1.0.0 (${com.example.util.AppStrings.motto(language)})",
-                    onClick = {}
+                    onClick = {
+                        // Secret developer trigger: klik 5x cepat untuk membuka konfigurasi cloud pengembang
+                        val now = System.currentTimeMillis()
+                        if (now - lastSecretClickTime < 1000L) {
+                            secretDevClickCount++
+                            if (secretDevClickCount >= 5) {
+                                secretDevClickCount = 0
+                                Toast.makeText(context, "Mode Pengembang: Membuka Pengaturan Cloud ☁️", Toast.LENGTH_SHORT).show()
+                                onNavigateToSupabaseConfig()
+                            }
+                        } else {
+                            secretDevClickCount = 1
+                        }
+                        lastSecretClickTime = now
+                    }
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
                 ProfileMenuItem(

@@ -88,9 +88,13 @@ fun SupabaseConfigScreen(
     val scope = rememberCoroutineScope()
 
     val sqlSchema = """
--- Lovy Chat Supabase Schema
--- Jalankan di SQL Editor di dashboard Supabase Anda:
+-- =======================================================
+-- LOVY CHAT: SKRIP LENGKAP STRUKTUR DATABASE SUPABASE
+-- Jalankan skrip ini di SQL Editor di dashboard Supabase Anda.
+-- Skrip ini aman dijalankan berulang kali (tidak akan menghapus data yang ada).
+-- =======================================================
 
+-- 1. TABEL PENGGUNA SEKITAR (nearby_users)
 create table if not exists nearby_users (
     id text primary key,
     name text not null,
@@ -101,13 +105,21 @@ create table if not exists nearby_users (
     is_online boolean default true,
     last_active_at bigint default 0,
     avatar_url text,
-    city text default 'Indonesia'
+    city text default 'Indonesia',
+    fcm_token text
 );
+alter table nearby_users add column if not exists name text;
+alter table nearby_users add column if not exists gender text;
+alter table nearby_users add column if not exists distance_meters int default 100;
+alter table nearby_users add column if not exists bio text;
+alter table nearby_users add column if not exists avatar_hex bigint default 3046706;
+alter table nearby_users add column if not exists is_online boolean default true;
 alter table nearby_users add column if not exists last_active_at bigint default 0;
 alter table nearby_users add column if not exists avatar_url text;
-alter table nearby_users add column if not exists city text;
+alter table nearby_users add column if not exists city text default 'Indonesia';
 alter table nearby_users add column if not exists fcm_token text;
 
+-- 2. TABEL BOTOL LAUTAN (ocean_bottles)
 create table if not exists ocean_bottles (
     id text primary key,
     sender_id text not null,
@@ -116,9 +128,19 @@ create table if not exists ocean_bottles (
     content text not null,
     created_at bigint not null,
     location_hint text default 'Lautan Nusantara',
-    avatar_hex bigint default 33679
+    avatar_hex bigint default 33679,
+    avatar_url text
 );
+alter table ocean_bottles add column if not exists sender_id text;
+alter table ocean_bottles add column if not exists sender_name text;
+alter table ocean_bottles add column if not exists sender_gender text;
+alter table ocean_bottles add column if not exists content text;
+alter table ocean_bottles add column if not exists created_at bigint;
+alter table ocean_bottles add column if not exists location_hint text default 'Lautan Nusantara';
+alter table ocean_bottles add column if not exists avatar_hex bigint default 33679;
+alter table ocean_bottles add column if not exists avatar_url text;
 
+-- 3. TABEL PESAN CHAT (chat_messages)
 create table if not exists chat_messages (
     id text primary key,
     conversation_id text not null,
@@ -131,12 +153,17 @@ create table if not exists chat_messages (
     image_url text,
     is_read boolean default false
 );
+alter table chat_messages add column if not exists conversation_id text;
+alter table chat_messages add column if not exists sender_id text;
 alter table chat_messages add column if not exists receiver_id text;
+alter table chat_messages add column if not exists text text;
+alter table chat_messages add column if not exists created_at bigint;
 alter table chat_messages add column if not exists deleted_for_sender boolean default false;
 alter table chat_messages add column if not exists deleted_for_receiver boolean default false;
 alter table chat_messages add column if not exists image_url text;
 alter table chat_messages add column if not exists is_read boolean default false;
 
+-- 4. TABEL MOMEN SOSIAL (moments)
 create table if not exists moments (
     id text primary key,
     author_id text not null,
@@ -149,8 +176,17 @@ create table if not exists moments (
     image_url text,
     author_avatar_url text
 );
+alter table moments add column if not exists author_id text;
+alter table moments add column if not exists author_name text;
+alter table moments add column if not exists content text;
+alter table moments add column if not exists likes_count int default 0;
+alter table moments add column if not exists comments_count int default 0;
+alter table moments add column if not exists created_at bigint;
+alter table moments add column if not exists author_avatar_hex bigint default 4222123520;
+alter table moments add column if not exists image_url text;
 alter table moments add column if not exists author_avatar_url text;
 
+-- 5. TABEL AKUN PENGGUNA (app_accounts)
 create table if not exists app_accounts (
     id text primary key,
     username text unique not null,
@@ -165,12 +201,24 @@ create table if not exists app_accounts (
     last_login_at bigint not null,
     fcm_token text
 );
+alter table app_accounts add column if not exists username text;
+alter table app_accounts add column if not exists password_hash text;
+alter table app_accounts add column if not exists display_name text;
+alter table app_accounts add column if not exists gender text default 'FEMALE';
+alter table app_accounts add column if not exists bio text default '';
+alter table app_accounts add column if not exists avatar_url text;
+alter table app_accounts add column if not exists google_id text;
+alter table app_accounts add column if not exists google_email text;
+alter table app_accounts add column if not exists created_at bigint;
+alter table app_accounts add column if not exists last_login_at bigint;
 alter table app_accounts add column if not exists fcm_token text;
 
--- Buka policy CRUD untuk public (anon)
+-- 6. HAK AKSES PERIZINAN (GRANTS & RLS)
+grant usage on schema public to anon, authenticated;
+grant all on all tables in schema public to anon, authenticated;
+grant all on all sequences in schema public to anon, authenticated;
+
 alter table nearby_users enable row level security;
-drop policy if exists "Allow anon read nearby" on nearby_users;
-drop policy if exists "Allow anon insert nearby" on nearby_users;
 drop policy if exists "Allow anon all nearby" on nearby_users;
 create policy "Allow anon all nearby" on nearby_users for all using (true) with check (true);
 
@@ -190,7 +238,7 @@ alter table app_accounts enable row level security;
 drop policy if exists "Allow anon all accounts" on app_accounts;
 create policy "Allow anon all accounts" on app_accounts for all using (true) with check (true);
 
--- Indeks performa untuk jutaan pesan & pengguna:
+-- 7. INDEKS PERFORMA CEPAT (INDEXES)
 create index if not exists idx_accounts_username on app_accounts (username);
 create index if not exists idx_accounts_google on app_accounts (google_email);
 create index if not exists idx_chat_messages_conv on chat_messages (conversation_id, created_at asc);

@@ -75,7 +75,8 @@ fun MainAppScreen(
                 onLanguageChange = { viewModel.setLanguage(it) },
                 onPerformLogin = { username, password -> viewModel.performLogin(username, password) },
                 onPerformRegister = { username, password, gender -> viewModel.performRegister(username, password, gender) },
-                onPerformGoogleLogin = { googleUser -> viewModel.performGoogleLogin(googleUser) }
+                onPerformGoogleLogin = { googleUser -> viewModel.performGoogleLogin(googleUser) },
+                onNavigateToSupabaseConfig = { viewModel.navigateTo(CurrentScreen.SupabaseConfig) }
             )
         }
         is CurrentScreen.Nearby -> {
@@ -404,6 +405,9 @@ fun MainAppScreen(
                             },
                             onNavigateToMoments = {
                                 viewModel.navigateTo(CurrentScreen.Moments)
+                            },
+                            onNavigateToSupabaseConfig = {
+                                viewModel.navigateTo(CurrentScreen.SupabaseConfig)
                             },
                             blockedUserNames = uiState.blockedUserNames,
                             onUnblockUser = { userName ->

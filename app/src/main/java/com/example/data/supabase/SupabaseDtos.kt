@@ -27,7 +27,8 @@ data class SupabaseBottleDto(
     @Json(name = "content") val content: String,
     @Json(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
     @Json(name = "location_hint") val locationHint: String? = "Lautan Nusantara",
-    @Json(name = "avatar_hex") val avatarHex: Long? = 0xFF00838F
+    @Json(name = "avatar_hex") val avatarHex: Long? = 0xFF00838F,
+    @Json(name = "avatar_url") val avatarUrl: String? = null
 )
 
 @JsonClass(generateAdapter = true)
