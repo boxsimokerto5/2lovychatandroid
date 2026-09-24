@@ -359,7 +359,7 @@ class SupabaseRepository {
                 deletedForSender = message.deletedForSender,
                 deletedForReceiver = message.deletedForReceiver,
                 imageUrl = message.imageUrl,
-                isRead = message.isRead
+                isRead = null // Jangan kirim kolom is_read saat insert agar kompatibel dengan tabel database yang belum memiliki kolom is_read
             )
             val response = api.insertChatMessage(apiKey, auth, dto)
             if (response.isSuccessful) {
@@ -377,7 +377,8 @@ class SupabaseRepository {
                     createdAt = message.timestamp,
                     deletedForSender = null,
                     deletedForReceiver = null,
-                    imageUrl = null
+                    imageUrl = null,
+                    isRead = null
                 )
                 val retryResp = api.insertChatMessage(apiKey, auth, coreDto)
                 if (retryResp.isSuccessful) {
@@ -447,7 +448,7 @@ class SupabaseRepository {
                 isOnline = true,
                 lastActiveAt = System.currentTimeMillis(),
                 avatarUrl = avatarUrl,
-                city = city,
+                city = null, // Tabel nearby_users di Supabase belum memiliki kolom city, disimpan di Room lokal
                 fcmToken = fcmToken
             )
             val response = api.upsertNearbyUser(apiKey, auth, dto)
@@ -455,7 +456,7 @@ class SupabaseRepository {
                 return@withContext true
             }
 
-            // Fallback jika database Supabase belum memiliki kolom city / last_active_at / avatar_url / fcm_token
+            // Fallback jika database Supabase versi lama belum memiliki fcm_token / last_active_at
             val coreDto = SupabaseUserDto(
                 id = id,
                 name = name,
@@ -464,8 +465,8 @@ class SupabaseRepository {
                 bio = bio,
                 avatarHex = avatarHex,
                 isOnline = true,
-                lastActiveAt = null,
-                avatarUrl = null,
+                lastActiveAt = System.currentTimeMillis(),
+                avatarUrl = avatarUrl,
                 city = null,
                 fcmToken = null
             )

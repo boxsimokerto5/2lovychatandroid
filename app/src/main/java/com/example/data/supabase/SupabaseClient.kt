@@ -86,34 +86,65 @@ object SupabaseClient {
         cachedApi = null
     }
 
-    fun getSupabaseUrl(): String {
-        customUrl?.let { if (it.isNotBlank()) return normalizeBaseUrl(it) }
+    private fun extractRefFromJwt(token: String): String {
+        val clean = token.trim()
+        if (!clean.startsWith("ey") || !clean.contains(".")) return ""
         return try {
-            val field = BuildConfig::class.java.getField("SUPABASE_URL")
-            val value = field.get(null) as? String ?: ""
-            if (value.isNotBlank() && !value.contains("your-project-id")) {
-                normalizeBaseUrl(value)
+            val parts = clean.split(".")
+            if (parts.size >= 2) {
+                val payloadBytes = android.util.Base64.decode(
+                    parts[1],
+                    android.util.Base64.URL_SAFE or android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP
+                )
+                val json = String(payloadBytes, Charsets.UTF_8)
+                val matcher = "\"ref\"\\s*:\\s*\"([^\"]+)\"".toRegex().find(json)
+                matcher?.groupValues?.getOrNull(1) ?: ""
             } else ""
-        } catch (_: Exception) {
+        } catch (_: Throwable) {
             ""
         }
     }
 
-    fun getSupabaseAnonKey(): String {
-        customAnonKey?.let { if (it.isNotBlank()) return it }
-        return try {
-            val field = BuildConfig::class.java.getField("SUPABASE_ANON_KEY")
-            val value = field.get(null) as? String ?: ""
-            if (value.isNotBlank() && !value.contains("your-anon-public-key")) value else ""
+    fun getSupabaseUrl(): String {
+        customUrl?.let { if (it.isNotBlank()) return normalizeBaseUrl(it) }
+        val rawValue = try {
+            val field = BuildConfig::class.java.getField("SUPABASE_URL")
+            field.get(null) as? String ?: ""
         } catch (_: Exception) {
             ""
         }
+        val candidate = rawValue.trim()
+        if (candidate.startsWith("http://") || candidate.startsWith("https://")) {
+            return normalizeBaseUrl(candidate)
+        }
+        // Jika SUPABASE_URL keliru diisi token JWT atau anon key, ekstrak 'ref' dari payload JWT:
+        val refFromJwt = extractRefFromJwt(candidate).ifBlank {
+            extractRefFromJwt(getSupabaseAnonKey())
+        }
+        if (refFromJwt.isNotBlank()) {
+            return "https://$refFromJwt.supabase.co/"
+        }
+        return "https://azcxvjjcjytfqwhfcbui.supabase.co/"
+    }
+
+    fun getSupabaseAnonKey(): String {
+        customAnonKey?.let { if (it.isNotBlank()) return it.trim() }
+        val raw = try {
+            val field = BuildConfig::class.java.getField("SUPABASE_ANON_KEY")
+            field.get(null) as? String ?: ""
+        } catch (_: Exception) {
+            ""
+        }
+        if (raw.isNotBlank() && !raw.contains("your-anon-public-key")) {
+            return raw.trim()
+        }
+        return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6Y3h2ampjanl0ZnF3aGZjYnVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2NzgzMTgsImV4cCI6MjEwNTI1NDMxOH0.h8M71nfUKA6fd69yKZIHIwBH1ssI1vHq_1bNYCPQmhY"
     }
 
     fun isConfigured(): Boolean {
         val url = getSupabaseUrl()
         val key = getSupabaseAnonKey()
-        return url.isNotBlank() && key.isNotBlank() && url.startsWith("http")
+        return url.isNotBlank() && key.isNotBlank() && (url.startsWith("http://") || url.startsWith("https://"))
     }
 
     fun getAuthHeader(): String {

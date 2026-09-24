@@ -942,6 +942,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                             updated.copy(moments = enrichMomentsWithAvatars(updated.moments, profile.profilePicture))
                         }
 
+                        if (!_uiState.value.isGuest && profile.lovyId.isNotBlank()) {
+                            startIncomingChatPeriodicSync()
+                        }
+
                         // Jika kota GPS nyata sudah terdeteksi dan profil masih default, sinkronkan otomatis
                         val detectedCity = _uiState.value.currentGpsLocation?.cityName
                         if (!detectedCity.isNullOrBlank() && (profile.city.isBlank() || profile.city.equals("Jakarta Selatan", ignoreCase = true))) {
@@ -2794,7 +2798,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         val currentMessages = _uiState.value.messagesMap.toMutableMap()
 
         for ((convId, dtoList) in grouped) {
-            val partnerId = extractPartnerIdFromConvId(convId, myId)
+            val partnerId = extractPartnerIdFromConvId(convId, myId).ifBlank {
+                dtoList.firstNotNullOfOrNull { dto ->
+                    if (dto.senderId != myId && dto.senderId != "me") dto.senderId
+                    else if (dto.receiverId != null && dto.receiverId != myId) dto.receiverId
+                    else null
+                } ?: ""
+            }
             if (partnerId.isBlank()) continue
 
             // Abaikan sinyal ephemeral mengetik agar tidak muncul sebagai pesan riwayat teks
