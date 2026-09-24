@@ -370,43 +370,91 @@ fun UserProfileBottomSheet(
                     )
                 }
 
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = EmeraldGreen.copy(alpha = 0.12f)
-                ) {
-                    Text(
-                        text = "${userMoments.size} Foto Momen",
-                        fontSize = 11.5.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = EmeraldGreen,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                    )
+                if (userMoments.isNotEmpty()) {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = EmeraldGreen.copy(alpha = 0.12f)
+                    ) {
+                        Text(
+                            text = "${userMoments.size} Foto Momen",
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = EmeraldGreen,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Daftar Foto Momen
-            Column(
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                userMoments.forEach { moment ->
-                    val isLocallyLiked = likedState[moment.id] ?: moment.isLiked
-                    val currentLikes = moment.likesCount + (likesCountDelta[moment.id] ?: 0)
-
-                    UserProfileMomentCard(
-                        moment = moment,
-                        isLiked = isLocallyLiked,
-                        likesCount = currentLikes,
-                        onPhotoClick = { previewMoment = moment },
-                        onToggleLike = {
-                            val nextState = !isLocallyLiked
-                            likedState[moment.id] = nextState
-                            val delta = if (nextState) 1 else -1
-                            likesCountDelta[moment.id] = (likesCountDelta[moment.id] ?: 0) + delta
+            // Daftar Foto Momen atau Empty State
+            if (userMoments.isEmpty()) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color(0xFFF9FBF9),
+                    border = BorderStroke(1.dp, Color(0xFFE8F5E9)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 24.dp, horizontal = 16.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = EmeraldGreen.copy(alpha = 0.10f),
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.PhotoLibrary,
+                                    contentDescription = null,
+                                    tint = EmeraldGreen,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
                         }
-                    )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = "Belum Ada Momen",
+                            fontSize = 14.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = NeutralDark
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "${user.name} belum membagikan foto atau cerita momen.",
+                            fontSize = 12.5.sp,
+                            color = NeutralMedium,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
+                }
+            } else {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    userMoments.forEach { moment ->
+                        val isLocallyLiked = likedState[moment.id] ?: moment.isLiked
+                        val currentLikes = moment.likesCount + (likesCountDelta[moment.id] ?: 0)
+
+                        UserProfileMomentCard(
+                            moment = moment,
+                            isLiked = isLocallyLiked,
+                            likesCount = currentLikes,
+                            onPhotoClick = { previewMoment = moment },
+                            onToggleLike = {
+                                val nextState = !isLocallyLiked
+                                likedState[moment.id] = nextState
+                                val delta = if (nextState) 1 else -1
+                                likesCountDelta[moment.id] = (likesCountDelta[moment.id] ?: 0) + delta
+                            }
+                        )
+                    }
                 }
             }
 
@@ -842,237 +890,13 @@ fun UserPhotoPreviewDialog(
 }
 
 /**
- * Mengambil foto momen yang tersedia untuk user atau menghasilkan momen foto yang
- * disesuaikan secara autentik dan artistik berdasarkan persona bio dan minat user.
+ * Mengambil foto momen asli yang telah diunggah oleh user dari database Supabase/lokal.
+ * Jika belum ada momen yang diunggah, kembalikan daftar kosong (tanpa data dummy).
  */
 fun getUserMoments(user: User, existingMoments: List<MomentItem>): List<MomentItem> {
-    val matched = existingMoments.filter {
+    return existingMoments.filter {
         it.authorName.equals(user.name, ignoreCase = true) ||
         (it.authorId.isNotEmpty() && it.authorId == user.id)
     }
-    if (matched.isNotEmpty()) return matched
-
-    return generateCustomMomentsForUser(user)
 }
 
-private fun generateCustomMomentsForUser(user: User): List<MomentItem> {
-    val bioLower = user.bio.lowercase()
-    val name = user.name
-
-    return when {
-        // Rio Dewanto / Barista / Kopi / Film
-        bioLower.contains("barista") || bioLower.contains("kopi") || bioLower.contains("film") || name.contains("Rio Dewanto") -> {
-            listOf(
-                MomentItem(
-                    id = "mom_custom_${user.id}_1",
-                    authorName = user.name,
-                    authorAvatarHex = user.avatarColorHex,
-                    authorAvatarUrl = user.avatarUrl,
-                    timeAgo = "1 jam yang lalu",
-                    content = "Seduh manual brew beans Ethiopia pagi ini, aroma floral & acidity-nya seger banget ☕ Ada yang suka kopi juga di sekitar ${user.city}?",
-                    likesCount = 38,
-                    commentsCount = 7,
-                    imageUrl = "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1000&q=80",
-                    locationTag = user.city
-                ),
-                MomentItem(
-                    id = "mom_custom_${user.id}_2",
-                    authorName = user.name,
-                    authorAvatarHex = user.avatarColorHex,
-                    authorAvatarUrl = user.avatarUrl,
-                    timeAgo = "Kemarin",
-                    content = "Menghadiri pemutaran film dokumenter indie sore tadi 🎞️ Sinematografinya luar biasa dan sangat menggugah pikiran.",
-                    likesCount = 52,
-                    commentsCount = 11,
-                    imageUrl = "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1000&q=80",
-                    locationTag = "Jakarta"
-                )
-            )
-        }
-        // Aliando Syarief / Drummer / Astronomi / Musik
-        bioLower.contains("drum") || bioLower.contains("astronomi") || bioLower.contains("band") || name.contains("Aliando") -> {
-            listOf(
-                MomentItem(
-                    id = "mom_custom_${user.id}_1",
-                    authorName = user.name,
-                    authorAvatarHex = user.avatarColorHex,
-                    authorAvatarUrl = user.avatarUrl,
-                    timeAgo = "2 jam yang lalu",
-                    content = "Latihan bareng temen-temen band buat persiapan manggung akhir pekan ini 🥁🔥 Tetap semangat terus berkarya!",
-                    likesCount = 47,
-                    commentsCount = 9,
-                    imageUrl = "https://images.unsplash.com/photo-1519892300165-cb5542fb47c7?auto=format&fit=crop&w=1000&q=80",
-                    locationTag = user.city
-                ),
-                MomentItem(
-                    id = "mom_custom_${user.id}_2",
-                    authorName = user.name,
-                    authorAvatarHex = user.avatarColorHex,
-                    authorAvatarUrl = user.avatarUrl,
-                    timeAgo = "Kemarin",
-                    content = "Langit malam ini jernih banget, berhasil ambil foto rasi bintang Orion pakai teleskop mini 🌌🔭 Ada yang suka astronomi juga?",
-                    likesCount = 64,
-                    commentsCount = 14,
-                    imageUrl = "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1000&q=80",
-                    locationTag = "Tangerang"
-                )
-            )
-        }
-        // Beby Tsabina / K-Pop / Boba
-        bioLower.contains("boba") || bioLower.contains("k-pop") || bioLower.contains("kpop") || name.contains("Beby") -> {
-            listOf(
-                MomentItem(
-                    id = "mom_custom_${user.id}_1",
-                    authorName = user.name,
-                    authorAvatarHex = user.avatarColorHex,
-                    authorAvatarUrl = user.avatarUrl,
-                    timeAgo = "3 jam yang lalu",
-                    content = "Weekend reward: Brown sugar boba fresh milk favorit 🧋 Manisnya pas, mood seharian langsung ceria banget!",
-                    likesCount = 59,
-                    commentsCount = 15,
-                    imageUrl = "https://images.unsplash.com/photo-1558857563-b371033873b8?auto=format&fit=crop&w=1000&q=80",
-                    locationTag = user.city
-                ),
-                MomentItem(
-                    id = "mom_custom_${user.id}_2",
-                    authorName = user.name,
-                    authorAvatarHex = user.avatarColorHex,
-                    authorAvatarUrl = user.avatarUrl,
-                    timeAgo = "2 hari yang lalu",
-                    content = "Keseruan suasana konser semalam! Visual panggung dan lagu-lagunya gak pernah gagal bikin merinding 💜✨",
-                    likesCount = 78,
-                    commentsCount = 21,
-                    imageUrl = "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1000&q=80",
-                    locationTag = "Bintaro"
-                )
-            )
-        }
-        // Fotografi / Touring / Motor
-        bioLower.contains("fotografi") || bioLower.contains("touring") || bioLower.contains("motor") || bioLower.contains("vespa") -> {
-            listOf(
-                MomentItem(
-                    id = "mom_custom_${user.id}_1",
-                    authorName = user.name,
-                    authorAvatarHex = user.avatarColorHex,
-                    authorAvatarUrl = user.avatarUrl,
-                    timeAgo = "2 jam yang lalu",
-                    content = "Hunting golden hour di sudut kota. Komposisi cahaya sore selalu punya cerita tersendiri 📸🌅",
-                    likesCount = 41,
-                    commentsCount = 6,
-                    imageUrl = "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=1000&q=80",
-                    locationTag = user.city
-                ),
-                MomentItem(
-                    id = "mom_custom_${user.id}_2",
-                    authorName = user.name,
-                    authorAvatarHex = user.avatarColorHex,
-                    authorAvatarUrl = user.avatarUrl,
-                    timeAgo = "Kemarin",
-                    content = "Touring santai menyusuri udara sejuk pegunungan 🏍️💨 Menikmati setiap tikungan perjalanan.",
-                    likesCount = 63,
-                    commentsCount = 12,
-                    imageUrl = "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=1000&q=80",
-                    locationTag = "Puncak"
-                )
-            )
-        }
-        // Kucing / Kuliner
-        bioLower.contains("kucing") || bioLower.contains("kuliner") || bioLower.contains("foodie") || bioLower.contains("pizza") -> {
-            listOf(
-                MomentItem(
-                    id = "mom_custom_${user.id}_1",
-                    authorName = user.name,
-                    authorAvatarHex = user.avatarColorHex,
-                    authorAvatarUrl = user.avatarUrl,
-                    timeAgo = "4 jam yang lalu",
-                    content = "Ekspresi si anabul waktu dipanggil buat makan siang 🐱💤 Selalu berhasil bikin gemas!",
-                    likesCount = 55,
-                    commentsCount = 13,
-                    imageUrl = "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=1000&q=80",
-                    locationTag = user.city
-                ),
-                MomentItem(
-                    id = "mom_custom_${user.id}_2",
-                    authorName = user.name,
-                    authorAvatarHex = user.avatarColorHex,
-                    authorAvatarUrl = user.avatarUrl,
-                    timeAgo = "1 hari yang lalu",
-                    content = "Nemuin spot kuliner enak dan autentik di dekat sini 🍜🔥 Porsinya banyak dan rasanya nendang!",
-                    likesCount = 37,
-                    commentsCount = 8,
-                    imageUrl = "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1000&q=80",
-                    locationTag = user.city
-                )
-            )
-        }
-        // Alam / Pantai / Liburan / Wisata
-        bioLower.contains("pantai") || bioLower.contains("alam") || bioLower.contains("liburan") || bioLower.contains("travel") -> {
-            listOf(
-                MomentItem(
-                    id = "mom_custom_${user.id}_1",
-                    authorName = user.name,
-                    authorAvatarHex = user.avatarColorHex,
-                    authorAvatarUrl = user.avatarUrl,
-                    timeAgo = "5 jam yang lalu",
-                    content = "Suara ombak dan semilir angin pantai. Tempat ternyaman untuk melepaskan penat 🌊🏖️",
-                    likesCount = 68,
-                    commentsCount = 17,
-                    imageUrl = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1000&q=80",
-                    locationTag = "Pantai Ancol"
-                ),
-                MomentItem(
-                    id = "mom_custom_${user.id}_2",
-                    authorName = user.name,
-                    authorAvatarHex = user.avatarColorHex,
-                    authorAvatarUrl = user.avatarUrl,
-                    timeAgo = "2 hari yang lalu",
-                    content = "Menghirup udara bersih di alam bebas 🌿🏔️ Bikin pikiran kembali segar dan bersemangat.",
-                    likesCount = 49,
-                    commentsCount = 10,
-                    imageUrl = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1000&q=80",
-                    locationTag = "Taman Nasional"
-                )
-            )
-        }
-        // Default / General Lifestyle
-        else -> {
-            val photo1 = if (user.gender == Gender.FEMALE) {
-                "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1000&q=80"
-            } else {
-                "https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1000&q=80"
-            }
-            val photo2 = if (user.gender == Gender.FEMALE) {
-                "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1000&q=80"
-            } else {
-                "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1000&q=80"
-            }
-
-            listOf(
-                MomentItem(
-                    id = "mom_custom_${user.id}_1",
-                    authorName = user.name,
-                    authorAvatarHex = user.avatarColorHex,
-                    authorAvatarUrl = user.avatarUrl,
-                    timeAgo = "3 jam yang lalu",
-                    content = "Menikmati suasana santai sore ini di sekitar ${user.city}. Senang bisa berteman dengan kalian di Lovy Chat! ✨🏙️",
-                    likesCount = 33,
-                    commentsCount = 5,
-                    imageUrl = photo1,
-                    locationTag = user.city
-                ),
-                MomentItem(
-                    id = "mom_custom_${user.id}_2",
-                    authorName = user.name,
-                    authorAvatarHex = user.avatarColorHex,
-                    authorAvatarUrl = user.avatarUrl,
-                    timeAgo = "1 hari yang lalu",
-                    content = "Waktu santai ditemani secangkir minuman favorit ☕ Semoga hari kalian semua menyenangkan!",
-                    likesCount = 45,
-                    commentsCount = 8,
-                    imageUrl = photo2,
-                    locationTag = user.city
-                )
-            )
-        }
-    }
-}
