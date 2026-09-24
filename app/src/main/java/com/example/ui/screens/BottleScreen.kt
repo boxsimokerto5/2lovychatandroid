@@ -80,6 +80,8 @@ import com.example.ui.theme.NeutralBorder
 import com.example.ui.theme.NeutralDark
 import com.example.ui.theme.NeutralMedium
 import com.example.ui.theme.ScreenBackground
+import com.example.util.AppLanguage
+import com.example.util.AppStrings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,6 +97,7 @@ fun BottleScreen(
     onDismissFishedBottle: () -> Unit,
     onReleaseFishedBottle: (BottleMessage) -> Unit = {},
     onReplyBottle: (BottleMessage) -> Unit,
+    language: AppLanguage = AppLanguage.INDONESIAN,
     modifier: Modifier = Modifier
 ) {
     var showThrowDialog by remember { mutableStateOf(false) }
@@ -118,7 +121,7 @@ fun BottleScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Pesan dalam Botol",
+                        text = AppStrings.bottleTitle(language),
                         fontSize = 19.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -131,7 +134,7 @@ fun BottleScreen(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali",
+                            contentDescription = AppStrings.btnBack(language),
                             tint = Color.White
                         )
                     }
@@ -183,14 +186,14 @@ fun BottleScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "Lautan Misteri Lovy Chat",
+                        text = AppStrings.oceanTitle(language),
                         color = Color.White,
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Lempar kata hatimu atau pancing pesan dari sahabat baru",
+                        text = AppStrings.oceanSubtitle(language),
                         color = Color.White.copy(alpha = 0.85f),
                         fontSize = 12.sp,
                         textAlign = TextAlign.Center
@@ -246,7 +249,7 @@ fun BottleScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "Lempar Botol",
+                                    text = AppStrings.btnTossBottle(language),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White,
@@ -288,7 +291,7 @@ fun BottleScreen(
                                 }
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = if (isFishing) "Mengambil..." else "Ambil Botol",
+                                    text = if (isFishing) "..." else AppStrings.btnFishBottle(language),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White,
@@ -309,13 +312,13 @@ fun BottleScreen(
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    text = { Text("Botol Diambil (${fishedBottles.size})", fontWeight = FontWeight.SemiBold) },
+                    text = { Text(AppStrings.tabFishedBottles(language, fishedBottles.size), fontWeight = FontWeight.SemiBold) },
                     modifier = Modifier.testTag("tab_fished_bottles")
                 )
                 Tab(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    text = { Text("Botol Saya (${myBottles.size})", fontWeight = FontWeight.SemiBold) },
+                    text = { Text(AppStrings.tabMyBottles(language, myBottles.size), fontWeight = FontWeight.SemiBold) },
                     modifier = Modifier.testTag("tab_my_bottles")
                 )
             }
@@ -348,14 +351,14 @@ fun BottleScreen(
                             }
                             Spacer(modifier = Modifier.height(14.dp))
                             Text(
-                                text = "Belum Ada Botol yang Diambil",
+                                text = AppStrings.emptyFishedTitle(language),
                                 fontSize = 16.sp,
                                 color = NeutralDark,
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "Lautan Lovy menyimpan ribuan pesan misteri dari berbagai kota. Ketuk tombol 'Ambil Botol' di atas untuk menjaring botol pertamamu!",
+                                text = AppStrings.emptyFishedDesc(language),
                                 fontSize = 12.5.sp,
                                 color = NeutralMedium,
                                 textAlign = TextAlign.Center,
@@ -374,7 +377,7 @@ fun BottleScreen(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Ambil Botol Sekarang", fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
+                                Text(AppStrings.btnFishBottle(language), fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     } else {
@@ -390,14 +393,14 @@ fun BottleScreen(
                             }
                             Spacer(modifier = Modifier.height(14.dp))
                             Text(
-                                text = "Kamu Belum Pernah Melempar Botol",
+                                text = AppStrings.emptyMyBottlesTitle(language),
                                 fontSize = 16.sp,
                                 color = NeutralDark,
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "Tulis kata hatimu, salam hangat, atau curhatan dan hanyutkan ke lautan untuk ditemukan pengguna lain!",
+                                text = AppStrings.emptyMyBottlesDesc(language),
                                 fontSize = 12.5.sp,
                                 color = NeutralMedium,
                                 textAlign = TextAlign.Center,
@@ -416,7 +419,7 @@ fun BottleScreen(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Lempar Botol Sekarang", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                Text(AppStrings.btnTossBottle(language), fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -450,7 +453,7 @@ fun BottleScreen(
                     Text(text = "🍾", fontSize = 22.sp)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Lempar Pesan Botol",
+                        text = AppStrings.throwDialogTitle(language),
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -459,7 +462,7 @@ fun BottleScreen(
             text = {
                 Column {
                     Text(
-                        text = "Tulis pesan, curhatan, atau salam yang ingin kamu hanyutkan ke lautan:",
+                        text = AppStrings.throwDialogPlaceholder(language),
                         fontSize = 12.5.sp,
                         color = NeutralMedium
                     )
@@ -467,7 +470,7 @@ fun BottleScreen(
                     OutlinedTextField(
                         value = throwMessageText,
                         onValueChange = { throwMessageText = it },
-                        placeholder = { Text("Contoh: Semangat buat kamu yang lagi berjuang hari ini!", color = NeutralMedium) },
+                        placeholder = { Text(AppStrings.throwDialogPlaceholder(language), color = NeutralMedium) },
                         minLines = 3,
                         maxLines = 5,
                         colors = OutlinedTextFieldDefaults.colors(
@@ -495,12 +498,12 @@ fun BottleScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
                     modifier = Modifier.testTag("btn_confirm_throw")
                 ) {
-                    Text("Hanyutkan")
+                    Text(AppStrings.btnTossNow(language))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showThrowDialog = false }) {
-                    Text("Batal", color = NeutralMedium)
+                    Text(AppStrings.btnCancel(language), color = NeutralMedium)
                 }
             }
         )
@@ -578,7 +581,7 @@ fun BottleScreen(
                         onClick = onDismissFishedBottle,
                         shape = RoundedCornerShape(20.dp)
                     ) {
-                        Text("Simpan", fontSize = 12.sp)
+                        Text(AppStrings.btnSave(language), fontSize = 12.sp)
                     }
                     Button(
                         onClick = {
@@ -590,7 +593,7 @@ fun BottleScreen(
                     ) {
                         Icon(imageVector = Icons.AutoMirrored.Filled.Chat, contentDescription = null, modifier = Modifier.size(15.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Balas di Obrolan", fontSize = 12.sp)
+                        Text(AppStrings.btnReply(language), fontSize = 12.sp)
                     }
                 }
             },
@@ -599,7 +602,7 @@ fun BottleScreen(
                     onClick = { onReleaseFishedBottle(bottle) },
                     modifier = Modifier.testTag("btn_dismiss_fished_bottle")
                 ) {
-                    Text("Hanyutkan Kembali", color = NeutralMedium, fontSize = 12.sp)
+                    Text(AppStrings.btnRelease(language), color = NeutralMedium, fontSize = 12.sp)
                 }
             }
         )

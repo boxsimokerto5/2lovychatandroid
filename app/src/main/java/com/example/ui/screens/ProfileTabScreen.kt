@@ -614,6 +614,7 @@ fun ProfileTabScreen(
             onToggleHideExactDistance = onToggleHideExactDistance,
             onToggleShowOnlineStatus = onToggleShowOnlineStatus,
             onLocationPermissionChanged = onLocationPermissionChanged,
+            language = language,
             onDismiss = { showPrivacyDialog = false }
         )
     }
@@ -714,6 +715,7 @@ fun PrivacyLocationDialog(
     onToggleHideExactDistance: (Boolean) -> Unit,
     onToggleShowOnlineStatus: (Boolean) -> Unit,
     onLocationPermissionChanged: (Boolean) -> Unit,
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -733,6 +735,7 @@ fun PrivacyLocationDialog(
     if (showLocationDisclosure) {
         com.example.ui.components.PermissionDisclosureDialog(
             type = com.example.ui.components.DisclosureType.LOCATION,
+            language = language,
             onConfirm = {
                 showLocationDisclosure = false
                 permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)

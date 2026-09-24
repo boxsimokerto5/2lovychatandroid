@@ -48,8 +48,8 @@ object GeoLanguageDetector {
         val countryCode = (getCountryCode(context).ifBlank { defaultLocale.country }).uppercase(Locale.ROOT)
         val tzId = TimeZone.getDefault().id.lowercase(Locale.ROOT)
 
-        // 1. Deteksi Cina / Mandarin (zh, CN, TW, HK)
-        if (langCode.startsWith("zh") || countryCode in listOf("CN", "TW", "HK") ||
+        // 1. Deteksi Cina / Mandarin (zh, CN, TW, HK, MO)
+        if (langCode.startsWith("zh") || countryCode in listOf("CN", "TW", "HK", "MO") ||
             tzId.contains("shanghai") || tzId.contains("beijing") || tzId.contains("taipei") || tzId.contains("hong_kong")
         ) {
             return AppLanguage.CHINESE
@@ -65,49 +65,51 @@ object GeoLanguageDetector {
             return AppLanguage.KOREAN
         }
 
-        // 4. Deteksi Arab (ar, SA, AE, EG, dll)
-        if (langCode.startsWith("ar") || countryCode in listOf("SA", "AE", "EG", "QA", "KW", "OM", "BH", "JO", "LB", "IQ") ||
-            tzId.contains("riyadh") || tzId.contains("dubai") || tzId.contains("cairo")
+        // 4. Deteksi Arab (ar, SA, AE, EG, QA, KW, OM, BH, JO, LB, IQ, dll)
+        if (langCode.startsWith("ar") || countryCode in listOf("SA", "AE", "EG", "QA", "KW", "OM", "BH", "JO", "LB", "IQ", "MA", "DZ", "TN", "LY", "YE", "SY") ||
+            tzId.contains("riyadh") || tzId.contains("dubai") || tzId.contains("cairo") || tzId.contains("doha") || tzId.contains("kuwait")
         ) {
             return AppLanguage.ARABIC
         }
 
-        // 5. Deteksi Spanyol (es, ES, MX, AR, dll)
-        if (langCode.startsWith("es") || countryCode in listOf("ES", "MX", "AR", "CO", "CL", "PE", "VE", "EC", "GT")) {
+        // 5. Deteksi Spanyol (es, ES, MX, AR, CO, CL, PE, VE, EC, GT, dll)
+        if (langCode.startsWith("es") || countryCode in listOf("ES", "MX", "AR", "CO", "CL", "PE", "VE", "EC", "GT", "CU", "BO", "DO", "HN", "PY", "SV", "NI", "CR", "PA", "UY")) {
             return AppLanguage.SPANISH
         }
 
-        // 6. Deteksi Prancis (fr, FR, BE, CA)
-        if (langCode.startsWith("fr") || countryCode in listOf("FR", "BE", "MC") || tzId.contains("paris")) {
+        // 6. Deteksi Prancis (fr, FR, BE, CA, MC, dll)
+        if (langCode.startsWith("fr") || countryCode in listOf("FR", "BE", "MC", "SN", "CI") || tzId.contains("paris") || tzId.contains("brussels")) {
             return AppLanguage.FRENCH
         }
 
-        // 7. Deteksi Jerman (de, DE, AT, CH)
-        if (langCode.startsWith("de") || countryCode in listOf("DE", "AT") || tzId.contains("berlin")) {
+        // 7. Deteksi Jerman (de, DE, AT, CH, LI)
+        if (langCode.startsWith("de") || countryCode in listOf("DE", "AT", "LI") || tzId.contains("berlin") || tzId.contains("vienna") || tzId.contains("zurich")) {
             return AppLanguage.GERMAN
         }
 
-        // 8. Deteksi Rusia (ru, RU, BY, KZ)
-        if (langCode.startsWith("ru") || countryCode in listOf("RU", "BY", "KZ") || tzId.contains("moscow")) {
+        // 8. Deteksi Rusia (ru, RU, BY, KZ, KG)
+        if (langCode.startsWith("ru") || countryCode in listOf("RU", "BY", "KZ", "KG") || tzId.contains("moscow") || tzId.contains("minsk") || tzId.contains("almaty")) {
             return AppLanguage.RUSSIAN
         }
 
-        // 9. Deteksi Portugis (pt, BR, PT)
-        if (langCode.startsWith("pt") || countryCode in listOf("BR", "PT") || tzId.contains("sao_paulo") || tzId.contains("lisbon")) {
+        // 9. Deteksi Portugis (pt, BR, PT, AO, MZ)
+        if (langCode.startsWith("pt") || countryCode in listOf("BR", "PT", "AO", "MZ") || tzId.contains("sao_paulo") || tzId.contains("lisbon") || tzId.contains("rio")) {
             return AppLanguage.PORTUGUESE
         }
 
-        // 10. Deteksi Indonesia / Melayu (id, in, ms, ID, MY)
-        if (langCode in listOf("id", "in", "ms") || countryCode in listOf("ID", "MY") || isIndonesianOrMalaysianTimeZone(tzId)) {
+        // 10. Deteksi Indonesia / Melayu (id, in, ms, ID, MY, BN)
+        if (langCode in listOf("id", "in", "ms") || countryCode in listOf("ID", "MY", "BN") || isIndonesianOrMalaysianTimeZone(tzId)) {
             return AppLanguage.INDONESIAN
         }
 
-        // 11. Bahasa Inggris jika perangkat berbahasa Inggris
-        if (langCode.startsWith("en")) {
+        // 11. Bahasa Inggris jika perangkat berbahasa Inggris atau zona negara global
+        if (langCode.startsWith("en") || countryCode in listOf("US", "GB", "AU", "CA", "NZ", "SG", "IE", "IN", "PH", "ZA", "NG", "KE", "GH") ||
+            tzId.contains("london") || tzId.startsWith("australia/") || tzId.startsWith("pacific/") || tzId.contains("new_york") || tzId.contains("chicago") || tzId.contains("los_angeles")
+        ) {
             return AppLanguage.ENGLISH
         }
 
-        // Fallback jika tidak terdaftar: periksa kecocokan kode bahasa ISO
+        // Fallback berdasarkan kode bahasa ISO atau wilayah
         return when (langCode) {
             "zh" -> AppLanguage.CHINESE
             "ja" -> AppLanguage.JAPANESE
@@ -118,7 +120,8 @@ object GeoLanguageDetector {
             "de" -> AppLanguage.GERMAN
             "ru" -> AppLanguage.RUSSIAN
             "pt" -> AppLanguage.PORTUGUESE
-            else -> AppLanguage.INDONESIAN // Default fallback
+            "id", "in", "ms" -> AppLanguage.INDONESIAN
+            else -> if (countryCode in listOf("ID", "MY") || isIndonesianOrMalaysianTimeZone(tzId)) AppLanguage.INDONESIAN else AppLanguage.ENGLISH
         }
     }
 

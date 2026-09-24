@@ -164,6 +164,7 @@ fun NearbyScreen(
     if (showLocationDisclosure) {
         com.example.ui.components.PermissionDisclosureDialog(
             type = com.example.ui.components.DisclosureType.LOCATION,
+            language = language,
             onConfirm = {
                 showLocationDisclosure = false
                 locationPermissionLauncher.launch(

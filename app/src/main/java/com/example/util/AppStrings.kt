@@ -684,4 +684,372 @@ object AppStrings {
         AppLanguage.INDONESIAN -> "Sapa"
         else -> "Say Hi"
     }
+
+    // Common navigation & action
+    fun btnBack(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "返回"
+        AppLanguage.JAPANESE -> "戻る"
+        AppLanguage.KOREAN -> "뒤로"
+        AppLanguage.ARABIC -> "رجوع"
+        AppLanguage.SPANISH -> "Volver"
+        AppLanguage.FRENCH -> "Retour"
+        AppLanguage.GERMAN -> "Zurück"
+        AppLanguage.RUSSIAN -> "Назад"
+        AppLanguage.PORTUGUESE -> "Voltar"
+        AppLanguage.INDONESIAN -> "Kembali"
+        else -> "Back"
+    }
+
+    fun btnSave(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "保存"
+        AppLanguage.JAPANESE -> "保存"
+        AppLanguage.KOREAN -> "저장"
+        AppLanguage.ARABIC -> "حفظ"
+        AppLanguage.SPANISH -> "Guardar"
+        AppLanguage.FRENCH -> "Enregistrer"
+        AppLanguage.GERMAN -> "Speichern"
+        AppLanguage.RUSSIAN -> "Сохранить"
+        AppLanguage.PORTUGUESE -> "Salvar"
+        AppLanguage.INDONESIAN -> "Simpan"
+        else -> "Save"
+    }
+
+    fun btnCancel(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "取消"
+        AppLanguage.JAPANESE -> "キャンセル"
+        AppLanguage.KOREAN -> "취소"
+        AppLanguage.ARABIC -> "إلغاء"
+        AppLanguage.SPANISH -> "Cancelar"
+        AppLanguage.FRENCH -> "Annuler"
+        AppLanguage.GERMAN -> "Abbrechen"
+        AppLanguage.RUSSIAN -> "Отмена"
+        AppLanguage.PORTUGUESE -> "Cancelar"
+        AppLanguage.INDONESIAN -> "Batal"
+        else -> "Cancel"
+    }
+
+    // Bottle Screen Strings
+    fun oceanTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "Lovy 奇幻海洋"
+        AppLanguage.JAPANESE -> "Lovy 魅惑の海"
+        AppLanguage.KOREAN -> "Lovy 신비의 바다"
+        AppLanguage.ARABIC -> "محيط Lovy الغامض"
+        AppLanguage.SPANISH -> "Océano de Misterio Lovy"
+        AppLanguage.FRENCH -> "Océan de Mystère Lovy"
+        AppLanguage.GERMAN -> "Lovy Geheimnisvolles Meer"
+        AppLanguage.RUSSIAN -> "Таинственный океан Lovy"
+        AppLanguage.PORTUGUESE -> "Oceano Misterioso Lovy"
+        AppLanguage.INDONESIAN -> "Lautan Misteri Lovy Chat"
+        else -> "Lovy Mystery Ocean"
+    }
+
+    fun oceanSubtitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "投掷内心倾诉，或是捞起远方新朋友的漂流瓶"
+        AppLanguage.JAPANESE -> "心の手紙を流すか、新しい友達からのボトルを釣りましょう"
+        AppLanguage.KOREAN -> "마음을 담은 편지를 띄우거나 새로운 친구의 유리병을 낚아보세요"
+        AppLanguage.ARABIC -> "ارمي كلمات قلبك أو اصطد رسائل من أصدقاء جدد حول العالم"
+        AppLanguage.SPANISH -> "Lanza tus pensamientos o pesca mensajes de nuevos amigos"
+        AppLanguage.FRENCH -> "Lancez vos pensées ou repêchez des messages de nouveaux amis"
+        AppLanguage.GERMAN -> "Wirf deine Gedanken ins Meer oder fische Flaschen von neuen Freunden"
+        AppLanguage.RUSSIAN -> "Отправьте послание в океан или выловите бутылку нового друга"
+        AppLanguage.PORTUGUESE -> "Lance seus pensamentos ou pesque mensagens de novos amigos"
+        AppLanguage.INDONESIAN -> "Lempar kata hatimu atau pancing pesan dari sahabat baru"
+        else -> "Toss your thoughts or fish messages from new friends across the globe"
+    }
+
+    fun tabFishedBottles(lang: AppLanguage, count: Int): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "捞到的瓶子 ($count)"
+        AppLanguage.JAPANESE -> "釣ったボトル ($count)"
+        AppLanguage.KOREAN -> "낚은 유리병 ($count)"
+        AppLanguage.ARABIC -> "الزجاجات المصطادة ($count)"
+        AppLanguage.SPANISH -> "Pescadas ($count)"
+        AppLanguage.FRENCH -> "Repêchées ($count)"
+        AppLanguage.GERMAN -> "Gefischt ($count)"
+        AppLanguage.RUSSIAN -> "Выловленные ($count)"
+        AppLanguage.PORTUGUESE -> "Pescadas ($count)"
+        AppLanguage.INDONESIAN -> "Botol Diambil ($count)"
+        else -> "Fished Bottles ($count)"
+    }
+
+    fun tabMyBottles(lang: AppLanguage, count: Int): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "我的瓶子 ($count)"
+        AppLanguage.JAPANESE -> "流したボトル ($count)"
+        AppLanguage.KOREAN -> "내가 띄운 병 ($count)"
+        AppLanguage.ARABIC -> "زجاجاتي ($count)"
+        AppLanguage.SPANISH -> "Mis Botellas ($count)"
+        AppLanguage.FRENCH -> "Mes Bouteilles ($count)"
+        AppLanguage.GERMAN -> "Meine Flaschen ($count)"
+        AppLanguage.RUSSIAN -> "Мои бутылки ($count)"
+        AppLanguage.PORTUGUESE -> "Minhas Garrafas ($count)"
+        AppLanguage.INDONESIAN -> "Botol Saya ($count)"
+        else -> "My Bottles ($count)"
+    }
+
+    fun emptyFishedTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "暂无捞到的漂流瓶"
+        AppLanguage.JAPANESE -> "まだ釣ったボトルがありません"
+        AppLanguage.KOREAN -> "아직 낚은 유리병이 없습니다"
+        AppLanguage.ARABIC -> "لم تصطد أي زجاجة بعد"
+        AppLanguage.SPANISH -> "Aún no has pescado ninguna botella"
+        AppLanguage.FRENCH -> "Aucune bouteille repêchée pour le moment"
+        AppLanguage.GERMAN -> "Noch keine Flaschen gefischt"
+        AppLanguage.RUSSIAN -> "Пока нет выловленных бутылок"
+        AppLanguage.PORTUGUESE -> "Nenhuma garrafa pescada ainda"
+        AppLanguage.INDONESIAN -> "Belum Ada Botol yang Diambil"
+        else -> "No Fished Bottles Yet"
+    }
+
+    fun emptyFishedDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "Lovy 海洋蕴藏着来自各地的问候，点击上方“捞瓶子”开启你的奇遇吧！"
+        AppLanguage.JAPANESE -> "海には世界中のメッセージが漂っています。上のボタンからボトルを釣ってみましょう！"
+        AppLanguage.KOREAN -> "Lovy 바다에는 전 세계의 메시지가 떠다닙니다. 위의 버튼을 눌러 첫 유리병을 낚아보세요!"
+        AppLanguage.ARABIC -> "يحتفظ محيط Lovy بآلاف الرسائل من مدن مختلفة. اضغط على الزر بالأعلى لصيد أول زجاجة!"
+        AppLanguage.SPANISH -> "El océano Lovy guarda miles de mensajes. ¡Toca el botón arriba para pescar tu primera botella!"
+        AppLanguage.FRENCH -> "L'océan Lovy regorge de messages. Appuyez sur le bouton ci-dessus pour repêcher votre première bouteille !"
+        AppLanguage.GERMAN -> "Das Meer birgt tausende Nachrichten. Tippe oben auf 'Flasche fischen', um deine erste zu finden!"
+        AppLanguage.RUSSIAN -> "Океан Lovy хранит тысячи посланий. Нажмите кнопку выше, чтобы выловить первую бутылку!"
+        AppLanguage.PORTUGUESE -> "O oceano Lovy guarda mensagens misteriosas. Toque acima para pescar sua primeira garrafa!"
+        AppLanguage.INDONESIAN -> "Lautan Lovy menyimpan ribuan pesan misteri dari berbagai kota. Ketuk tombol 'Ambil Botol' di atas untuk menjaring botol pertamamu!"
+        else -> "The ocean holds thousands of mysterious messages from around the world. Tap 'Fish Bottle' above to catch your first one!"
+    }
+
+    fun emptyMyBottlesTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "你还没有扔过漂流瓶"
+        AppLanguage.JAPANESE -> "まだボトルを流していません"
+        AppLanguage.KOREAN -> "아직 유리병을 띄우지 않았습니다"
+        AppLanguage.ARABIC -> "لم تقم برمي أي زجاجة بعد"
+        AppLanguage.SPANISH -> "Aún no has lanzado ninguna botella"
+        AppLanguage.FRENCH -> "Vous n'avez pas encore lancé de bouteille"
+        AppLanguage.GERMAN -> "Du hast noch keine Flasche geworfen"
+        AppLanguage.RUSSIAN -> "Вы еще не бросали бутылки"
+        AppLanguage.PORTUGUESE -> "Você ainda não lançou nenhuma garrafa"
+        AppLanguage.INDONESIAN -> "Kamu Belum Pernah Melempar Botol"
+        else -> "You Haven't Tossed a Bottle Yet"
+    }
+
+    fun emptyMyBottlesDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "写下你的心声或暖心问候，让它漂向远方被有缘人发现吧！"
+        AppLanguage.JAPANESE -> "思いや温かいメッセージを書いて、海に流してみましょう！"
+        AppLanguage.KOREAN -> "따뜻한 인사나 진솔한 마음을 담아 바다로 띄워보세요!"
+        AppLanguage.ARABIC -> "اكتب ما يجول في خاطرك أو تحية دافئة ودعها تطفو في البحر ليكتشفها الآخرون!"
+        AppLanguage.SPANISH -> "Escribe tus pensamientos o saludos y déjalos flotar en el océano."
+        AppLanguage.FRENCH -> "Écrivez vos pensées et laissez-les flotter vers de nouvelles rencontres !"
+        AppLanguage.GERMAN -> "Schreibe deine Gedanken auf und lass sie ins Meer treiben!"
+        AppLanguage.RUSSIAN -> "Напишите теплое послание и пустите его по волнам!"
+        AppLanguage.PORTUGUESE -> "Escreva seus sentimentos ou saudações e lance-os no oceano!"
+        AppLanguage.INDONESIAN -> "Tulis kata hatimu, salam hangat, atau curhatan dan hanyutkan ke lautan untuk ditemukan pengguna lain!"
+        else -> "Write your thoughts or warm greetings and let them float across the sea to be discovered!"
+    }
+
+    fun throwDialogTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "写下漂流瓶寄语"
+        AppLanguage.JAPANESE -> "ボトルメッセージを書く"
+        AppLanguage.KOREAN -> "유리병 편지 작성하기"
+        AppLanguage.ARABIC -> "كتابة رسالة في زجاجة"
+        AppLanguage.SPANISH -> "Escribir Mensaje en Botella"
+        AppLanguage.FRENCH -> "Écrire une bouteille à la mer"
+        AppLanguage.GERMAN -> "Flaschenpost verfassen"
+        AppLanguage.RUSSIAN -> "Написать послание в бутылке"
+        AppLanguage.PORTUGUESE -> "Escrever Mensagem na Garrafa"
+        AppLanguage.INDONESIAN -> "Tulis Pesan dalam Botol"
+        else -> "Write Message in a Bottle"
+    }
+
+    fun throwDialogPlaceholder(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "写下你想对世界说的话..."
+        AppLanguage.JAPANESE -> "世界に届けたいメッセージを入力..."
+        AppLanguage.KOREAN -> "세상에 전하고 싶은 메시지를 적어보세요..."
+        AppLanguage.ARABIC -> "اكتب ما ترغب في مشاركته مع العالم..."
+        AppLanguage.SPANISH -> "Escribe lo que quieras compartir con el mundo..."
+        AppLanguage.FRENCH -> "Écrivez ce que vous souhaitez partager..."
+        AppLanguage.GERMAN -> "Teile deine Gedanken mit der Welt..."
+        AppLanguage.RUSSIAN -> "Напишите то, чем хотите поделиться..."
+        AppLanguage.PORTUGUESE -> "Escreva o que você gostaria de dizer ao mundo..."
+        AppLanguage.INDONESIAN -> "Tulis apa saja yang ingin kamu bagikan ke dunia..."
+        else -> "Write whatever you would like to share with the world..."
+    }
+
+    fun btnTossNow(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "扔入海洋"
+        AppLanguage.JAPANESE -> "海へ流す"
+        AppLanguage.KOREAN -> "바다로 띄우기"
+        AppLanguage.ARABIC -> "رمي في المحيط"
+        AppLanguage.SPANISH -> "Lanzar al Océano"
+        AppLanguage.FRENCH -> "Jeter à la mer"
+        AppLanguage.GERMAN -> "Ins Meer werfen"
+        AppLanguage.RUSSIAN -> "Бросить в океан"
+        AppLanguage.PORTUGUESE -> "Lançar ao Oceano"
+        AppLanguage.INDONESIAN -> "Lempar ke Lautan"
+        else -> "Toss into the Sea"
+    }
+
+    fun btnReply(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "回复"
+        AppLanguage.JAPANESE -> "返信する"
+        AppLanguage.KOREAN -> "답장하기"
+        AppLanguage.ARABIC -> "رد"
+        AppLanguage.SPANISH -> "Responder"
+        AppLanguage.FRENCH -> "Répondre"
+        AppLanguage.GERMAN -> "Antworten"
+        AppLanguage.RUSSIAN -> "Ответить"
+        AppLanguage.PORTUGUESE -> "Responder"
+        AppLanguage.INDONESIAN -> "Balas"
+        else -> "Reply"
+    }
+
+    fun btnRelease(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "放生瓶子"
+        AppLanguage.JAPANESE -> "海に戻す"
+        AppLanguage.KOREAN -> "다시 방생하기"
+        AppLanguage.ARABIC -> "إعادة للبحر"
+        AppLanguage.SPANISH -> "Devolver al mar"
+        AppLanguage.FRENCH -> "Remettre à la mer"
+        AppLanguage.GERMAN -> "Freilassen"
+        AppLanguage.RUSSIAN -> "Отпустить"
+        AppLanguage.PORTUGUESE -> "Devolver ao mar"
+        AppLanguage.INDONESIAN -> "Hanyutkan Lagi"
+        else -> "Release Back"
+    }
+
+    // Nearby Screen Strings
+    fun nearbyTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "附近的人"
+        AppLanguage.JAPANESE -> "近くの人"
+        AppLanguage.KOREAN -> "주변 친구"
+        AppLanguage.ARABIC -> "أشخاص بالجوار"
+        AppLanguage.SPANISH -> "Personas Cercanas"
+        AppLanguage.FRENCH -> "Personnes à proximité"
+        AppLanguage.GERMAN -> "Personen in der Nähe"
+        AppLanguage.RUSSIAN -> "Люди рядом"
+        AppLanguage.PORTUGUESE -> "Pessoas Próximas"
+        AppLanguage.INDONESIAN -> "Pengguna di Sekitar"
+        else -> "People Nearby"
+    }
+
+    fun radarCenterLabel(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "雷达中心:"
+        AppLanguage.JAPANESE -> "レーダー中心:"
+        AppLanguage.KOREAN -> "레이더 중심:"
+        AppLanguage.ARABIC -> "مركز الرادار:"
+        AppLanguage.SPANISH -> "Centro del radar:"
+        AppLanguage.FRENCH -> "Centre du radar :"
+        AppLanguage.GERMAN -> "Radarzentrum:"
+        AppLanguage.RUSSIAN -> "Центр радара:"
+        AppLanguage.PORTUGUESE -> "Centro do radar:"
+        AppLanguage.INDONESIAN -> "Pusat Radar:"
+        else -> "Radar Center:"
+    }
+
+    fun btnRefreshGps(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "刷新 GPS"
+        AppLanguage.JAPANESE -> "GPS更新"
+        AppLanguage.KOREAN -> "GPS 갱신"
+        AppLanguage.ARABIC -> "تحديث GPS"
+        AppLanguage.SPANISH -> "Actualizar GPS"
+        AppLanguage.FRENCH -> "Actualiser GPS"
+        AppLanguage.GERMAN -> "GPS aktualisieren"
+        AppLanguage.RUSSIAN -> "Обновить GPS"
+        AppLanguage.PORTUGUESE -> "Atualizar GPS"
+        AppLanguage.INDONESIAN -> "Perbarui GPS"
+        else -> "Update GPS"
+    }
+
+    fun filterAll(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "全部"
+        AppLanguage.JAPANESE -> "すべて"
+        AppLanguage.KOREAN -> "전체"
+        AppLanguage.ARABIC -> "الكل"
+        AppLanguage.SPANISH -> "Todos"
+        AppLanguage.FRENCH -> "Tous"
+        AppLanguage.GERMAN -> "Alle"
+        AppLanguage.RUSSIAN -> "Все"
+        AppLanguage.PORTUGUESE -> "Todos"
+        AppLanguage.INDONESIAN -> "Semua"
+        else -> "All"
+    }
+
+    fun filterMale(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "男生"
+        AppLanguage.JAPANESE -> "男性"
+        AppLanguage.KOREAN -> "남성"
+        AppLanguage.ARABIC -> "ذكور"
+        AppLanguage.SPANISH -> "Hombres"
+        AppLanguage.FRENCH -> "Hommes"
+        AppLanguage.GERMAN -> "Männer"
+        AppLanguage.RUSSIAN -> "Мужчины"
+        AppLanguage.PORTUGUESE -> "Homens"
+        AppLanguage.INDONESIAN -> "Pria"
+        else -> "Men"
+    }
+
+    fun filterFemale(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "女生"
+        AppLanguage.JAPANESE -> "女性"
+        AppLanguage.KOREAN -> "여성"
+        AppLanguage.ARABIC -> "إناث"
+        AppLanguage.SPANISH -> "Mujeres"
+        AppLanguage.FRENCH -> "Femmes"
+        AppLanguage.GERMAN -> "Frauen"
+        AppLanguage.RUSSIAN -> "Женщины"
+        AppLanguage.PORTUGUESE -> "Mulheres"
+        AppLanguage.INDONESIAN -> "Wanita"
+        else -> "Women"
+    }
+
+    fun filterOnlineOnly(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "仅看在线"
+        AppLanguage.JAPANESE -> "オンラインのみ"
+        AppLanguage.KOREAN -> "온라인만"
+        AppLanguage.ARABIC -> "المتصلون فقط"
+        AppLanguage.SPANISH -> "Solo en línea"
+        AppLanguage.FRENCH -> "En ligne seulement"
+        AppLanguage.GERMAN -> "Nur online"
+        AppLanguage.RUSSIAN -> "Только в сети"
+        AppLanguage.PORTUGUESE -> "Apenas online"
+        AppLanguage.INDONESIAN -> "Hanya Online"
+        else -> "Online Only"
+    }
+
+    // Profile Screen Strings
+    fun profileDetailsTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "个人资料详情"
+        AppLanguage.JAPANESE -> "プロフィール詳細"
+        AppLanguage.KOREAN -> "프로필 상세"
+        AppLanguage.ARABIC -> "تفاصيل الملف الشخصي"
+        AppLanguage.SPANISH -> "Detalles del Perfil"
+        AppLanguage.FRENCH -> "Détails du profil"
+        AppLanguage.GERMAN -> "Profildetails"
+        AppLanguage.RUSSIAN -> "Данные профиля"
+        AppLanguage.PORTUGUESE -> "Detalhes do Perfil"
+        AppLanguage.INDONESIAN -> "Detail Profil Pengguna"
+        else -> "User Profile Details"
+    }
+
+    fun aboutMeBio(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "关于我 / 个性签名"
+        AppLanguage.JAPANESE -> "自己紹介 / バイオ"
+        AppLanguage.KOREAN -> "자기소개 / 바이오"
+        AppLanguage.ARABIC -> "نبذة عني"
+        AppLanguage.SPANISH -> "Sobre Mí / Biografía"
+        AppLanguage.FRENCH -> "À propos de moi / Bio"
+        AppLanguage.GERMAN -> "Über mich / Bio"
+        AppLanguage.RUSSIAN -> "Обо мне / Биография"
+        AppLanguage.PORTUGUESE -> "Sobre Mim / Bio"
+        AppLanguage.INDONESIAN -> "Tentang Saya / Bio"
+        else -> "About Me / Bio"
+    }
+
+    fun cityDomicile(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "常住城市"
+        AppLanguage.JAPANESE -> "居住都市"
+        AppLanguage.KOREAN -> "거주 도시"
+        AppLanguage.ARABIC -> "المدينة"
+        AppLanguage.SPANISH -> "Ciudad de Residencia"
+        AppLanguage.FRENCH -> "Ville de résidence"
+        AppLanguage.GERMAN -> "Wohnort"
+        AppLanguage.RUSSIAN -> "Город проживания"
+        AppLanguage.PORTUGUESE -> "Cidade de Residência"
+        AppLanguage.INDONESIAN -> "Domisili Kota"
+        else -> "Current City"
+    }
 }

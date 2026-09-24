@@ -113,6 +113,7 @@ fun UserProfileScreen(
     isGpsEnabled: Boolean = true,
     onRefreshLocation: (() -> Unit)? = null,
     onPermissionResult: ((Boolean) -> Unit)? = null,
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     modifier: Modifier = Modifier
 ) {
     var showEditDialog by remember { mutableStateOf(false) }
@@ -145,6 +146,7 @@ fun UserProfileScreen(
     if (showLocationDisclosure) {
         com.example.ui.components.PermissionDisclosureDialog(
             type = com.example.ui.components.DisclosureType.LOCATION,
+            language = language,
             onConfirm = {
                 showLocationDisclosure = false
                 locationPermissionLauncher.launch(

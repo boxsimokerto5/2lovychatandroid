@@ -94,6 +94,7 @@ fun MainAppScreen(
     if (showNotificationDisclosure) {
         PermissionDisclosureDialog(
             type = DisclosureType.NOTIFICATION,
+            language = uiState.language,
             onConfirm = {
                 showNotificationDisclosure = false
                 context.getSharedPreferences("lovy_prefs", Context.MODE_PRIVATE)
@@ -180,7 +181,8 @@ fun MainAppScreen(
                 onFishBottle = { viewModel.fishBottle() },
                 onDismissFishedBottle = { viewModel.dismissFishedBottle() },
                 onReleaseFishedBottle = { viewModel.returnFishedBottleToOcean(it) },
-                onReplyBottle = { viewModel.openChatWithBottleSender(it) }
+                onReplyBottle = { viewModel.openChatWithBottleSender(it) },
+                language = uiState.language
             )
         }
         is CurrentScreen.Moments -> {
@@ -363,7 +365,8 @@ fun MainAppScreen(
                 hasLocationPermission = uiState.hasLocationPermission,
                 isGpsEnabled = uiState.isGpsEnabled,
                 onRefreshLocation = { viewModel.refreshLocationFromGps() },
-                onPermissionResult = { granted -> viewModel.updateLocationPermission(granted) }
+                onPermissionResult = { granted -> viewModel.updateLocationPermission(granted) },
+                language = uiState.language
             )
         }
         is CurrentScreen.NewFriends -> {

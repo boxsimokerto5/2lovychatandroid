@@ -126,7 +126,8 @@ fun QrCodeScannerDialog(
     myName: String = "",
     myAvatarUrl: String? = null,
     myAvatarColorHex: String? = null,
-    onOpenChatWithUser: (User) -> Unit = {}
+    onOpenChatWithUser: (User) -> Unit = {},
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -152,6 +153,7 @@ fun QrCodeScannerDialog(
     if (showCameraDisclosure && !hasCameraPermission) {
         PermissionDisclosureDialog(
             type = DisclosureType.CAMERA,
+            language = language,
             onConfirm = {
                 showCameraDisclosure = false
                 permissionLauncher.launch(Manifest.permission.CAMERA)
