@@ -175,6 +175,14 @@ interface SupabaseRestApi {
         @Query("limit") limit: Int = 1
     ): Response<List<SupabaseAccountDto>>
 
+    @GET("rest/v1/app_accounts?select=*")
+    suspend fun getAccountById(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("id") idFilter: String,
+        @Query("limit") limit: Int = 1
+    ): Response<List<SupabaseAccountDto>>
+
     @POST("rest/v1/app_accounts")
     @Headers("Prefer: return=representation,resolution=merge-duplicates")
     suspend fun upsertAccount(

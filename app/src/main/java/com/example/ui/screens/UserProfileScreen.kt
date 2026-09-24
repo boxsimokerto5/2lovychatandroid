@@ -726,6 +726,7 @@ fun EditProfileDialog(
     onSave: (UserProfile) -> Unit
 ) {
     var displayName by remember { mutableStateOf(currentProfile.displayName) }
+    var email by remember { mutableStateOf(currentProfile.email ?: "") }
     var bio by remember { mutableStateOf(currentProfile.bio) }
     var profilePictureUrl by remember { mutableStateOf(currentProfile.profilePicture ?: "") }
     var city by remember { mutableStateOf(currentProfile.city) }
@@ -925,6 +926,23 @@ fun EditProfileDialog(
                         .testTag("input_edit_display_name")
                 )
 
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email Akun (Terkoneksi)") },
+                    singleLine = true,
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Email,
+                            contentDescription = null,
+                            tint = EmeraldGreen
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("input_edit_email")
+                )
+
                 // Gender Selection (Jenis Kelamin)
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
@@ -1115,6 +1133,7 @@ fun EditProfileDialog(
                     val parsedAge = ageText.trim().toIntOrNull()?.coerceIn(12, 120) ?: currentProfile.age
                     val updated = currentProfile.copy(
                         displayName = displayName.trim().ifBlank { currentProfile.displayName },
+                        email = email.trim().takeIf { it.isNotBlank() } ?: currentProfile.email,
                         bio = bio.trim(),
                         profilePicture = profilePictureUrl.trim().ifBlank { null },
                         city = city.trim().ifBlank { currentProfile.city },

@@ -66,9 +66,9 @@ data class LovyChatUiState(
     val moments: List<MomentItem> = emptyList(),
     val momentComments: Map<String, List<com.example.model.MomentComment>> = emptyMap(),
     val activeChatId: String? = null,
-    val myName: String = "Pengguna Lovy",
-    val myBio: String = "Menjelajahi dunia dan mencari teman baru di Lovy Chat ✨",
-    val myLovyId: String = "lovy_889214",
+    val myName: String = "",
+    val myBio: String = "",
+    val myLovyId: String = "",
     // Supabase Connection State
     val isSupabaseConnected: Boolean = false,
     val supabaseUrl: String = "",
@@ -180,18 +180,96 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             val savedSession = authRepo.getSavedSession()
             if (savedSession != null && savedSession.isLoggedIn && !savedSession.isGuest) {
                 clearDummyFriends()
+                val sessionName = savedSession.displayName.takeIf { it.isNotBlank() && !it.equals("Pengguna Lovy", ignoreCase = true) }
+                    ?: if (savedSession.username.contains("@")) {
+                        savedSession.username.substringBefore("@").replaceFirstChar { it.uppercase() }
+                    } else {
+                        savedSession.username.ifBlank { "Pengguna" }
+                    }
+                val sessionEmail = savedSession.email ?: if (savedSession.username.contains("@")) savedSession.username else null
+                val sessionLovyId = savedSession.lovyId.takeIf { it.isNotBlank() && it != "lovy_889214" } ?: "lovy_${(100000..999999).random()}"
+                val sessionBio = savedSession.bio.takeIf { it != "Menjelajahi dunia dan mencari teman baru di Lovy Chat ✨" } ?: ""
+
+                val restoredProfile = UserProfile(
+                    id = "current_user",
+                    displayName = sessionName,
+                    bio = sessionBio,
+                    profilePicture = savedSession.avatarUrl,
+                    email = sessionEmail,
+                    lovyId = sessionLovyId,
+                    city = savedSession.city ?: "",
+                    gender = savedSession.gender.name,
+                    age = savedSession.age ?: 22
+                )
+
                 _uiState.update {
                     it.copy(
                         isLoggedIn = true,
                         isGuest = false,
-                        myName = savedSession.displayName.ifBlank { savedSession.username },
-                        myLovyId = savedSession.lovyId,
+                        myName = sessionName,
+                        myBio = sessionBio,
+                        myLovyId = sessionLovyId,
+                        userProfile = restoredProfile,
                         conversations = emptyList(),
                         messagesMap = emptyMap(),
                         oceanBottles = emptyList(),
                         moments = emptyList(),
                         nearbyUsers = emptyList()
                     )
+                }
+
+                // Tulis profil pulihan ke Room secara instan agar tidak kosong jika app baru diperbarui
+                viewModelScope.launch {
+                    try {
+                        userProfileRepo.saveProfile(restoredProfile)
+                    } catch (_: Exception) {}
+
+                    // Sinkronisasi data akun terbaru dari Supabase di latar belakang
+                    try {
+                        if (SupabaseClient.isConfigured()) {
+                            val cloudAccount = when {
+                                sessionEmail != null -> supabaseRepo.findAccountByGoogle(sessionEmail)
+                                savedSession.isGoogleUser && savedSession.username.contains("@") -> supabaseRepo.findAccountByGoogle(savedSession.username)
+                                savedSession.username.isNotBlank() -> supabaseRepo.findAccountByUsername(savedSession.username)
+                                else -> supabaseRepo.findAccountById(sessionLovyId)
+                            }
+                            if (cloudAccount != null) {
+                                val cloudDisplayName = cloudAccount.displayName?.takeIf { it.isNotBlank() && !it.equals("Pengguna Lovy", ignoreCase = true) }
+                                    ?: sessionName
+                                val cloudAvatar = cloudAccount.avatarUrl ?: savedSession.avatarUrl
+                                val cloudBio = cloudAccount.bio?.takeIf { it != "Menjelajahi dunia dan mencari teman baru di Lovy Chat ✨" } ?: sessionBio
+                                val cloudEmail = cloudAccount.googleEmail ?: sessionEmail
+                                val cloudGender = if (cloudAccount.gender?.equals("MALE", ignoreCase = true) == true) "MALE" else "FEMALE"
+
+                                val fullySyncedProfile = restoredProfile.copy(
+                                    displayName = cloudDisplayName,
+                                    profilePicture = cloudAvatar,
+                                    bio = cloudBio,
+                                    email = cloudEmail,
+                                    gender = cloudGender
+                                )
+
+                                userProfileRepo.saveProfile(fullySyncedProfile)
+                                _uiState.update {
+                                    it.copy(
+                                        myName = cloudDisplayName,
+                                        myBio = cloudBio,
+                                        userProfile = fullySyncedProfile
+                                    )
+                                }
+                                authRepo.saveSession(
+                                    savedSession.copy(
+                                        displayName = cloudDisplayName,
+                                        avatarUrl = cloudAvatar,
+                                        bio = cloudBio,
+                                        email = cloudEmail
+                                    )
+                                )
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.d("LovyChatViewModel", "Sync cloud account on init background: ${e.message}")
+                    }
                 }
             } else if (savedSession != null && savedSession.isGuest) {
                 authRepo.clearSession()
@@ -807,8 +885,53 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     private fun observeUserProfile() {
         viewModelScope.launch {
             try {
-                userProfileRepo.currentProfile.collect { profile ->
+                userProfileRepo.currentProfile.collect { rawProfile ->
+                    var profile = rawProfile
+                    val savedSession = authRepo.getSavedSession()
+                    val hasActiveSession = savedSession != null && savedSession.isLoggedIn && !savedSession.isGuest
+
                     if (profile != null) {
+                        // Periksa apakah ada residu data dummy "Pengguna Lovy" atau "lovy_889214"
+                        val isDummyName = profile.displayName.isBlank() || profile.displayName.equals("Pengguna Lovy", ignoreCase = true)
+                        val isDummyLovyId = profile.lovyId.isBlank() || profile.lovyId == "lovy_889214"
+                        val isDummyBio = profile.bio == "Menjelajahi dunia dan mencari teman baru di Lovy Chat ✨"
+                        val isMissingEmail = profile.email.isNullOrBlank()
+
+                        if (hasActiveSession && (isDummyName || isDummyLovyId || isDummyBio || isMissingEmail)) {
+                            val healedName = if (isDummyName) {
+                                savedSession.displayName.takeIf { it.isNotBlank() && !it.equals("Pengguna Lovy", ignoreCase = true) }
+                                    ?: if (savedSession.username.contains("@")) savedSession.username.substringBefore("@").replaceFirstChar { it.uppercase() } else savedSession.username
+                            } else profile.displayName
+
+                            val healedLovyId = if (isDummyLovyId) {
+                                savedSession.lovyId.takeIf { it.isNotBlank() && it != "lovy_889214" } ?: "lovy_${(100000..999999).random()}"
+                            } else profile.lovyId
+
+                            val healedBio = if (isDummyBio) {
+                                savedSession.bio.takeIf { it != "Menjelajahi dunia dan mencari teman baru di Lovy Chat ✨" } ?: ""
+                            } else profile.bio
+
+                            val healedEmail = if (isMissingEmail) {
+                                savedSession.email ?: if (savedSession.username.contains("@")) savedSession.username else null
+                            } else profile.email
+
+                            val healedAvatar = profile.profilePicture ?: savedSession.avatarUrl
+
+                            val healedProfile = profile.copy(
+                                displayName = healedName,
+                                lovyId = healedLovyId,
+                                bio = healedBio,
+                                email = healedEmail,
+                                profilePicture = healedAvatar
+                            )
+                            profile = healedProfile
+                            viewModelScope.launch {
+                                try {
+                                    userProfileRepo.saveProfile(healedProfile)
+                                } catch (_: Throwable) {}
+                            }
+                        }
+
                         _uiState.update {
                             val updated = it.copy(
                                 userProfile = profile,
@@ -818,20 +941,40 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                             )
                             updated.copy(moments = enrichMomentsWithAvatars(updated.moments, profile.profilePicture))
                         }
+
                         // Jika kota GPS nyata sudah terdeteksi dan profil masih default, sinkronkan otomatis
                         val detectedCity = _uiState.value.currentGpsLocation?.cityName
                         if (!detectedCity.isNullOrBlank() && (profile.city.isBlank() || profile.city.equals("Jakarta Selatan", ignoreCase = true))) {
                             updateCityFromGps(detectedCity)
                         }
                     } else {
-                        // Seed initial profile in Room database dengan kota GPS jika sudah terdeteksi
-                        val initialCity = _uiState.value.currentGpsLocation?.cityName?.takeIf { it.isNotBlank() } ?: "Jakarta Selatan"
+                        // Seed initial profile in Room database tanpa data dummy
+                        val initialName = if (hasActiveSession) {
+                            savedSession.displayName.takeIf { it.isNotBlank() && !it.equals("Pengguna Lovy", ignoreCase = true) }
+                                ?: if (savedSession.username.contains("@")) savedSession.username.substringBefore("@").replaceFirstChar { it.uppercase() } else savedSession.username
+                        } else {
+                            _uiState.value.myName.takeIf { it.isNotBlank() && !it.equals("Pengguna Lovy", ignoreCase = true) } ?: ""
+                        }
+                        val initialEmail = if (hasActiveSession) {
+                            savedSession.email ?: if (savedSession.username.contains("@")) savedSession.username else null
+                        } else null
+                        val initialLovyId = if (hasActiveSession) {
+                            savedSession.lovyId.takeIf { it.isNotBlank() && it != "lovy_889214" } ?: "lovy_${(100000..999999).random()}"
+                        } else {
+                            _uiState.value.myLovyId.takeIf { it.isNotBlank() && it != "lovy_889214" } ?: "lovy_${(100000..999999).random()}"
+                        }
+                        val initialCity = _uiState.value.currentGpsLocation?.cityName?.takeIf { it.isNotBlank() }
+                            ?: savedSession?.city?.takeIf { it.isNotBlank() } ?: ""
                         val initialProfile = UserProfile(
                             id = "current_user",
-                            displayName = _uiState.value.myName,
-                            bio = _uiState.value.myBio,
-                            lovyId = _uiState.value.myLovyId,
-                            city = initialCity
+                            displayName = initialName,
+                            bio = savedSession?.bio?.takeIf { it != "Menjelajahi dunia dan mencari teman baru di Lovy Chat ✨" } ?: "",
+                            profilePicture = savedSession?.avatarUrl,
+                            email = initialEmail,
+                            lovyId = initialLovyId,
+                            city = initialCity,
+                            gender = savedSession?.gender?.name ?: "FEMALE",
+                            age = savedSession?.age ?: 22
                         )
                         userProfileRepo.saveProfile(initialProfile)
                     }
@@ -859,6 +1002,25 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             } catch (e: Throwable) {
                 android.util.Log.e("LovyChatViewModel", "Error saving UserProfile to Room: ${e.message}")
             }
+            // Sinkronkan juga sesi SharedPreferences agar data auth selalu mutakhir
+            try {
+                val currentSession = authRepo.getSavedSession()
+                if (currentSession != null && currentSession.isLoggedIn && !currentSession.isGuest) {
+                    val updatedSession = currentSession.copy(
+                        displayName = profile.displayName,
+                        lovyId = profile.lovyId,
+                        email = profile.email ?: currentSession.email,
+                        bio = profile.bio,
+                        avatarUrl = profile.profilePicture,
+                        gender = if (profile.gender.equals("MALE", ignoreCase = true)) Gender.MALE else Gender.FEMALE,
+                        city = profile.city,
+                        age = profile.age
+                    )
+                    authRepo.saveSession(updatedSession)
+                }
+            } catch (e: Throwable) {
+                android.util.Log.e("LovyChatViewModel", "Error updating session from UserProfile: ${e.message}")
+            }
             syncUserProfileToSupabase()
         }
     }
@@ -870,16 +1032,59 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         val lovyId = _uiState.value.myLovyId
         val userGender = if (profile.gender.equals("MALE", ignoreCase = true)) Gender.MALE else Gender.FEMALE
         viewModelScope.launch(Dispatchers.IO) {
-            supabaseRepo.registerOrUpdateUser(
-                id = lovyId,
-                name = profile.displayName.ifBlank { _uiState.value.myName },
-                gender = userGender,
-                bio = profile.bio,
-                avatarHex = 0xFF4CAF50,
-                avatarUrl = profile.profilePicture?.takeIf { it.isNotBlank() },
-                city = profile.city,
-                fcmToken = _uiState.value.fcmToken.takeIf { it.isNotBlank() }
-            )
+            try {
+                // 1. Sinkronkan ke tabel nearby_users di Supabase agar pengguna lain melihat info terbaru
+                supabaseRepo.registerOrUpdateUser(
+                    id = lovyId,
+                    name = profile.displayName.ifBlank { _uiState.value.myName },
+                    gender = userGender,
+                    bio = profile.bio,
+                    avatarHex = 0xFF4CAF50,
+                    avatarUrl = profile.profilePicture?.takeIf { it.isNotBlank() },
+                    city = profile.city,
+                    fcmToken = _uiState.value.fcmToken.takeIf { it.isNotBlank() }
+                )
+
+                // 2. Sinkronkan ke tabel app_accounts di Supabase agar data akun login terbarukan
+                val savedSession = authRepo.getSavedSession()
+                val sessionUsername = savedSession?.username
+                val userEmail = profile.email ?: savedSession?.email
+
+                val currentAcc = (if (lovyId.isNotBlank()) supabaseRepo.findAccountById(lovyId) else null)
+                    ?: (if (!userEmail.isNullOrBlank()) supabaseRepo.findAccountByGoogle(userEmail) else null)
+                    ?: (if (!sessionUsername.isNullOrBlank()) supabaseRepo.findAccountByUsername(sessionUsername) else null)
+
+                if (currentAcc != null) {
+                    supabaseRepo.registerOrUpdateAccount(
+                        currentAcc.copy(
+                            displayName = profile.displayName.ifBlank { currentAcc.displayName },
+                            avatarUrl = profile.profilePicture,
+                            bio = profile.bio,
+                            gender = profile.gender,
+                            googleEmail = userEmail ?: currentAcc.googleEmail,
+                            lastLoginAt = System.currentTimeMillis()
+                        )
+                    )
+                } else if (lovyId.isNotBlank()) {
+                    val newAcc = com.example.data.supabase.SupabaseAccountDto(
+                        id = lovyId,
+                        username = userEmail ?: sessionUsername ?: lovyId,
+                        passwordHash = null,
+                        displayName = profile.displayName.ifBlank { _uiState.value.myName },
+                        gender = profile.gender,
+                        bio = profile.bio,
+                        avatarUrl = profile.profilePicture,
+                        googleId = null,
+                        googleEmail = userEmail,
+                        createdAt = System.currentTimeMillis(),
+                        lastLoginAt = System.currentTimeMillis(),
+                        fcmToken = _uiState.value.fcmToken.takeIf { it.isNotBlank() }
+                    )
+                    supabaseRepo.registerOrUpdateAccount(newAcc)
+                }
+            } catch (e: Exception) {
+                Log.d("LovyChatViewModel", "syncUserProfileToSupabase error: ${e.message}")
+            }
         }
     }
 
@@ -1166,13 +1371,16 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     nearbyUsers = emptyList()
                 )
             }
+            val detectedCity = _uiState.value.currentGpsLocation?.cityName?.takeIf { it.isNotBlank() } ?: ""
+            val userEmail = result.email ?: if (username.contains("@")) username else null
             val newProfile = UserProfile(
                 id = "current_user",
                 displayName = finalName,
                 bio = result.bio ?: "Halo, saya pengguna baru Lovy Chat! ✨",
                 lovyId = lovyId,
                 gender = gender.name,
-                city = "Jakarta Selatan"
+                email = userEmail,
+                city = detectedCity
             )
             saveUserProfile(newProfile)
             updateUserActivity()
@@ -1204,9 +1412,11 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 )
             }
             val existingProfile = _uiState.value.userProfile
+            val userEmail = result.email ?: if (username.contains("@")) username else existingProfile.email
             val updatedProfile = existingProfile.copy(
                 displayName = finalName,
                 lovyId = lovyId,
+                email = userEmail,
                 gender = result.gender.name,
                 bio = result.bio ?: existingProfile.bio,
                 profilePicture = result.avatarUrl ?: existingProfile.profilePicture
@@ -1246,7 +1456,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 lovyId = lovyId,
                 email = googleUser.email,
                 profilePicture = result.avatarUrl ?: googleUser.profilePictureUri ?: existingProfile.profilePicture,
-                bio = result.bio ?: existingProfile.bio
+                bio = result.bio ?: existingProfile.bio,
+                gender = result.gender.name
             )
             saveUserProfile(updatedProfile)
             updateUserActivity()
@@ -1867,7 +2078,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                                 ChatConversation(
                                     id = conversationId,
                                     partnerId = partnerId,
-                                    partnerName = partnerUser?.name ?: "Pengguna Lovy",
+                                    partnerName = partnerUser?.name ?: "Pengguna ($partnerId)",
                                     partnerAvatarHex = partnerUser?.avatarColorHex ?: 0xFF4CAF50,
                                     partnerGender = partnerUser?.gender ?: Gender.FEMALE,
                                     lastMessage = lastMsg.text,

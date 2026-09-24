@@ -603,6 +603,24 @@ class SupabaseRepository {
         }
     }
 
+    suspend fun findAccountById(accountId: String): SupabaseAccountDto? = withContext(Dispatchers.IO) {
+        val api = SupabaseClient.getApi() ?: return@withContext null
+        val apiKey = SupabaseClient.getSupabaseAnonKey()
+        val auth = SupabaseClient.getAuthHeader()
+
+        try {
+            val response = api.getAccountById(apiKey, auth, "eq.$accountId")
+            if (response.isSuccessful) {
+                response.body()?.firstOrNull()
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "findAccountById error: ${e.message}")
+            null
+        }
+    }
+
     suspend fun registerOrUpdateAccount(account: SupabaseAccountDto): Boolean = withContext(Dispatchers.IO) {
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()

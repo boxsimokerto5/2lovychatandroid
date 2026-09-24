@@ -18,11 +18,14 @@ data class AuthResult(
     val message: String,
     val username: String? = null,
     val displayName: String? = null,
+    val email: String? = null,
     val lovyId: String? = null,
     val gender: Gender = Gender.FEMALE,
     val bio: String? = null,
     val avatarUrl: String? = null,
-    val isGoogleUser: Boolean = false
+    val isGoogleUser: Boolean = false,
+    val city: String? = null,
+    val age: Int? = null
 )
 
 data class SavedSession(
@@ -31,10 +34,13 @@ data class SavedSession(
     val lovyId: String,
     val username: String,
     val displayName: String,
+    val email: String? = null,
     val gender: Gender = Gender.FEMALE,
     val bio: String = "",
     val avatarUrl: String? = null,
-    val isGoogleUser: Boolean = false
+    val isGoogleUser: Boolean = false,
+    val city: String? = null,
+    val age: Int? = null
 )
 
 class AuthRepository(
@@ -99,16 +105,46 @@ class AuthRepository(
             val json = JSONObject(jsonStr)
             val isLoggedIn = json.optBoolean("is_logged_in", false)
             if (!isLoggedIn) return null
+
+            val rawUsername = json.optString("username", "")
+            val rawDisplayName = json.optString("display_name", "")
+            val fallbackName = if (rawUsername.contains("@")) {
+                rawUsername.substringBefore("@").replaceFirstChar { it.uppercase() }
+            } else {
+                rawUsername
+            }
+            val finalDisplayName = when {
+                rawDisplayName.isNotBlank() && !rawDisplayName.equals("Pengguna Lovy", ignoreCase = true) -> rawDisplayName
+                fallbackName.isNotBlank() -> fallbackName
+                else -> "Pengguna"
+            }
+
+            val storedLovyId = json.optString("lovy_id", "")
+            val finalLovyId = if (storedLovyId.isNotBlank() && storedLovyId != "lovy_889214") {
+                storedLovyId
+            } else {
+                "lovy_${(100000..999999).random()}"
+            }
+
+            val storedEmail = json.optString("email").takeIf { it.isNotBlank() }
+                ?: if (rawUsername.contains("@")) rawUsername else null
+
+            val storedBio = json.optString("bio", "")
+            val cleanBio = if (storedBio == "Menjelajahi dunia dan mencari teman baru di Lovy Chat ✨") "" else storedBio
+
             SavedSession(
                 isLoggedIn = true,
                 isGuest = json.optBoolean("is_guest", false),
-                lovyId = json.optString("lovy_id", "lovy_${(100000..999999).random()}"),
-                username = json.optString("username", "user"),
-                displayName = json.optString("display_name", "Pengguna Lovy"),
+                lovyId = finalLovyId,
+                username = rawUsername,
+                displayName = finalDisplayName,
+                email = storedEmail,
                 gender = if (json.optString("gender", "FEMALE").equals("MALE", ignoreCase = true)) Gender.MALE else Gender.FEMALE,
-                bio = json.optString("bio", ""),
+                bio = cleanBio,
                 avatarUrl = json.optString("avatar_url").takeIf { it.isNotBlank() },
-                isGoogleUser = json.optBoolean("is_google_user", false)
+                isGoogleUser = json.optBoolean("is_google_user", false),
+                city = json.optString("city").takeIf { it.isNotBlank() },
+                age = if (json.has("age")) json.optInt("age") else null
             )
         } catch (_: Exception) {
             null
@@ -123,10 +159,15 @@ class AuthRepository(
                 put("lovy_id", session.lovyId)
                 put("username", session.username)
                 put("display_name", session.displayName)
+                put("email", session.email ?: "")
                 put("gender", session.gender.name)
                 put("bio", session.bio)
                 put("avatar_url", session.avatarUrl ?: "")
                 put("is_google_user", session.isGoogleUser)
+                put("city", session.city ?: "")
+                if (session.age != null) {
+                    put("age", session.age)
+                }
             }
             prefs.edit().putString(KEY_SAVED_SESSION, json.toString()).apply()
         } catch (e: Exception) {
@@ -243,12 +284,14 @@ class AuthRepository(
         saveUsersMap(map)
 
         // 3. Simpan sesi aktif
+        val userEmail = if (normalizedKey.contains("@")) normalizedKey else null
         val session = SavedSession(
             isLoggedIn = true,
             isGuest = false,
             lovyId = lovyId,
             username = normalizedKey,
             displayName = finalDisplayName,
+            email = userEmail,
             gender = gender,
             bio = defaultBio,
             isGoogleUser = false
@@ -260,6 +303,7 @@ class AuthRepository(
             message = "Registrasi berhasil! Selamat datang di Lovy Chat.",
             username = normalizedKey,
             displayName = finalDisplayName,
+            email = userEmail,
             lovyId = lovyId,
             gender = gender,
             bio = defaultBio,
@@ -293,6 +337,7 @@ class AuthRepository(
                         val userGender = if (cloudAccount.gender?.equals("MALE", ignoreCase = true) == true) Gender.MALE else Gender.FEMALE
                         val dispName = cloudAccount.displayName ?: cloudAccount.username
                         val bioText = cloudAccount.bio ?: ""
+                        val cloudEmail = cloudAccount.googleEmail ?: if (normalizedKey.contains("@")) normalizedKey else null
 
                         // Simpan cadangan lokal
                         val map = getUsersMap()
@@ -305,6 +350,7 @@ class AuthRepository(
                             lovyId = cloudAccount.id,
                             username = cloudAccount.username,
                             displayName = dispName,
+                            email = cloudEmail,
                             gender = userGender,
                             bio = bioText,
                             avatarUrl = cloudAccount.avatarUrl,
@@ -317,6 +363,7 @@ class AuthRepository(
                             message = "Login berhasil! Selamat datang kembali.",
                             username = cloudAccount.username,
                             displayName = dispName,
+                            email = cloudEmail,
                             lovyId = cloudAccount.id,
                             gender = userGender,
                             bio = bioText,
@@ -354,14 +401,16 @@ class AuthRepository(
         }
 
         val lovyId = "lovy_${(100000..999999).random()}"
+        val userEmail = if (normalizedKey.contains("@")) normalizedKey else null
         val session = SavedSession(
             isLoggedIn = true,
             isGuest = false,
             lovyId = lovyId,
             username = normalizedKey,
             displayName = trimmed,
+            email = userEmail,
             gender = Gender.FEMALE,
-            bio = "Menjelajahi dunia dengan Lovy Chat ✨",
+            bio = "",
             isGoogleUser = false
         )
         saveSession(session)
@@ -371,6 +420,7 @@ class AuthRepository(
             message = "Login berhasil!",
             username = normalizedKey,
             displayName = trimmed,
+            email = userEmail,
             lovyId = lovyId,
             gender = Gender.FEMALE,
             bio = session.bio,
@@ -404,6 +454,7 @@ class AuthRepository(
                         lovyId = existingCloudAccount.id,
                         username = existingCloudAccount.username,
                         displayName = dispName,
+                        email = googleEmail,
                         gender = userGender,
                         bio = bioText,
                         avatarUrl = existingCloudAccount.avatarUrl ?: avatarUrl,
@@ -416,6 +467,7 @@ class AuthRepository(
                         message = "Selamat datang kembali, $dispName!",
                         username = existingCloudAccount.username,
                         displayName = dispName,
+                        email = googleEmail,
                         lovyId = existingCloudAccount.id,
                         gender = userGender,
                         bio = bioText,
@@ -456,6 +508,7 @@ class AuthRepository(
                         lovyId = newLovyId,
                         username = baseUsername,
                         displayName = displayName,
+                        email = googleEmail,
                         gender = Gender.FEMALE,
                         bio = newAccount.bio ?: "",
                         avatarUrl = avatarUrl,
@@ -468,6 +521,7 @@ class AuthRepository(
                         message = "Selamat datang, $displayName!",
                         username = baseUsername,
                         displayName = displayName,
+                        email = googleEmail,
                         lovyId = newLovyId,
                         gender = Gender.FEMALE,
                         bio = newAccount.bio,
@@ -489,6 +543,7 @@ class AuthRepository(
             lovyId = localLovyId,
             username = baseUsername,
             displayName = displayName,
+            email = googleEmail,
             gender = Gender.FEMALE,
             bio = "Pengguna Google di Lovy Chat ✨",
             avatarUrl = avatarUrl,
@@ -501,6 +556,7 @@ class AuthRepository(
             message = "Selamat datang, $displayName!",
             username = baseUsername,
             displayName = displayName,
+            email = googleEmail,
             lovyId = localLovyId,
             gender = Gender.FEMALE,
             bio = session.bio,
