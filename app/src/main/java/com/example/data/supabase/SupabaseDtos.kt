@@ -64,6 +64,17 @@ data class SupabaseMomentDto(
 )
 
 @JsonClass(generateAdapter = true)
+data class SupabaseBasicMomentDto(
+    @Json(name = "id") val id: String,
+    @Json(name = "author_id") val authorId: String,
+    @Json(name = "author_name") val authorName: String,
+    @Json(name = "content") val content: String,
+    @Json(name = "likes_count") val likesCount: Int? = 0,
+    @Json(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
+    @Json(name = "image_url") val imageUrl: String? = null
+)
+
+@JsonClass(generateAdapter = true)
 data class SupabaseAccountDto(
     @Json(name = "id") val id: String,
     @Json(name = "username") val username: String,

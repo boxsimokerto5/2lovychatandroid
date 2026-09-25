@@ -163,12 +163,20 @@ interface SupabaseRestApi {
     ): Response<List<SupabaseMomentDto>>
 
     @POST("rest/v1/moments")
-    @Headers("Prefer: return=representation,resolution=merge-duplicates")
+    @Headers("Prefer: return=representation")
     suspend fun insertMoment(
         @Header("apikey") apiKey: String,
         @Header("Authorization") authHeader: String,
         @Body moment: SupabaseMomentDto
     ): Response<List<SupabaseMomentDto>>
+
+    @POST("rest/v1/moments")
+    @Headers("Prefer: return=representation")
+    suspend fun insertBasicMoment(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Body moment: SupabaseBasicMomentDto
+    ): Response<List<SupabaseBasicMomentDto>>
 
     @PATCH("rest/v1/moments")
     suspend fun updateMomentCommentsCount(

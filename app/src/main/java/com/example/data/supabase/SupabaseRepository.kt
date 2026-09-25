@@ -275,7 +275,7 @@ class SupabaseRepository {
         val safeAuthorId = if (authorId.isBlank() || authorId == "me") "lovy_${(100000..999999).random()}" else authorId
 
         try {
-            // Pastikan akun penulis ada di app_accounts agar tidak kena error constraint fk_moments_author
+            // Pastikan akun penulis ada di app_accounts jika ada constraint
             ensureAuthorAccountExists(safeAuthorId, moment.authorName, moment.authorAvatarUrl)
 
             val dto = SupabaseMomentDto(
@@ -297,15 +297,7 @@ class SupabaseRepository {
                 return@withContext true
             }
 
-            // Retry setelah memastikan akun author ada di database
-            ensureAuthorAccountExists(safeAuthorId, moment.authorName, moment.authorAvatarUrl)
-            val retry = api.insertMoment(apiKey, auth, dto)
-            if (retry.isSuccessful) {
-                Log.d(TAG, "Momen berhasil diinsert ke Supabase pada retry: ${moment.id}")
-                return@withContext true
-            }
-
-            // Fallback jika database Supabase belum memiliki kolom location_tag / author_avatar_url
+            // Fallback 1: Jika database Supabase belum memiliki kolom location_tag / author_avatar_url
             if (dto.locationTag != null || dto.authorAvatarUrl != null) {
                 val fallbackDto = dto.copy(locationTag = null, authorAvatarUrl = null)
                 val retryFallback = api.insertMoment(apiKey, auth, fallbackDto)
@@ -313,6 +305,22 @@ class SupabaseRepository {
                     Log.d(TAG, "Momen berhasil diinsert dengan fallback kolom standar: ${moment.id}")
                     return@withContext true
                 }
+            }
+
+            // Fallback 2: Basic DTO tanpa comments_count, author_avatar_hex, location_tag, author_avatar_url
+            val basicDto = SupabaseBasicMomentDto(
+                id = moment.id,
+                authorId = safeAuthorId,
+                authorName = moment.authorName.ifBlank { "Pengguna Lovy" },
+                content = moment.content,
+                likesCount = moment.likesCount,
+                createdAt = System.currentTimeMillis(),
+                imageUrl = moment.imageUrl
+            )
+            val basicRetry = api.insertBasicMoment(apiKey, auth, basicDto)
+            if (basicRetry.isSuccessful) {
+                Log.d(TAG, "Momen berhasil diinsert dengan basic DTO: ${moment.id}")
+                return@withContext true
             }
 
             Log.w(TAG, "Gagal insert momen ke Supabase, code=${response.code()}, error=${response.errorBody()?.string()}")
