@@ -283,6 +283,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         syncFromSupabase()
         refreshNewFriendRequests()
         syncFcmTokenToSupabase()
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                if (SupabaseClient.isConfigured()) {
+                    supabaseRepo.purgeInactiveAccountsAndDeletedMessages()
+                }
+            } catch (_: Exception) {}
+        }
         if (!_uiState.value.isGuest && _uiState.value.myLovyId.isNotBlank()) {
             startIncomingChatPeriodicSync()
             startRealtimeChatSubscription()
@@ -1726,8 +1733,16 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
         authRepo.deleteAccount(myName)
 
-        if (wasRealUser) {
-            viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                localChatRepo.clearAllMessages()
+                userProfileRepo.deleteProfile("current_user")
+                chatFriendDao.deleteAllFriends()
+            } catch (e: Exception) {
+                Log.w("LovyChatViewModel", "Gagal membersihkan data Room lokal: ${e.message}")
+            }
+
+            if (wasRealUser) {
                 try {
                     supabaseRepo.deleteAccountAndUserData(myId, myId)
                 } catch (e: Exception) {

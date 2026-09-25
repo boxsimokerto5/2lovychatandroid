@@ -113,4 +113,12 @@ class LocalChatRepository(context: Context) {
             Log.e(TAG, "Gagal menghapus percakapan lokal $conversationId", e)
         }
     }
+
+    suspend fun clearAllMessages() = withContext(Dispatchers.IO) {
+        try {
+            chatMessageDao.clearAll()
+        } catch (e: Exception) {
+            Log.e(TAG, "Gagal membersihkan seluruh pesan lokal", e)
+        }
+    }
 }

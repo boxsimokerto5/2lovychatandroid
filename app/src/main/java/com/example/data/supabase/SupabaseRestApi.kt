@@ -214,6 +214,20 @@ interface SupabaseRestApi {
         @Query("id") idFilter: String
     ): Response<Unit>
 
+    @DELETE("rest/v1/nearby_users")
+    suspend fun deleteNearbyUser(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("id") idFilter: String
+    ): Response<Unit>
+
+    @DELETE("rest/v1/ocean_bottles")
+    suspend fun deleteOceanBottlesBySender(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("sender_id") senderIdFilter: String
+    ): Response<Unit>
+
     @DELETE("rest/v1/moments")
     suspend fun deleteMomentsByAuthor(
         @Header("apikey") apiKey: String,
@@ -226,5 +240,27 @@ interface SupabaseRestApi {
         @Header("apikey") apiKey: String,
         @Header("Authorization") authHeader: String,
         @Query("id") idFilter: String
+    ): Response<Unit>
+
+    @DELETE("rest/v1/chat_messages")
+    suspend fun deleteChatMessagesPermanentlyBySender(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("sender_id") senderIdFilter: String
+    ): Response<Unit>
+
+    @DELETE("rest/v1/app_accounts")
+    suspend fun purgeInactiveAccounts(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("last_login_at") lastLoginBeforeFilter: String
+    ): Response<Unit>
+
+    @DELETE("rest/v1/chat_messages")
+    suspend fun purgeFullyDeletedMessages(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("deleted_for_sender") senderDel: String = "eq.true",
+        @Query("deleted_for_receiver") receiverDel: String = "eq.true"
     ): Response<Unit>
 }

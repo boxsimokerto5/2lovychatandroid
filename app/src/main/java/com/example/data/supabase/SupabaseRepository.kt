@@ -737,9 +737,11 @@ class SupabaseRepository {
 
     /**
      * Menghapus seluruh data pengguna dari database Supabase:
-     * - Akun di tabel app_accounts
-     * - Momen yang dibuat pengguna di tabel moments
-     * - Menandai semua pesan obrolan terhapus di tabel chat_messages
+     * - Hapus nearby_users
+     * - Hapus ocean_bottles
+     * - Hapus moments
+     * - Hapus / tandai chat_messages
+     * - Hapus akun di tabel app_accounts
      */
     suspend fun deleteAccountAndUserData(accountId: String, lovyId: String): Boolean = withContext(Dispatchers.IO) {
         val api = SupabaseClient.getApi() ?: return@withContext false
@@ -747,25 +749,83 @@ class SupabaseRepository {
         val auth = SupabaseClient.getAuthHeader()
 
         var success = true
+        val targetId = lovyId.ifBlank { accountId }
+
+        // 1. Hapus dari nearby_users
+        try {
+            if (targetId.isNotBlank()) {
+                api.deleteNearbyUser(apiKey, auth, "eq.$targetId")
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "deleteNearbyUser error: ${e.message}")
+        }
+
+        // 2. Hapus ocean_bottles yang dikirim user
+        try {
+            if (targetId.isNotBlank()) {
+                api.deleteOceanBottlesBySender(apiKey, auth, "eq.$targetId")
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "deleteOceanBottles error: ${e.message}")
+        }
+
+        // 3. Hapus momen yang dibuat user
+        try {
+            if (targetId.isNotBlank()) {
+                api.deleteMomentsByAuthor(apiKey, auth, "eq.$targetId")
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "deleteUserMoments error: ${e.message}")
+        }
+
+        // 4. Hapus / tandai pesan chat terhapus permanen
+        try {
+            if (targetId.isNotBlank()) {
+                api.markAllSenderMessagesDeleted(apiKey, auth, "eq.$targetId", mapOf("deleted_for_sender" to true, "deleted_for_receiver" to true))
+                api.deleteChatMessagesPermanentlyBySender(apiKey, auth, "eq.$targetId")
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "deleteChatMessages error: ${e.message}")
+        }
+
+        // 5. Hapus akun pengguna di app_accounts
         try {
             if (accountId.isNotBlank()) {
-                api.deleteAccount(apiKey, auth, "eq.$accountId")
+                val res = api.deleteAccount(apiKey, auth, "eq.$accountId")
+                success = res.isSuccessful
             }
         } catch (e: Exception) {
             Log.w(TAG, "deleteAccount error: ${e.message}")
             success = false
         }
 
-        val targetId = lovyId.ifBlank { accountId }
-        try {
-            if (targetId.isNotBlank()) {
-                api.deleteMomentsByAuthor(apiKey, auth, "eq.$targetId")
-                api.markAllSenderMessagesDeleted(apiKey, auth, "eq.$targetId", mapOf("deleted_for_sender" to true, "deleted_for_receiver" to true))
-            }
-        } catch (e: Exception) {
-            Log.w(TAG, "deleteUserMoments/Messages error: ${e.message}")
-        }
-
         success
+    }
+
+    /**
+     * Pembersihan otomatis data usang / tidak aktif:
+     * - Hapus akun yang tidak login lebih dari 15 hari
+     * - Hapus pesan chat yang sudah dihapus oleh kedua belah pihak
+     */
+    suspend fun purgeInactiveAccountsAndDeletedMessages(): Boolean = withContext(Dispatchers.IO) {
+        val api = SupabaseClient.getApi() ?: return@withContext false
+        val apiKey = SupabaseClient.getSupabaseAnonKey()
+        val auth = SupabaseClient.getAuthHeader()
+
+        try {
+            // Waktu 15 hari yang lalu dalam epoch ms
+            val fifteenDaysAgo = System.currentTimeMillis() - (15L * 24 * 60 * 60 * 1000)
+
+            // 1. Hapus akun tidak aktif > 15 hari
+            api.purgeInactiveAccounts(apiKey, auth, "lt.$fifteenDaysAgo")
+
+            // 2. Hapus fisik chat yang sudah dihapus kedua pihak
+            api.purgeFullyDeletedMessages(apiKey, auth)
+
+            true
+        } catch (e: Exception) {
+            Log.d(TAG, "purgeInactiveAccountsAndDeletedMessages skipped/error: ${e.message}")
+            false
+        }
     }
 }
