@@ -555,6 +555,10 @@ fun MainAppScreen(
                         0 -> ChatsTabScreen(
                             conversations = uiState.conversations,
                             language = uiState.language,
+                            activityNotifications = uiState.activityNotifications,
+                            onMarkAllNotificationsAsRead = { viewModel.markAllNotificationsAsRead() },
+                            onClearAllNotifications = { viewModel.clearAllNotifications() },
+                            onNotificationClick = { notif -> viewModel.markNotificationAsRead(notif.id) },
                             onOpenChat = { conv ->
                                 viewModel.openChat(conv.id, conv.partnerName, conv.partnerAvatarHex)
                             },

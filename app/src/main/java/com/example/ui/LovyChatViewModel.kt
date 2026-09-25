@@ -108,7 +108,8 @@ data class LovyChatUiState(
     val hideExactDistance: Boolean = false,
     val showOnlineStatus: Boolean = true,
     val fcmToken: String = "",
-    val typingMap: Map<String, Boolean> = emptyMap()
+    val typingMap: Map<String, Boolean> = emptyMap(),
+    val activityNotifications: List<com.example.model.ActivityNotification> = emptyList()
 )
 
 class LovyChatViewModel(application: Application) : AndroidViewModel(application) {
@@ -219,6 +220,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         observeChatFriends()
         updateUserActivity()
         initFirebaseMessaging()
+        initDefaultNotifications()
         // Pulihkan sesi login jika sebelumnya pengguna sudah masuk
         try {
             val savedSession = authRepo.getSavedSession()
@@ -454,6 +456,71 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
         val sortedList = requestsMap.values.sortedByDescending { it.timestamp }
         _uiState.update { it.copy(newFriendRequests = sortedList) }
+
+        // Tambahkan notifikasi aktivitas ringan untuk permintaan teman baru
+        for (req in sortedList.take(3)) {
+            addActivityNotification(
+                com.example.model.ActivityNotification(
+                    id = "friend_req_${req.id}",
+                    title = "Permintaan Pertemanan Baru 🤝",
+                    message = "${req.user.name} ingin berteman dengan Anda.",
+                    timestamp = req.timestamp,
+                    isRead = false,
+                    category = com.example.model.NotificationCategory.FRIEND,
+                    senderName = req.user.name
+                )
+            )
+        }
+    }
+
+    fun addActivityNotification(notification: com.example.model.ActivityNotification) {
+        _uiState.update { state ->
+            val exists = state.activityNotifications.any { it.id == notification.id }
+            if (exists) state
+            else state.copy(activityNotifications = listOf(notification) + state.activityNotifications)
+        }
+    }
+
+    fun markAllNotificationsAsRead() {
+        _uiState.update { state ->
+            state.copy(activityNotifications = state.activityNotifications.map { it.copy(isRead = true) })
+        }
+    }
+
+    fun markNotificationAsRead(id: String) {
+        _uiState.update { state ->
+            state.copy(activityNotifications = state.activityNotifications.map {
+                if (it.id == id) it.copy(isRead = true) else it
+            })
+        }
+    }
+
+    fun clearAllNotifications() {
+        _uiState.update { it.copy(activityNotifications = emptyList()) }
+    }
+
+    private fun initDefaultNotifications() {
+        val welcomeNotif = com.example.model.ActivityNotification(
+            id = "sys_welcome",
+            title = "Selamat Datang di Lovy Chat ✨",
+            message = "Mulai temukan teman baru di sekitar, bagikan momen, dan nikmati obrolan!",
+            timestamp = System.currentTimeMillis() - 120000L,
+            isRead = false,
+            category = com.example.model.NotificationCategory.SYSTEM
+        )
+        val radarNotif = com.example.model.ActivityNotification(
+            id = "sys_radar_active",
+            title = "Radar Sekitar Aktif 📍",
+            message = "Sistem pelacak teman siap menemukan pengguna terdekat dengan aman.",
+            timestamp = System.currentTimeMillis() - 60000L,
+            isRead = false,
+            category = com.example.model.NotificationCategory.NEARBY
+        )
+        _uiState.update {
+            if (it.activityNotifications.isEmpty()) {
+                it.copy(activityNotifications = listOf(welcomeNotif, radarNotif))
+            } else it
+        }
     }
 
     fun acceptNewFriend(user: User) {

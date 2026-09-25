@@ -38,6 +38,8 @@ import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Female
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Male
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SelectAll
@@ -93,12 +95,17 @@ fun ChatsTabScreen(
     onStartNewChat: () -> Unit,
     onDeleteConversations: ((Set<String>) -> Unit)? = null,
     onRefresh: (() -> Unit)? = null,
+    activityNotifications: List<com.example.model.ActivityNotification> = emptyList(),
+    onMarkAllNotificationsAsRead: (() -> Unit)? = null,
+    onClearAllNotifications: (() -> Unit)? = null,
+    onNotificationClick: ((com.example.model.ActivityNotification) -> Unit)? = null,
     language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedConversationIds by remember { mutableStateOf(emptySet<String>()) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showNotificationsSheet by remember { mutableStateOf(false) }
     var viewingAvatarPhoto by remember { mutableStateOf<Pair<String, String>?>(null) } // Pair(name, url)
 
     val isSelectionMode = selectedConversationIds.isNotEmpty()
@@ -197,16 +204,56 @@ fun ChatsTabScreen(
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.weight(1f)
                         )
+
+                        // Ikon Lonceng Notifikasi Aktivitas (Senada & Menarik)
+                        val unreadNotifs = remember(activityNotifications) {
+                            activityNotifications.count { !it.isRead }
+                        }
+                        Box(
+                            contentAlignment = Alignment.TopEnd,
+                            modifier = Modifier.padding(end = 4.dp)
+                        ) {
+                            IconButton(
+                                onClick = { showNotificationsSheet = true },
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .testTag("btn_top_notifications")
+                            ) {
+                                Icon(
+                                    imageVector = if (unreadNotifs > 0) Icons.Default.Notifications else Icons.Default.NotificationsNone,
+                                    contentDescription = "Pemberitahuan Aktivitas",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(21.dp)
+                                )
+                            }
+                            if (unreadNotifs > 0) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(15.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFFF3D00)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = if (unreadNotifs > 9) "9+" else "$unreadNotifs",
+                                        color = Color.White,
+                                        fontSize = 8.5.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+
                         if (onRefresh != null) {
                             IconButton(
                                 onClick = onRefresh,
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier.size(34.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Refresh,
                                     contentDescription = com.example.util.AppStrings.btnRefreshGps(language),
                                     tint = Color.White,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(19.dp)
                                 )
                             }
                         }
@@ -459,6 +506,17 @@ fun ChatsTabScreen(
             photoUrl = photoUrl,
             title = "${com.example.util.AppStrings.profileTitle(language)} $partnerName",
             onDismiss = { viewingAvatarPhoto = null }
+        )
+    }
+
+    // Lembar Notifikasi Aktivitas Ringan & Elegan
+    if (showNotificationsSheet) {
+        com.example.ui.components.ActivityNotificationsBottomSheet(
+            notifications = activityNotifications,
+            onDismiss = { showNotificationsSheet = false },
+            onMarkAllAsRead = { onMarkAllNotificationsAsRead?.invoke() },
+            onClearAll = { onClearAllNotifications?.invoke() },
+            onNotificationClick = { notif -> onNotificationClick?.invoke(notif) }
         )
     }
 }
