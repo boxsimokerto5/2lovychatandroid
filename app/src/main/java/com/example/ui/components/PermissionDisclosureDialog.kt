@@ -5,16 +5,22 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CheckCircle
@@ -481,185 +487,200 @@ fun PermissionDisclosureDialog(
             usePlatformDefaultWidth = false
         )
     ) {
-        Box(
-            modifier = modifier
-                .padding(horizontal = 24.dp)
-                .fillMaxWidth(),
-            contentAlignment = Alignment.Center
+        BoxWithConstraints(
+            modifier = modifier.fillMaxSize(),
+            contentAlignment = Alignment.BottomCenter
         ) {
+            val minCardHeight = (maxHeight * 0.72f).coerceAtLeast(420.dp)
             Card(
-                shape = RoundedCornerShape(28.dp),
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .defaultMinSize(minHeight = minCardHeight)
                     .testTag("dialog_permission_disclosure_${type.name.lowercase()}")
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 28.dp)
+                        .defaultMinSize(minHeight = minCardHeight)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 24.dp, vertical = 22.dp)
+                        .navigationBarsPadding()
                 ) {
-                    // Ikon Ilustrasi Elegan di Lingkaran Lembut
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(96.dp)
-                            .clip(CircleShape)
-                            .background(config.iconBgColor)
-                            .border(2.dp, config.iconColor.copy(alpha = 0.2f), CircleShape)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        // Lingkaran konsentris dalam
+                        // Ikon Ilustrasi Elegan di Lingkaran Lembut
                         Box(
                             contentAlignment = Alignment.Center,
                             modifier = Modifier
-                                .size(72.dp)
+                                .size(88.dp)
                                 .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.85f))
+                                .background(config.iconBgColor)
+                                .border(2.dp, config.iconColor.copy(alpha = 0.2f), CircleShape)
                         ) {
-                            Icon(
-                                imageVector = config.icon,
-                                contentDescription = config.title,
-                                tint = config.iconColor,
-                                modifier = Modifier.size(42.dp)
-                            )
+                            // Lingkaran konsentris dalam
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(66.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White.copy(alpha = 0.85f))
+                            ) {
+                                Icon(
+                                    imageVector = config.icon,
+                                    contentDescription = config.title,
+                                    tint = config.iconColor,
+                                    modifier = Modifier.size(38.dp)
+                                )
+                            }
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                    // Judul Deklarasi
-                    Text(
-                        text = config.title,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = NeutralDark,
-                        textAlign = TextAlign.Center
-                    )
+                        // Judul Deklarasi
+                        Text(
+                            text = config.title,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = NeutralDark,
+                            textAlign = TextAlign.Center
+                        )
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                    // Deskripsi Penjelasan Informatif
-                    Text(
-                        text = config.description,
-                        fontSize = 13.5.sp,
-                        lineHeight = 20.sp,
-                        color = NeutralMedium,
-                        textAlign = TextAlign.Center
-                    )
+                        // Deskripsi Penjelasan Informatif
+                        Text(
+                            text = config.description,
+                            fontSize = 13.5.sp,
+                            lineHeight = 20.sp,
+                            color = NeutralMedium,
+                            textAlign = TextAlign.Center
+                        )
 
-                    Spacer(modifier = Modifier.height(18.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                    // Poin-poin Jaminan Kepatuhan & Keamanan
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = Color(0xFFF8FAFC),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 12.dp, horizontal = 14.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        // Poin-poin Jaminan Kepatuhan & Keamanan
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = Color(0xFFF8FAFC),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            config.highlights.forEach { (icon, text) ->
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Icon(
-                                        imageVector = icon,
-                                        contentDescription = null,
-                                        tint = EmeraldGreen,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = text,
-                                        fontSize = 12.sp,
-                                        lineHeight = 16.sp,
-                                        color = NeutralDark,
-                                        fontWeight = FontWeight.Medium
-                                    )
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 12.dp, horizontal = 14.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                config.highlights.forEach { (icon, text) ->
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Icon(
+                                            imageVector = icon,
+                                            contentDescription = null,
+                                            tint = EmeraldGreen,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = text,
+                                            fontSize = 12.sp,
+                                            lineHeight = 16.sp,
+                                            color = NeutralDark,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Tombol Aksi Utama "Mengerti" (Gradient Pill)
-                    Button(
-                        onClick = onConfirm,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Transparent
-                        ),
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
-                        shape = RoundedCornerShape(24.dp),
+                    // Bottom Action Area
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp)
-                            .background(
-                                Brush.horizontalGradient(
-                                    listOf(EmeraldGreen, AccentCyan)
-                                ),
-                                shape = RoundedCornerShape(24.dp)
-                            )
-                            .testTag("btn_disclosure_confirm")
+                            .padding(top = 18.dp)
                     ) {
-                        Text(
-                            text = config.confirmText,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                    }
-
-                    // Tombol Opsional "Nanti Saja"
-                    if (!config.dismissText.isNullOrBlank()) {
-                        Spacer(modifier = Modifier.height(6.dp))
-                        TextButton(
-                            onClick = onDismiss,
+                        // Tombol Aksi Utama "Mengerti" (Gradient Pill)
+                        Button(
+                            onClick = onConfirm,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Transparent
+                            ),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+                            shape = RoundedCornerShape(24.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .testTag("btn_disclosure_dismiss")
+                                .height(48.dp)
+                                .background(
+                                    Brush.horizontalGradient(
+                                        listOf(EmeraldGreen, AccentCyan)
+                                    ),
+                                    shape = RoundedCornerShape(24.dp)
+                                )
+                                .testTag("btn_disclosure_confirm")
                         ) {
                             Text(
-                                text = config.dismissText,
-                                fontSize = 13.5.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = NeutralMedium
+                                text = config.confirmText,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
                             )
                         }
-                    }
 
-                    // Tautan Kebijakan Privasi jika disediakan
-                    if (onReadPrivacyPolicy != null) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        val privacyLabel = when (resolvedLang) {
-                            AppLanguage.CHINESE -> "阅读隐私政策"
-                            AppLanguage.JAPANESE -> "プライバシーポリシーを読む"
-                            AppLanguage.KOREAN -> "개인정보 처리방침 읽기"
-                            AppLanguage.ARABIC -> "قراءة سياسة الخصوصية"
-                            AppLanguage.SPANISH -> "Leer Política de Privacidad"
-                            AppLanguage.FRENCH -> "Lire la politique de confidentialité"
-                            AppLanguage.GERMAN -> "Datenschutzerklärung lesen"
-                            AppLanguage.RUSSIAN -> "Читать Политику конфиденциальности"
-                            AppLanguage.PORTUGUESE -> "Ler Política de Privacidade"
-                            AppLanguage.INDONESIAN -> "Baca Kebijakan Privasi"
-                            else -> "Read Privacy Policy"
+                        // Tombol Opsional "Nanti Saja"
+                        if (!config.dismissText.isNullOrBlank()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            TextButton(
+                                onClick = onDismiss,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("btn_disclosure_dismiss")
+                            ) {
+                                Text(
+                                    text = config.dismissText,
+                                    fontSize = 13.5.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = NeutralMedium
+                                )
+                            }
                         }
-                        Text(
-                            text = privacyLabel,
-                            fontSize = 12.sp,
-                            color = EmeraldGreen,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier
-                                .clickable { onReadPrivacyPolicy() }
-                                .padding(4.dp)
-                        )
+
+                        // Tautan Kebijakan Privasi jika disediakan
+                        if (onReadPrivacyPolicy != null) {
+                            Spacer(modifier = Modifier.height(2.dp))
+                            val privacyLabel = when (resolvedLang) {
+                                AppLanguage.CHINESE -> "阅读隐私政策"
+                                AppLanguage.JAPANESE -> "プライバシーポリシーを読む"
+                                AppLanguage.KOREAN -> "개인정보 처리방침 읽기"
+                                AppLanguage.ARABIC -> "قراءة سياسة الخصوصية"
+                                AppLanguage.SPANISH -> "Leer Política de Privacidad"
+                                AppLanguage.FRENCH -> "Lire la politique de confidentialité"
+                                AppLanguage.GERMAN -> "Datenschutzerklärung lesen"
+                                AppLanguage.RUSSIAN -> "Читать Политику конфиденциальности"
+                                AppLanguage.PORTUGUESE -> "Ler Política de Privacidade"
+                                AppLanguage.INDONESIAN -> "Baca Kebijakan Privasi"
+                                else -> "Read Privacy Policy"
+                            }
+                            Text(
+                                text = privacyLabel,
+                                fontSize = 12.sp,
+                                color = EmeraldGreen,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier
+                                    .clickable { onReadPrivacyPolicy() }
+                                    .padding(4.dp)
+                            )
+                        }
                     }
                 }
             }
