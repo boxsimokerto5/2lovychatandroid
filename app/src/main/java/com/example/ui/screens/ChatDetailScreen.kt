@@ -198,6 +198,8 @@ fun ChatDetailScreen(
     onUserTyping: ((Boolean) -> Unit)? = null,
     isFriend: Boolean = true,
     onAddFriend: (() -> Unit)? = null,
+    momentComments: Map<String, List<com.example.model.MomentComment>> = emptyMap(),
+    onAddComment: ((momentId: String, text: String) -> Unit)? = null,
     language: AppLanguage = AppLanguage.INDONESIAN,
     modifier: Modifier = Modifier
 ) {
@@ -206,6 +208,7 @@ fun ChatDetailScreen(
     val focusRequester = remember { FocusRequester() }
     val coroutineScope = rememberCoroutineScope()
     var showPartnerProfileSheet by remember { mutableStateOf(false) }
+    var activeMomentForComments by remember { mutableStateOf<MomentItem?>(null) }
     var messageToDelete by remember { mutableStateOf<ChatMessage?>(null) }
     var pendingPhotoUri by remember { mutableStateOf<android.net.Uri?>(null) }
     var viewingPhotoUrl by remember { mutableStateOf<String?>(null) }
@@ -1069,10 +1072,26 @@ fun ChatDetailScreen(
             onUnblockUser = onUnblockPartner,
             onReportUser = onReportPartner,
             onToggleLikeMoment = onToggleLikeMoment,
+            onCommentClick = { moment -> activeMomentForComments = moment },
+            momentComments = momentComments,
             onDismiss = { showPartnerProfileSheet = false },
             onSendGreeting = { greeting ->
                 onSendMessage(greeting)
                 showPartnerProfileSheet = false
+            }
+        )
+    }
+
+    // Modal Bottom Sheet untuk Melihat & Mengirim Komentar Momen Teman
+    activeMomentForComments?.let { activeMoment ->
+        val comments = momentComments[activeMoment.id] ?: emptyList()
+        com.example.ui.components.MomentCommentsBottomSheet(
+            moment = activeMoment,
+            comments = comments,
+            language = language,
+            onDismiss = { activeMomentForComments = null },
+            onAddComment = { text ->
+                onAddComment?.invoke(activeMoment.id, text)
             }
         )
     }
@@ -1096,6 +1115,8 @@ fun PartnerProfileBottomSheet(
     onUnblockUser: (() -> Unit)? = null,
     onReportUser: ((reason: String, notes: String, alsoBlock: Boolean) -> Unit)? = null,
     onToggleLikeMoment: ((String) -> Unit)? = null,
+    onCommentClick: ((MomentItem) -> Unit)? = null,
+    momentComments: Map<String, List<com.example.model.MomentComment>> = emptyMap(),
     onDismiss: () -> Unit,
     onSendGreeting: (String) -> Unit
 ) {
@@ -1386,12 +1407,21 @@ fun PartnerProfileBottomSheet(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     activeMoments.forEach { moment ->
+                        val commentsForThis = momentComments[moment.id]
+                        val accurateCommentsCount = maxOf(moment.commentsCount, commentsForThis?.size ?: 0)
+                        val displayMoment = if (moment.commentsCount != accurateCommentsCount) {
+                            moment.copy(commentsCount = accurateCommentsCount)
+                        } else moment
+
                         PartnerMomentItemCard(
                             language = language,
-                            moment = moment,
-                            onPhotoClick = { previewMoment = moment },
+                            moment = displayMoment,
+                            onPhotoClick = { previewMoment = displayMoment },
                             onToggleLike = {
-                                onToggleLikeMoment?.invoke(moment.id)
+                                onToggleLikeMoment?.invoke(displayMoment.id)
+                            },
+                            onCommentClick = {
+                                onCommentClick?.invoke(displayMoment)
                             }
                         )
                     }
@@ -1594,13 +1624,23 @@ fun PartnerProfileBottomSheet(
 
     // Photo Preview Lightbox Dialog
     previewMoment?.let { moment ->
+        val commentsForThis = momentComments[moment.id]
+        val accurateCommentsCount = maxOf(moment.commentsCount, commentsForThis?.size ?: 0)
+        val displayMoment = if (moment.commentsCount != accurateCommentsCount) {
+            moment.copy(commentsCount = accurateCommentsCount)
+        } else moment
+
         PartnerPhotoPreviewDialog(
             language = language,
-            moment = moment,
+            moment = displayMoment,
             partnerAvatarHex = partnerAvatarHex,
             onDismiss = { previewMoment = null },
             onToggleLike = {
-                onToggleLikeMoment?.invoke(moment.id)
+                onToggleLikeMoment?.invoke(displayMoment.id)
+            },
+            onCommentClick = {
+                previewMoment = null
+                onCommentClick?.invoke(displayMoment)
             }
         )
     }
@@ -1621,6 +1661,7 @@ fun PartnerMomentItemCard(
     moment: MomentItem,
     onPhotoClick: () -> Unit,
     onToggleLike: () -> Unit,
+    onCommentClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -1787,8 +1828,14 @@ fun PartnerMomentItemCard(
                             )
                         }
 
-                        // Comments count indicator
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Comments count indicator and action
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { onCommentClick() }
+                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.ChatBubbleOutline,
                                 contentDescription = AppStrings.momentsComment(language),
@@ -1815,7 +1862,8 @@ fun PartnerPhotoPreviewDialog(
     moment: MomentItem,
     partnerAvatarHex: Long,
     onDismiss: () -> Unit,
-    onToggleLike: () -> Unit
+    onToggleLike: () -> Unit,
+    onCommentClick: (() -> Unit)? = null
 ) {
     Dialog(
         onDismissRequest = onDismiss,
@@ -2016,11 +2064,29 @@ fun PartnerPhotoPreviewDialog(
                                 )
                             }
 
-                            Text(
-                                text = AppStrings.partnerMomentCommentsCount(language, moment.commentsCount),
-                                fontSize = 12.sp,
-                                color = Color.White.copy(alpha = 0.7f)
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .then(
+                                        if (onCommentClick != null) Modifier.clickable { onCommentClick() }
+                                        else Modifier
+                                    )
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ChatBubbleOutline,
+                                    contentDescription = null,
+                                    tint = Color.White.copy(alpha = 0.85f),
+                                    modifier = Modifier.size(15.dp)
+                                )
+                                Spacer(modifier = Modifier.width(5.dp))
+                                Text(
+                                    text = AppStrings.partnerMomentCommentsCount(language, moment.commentsCount),
+                                    fontSize = 12.sp,
+                                    color = Color.White.copy(alpha = 0.85f)
+                                )
+                            }
                         }
                     }
                 }

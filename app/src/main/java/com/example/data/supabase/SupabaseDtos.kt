@@ -50,13 +50,13 @@ data class SupabaseMessageDto(
 
 @JsonClass(generateAdapter = true)
 data class SupabaseMomentDto(
-    @Json(name = "id") val id: String,
-    @Json(name = "author_id") val authorId: String,
-    @Json(name = "author_name") val authorName: String,
-    @Json(name = "content") val content: String,
+    @Json(name = "id") val id: String? = null,
+    @Json(name = "author_id") val authorId: String? = null,
+    @Json(name = "author_name") val authorName: String? = null,
+    @Json(name = "content") val content: String? = null,
     @Json(name = "likes_count") val likesCount: Int? = 0,
     @Json(name = "comments_count") val commentsCount: Int? = 0,
-    @Json(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
+    @Json(name = "created_at") val createdAt: Long? = System.currentTimeMillis(),
     @Json(name = "author_avatar_hex") val authorAvatarHex: Long? = 0xFFFB8C00,
     @Json(name = "image_url") val imageUrl: String? = null,
     @Json(name = "author_avatar_url") val authorAvatarUrl: String? = null,
@@ -65,12 +65,12 @@ data class SupabaseMomentDto(
 
 @JsonClass(generateAdapter = true)
 data class SupabaseBasicMomentDto(
-    @Json(name = "id") val id: String,
-    @Json(name = "author_id") val authorId: String,
-    @Json(name = "author_name") val authorName: String,
-    @Json(name = "content") val content: String,
+    @Json(name = "id") val id: String? = null,
+    @Json(name = "author_id") val authorId: String? = null,
+    @Json(name = "author_name") val authorName: String? = null,
+    @Json(name = "content") val content: String? = null,
     @Json(name = "likes_count") val likesCount: Int? = 0,
-    @Json(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
+    @Json(name = "created_at") val createdAt: Long? = System.currentTimeMillis(),
     @Json(name = "image_url") val imageUrl: String? = null
 )
 

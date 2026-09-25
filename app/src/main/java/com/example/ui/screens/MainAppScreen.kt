@@ -300,6 +300,9 @@ fun MainAppScreen(
                     viewModel.reportUser(user.id, user.name, reason, notes, alsoBlock)
                 },
                 moments = uiState.moments,
+                momentComments = uiState.momentComments,
+                onAddComment = { momentId, text -> viewModel.addMomentComment(momentId, text) },
+                onToggleLikeMoment = { momentId -> viewModel.toggleLikeMoment(momentId) },
                 onPermissionResult = { granted -> viewModel.updateLocationPermission(granted) },
                 onBack = { viewModel.navigateBack() },
                 onFilterChange = { viewModel.setNearbyGenderFilter(it) },
@@ -402,6 +405,8 @@ fun MainAppScreen(
                 partnerAge = partnerUser?.age ?: 22,
                 partnerMoments = partnerMoments,
                 onToggleLikeMoment = { momentId -> viewModel.toggleLikeMoment(momentId) },
+                momentComments = uiState.momentComments,
+                onAddComment = { momentId, text -> viewModel.addMomentComment(momentId, text) },
                 messages = messages,
                 onBack = { viewModel.navigateBack() },
                 onSendMessage = { text ->

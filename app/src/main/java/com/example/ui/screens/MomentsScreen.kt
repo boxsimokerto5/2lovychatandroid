@@ -994,6 +994,10 @@ fun MomentsScreen(
             user = user,
             existingMoments = moments,
             isBlocked = blockedUserIds.contains(user.id),
+            momentComments = momentComments,
+            onAddComment = onAddComment,
+            onToggleLikeMoment = onToggleLike,
+            language = language,
             onDismiss = { selectedUserForProfile = null },
             onSayHi = { targetUser ->
                 selectedUserForProfile = null

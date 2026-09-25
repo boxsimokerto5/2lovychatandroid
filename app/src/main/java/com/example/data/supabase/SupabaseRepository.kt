@@ -203,28 +203,52 @@ class SupabaseRepository {
             val response = api.getMoments(apiKey, auth)
             if (response.isSuccessful) {
                 val list = response.body() ?: return@withContext null
-                list.map { dto ->
+                Log.d(TAG, "Berhasil memuat ${list.size} moments dari Supabase")
+                list.mapNotNull { dto ->
+                    val id = dto.id ?: return@mapNotNull null
+                    val content = dto.content ?: ""
+                    val authorName = dto.authorName?.ifBlank { "Pengguna Lovy" } ?: "Pengguna Lovy"
                     MomentItem(
-                        id = dto.id,
-                        authorName = dto.authorName,
+                        id = id,
+                        authorName = authorName,
                         authorAvatarHex = dto.authorAvatarHex ?: 0xFFFB8C00,
-                        content = dto.content,
-                        timeAgo = "Baru saja",
+                        content = content,
+                        timeAgo = formatMomentTimeAgo(dto.createdAt ?: System.currentTimeMillis()),
                         likesCount = dto.likesCount ?: 0,
                         commentsCount = dto.commentsCount ?: 0,
                         isLiked = false,
-                        imageUrl = dto.imageUrl,
-                        authorAvatarUrl = dto.authorAvatarUrl,
-                        locationTag = dto.locationTag,
-                        authorId = dto.authorId
+                        imageUrl = dto.imageUrl?.takeIf { it.isNotBlank() },
+                        authorAvatarUrl = dto.authorAvatarUrl?.takeIf { it.isNotBlank() },
+                        locationTag = dto.locationTag?.takeIf { it.isNotBlank() },
+                        authorId = dto.authorId ?: ""
                     )
                 }
             } else {
+                val errorStr = response.errorBody()?.string()
+                Log.w(TAG, "Gagal mengambil moments dari Supabase: HTTP ${response.code()} $errorStr")
                 null
             }
         } catch (e: Exception) {
             Log.w(TAG, "Gagal mengambil moments dari Supabase", e)
             null
+        }
+    }
+
+    private fun formatMomentTimeAgo(timestamp: Long): String {
+        val diff = System.currentTimeMillis() - timestamp
+        val minutes = diff / (60 * 1000)
+        val hours = minutes / 60
+        val days = hours / 24
+
+        return when {
+            diff < 60_000 -> "Baru saja"
+            minutes < 60 -> "$minutes mnt lalu"
+            hours < 24 -> "$hours jam lalu"
+            days < 7 -> "$days hari lalu"
+            else -> {
+                val sdf = java.text.SimpleDateFormat("dd MMM", java.util.Locale("id", "ID"))
+                sdf.format(java.util.Date(timestamp))
+            }
         }
     }
 

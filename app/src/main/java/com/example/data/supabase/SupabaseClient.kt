@@ -161,6 +161,7 @@ object SupabaseClient {
 
         return try {
             val moshi = Moshi.Builder()
+                .add(FlexibleTypeAdapters())
                 .add(KotlinJsonAdapterFactory())
                 .build()
 

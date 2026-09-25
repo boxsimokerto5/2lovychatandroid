@@ -84,6 +84,10 @@ fun UserProfileBottomSheet(
     user: User,
     existingMoments: List<MomentItem> = emptyList(),
     isBlocked: Boolean = false,
+    momentComments: Map<String, List<com.example.model.MomentComment>> = emptyMap(),
+    onAddComment: ((momentId: String, text: String) -> Unit)? = null,
+    onToggleLikeMoment: ((String) -> Unit)? = null,
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     onDismiss: () -> Unit,
     onSayHi: (User) -> Unit,
     onBlockUser: (() -> Unit)? = null,
@@ -94,6 +98,7 @@ fun UserProfileBottomSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var previewMoment by remember { mutableStateOf<MomentItem?>(null) }
     var viewingAvatarPhoto by remember { mutableStateOf<String?>(null) }
+    var activeMomentForComments by remember { mutableStateOf<MomentItem?>(null) }
     var showBlockConfirmDialog by remember { mutableStateOf(false) }
     var showReportDialog by remember { mutableStateOf(false) }
 
@@ -448,17 +453,27 @@ fun UserProfileBottomSheet(
                     userMoments.forEach { moment ->
                         val isLocallyLiked = likedState[moment.id] ?: moment.isLiked
                         val currentLikes = moment.likesCount + (likesCountDelta[moment.id] ?: 0)
+                        val commentsForThis = momentComments[moment.id]
+                        val accurateCommentsCount = maxOf(moment.commentsCount, commentsForThis?.size ?: 0)
+                        val displayMoment = if (moment.commentsCount != accurateCommentsCount || moment.likesCount != currentLikes || moment.isLiked != isLocallyLiked) {
+                            moment.copy(commentsCount = accurateCommentsCount, likesCount = currentLikes, isLiked = isLocallyLiked)
+                        } else moment
 
                         UserProfileMomentCard(
-                            moment = moment,
+                            moment = displayMoment,
                             isLiked = isLocallyLiked,
                             likesCount = currentLikes,
-                            onPhotoClick = { previewMoment = moment },
+                            commentsCount = accurateCommentsCount,
+                            onPhotoClick = { previewMoment = displayMoment },
                             onToggleLike = {
                                 val nextState = !isLocallyLiked
                                 likedState[moment.id] = nextState
                                 val delta = if (nextState) 1 else -1
                                 likesCountDelta[moment.id] = (likesCountDelta[moment.id] ?: 0) + delta
+                                onToggleLikeMoment?.invoke(moment.id)
+                            },
+                            onCommentClick = {
+                                activeMomentForComments = displayMoment
                             }
                         )
                     }
@@ -611,6 +626,20 @@ fun UserProfileBottomSheet(
             onDismiss = { viewingAvatarPhoto = null }
         )
     }
+
+    // Modal Bottom Sheet untuk Melihat & Mengirim Komentar Momen Pengguna
+    activeMomentForComments?.let { activeMoment ->
+        val comments = momentComments[activeMoment.id] ?: emptyList()
+        MomentCommentsBottomSheet(
+            moment = activeMoment,
+            comments = comments,
+            language = language,
+            onDismiss = { activeMomentForComments = null },
+            onAddComment = { text ->
+                onAddComment?.invoke(activeMoment.id, text)
+            }
+        )
+    }
 }
 
 @Composable
@@ -618,8 +647,10 @@ fun UserProfileMomentCard(
     moment: MomentItem,
     isLiked: Boolean,
     likesCount: Int,
+    commentsCount: Int = moment.commentsCount,
     onPhotoClick: () -> Unit,
     onToggleLike: () -> Unit,
+    onCommentClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -756,16 +787,22 @@ fun UserProfileMomentCard(
                         }
 
                         // Comments
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { onCommentClick() }
+                                .padding(horizontal = 6.dp, vertical = 3.dp)
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.ChatBubbleOutline,
-                                contentDescription = null,
-                                tint = NeutralMedium,
+                                contentDescription = "Komentar",
+                                tint = EmeraldGreen,
                                 modifier = Modifier.size(15.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "${moment.commentsCount}",
+                                text = "$commentsCount",
                                 fontSize = 12.sp,
                                 color = NeutralMedium
                             )
