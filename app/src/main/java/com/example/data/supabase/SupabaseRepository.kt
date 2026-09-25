@@ -61,20 +61,33 @@ class SupabaseRepository {
             val response = api.getNearbyUsers(apiKey, auth)
             if (response.isSuccessful) {
                 val list = response.body() ?: return@withContext null
-                list.map { dto ->
-                    User(
-                        id = dto.id,
-                        name = dto.name,
-                        gender = if (dto.gender.equals("male", ignoreCase = true)) Gender.MALE else Gender.FEMALE,
-                        age = 22,
-                        distanceMeters = dto.distanceMeters ?: 100,
-                        bio = dto.bio ?: "",
-                        avatarColorHex = dto.avatarHex ?: 0xFF2E7D32,
-                        isOnline = dto.isOnline ?: true,
-                        city = dto.city?.takeIf { it.isNotBlank() } ?: "Indonesia",
-                        avatarUrl = dto.avatarUrl
-                    )
-                }
+                val dummyNames = setOf(
+                    "siti rahma", "rian pratama", "nadia putri", "dimas anggara", 
+                    "alya zahra", "pengguna lovy", "rania putri", "clara monica",
+                    "dimas danendra", "clarissa aurelia", "salma salsabil",
+                    "tanpa nama", "user tak bernama", "pengguna", "unknown user", "anonymous"
+                )
+                list
+                    .filterNot { dto ->
+                        val cleanName = dto.name.trim()
+                        cleanName.isEmpty() ||
+                        cleanName.lowercase() in dummyNames ||
+                        dto.id.matches(Regex("^u[0-9]+$"))
+                    }
+                    .map { dto ->
+                        User(
+                            id = dto.id,
+                            name = dto.name.trim(),
+                            gender = if (dto.gender.equals("male", ignoreCase = true)) Gender.MALE else Gender.FEMALE,
+                            age = 22,
+                            distanceMeters = dto.distanceMeters ?: 100,
+                            bio = dto.bio ?: "",
+                            avatarColorHex = dto.avatarHex ?: 0xFF2E7D32,
+                            isOnline = dto.isOnline ?: true,
+                            city = dto.city?.takeIf { it.isNotBlank() } ?: "Indonesia",
+                            avatarUrl = dto.avatarUrl
+                        )
+                    }
             } else {
                 null
             }
@@ -93,9 +106,10 @@ class SupabaseRepository {
             val response = api.getNearbyUserById(apiKey, auth, "eq.$userId")
             if (response.isSuccessful) {
                 val dto = response.body()?.firstOrNull() ?: return@withContext null
+                val cleanName = dto.name.trim().takeIf { it.isNotBlank() } ?: "Teman Lovy"
                 User(
                     id = dto.id,
-                    name = dto.name,
+                    name = cleanName,
                     gender = if (dto.gender.equals("male", ignoreCase = true)) Gender.MALE else Gender.FEMALE,
                     age = 22,
                     distanceMeters = dto.distanceMeters ?: 100,
@@ -852,6 +866,12 @@ class SupabaseRepository {
 
             // 2. Hapus fisik chat yang sudah dihapus kedua pihak
             api.purgeFullyDeletedMessages(apiKey, auth)
+
+            // 3. Bersihkan entri tanpa nama atau dummy di nearby_users
+            try {
+                api.deleteNearbyUsersByName(apiKey, auth, "is.null")
+                api.deleteNearbyUsersByName(apiKey, auth, "eq.")
+            } catch (_: Exception) {}
 
             true
         } catch (e: Exception) {

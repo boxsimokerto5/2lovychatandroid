@@ -848,7 +848,7 @@ fun NearbyRadarView(
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
                                         Text(
-                                            text = user.name,
+                                            text = user.name.ifBlank { "Pengguna Lovy" },
                                             fontSize = 15.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = NeutralDark,

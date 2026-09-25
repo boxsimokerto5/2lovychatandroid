@@ -200,7 +200,7 @@ fun UserProfileBottomSheet(
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = user.name,
+                    text = user.name.ifBlank { "Pengguna Lovy" },
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = NeutralDark

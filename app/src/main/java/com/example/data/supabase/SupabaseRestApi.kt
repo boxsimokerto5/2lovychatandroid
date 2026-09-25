@@ -239,6 +239,13 @@ interface SupabaseRestApi {
         @Query("id") idFilter: String
     ): Response<Unit>
 
+    @DELETE("rest/v1/nearby_users")
+    suspend fun deleteNearbyUsersByName(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("name") nameFilter: String
+    ): Response<Unit>
+
     @DELETE("rest/v1/ocean_bottles")
     suspend fun deleteOceanBottlesBySender(
         @Header("apikey") apiKey: String,

@@ -355,7 +355,7 @@ private fun NewFriendRequestCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = request.user.name,
+                            text = request.user.name.ifBlank { "Pengguna Lovy" },
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp,
                             color = NeutralDark,

@@ -30,7 +30,7 @@ interface ChatFriendDao {
     @Query("DELETE FROM chat_friends")
     suspend fun deleteAllFriends()
 
-    @Query("DELETE FROM chat_friends WHERE id LIKE 'u%' OR lower(name) IN ('siti rahma', 'rian pratama', 'nadia putri', 'dimas anggara', 'alya zahra', 'pengguna lovy', 'rania putri', 'clara monica', 'dimas danendra', 'clarissa aurelia', 'salma salsabil')")
+    @Query("DELETE FROM chat_friends WHERE id LIKE 'u%' OR trim(name) = '' OR name IS NULL OR lower(name) IN ('siti rahma', 'rian pratama', 'nadia putri', 'dimas anggara', 'alya zahra', 'pengguna lovy', 'rania putri', 'clara monica', 'dimas danendra', 'clarissa aurelia', 'salma salsabil', 'tanpa nama', 'user tak bernama', 'pengguna')")
     suspend fun deleteDummyFriends()
 
     @Query("SELECT COUNT(*) FROM chat_friends")

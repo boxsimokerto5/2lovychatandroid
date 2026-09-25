@@ -289,8 +289,8 @@ alter publication supabase_realtime add table chat_messages;
 -- 1. AKTIFKAN EKSTENSI PG_CRON
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 
--- 2. BERSIHKAN DATA YATIM (ORPHAN) TERLEBIH DAHULU AGAR TIDAK ADA ERROR CONSTRAINT
-DELETE FROM nearby_users WHERE id NOT IN (SELECT id FROM app_accounts);
+-- 2. BERSIHKAN DATA YATIM (ORPHAN) & DATA TANPA NAMA TERLEBIH DAHULU AGAR TIDAK ADA ERROR CONSTRAINT
+DELETE FROM nearby_users WHERE id NOT IN (SELECT id FROM app_accounts) OR name IS NULL OR TRIM(name) = '';
 DELETE FROM moments WHERE author_id NOT IN (SELECT id FROM app_accounts);
 DELETE FROM ocean_bottles WHERE sender_id NOT IN (SELECT id FROM app_accounts);
 DELETE FROM chat_messages WHERE sender_id NOT IN (SELECT id FROM app_accounts);
@@ -349,8 +349,8 @@ BEGIN
     WHERE deleted_for_sender = TRUE 
       AND created_at < (EXTRACT(EPOCH FROM (NOW() - INTERVAL '30 days')) * 1000)::BIGINT;
 
-    -- [D] Bersihkan data yatim (jika ada data lama yang tersisa)
-    DELETE FROM nearby_users WHERE id NOT IN (SELECT id FROM app_accounts);
+    -- [D] Bersihkan data yatim & data tanpa nama (jika ada data lama/dummy yang tersisa)
+    DELETE FROM nearby_users WHERE id NOT IN (SELECT id FROM app_accounts) OR name IS NULL OR TRIM(name) = '';
 END;
 ${"$$"};
 

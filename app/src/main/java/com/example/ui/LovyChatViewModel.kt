@@ -339,13 +339,16 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun isDummyFriend(userId: String, userName: String): Boolean {
+        val cleanName = userName.trim().lowercase()
+        if (cleanName.isBlank()) return true // Tolak user tak bernama
         val dummyNames = setOf(
             "siti rahma", "rian pratama", "nadia putri", "dimas anggara", 
             "alya zahra", "pengguna lovy", "rania putri", "clara monica",
-            "dimas danendra", "clarissa aurelia", "salma salsabil"
+            "dimas danendra", "clarissa aurelia", "salma salsabil",
+            "tanpa nama", "user tak bernama", "pengguna", "unknown user", "anonymous"
         )
         val isMockId = userId.matches(Regex("^u[0-9]+$"))
-        return isMockId || dummyNames.contains(userName.trim().lowercase())
+        return isMockId || dummyNames.contains(cleanName)
     }
 
     private fun observeChatFriends() {
@@ -353,11 +356,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             try {
                 chatFriendDao.getAllFriendsFlow().collect { friendEntities ->
                     val friends = friendEntities.map { it.toUser() }
-                    val finalFriends = if (!_uiState.value.isGuest) {
-                        friends.filterNot { isDummyFriend(it.id, it.name) }
-                    } else {
-                        friends
-                    }
+                    val finalFriends = friends
+                        .filterNot { it.name.trim().isBlank() }
+                        .filterNot { isDummyFriend(it.id, it.name) }
                     _uiState.update { it.copy(chattedFriends = finalFriends) }
                     refreshNewFriendRequests(finalFriends)
                 }
@@ -373,13 +374,14 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         val ignoredIds = state.ignoredNewFriendIds
 
         val requestsMap = state.newFriendRequests
-            .filterNot { it.user.id in friendIds || it.user.id in ignoredIds }
+            .filterNot { it.user.id in friendIds || it.user.id in ignoredIds || it.user.name.trim().isBlank() || isDummyFriend(it.user.id, it.user.name) }
             .associateBy { it.user.id }
             .toMutableMap()
 
         for (conv in state.conversations) {
             val partnerId = conv.partnerId
-            if (partnerId.isBlank() || partnerId in friendIds || partnerId in ignoredIds) continue
+            val pName = conv.partnerName.trim()
+            if (partnerId.isBlank() || pName.isBlank() || isDummyFriend(partnerId, pName) || partnerId in friendIds || partnerId in ignoredIds) continue
 
             // Pengguna lain yang mengirimi pesan obrolan tapi belum ada di Kontak Saya
             if (!conv.lastMessageIsFromMe || conv.unreadCount > 0) {
@@ -2025,6 +2027,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             val myId = _uiState.value.myLovyId
             val filtered = (remoteUsers ?: emptyList())
                 .filterNot { it.id == myId || it.id == "current_user" }
+                .filterNot { it.name.trim().isBlank() }
                 .filterNot { isUserBlocked(it.id, it.name) }
                 .filterNot { isDummyFriend(it.id, it.name) }
             _uiState.update { it.copy(isScanningNearby = false, nearbyUsers = filtered) }
@@ -3431,10 +3434,11 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                         }
                     }
                 }
+                val cleanPartnerName = partnerUser?.name?.trim()?.takeIf { it.isNotBlank() } ?: "Teman Lovy"
                 val newConv = ChatConversation(
                     id = convId,
                     partnerId = partnerId,
-                    partnerName = partnerUser?.name ?: "Teman Lovy",
+                    partnerName = cleanPartnerName,
                     partnerAvatarHex = partnerUser?.avatarColorHex ?: 0xFF4CAF50,
                     partnerGender = partnerUser?.gender ?: Gender.FEMALE,
                     lastMessage = lastMsg.text,

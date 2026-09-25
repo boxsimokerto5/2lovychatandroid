@@ -1018,7 +1018,7 @@ fun NearbyUserCard(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = user.name,
+                        text = user.name.ifBlank { "Pengguna Lovy" },
                         fontSize = 14.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeutralDark,

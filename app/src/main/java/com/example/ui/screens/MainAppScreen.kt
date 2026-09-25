@@ -474,7 +474,7 @@ fun MainAppScreen(
                     val partnerId = conv?.partnerId ?: viewModel.extractPartnerIdFromConvId(screen.conversationId, uiState.myLovyId)
                     val partnerUser = uiState.nearbyUsers.find { it.id == partnerId } ?: User(
                         id = partnerId,
-                        name = screen.partnerName,
+                        name = screen.partnerName.ifBlank { "Pengguna Lovy" },
                         gender = conv?.partnerGender ?: com.example.model.Gender.FEMALE,
                         age = conv?.partnerAge ?: 22,
                         distanceMeters = conv?.partnerDistanceMeters ?: 500,

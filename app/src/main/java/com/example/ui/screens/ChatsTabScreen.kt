@@ -68,6 +68,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -213,65 +214,75 @@ fun ChatsTabScreen(
 
                     Spacer(modifier = Modifier.height(6.dp))
 
-                    // Search Bar (Compact, Sleek, Vertically Centered - Never Submerged)
-                    Box(
+                    // Search Bar (Desain Pill Putih Kontras Tinggi, Teks Terbaca Jelas & Tidak Tenggelam)
+                    Surface(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(44.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color.White.copy(alpha = 0.2f))
-                            .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
-                            .padding(horizontal = 12.dp),
-                        contentAlignment = Alignment.CenterStart
+                            .testTag("chats_search_bar_surface"),
+                        shape = RoundedCornerShape(22.dp),
+                        color = Color.White,
+                        shadowElevation = 1.5.dp
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 14.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = null,
-                                tint = Color.White.copy(alpha = 0.85f),
-                                modifier = Modifier.size(18.dp)
+                                tint = EmeraldGreen,
+                                modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(10.dp))
-                            Box(
-                                modifier = Modifier.weight(1f),
-                                contentAlignment = Alignment.CenterStart
-                            ) {
-                                if (searchQuery.isEmpty()) {
-                                    Text(
-                                        text = com.example.util.AppStrings.chatsSearchPlaceholder(language),
-                                        fontSize = 13.5.sp,
-                                        color = Color.White.copy(alpha = 0.7f),
-                                        maxLines = 1
-                                    )
-                                }
-                                BasicTextField(
-                                    value = searchQuery,
-                                    onValueChange = { searchQuery = it },
-                                    singleLine = true,
-                                    textStyle = TextStyle(
-                                        color = Color.White,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Normal
-                                    ),
-                                    cursorBrush = SolidColor(Color.White),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .testTag("chats_search_input")
-                                )
-                            }
+                            BasicTextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                singleLine = true,
+                                textStyle = TextStyle(
+                                    color = NeutralDark,
+                                    fontSize = 14.5.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    platformStyle = PlatformTextStyle(includeFontPadding = false),
+                                    lineHeight = 20.sp
+                                ),
+                                cursorBrush = SolidColor(EmeraldGreen),
+                                decorationBox = { innerTextField ->
+                                    Box(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        contentAlignment = Alignment.CenterStart
+                                    ) {
+                                        if (searchQuery.isEmpty()) {
+                                            Text(
+                                                text = com.example.util.AppStrings.chatsSearchPlaceholder(language),
+                                                fontSize = 13.5.sp,
+                                                color = Color(0xFF94A3B8), // Slate 400
+                                                maxLines = 1,
+                                                style = TextStyle(
+                                                    platformStyle = PlatformTextStyle(includeFontPadding = false),
+                                                    lineHeight = 20.sp
+                                                )
+                                            )
+                                        }
+                                        innerTextField()
+                                    }
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("chats_search_input")
+                            )
                             if (searchQuery.isNotBlank()) {
                                 IconButton(
                                     onClick = { searchQuery = "" },
-                                    modifier = Modifier.size(24.dp)
+                                    modifier = Modifier.size(26.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Close,
                                         contentDescription = com.example.util.AppStrings.btnCancel(language),
-                                        tint = Color.White.copy(alpha = 0.85f),
-                                        modifier = Modifier.size(16.dp)
+                                        tint = Color(0xFF64748B),
+                                        modifier = Modifier.size(17.dp)
                                     )
                                 }
                             }
@@ -522,7 +533,7 @@ fun ChatConversationItem(
                     modifier = Modifier.weight(1f, fill = false)
                 ) {
                     Text(
-                        text = conversation.partnerName,
+                        text = conversation.partnerName.ifBlank { "Teman Lovy" },
                         fontSize = 14.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeutralDark,
