@@ -100,13 +100,6 @@ object AdManager {
             // Tandai initialized secara internal agar tidak dipanggil berulang
             isInitialized = true
 
-            // Validasi integrasi adapter dan manifest untuk membantu diagnosa logcat
-            try {
-                com.ironsource.mediationsdk.integration.IntegrationHelper.validateIntegration(activity)
-            } catch (e: Throwable) {
-                Log.d(TAG, "IntegrationHelper validation skipped: ${e.message}")
-            }
-
             // Automatically load interstitial in the background
             loadInterstitial()
         } catch (e: Exception) {

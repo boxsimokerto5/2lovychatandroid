@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,6 +31,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.CloudSync
@@ -56,9 +58,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -998,60 +1004,147 @@ fun PrivacyLocationDialog(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BlockedUsersDialog(
     blockedUserNames: Set<String>,
     onUnblockUser: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
-    AlertDialog(
+
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.Block,
-                    contentDescription = null,
-                    tint = Color(0xFFE53935),
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(10.dp))
-                Text(
-                    text = "Daftar Pengguna Diblokir",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 17.sp,
-                    color = NeutralDark
-                )
-            }
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        containerColor = Color.White,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(top = 10.dp, bottom = 6.dp)
+                    .width(36.dp)
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(Color(0xFFDADCE0))
+            )
         },
-        text = {
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("blocked_users_bottom_sheet")
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .navigationBarsPadding()
+                .padding(bottom = 24.dp)
+        ) {
+            // Header Bar: Icon, Title & Google Maps-style circular close button
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp, bottom = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFFFEBEE)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Block,
+                            contentDescription = null,
+                            tint = Color(0xFFE53935),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = "Daftar Pengguna Diblokir",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = NeutralDark
+                        )
+                        if (blockedUserNames.isNotEmpty()) {
+                            Text(
+                                text = "${blockedUserNames.size} pengguna diblokir",
+                                fontSize = 12.sp,
+                                color = NeutralMedium
+                            )
+                        }
+                    }
+                }
+
+                // Circular close button (Google Maps style)
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFF1F3F4))
+                        .testTag("btn_close_blocked_sheet")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Tutup",
+                        tint = NeutralDark,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
+            HorizontalDivider(
+                color = NeutralBorder.copy(alpha = 0.5f),
+                thickness = 0.8.dp,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            // Content Area
             if (blockedUserNames.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 24.dp),
+                        .padding(vertical = 32.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = null,
-                            tint = EmeraldGreen,
-                            modifier = Modifier.size(40.dp)
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(64.dp)
+                                .clip(CircleShape)
+                                .background(EmeraldGreen.copy(alpha = 0.12f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = EmeraldGreen,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(14.dp))
                         Text(
                             text = "Tidak ada pengguna yang diblokir",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = NeutralMedium
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = NeutralDark
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = "Pengguna yang Anda blokir di ruang chat akan muncul di sini.",
-                            fontSize = 12.sp,
+                            fontSize = 13.sp,
                             color = NeutralMedium,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 24.dp)
                         )
                     }
                 }
@@ -1065,20 +1158,21 @@ fun BlockedUsersDialog(
                     Text(
                         text = "Pengguna di bawah ini tidak dapat mengirimi Anda pesan atau melihat Anda di Sekitar Saya:",
                         fontSize = 12.sp,
-                        color = NeutralMedium
+                        color = NeutralMedium,
+                        lineHeight = 16.sp
                     )
                     Spacer(modifier = Modifier.height(4.dp))
 
                     blockedUserNames.forEach { blockedName ->
                         Card(
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(14.dp),
                             colors = CardDefaults.cardColors(containerColor = ScreenBackground),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                                    .padding(horizontal = 14.dp, vertical = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
@@ -1088,7 +1182,7 @@ fun BlockedUsersDialog(
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .size(36.dp)
+                                            .size(40.dp)
                                             .clip(CircleShape)
                                             .background(Color(0xFFFFEBEE)),
                                         contentAlignment = Alignment.Center
@@ -1097,7 +1191,7 @@ fun BlockedUsersDialog(
                                             text = blockedName.take(1).uppercase(),
                                             fontWeight = FontWeight.Bold,
                                             color = Color(0xFFE53935),
-                                            fontSize = 15.sp
+                                            fontSize = 16.sp
                                         )
                                     }
                                     Spacer(modifier = Modifier.width(12.dp))
@@ -1115,7 +1209,11 @@ fun BlockedUsersDialog(
                                         onUnblockUser(blockedName)
                                         Toast.makeText(context, "Blokir untuk $blockedName dibuka", Toast.LENGTH_SHORT).show()
                                     },
-                                    shape = RoundedCornerShape(8.dp),
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        contentColor = EmeraldGreen
+                                    ),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldGreen.copy(alpha = 0.5f)),
                                     modifier = Modifier.testTag("btn_unblock_$blockedName")
                                 ) {
                                     Text(
@@ -1130,17 +1228,8 @@ fun BlockedUsersDialog(
                     }
                 }
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = onDismiss,
-                colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text("Tutup", color = Color.White, fontWeight = FontWeight.Bold)
-            }
         }
-    )
+    }
 }
 
 @Composable
