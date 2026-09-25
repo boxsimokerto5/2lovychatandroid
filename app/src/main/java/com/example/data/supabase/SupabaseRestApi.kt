@@ -170,6 +170,14 @@ interface SupabaseRestApi {
         @Body moment: SupabaseMomentDto
     ): Response<List<SupabaseMomentDto>>
 
+    @PATCH("rest/v1/moments")
+    suspend fun updateMomentCommentsCount(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("id") idFilter: String,
+        @Body updates: Map<String, Int>
+    ): Response<Unit>
+
     @DELETE("rest/v1/moments")
     suspend fun deleteMoment(
         @Header("apikey") apiKey: String,

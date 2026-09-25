@@ -323,6 +323,20 @@ class SupabaseRepository {
         }
     }
 
+    suspend fun updateMomentCommentsCount(momentId: String, count: Int): Boolean = withContext(Dispatchers.IO) {
+        val api = SupabaseClient.getApi() ?: return@withContext false
+        val apiKey = SupabaseClient.getSupabaseAnonKey()
+        val auth = SupabaseClient.getAuthHeader()
+
+        try {
+            val response = api.updateMomentCommentsCount(apiKey, auth, "eq.$momentId", mapOf("comments_count" to count))
+            response.isSuccessful
+        } catch (e: Exception) {
+            Log.w(TAG, "Gagal mengupdate comments_count di Supabase", e)
+            false
+        }
+    }
+
     suspend fun deleteMoment(momentId: String): Boolean = withContext(Dispatchers.IO) {
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()

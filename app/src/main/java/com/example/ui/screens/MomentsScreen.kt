@@ -105,6 +105,10 @@ import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.example.model.MomentItem
 import com.example.model.MomentComment
+import com.example.model.User
+import com.example.model.Gender
+import com.example.model.UserProfile
+import com.example.ui.components.UserProfileBottomSheet
 import com.example.util.AppLanguage
 import com.example.util.AppStrings
 import com.example.ui.components.IronSourceBannerView
@@ -133,10 +137,16 @@ fun MomentsScreen(
     currentUserName: String = "",
     currentUserAvatarUrl: String? = null,
     currentGpsLocation: com.example.util.UserGpsLocation? = null,
+    nearbyUsers: List<User> = emptyList(),
+    friends: List<User> = emptyList(),
+    currentUserProfile: UserProfile = UserProfile(),
+    blockedUserIds: Set<String> = emptySet(),
     language: AppLanguage = AppLanguage.INDONESIAN,
     onBack: () -> Unit,
     onToggleLike: (String) -> Unit,
     onAddComment: ((momentId: String, text: String) -> Unit)? = null,
+    onSayHi: ((User) -> Unit)? = null,
+    onBlockUser: ((User) -> Unit)? = null,
     onPostMoment: (String) -> Unit,
     onPostMomentWithDetails: ((content: String, imageUrl: String?, locationTag: String?) -> Unit)? = null,
     onPostMomentWithPhotoUri: ((content: String, uri: android.net.Uri?, locationTag: String?) -> Unit)? = null,
@@ -151,6 +161,7 @@ fun MomentsScreen(
     val context = LocalContext.current
     var showPostDialog by remember { mutableStateOf(false) }
     var reportingMoment by remember { mutableStateOf<MomentItem?>(null) }
+    var selectedUserForProfile by remember { mutableStateOf<User?>(null) }
     var postText by remember { mutableStateOf("") }
     
     // Otomatis deteksi nama kota dari GPS map
@@ -369,12 +380,34 @@ fun MomentsScreen(
                             item.id in myMomentIds && (cleanAuthorId.isBlank() || cleanAuthorId.equals("me", ignoreCase = true) || cleanAuthorId.equals(cleanMyId, ignoreCase = true))
                         }
                     }
+
+                    // Pastikan jumlah komentar yang ditampilkan sinkron langsung dengan komentar yang tersimpan
+                    val commentsForThisItem = momentComments[item.id]
+                    val accurateCommentsCount = maxOf(item.commentsCount, commentsForThisItem?.size ?: 0)
+                    val displayItem = if (item.commentsCount != accurateCommentsCount) {
+                        item.copy(commentsCount = accurateCommentsCount)
+                    } else item
+
                     item(key = item.id) {
                     MomentCard(
-                        item = item,
+                        item = displayItem,
                         isMyMoment = isMyMoment,
                         currentUserAvatarUrl = currentUserAvatarUrl,
                         language = language,
+                        onAuthorClick = {
+                            selectedUserForProfile = resolveUserForAuthor(
+                                authorId = item.authorId,
+                                authorName = item.authorName,
+                                authorAvatarHex = item.authorAvatarHex,
+                                authorAvatarUrl = item.authorAvatarUrl,
+                                locationTag = item.locationTag,
+                                nearbyUsers = nearbyUsers,
+                                friends = friends,
+                                currentUserId = currentUserId,
+                                currentUserName = currentUserName,
+                                currentUserProfile = currentUserProfile
+                            )
+                        },
                         onToggleLike = { onToggleLike(item.id) },
                         onPhotoClick = { url -> fullscreenPhotoUrl = url },
                         onCommentClick = { activeMomentIdForComments = item.id },
@@ -803,7 +836,23 @@ fun MomentsScreen(
                                     avatarColorHex = comment.authorAvatarHex,
                                     avatarUrl = comment.authorAvatarUrl,
                                     size = 38.dp,
-                                    fontSize = 15.sp
+                                    fontSize = 15.sp,
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .clickable {
+                                            selectedUserForProfile = resolveUserForAuthor(
+                                                authorId = comment.authorId,
+                                                authorName = comment.authorName,
+                                                authorAvatarHex = comment.authorAvatarHex,
+                                                authorAvatarUrl = comment.authorAvatarUrl,
+                                                locationTag = null,
+                                                nearbyUsers = nearbyUsers,
+                                                friends = friends,
+                                                currentUserId = currentUserId,
+                                                currentUserName = currentUserName,
+                                                currentUserProfile = currentUserProfile
+                                            )
+                                        }
                                 )
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column(modifier = Modifier.weight(1f)) {
@@ -829,7 +878,21 @@ fun MomentsScreen(
                                                     text = comment.authorName,
                                                     fontSize = 13.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = NeutralDark
+                                                    color = NeutralDark,
+                                                    modifier = Modifier.clickable {
+                                                        selectedUserForProfile = resolveUserForAuthor(
+                                                            authorId = comment.authorId,
+                                                            authorName = comment.authorName,
+                                                            authorAvatarHex = comment.authorAvatarHex,
+                                                            authorAvatarUrl = comment.authorAvatarUrl,
+                                                            locationTag = null,
+                                                            nearbyUsers = nearbyUsers,
+                                                            friends = friends,
+                                                            currentUserId = currentUserId,
+                                                            currentUserName = currentUserName,
+                                                            currentUserProfile = currentUserProfile
+                                                        )
+                                                    }
                                                 )
                                                 Text(
                                                     text = comment.timeAgo,
@@ -924,6 +987,94 @@ fun MomentsScreen(
             }
         }
     }
+
+    // Modal Bottom Sheet untuk Melihat Profil & Momen Teman saat Nama/Avatar Diklik
+    selectedUserForProfile?.let { user ->
+        UserProfileBottomSheet(
+            user = user,
+            existingMoments = moments,
+            isBlocked = blockedUserIds.contains(user.id),
+            onDismiss = { selectedUserForProfile = null },
+            onSayHi = { targetUser ->
+                selectedUserForProfile = null
+                onSayHi?.invoke(targetUser)
+            },
+            onBlockUser = {
+                selectedUserForProfile = null
+                onBlockUser?.invoke(user)
+            },
+            onReportUser = { reason, notes, _ ->
+                selectedUserForProfile = null
+                onReportMoment?.invoke(user.id, user.name, reason, notes)
+            }
+        )
+    }
+}
+
+private fun resolveUserForAuthor(
+    authorId: String,
+    authorName: String,
+    authorAvatarHex: Long,
+    authorAvatarUrl: String?,
+    locationTag: String?,
+    nearbyUsers: List<User>,
+    friends: List<User>,
+    currentUserId: String,
+    currentUserName: String,
+    currentUserProfile: UserProfile
+): User {
+    val cleanAuthorId = authorId.trim()
+    val cleanMyId = currentUserId.trim()
+    val isMe = (cleanMyId.isNotBlank() && cleanAuthorId.equals(cleanMyId, ignoreCase = true)) ||
+            cleanAuthorId.equals("me", ignoreCase = true) ||
+            (currentUserName.isNotBlank() && authorName.equals(currentUserName, ignoreCase = true))
+
+    if (isMe) {
+        val userGender = if (currentUserProfile.gender.equals("MALE", ignoreCase = true)) Gender.MALE else Gender.FEMALE
+        return User(
+            id = cleanMyId.ifBlank { "current_user" },
+            name = currentUserName.ifBlank { currentUserProfile.displayName.ifBlank { "Saya" } },
+            gender = userGender,
+            age = currentUserProfile.age,
+            distanceMeters = 0,
+            bio = currentUserProfile.bio.ifBlank { "Profil saya di Lovy Chat ✨" },
+            avatarColorHex = 0xFF00A86B,
+            isOnline = true,
+            city = currentUserProfile.city.ifBlank { locationTag ?: "Indonesia" },
+            avatarUrl = currentUserProfile.profilePicture ?: authorAvatarUrl
+        )
+    }
+
+    // 1. Cari dari daftar teman
+    val friend = friends.find { f ->
+        (cleanAuthorId.isNotBlank() && f.id.equals(cleanAuthorId, ignoreCase = true)) ||
+                f.name.equals(authorName, ignoreCase = true)
+    }
+    if (friend != null) return friend
+
+    // 2. Cari dari daftar pengguna terdekat
+    val nearby = nearbyUsers.find { u ->
+        (cleanAuthorId.isNotBlank() && u.id.equals(cleanAuthorId, ignoreCase = true)) ||
+                u.name.equals(authorName, ignoreCase = true)
+    }
+    if (nearby != null) return nearby
+
+    // 3. Fallback konsisten jika akun belum tercatat di teman/sekitar
+    val seed = kotlin.math.abs(authorName.hashCode())
+    val age = 19 + (seed % 12)
+    val distance = 100 + (seed % 900)
+    return User(
+        id = cleanAuthorId.ifBlank { "user_$seed" },
+        name = authorName.ifBlank { "Pengguna Lovy" },
+        gender = Gender.FEMALE,
+        age = age,
+        distanceMeters = distance,
+        bio = "Halo! Senang bisa berbagi momen dan cerita seru di Lovy Chat ✨",
+        avatarColorHex = authorAvatarHex,
+        isOnline = true,
+        city = locationTag ?: "Indonesia",
+        avatarUrl = authorAvatarUrl
+    )
 }
 
 @Composable
@@ -932,6 +1083,7 @@ fun MomentCard(
     isMyMoment: Boolean = false,
     currentUserAvatarUrl: String? = null,
     language: AppLanguage = AppLanguage.INDONESIAN,
+    onAuthorClick: (() -> Unit)? = null,
     onToggleLike: () -> Unit,
     onPhotoClick: (String) -> Unit,
     onShareClick: (() -> Unit)? = null,
@@ -1008,18 +1160,28 @@ fun MomentCard(
                     avatarUrl = displayAvatarUrl,
                     size = 40.dp,
                     fontSize = 16.sp,
-                    modifier = if (hasAvatarPhoto) {
-                        Modifier
-                            .clip(CircleShape)
-                            .clickable { onPhotoClick(displayAvatarUrl) }
-                    } else Modifier
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .clickable {
+                            if (onAuthorClick != null) {
+                                onAuthorClick()
+                            } else if (hasAvatarPhoto) {
+                                onPhotoClick(displayAvatarUrl)
+                            }
+                        }
                 )
 
                 Spacer(modifier = Modifier.width(10.dp))
 
-                Column(modifier = Modifier.weight(1f)) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable(enabled = onAuthorClick != null) {
+                            onAuthorClick?.invoke()
+                        }
+                ) {
                     Text(
-                        text = item.authorName,
+                        text = item.authorName.ifBlank { "Pengguna Lovy" },
                         fontSize = 14.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeutralDark,

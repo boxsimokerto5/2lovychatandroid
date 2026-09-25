@@ -209,6 +209,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
         loadBlockedUsers()
         loadMyMoments()
+        loadSavedMomentComments()
         loadSavedBottles()
         loadPrivacySettings()
         loadDeletedTrackingData()
@@ -1004,6 +1005,76 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    private fun loadSavedMomentComments() {
+        try {
+            val jsonStr = prefs.getString("saved_moment_comments_json", null)
+            if (!jsonStr.isNullOrBlank()) {
+                val rootObj = org.json.JSONObject(jsonStr)
+                val map = mutableMapOf<String, List<com.example.model.MomentComment>>()
+                val keys = rootObj.keys()
+                while (keys.hasNext()) {
+                    val momentId = keys.next()
+                    val arr = rootObj.getJSONArray(momentId)
+                    val commentList = mutableListOf<com.example.model.MomentComment>()
+                    for (i in 0 until arr.length()) {
+                        val cObj = arr.getJSONObject(i)
+                        commentList.add(
+                            com.example.model.MomentComment(
+                                id = cObj.optString("id", java.util.UUID.randomUUID().toString()),
+                                momentId = cObj.optString("momentId", momentId),
+                                authorId = cObj.optString("authorId", "me"),
+                                authorName = cObj.optString("authorName", "Teman"),
+                                authorAvatarHex = cObj.optLong("authorAvatarHex", 0xFF00A86B),
+                                authorAvatarUrl = if (cObj.has("authorAvatarUrl")) cObj.optString("authorAvatarUrl").takeIf { it.isNotBlank() } else null,
+                                text = cObj.optString("text", ""),
+                                timestamp = cObj.optLong("timestamp", System.currentTimeMillis()),
+                                timeAgo = cObj.optString("timeAgo", "Baru saja")
+                            )
+                        )
+                    }
+                    map[momentId] = commentList
+                }
+                _uiState.update { state ->
+                    val updatedMoments = state.moments.map { m ->
+                        val count = map[m.id]?.size ?: m.commentsCount
+                        if (count > m.commentsCount) m.copy(commentsCount = count) else m
+                    }
+                    state.copy(
+                        momentComments = map,
+                        moments = updatedMoments
+                    )
+                }
+            }
+        } catch (_: Throwable) {
+        }
+    }
+
+    private fun persistMomentComments(map: Map<String, List<com.example.model.MomentComment>>) {
+        try {
+            val rootObj = org.json.JSONObject()
+            map.forEach { (momentId, comments) ->
+                val arr = org.json.JSONArray()
+                comments.forEach { c ->
+                    val cObj = org.json.JSONObject().apply {
+                        put("id", c.id)
+                        put("momentId", c.momentId)
+                        put("authorId", c.authorId)
+                        put("authorName", c.authorName)
+                        put("authorAvatarHex", c.authorAvatarHex)
+                        if (c.authorAvatarUrl != null) put("authorAvatarUrl", c.authorAvatarUrl)
+                        put("text", c.text)
+                        put("timestamp", c.timestamp)
+                        put("timeAgo", c.timeAgo)
+                    }
+                    arr.put(cObj)
+                }
+                rootObj.put(momentId, arr)
+            }
+            prefs.edit().putString("saved_moment_comments_json", rootObj.toString()).apply()
+        } catch (_: Throwable) {
+        }
+    }
+
     private fun loadSavedBottles() {
         try {
             val savedFished = loadFishedBottles()
@@ -1693,9 +1764,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                         val myLocal = (_uiState.value.moments.filter { it.id in allMyIds } + locallySaved).distinctBy { it.id }
                         val merged = (myLocal + remoteMoments).distinctBy { it.id }
                         val enriched = enrichMomentsWithAvatars(merged)
+                        val enrichedWithComments = enriched.map { m ->
+                            val localCount = _uiState.value.momentComments[m.id]?.size ?: 0
+                            if (localCount > m.commentsCount) m.copy(commentsCount = localCount) else m
+                        }
                         _uiState.update { 
                             it.copy(
-                                moments = enriched,
+                                moments = enrichedWithComments,
                                 myMomentIds = allMyIds
                             ) 
                         }
@@ -3118,11 +3193,12 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         recordFeatureClick()
         val state = _uiState.value
         val myId = state.myLovyId.ifBlank { "me" }
+        val senderDisplayName = state.myName.ifBlank { state.userProfile.displayName.ifBlank { "Pengguna Lovy" } }
         val newComment = com.example.model.MomentComment(
             id = UUID.randomUUID().toString(),
             momentId = momentId,
             authorId = myId,
-            authorName = state.myName,
+            authorName = senderDisplayName,
             authorAvatarHex = 0xFF00A86B,
             authorAvatarUrl = state.userProfile.profilePicture?.takeIf { it.isNotBlank() },
             text = text.trim(),
@@ -3145,6 +3221,25 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 moments = updatedMoments,
                 momentComments = updatedMap
             )
+        }
+
+        // 1. Simpan komentar secara persisten ke SharedPreferences
+        persistMomentComments(updatedMap)
+
+        // 2. Simpan pembaharuan jumlah komentar ke cache momen lokal
+        val momentToUpdate = updatedMoments.find { it.id == momentId }
+        if (momentToUpdate != null) {
+            saveMyLocalMoment(momentToUpdate)
+        }
+
+        // 3. Update comments_count di cloud Supabase secara asinkron
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                if (SupabaseClient.isConfigured()) {
+                    supabaseRepo.updateMomentCommentsCount(momentId, updatedComments.size)
+                }
+            } catch (_: Throwable) {
+            }
         }
     }
 

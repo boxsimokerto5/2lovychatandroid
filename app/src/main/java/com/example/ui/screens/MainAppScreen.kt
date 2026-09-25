@@ -335,11 +335,17 @@ fun MainAppScreen(
                 currentUserName = uiState.myName,
                 currentUserAvatarUrl = uiState.userProfile.profilePicture,
                 currentGpsLocation = uiState.currentGpsLocation,
+                nearbyUsers = uiState.nearbyUsers,
+                friends = uiState.chattedFriends,
+                currentUserProfile = uiState.userProfile,
+                blockedUserIds = uiState.blockedUserIds,
                 onBack = { viewModel.navigateBack() },
                 onToggleLike = { viewModel.toggleLikeMoment(it) },
                 onAddComment = { momentId, text ->
                     viewModel.addMomentComment(momentId, text)
                 },
+                onSayHi = { viewModel.sayHiToUser(it) },
+                onBlockUser = { viewModel.blockUser(it.id, it.name) },
                 onPostMoment = { viewModel.postMoment(it) },
                 onPostMomentWithDetails = { content, img, loc ->
                     viewModel.postMoment(content, img, loc)
