@@ -163,7 +163,7 @@ interface SupabaseRestApi {
     ): Response<List<SupabaseMomentDto>>
 
     @POST("rest/v1/moments")
-    @Headers("Prefer: return=representation")
+    @Headers("Prefer: return=representation,resolution=merge-duplicates")
     suspend fun insertMoment(
         @Header("apikey") apiKey: String,
         @Header("Authorization") authHeader: String,

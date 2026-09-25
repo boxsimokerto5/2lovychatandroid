@@ -428,6 +428,200 @@ object AppStrings {
         else -> "Profile"
     }
 
+    fun profileTapToView(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "点击查看资料详情 →"
+        AppLanguage.JAPANESE -> "タップしてプロフィール詳細を表示 →"
+        AppLanguage.KOREAN -> "프로필 세부정보 보기 →"
+        AppLanguage.ARABIC -> "انقر لعرض تفاصيل الملف الشخصي ←"
+        AppLanguage.SPANISH -> "Toca para ver detalles del perfil →"
+        AppLanguage.INDONESIAN -> "Ketuk untuk lihat detail profil →"
+        else -> "Tap to view profile details →"
+    }
+
+    fun lovyIdLabel(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "Lovy ID"
+        AppLanguage.JAPANESE -> "Lovy ID"
+        AppLanguage.INDONESIAN -> "ID Lovy"
+        else -> "Lovy ID"
+    }
+
+    fun menuUserProfile(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "个人资料详情"
+        AppLanguage.JAPANESE -> "プロフィール詳細"
+        AppLanguage.KOREAN -> "사용자 프로필 세부정보"
+        AppLanguage.ARABIC -> "تفاصيل الملف الشخصي"
+        AppLanguage.SPANISH -> "Detalles del perfil"
+        AppLanguage.INDONESIAN -> "Detail Profil Pengguna"
+        else -> "User Profile Details"
+    }
+
+    fun menuUserProfileSub(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "昵称、个人简介、照片及账号信息"
+        AppLanguage.JAPANESE -> "表示名、自己紹介、写真、アカウント情報"
+        AppLanguage.KOREAN -> "닉네임, 소개글, 사진 및 계정 정보"
+        AppLanguage.ARABIC -> "الاسم والسيرة الذاتية والصور ومعلومات الحساب"
+        AppLanguage.SPANISH -> "Nombre, biografía, fotos e información de cuenta"
+        AppLanguage.INDONESIAN -> "Nama tampilan, bio, foto & info akun"
+        else -> "Display name, bio, photos & account info"
+    }
+
+    fun menuMyMoments(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "我的动态"
+        AppLanguage.JAPANESE -> "マイモーメント"
+        AppLanguage.KOREAN -> "내 모먼트"
+        AppLanguage.ARABIC -> "لحظاتي"
+        AppLanguage.SPANISH -> "Mis momentos"
+        AppLanguage.INDONESIAN -> "Momen Saya"
+        else -> "My Moments"
+    }
+
+    fun menuMyMomentsSub(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "您的照片与日常动态收藏"
+        AppLanguage.JAPANESE -> "日々の写真やストーリーのコレクション"
+        AppLanguage.KOREAN -> "일상 사진 및 스토리 컬렉션"
+        AppLanguage.ARABIC -> "مجموعتك من الصور والقصص اليومية"
+        AppLanguage.SPANISH -> "Colección de fotos e historias diarias"
+        AppLanguage.INDONESIAN -> "Koleksi foto dan cerita harianmu"
+        else -> "Collection of your daily photos and stories"
+    }
+
+    fun menuMyBottles(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "我的漂流瓶"
+        AppLanguage.JAPANESE -> "マイボトル"
+        AppLanguage.KOREAN -> "내 바다 유리병"
+        AppLanguage.ARABIC -> "رسائلي في الزجاجة"
+        AppLanguage.SPANISH -> "Mis botellas del océano"
+        AppLanguage.INDONESIAN -> "Botol Lautan Saya"
+        else -> "My Ocean Bottles"
+    }
+
+    fun menuMyBottlesSub(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "您扔进大海的漂流瓶列表"
+        AppLanguage.JAPANESE -> "あなたが海に流したボトル一覧"
+        AppLanguage.KOREAN -> "내가 바다에 띄운 유리병 목록"
+        AppLanguage.ARABIC -> "قائمة الزجاجات التي قمت برميها"
+        AppLanguage.SPANISH -> "Lista de botellas que has lanzado"
+        AppLanguage.INDONESIAN -> "Daftar botol yang pernah kamu lempar"
+        else -> "List of bottles you have thrown"
+    }
+
+    fun menuPrivacyLocation(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "隐私与位置"
+        AppLanguage.JAPANESE -> "プライバシーと位置情報"
+        AppLanguage.KOREAN -> "개인정보 및 위치"
+        AppLanguage.ARABIC -> "الخصوصية والموقع"
+        AppLanguage.SPANISH -> "Privacidad y ubicación"
+        AppLanguage.INDONESIAN -> "Privasi & Lokasi"
+        else -> "Privacy & Location"
+    }
+
+    fun privacyIncognitoActive(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "隐身模式已开启"
+        AppLanguage.JAPANESE -> "ステルスモード有効"
+        AppLanguage.KOREAN -> "시크릿 모드 활성화"
+        AppLanguage.ARABIC -> "وضع التخفي نشط"
+        AppLanguage.SPANISH -> "Modo incógnito activo"
+        AppLanguage.INDONESIAN -> "Mode Penyamaran aktif"
+        else -> "Incognito mode active"
+    }
+
+    fun privacyExactDistanceHidden(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "精确距离已隐藏"
+        AppLanguage.JAPANESE -> "正確な距離は非公開"
+        AppLanguage.KOREAN -> "정확한 거리 숨김"
+        AppLanguage.ARABIC -> "المسافة الدقيقة مخفية"
+        AppLanguage.SPANISH -> "Distancia exacta oculta"
+        AppLanguage.INDONESIAN -> "Jarak persis disembunyikan"
+        else -> "Exact distance hidden"
+    }
+
+    fun privacyNearbyVisible(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "附近可见已开启"
+        AppLanguage.JAPANESE -> "周辺への表示有効"
+        AppLanguage.KOREAN -> "주변 검색 노출 활성화"
+        AppLanguage.ARABIC -> "الظهور بالقرب نشط"
+        AppLanguage.SPANISH -> "Visibilidad cercana activa"
+        AppLanguage.INDONESIAN -> "Visibilitas sekitar aktif"
+        else -> "Nearby visibility active"
+    }
+
+    fun menuBlockedUsers(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "已屏蔽用户"
+        AppLanguage.JAPANESE -> "ブロックしたユーザー"
+        AppLanguage.KOREAN -> "차단된 사용자"
+        AppLanguage.ARABIC -> "المستخدمون المحظورون"
+        AppLanguage.SPANISH -> "Usuarios bloqueados"
+        AppLanguage.INDONESIAN -> "Pengguna Diblokir"
+        else -> "Blocked Users"
+    }
+
+    fun blockedUsersEmpty(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "没有已屏蔽的用户"
+        AppLanguage.JAPANESE -> "ブロックしたユーザーはいません"
+        AppLanguage.KOREAN -> "차단된 사용자가 없습니다"
+        AppLanguage.ARABIC -> "لا يوجد مستخدمون محظورون"
+        AppLanguage.SPANISH -> "No hay usuarios bloqueados"
+        AppLanguage.INDONESIAN -> "Tidak ada pengguna diblokir"
+        else -> "No blocked users"
+    }
+
+    fun blockedUsersCount(lang: AppLanguage, count: Int): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "已屏蔽 $count 位用户"
+        AppLanguage.JAPANESE -> "$count 人のユーザーをブロック中"
+        AppLanguage.KOREAN -> "${count}명 차단됨"
+        AppLanguage.ARABIC -> "$count مستخدم محظور"
+        AppLanguage.SPANISH -> "$count usuarios bloqueados"
+        AppLanguage.INDONESIAN -> "$count pengguna diblokir"
+        else -> "$count blocked users"
+    }
+
+    fun menuTestNotification(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "测试通知与震动"
+        AppLanguage.JAPANESE -> "通知とバイブのテスト"
+        AppLanguage.KOREAN -> "알림 및 진동 테스트"
+        AppLanguage.ARABIC -> "اختبار الإشعارات والاهتزاز"
+        AppLanguage.SPANISH -> "Probar notificaciones y vibración"
+        AppLanguage.INDONESIAN -> "Uji Notifikasi & Getar"
+        else -> "Test Notifications & Vibration"
+    }
+
+    fun menuTestNotificationSub(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "点击测试弹窗声音与设备震动"
+        AppLanguage.JAPANESE -> "タップしてポップアップ音と振動をテスト"
+        AppLanguage.KOREAN -> "팝업 소리 및 기기 진동 테스트"
+        AppLanguage.ARABIC -> "انقر لاختبار صوت الإشعار واهتزاز الجهاز"
+        AppLanguage.SPANISH -> "Toca para probar sonido emergente y vibración"
+        AppLanguage.INDONESIAN -> "Tekan untuk tes suara pop-up & getaran perangkat"
+        else -> "Tap to test pop-up sound & device vibration"
+    }
+
+    fun menuPrivacyPolicy(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "隐私政策与条款"
+        AppLanguage.JAPANESE -> "プライバシーポリシーと利用規約"
+        AppLanguage.KOREAN -> "개인정보 처리방침 및 약관"
+        AppLanguage.ARABIC -> "سياسة الخصوصية والشروط"
+        AppLanguage.SPANISH -> "Política de privacidad y términos"
+        AppLanguage.INDONESIAN -> "Kebijakan Privasi & Ketentuan"
+        else -> "Privacy Policy & Terms"
+    }
+
+    fun menuPrivacyPolicySub(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "位置、相机、广告数据与账号权限指南"
+        AppLanguage.JAPANESE -> "位置情報、カメラ、広告データ、アカウントの権限ガイド"
+        AppLanguage.KOREAN -> "위치, 카메라, 광고 데이터 및 계정 권한 가이드"
+        AppLanguage.ARABIC -> "دليل أذونات الموقع والكاميرا والإعلانات والحساب"
+        AppLanguage.SPANISH -> "Guía de permisos de ubicación, cámara, anuncios y cuenta"
+        AppLanguage.INDONESIAN -> "Panduan izin lokasi, kamera, data iklan & akun"
+        else -> "Permissions guide for location, camera, ads & account data"
+    }
+
+    fun qrCodeButtonDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "打开我的二维码"
+        AppLanguage.JAPANESE -> "マイQRコードを開く"
+        AppLanguage.INDONESIAN -> "Buka Kode QR Saya"
+        else -> "Open My QR Code"
+    }
+
     fun menuSupabase(lang: AppLanguage): String = when (resolveLang(lang)) {
         AppLanguage.CHINESE -> "云端同步"
         AppLanguage.JAPANESE -> "クラウド同期"

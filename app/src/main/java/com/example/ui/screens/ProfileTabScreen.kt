@@ -198,7 +198,7 @@ fun ProfileTabScreen(
                     }
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "ID Lovy: $myLovyId",
+                        text = "${com.example.util.AppStrings.lovyIdLabel(language)}: $myLovyId",
                         fontSize = 11.5.sp,
                         color = Color.White.copy(alpha = 0.85f)
                     )
@@ -211,7 +211,7 @@ fun ProfileTabScreen(
                     )
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
-                        text = "Ketuk untuk lihat detail profil →",
+                        text = com.example.util.AppStrings.profileTapToView(language),
                         fontSize = 10.5.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFFC8E6C9)
@@ -230,7 +230,7 @@ fun ProfileTabScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.QrCode,
-                        contentDescription = "Buka Kode QR Saya",
+                        contentDescription = com.example.util.AppStrings.qrCodeButtonDesc(language),
                         tint = Color.White,
                         modifier = Modifier.size(24.dp)
                     )
@@ -252,24 +252,24 @@ fun ProfileTabScreen(
                 ProfileMenuItem(
                     icon = Icons.Default.Person,
                     iconTint = EmeraldGreen,
-                    title = "Detail Profil Pengguna",
-                    subtitle = "Nama tampilan, bio, foto & info akun",
+                    title = com.example.util.AppStrings.menuUserProfile(language),
+                    subtitle = com.example.util.AppStrings.menuUserProfileSub(language),
                     onClick = onNavigateToUserProfile
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
                 ProfileMenuItem(
                     icon = Icons.Default.CameraAlt,
                     iconTint = Color(0xFFFB8C00),
-                    title = "Momen Saya",
-                    subtitle = "Koleksi foto dan cerita harianmu",
+                    title = com.example.util.AppStrings.menuMyMoments(language),
+                    subtitle = com.example.util.AppStrings.menuMyMomentsSub(language),
                     onClick = onNavigateToMoments
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
                 ProfileMenuItem(
                     icon = Icons.Default.Waves,
                     iconTint = Color(0xFF00ACC1),
-                    title = "Botol Lautan Saya",
-                    subtitle = "Daftar botol yang pernah kamu lempar",
+                    title = com.example.util.AppStrings.menuMyBottles(language),
+                    subtitle = com.example.util.AppStrings.menuMyBottlesSub(language),
                     onClick = onNavigateToBottle
                 )
             }
@@ -289,16 +289,16 @@ fun ProfileTabScreen(
                 ProfileMenuItem(
                     icon = Icons.Default.Lock,
                     iconTint = EmeraldGreen,
-                    title = "Privasi & Lokasi",
-                    subtitle = if (!isNearbyVisible) "Mode Penyamaran aktif" else if (hideExactDistance) "Jarak persis disembunyikan" else "Visibilitas sekitar aktif",
+                    title = com.example.util.AppStrings.menuPrivacyLocation(language),
+                    subtitle = if (!isNearbyVisible) com.example.util.AppStrings.privacyIncognitoActive(language) else if (hideExactDistance) com.example.util.AppStrings.privacyExactDistanceHidden(language) else com.example.util.AppStrings.privacyNearbyVisible(language),
                     onClick = { showPrivacyDialog = true }
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
                 ProfileMenuItem(
                     icon = Icons.Default.Block,
                     iconTint = Color(0xFFE53935),
-                    title = "Pengguna Diblokir",
-                    subtitle = if (blockedUserNames.isEmpty()) "Tidak ada pengguna diblokir" else "${blockedUserNames.size} pengguna diblokir",
+                    title = com.example.util.AppStrings.menuBlockedUsers(language),
+                    subtitle = if (blockedUserNames.isEmpty()) com.example.util.AppStrings.blockedUsersEmpty(language) else com.example.util.AppStrings.blockedUsersCount(language, blockedUserNames.size),
                     onClick = { showBlockedUsersDialog = true }
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
@@ -313,8 +313,8 @@ fun ProfileTabScreen(
                 ProfileMenuItem(
                     icon = Icons.Default.Notifications,
                     iconTint = EmeraldGreen,
-                    title = "Uji Notifikasi & Getar",
-                    subtitle = "Tekan untuk tes suara pop-up & getaran perangkat",
+                    title = com.example.util.AppStrings.menuTestNotification(language),
+                    subtitle = com.example.util.AppStrings.menuTestNotificationSub(language),
                     onClick = {
                         com.example.util.LovyNotificationHelper.showChatNotification(
                             context = context,
@@ -329,8 +329,8 @@ fun ProfileTabScreen(
                 ProfileMenuItem(
                     icon = Icons.Default.Security,
                     iconTint = Color(0xFF0288D1),
-                    title = "Kebijakan Privasi & Ketentuan",
-                    subtitle = "Panduan izin lokasi, kamera, data iklan & akun",
+                    title = com.example.util.AppStrings.menuPrivacyPolicy(language),
+                    subtitle = com.example.util.AppStrings.menuPrivacyPolicySub(language),
                     onClick = { showPrivacyPolicyDialog = true }
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)

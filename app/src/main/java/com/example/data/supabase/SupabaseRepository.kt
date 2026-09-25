@@ -238,10 +238,13 @@ class SupabaseRepository {
             val checkResp = api.getAccountById(apiKey, auth, "eq.$authorId")
             val exists = checkResp.isSuccessful && !checkResp.body().isNullOrEmpty()
             if (!exists) {
+                // Gunakan authorId sebagai safe username unik agar tidak terjadi tabrakan unique constraint
+                val safeUsername = authorId.lowercase()
+                val safeDisplayName = authorName.ifBlank { "Pengguna Lovy" }
                 val newAcc = SupabaseAccountDto(
                     id = authorId,
-                    username = authorName.replace(" ", "_").lowercase().ifBlank { authorId },
-                    displayName = authorName,
+                    username = safeUsername,
+                    displayName = safeDisplayName,
                     gender = "FEMALE",
                     bio = "Pengguna Lovy Chat ✨",
                     avatarUrl = avatarUrl,
@@ -250,9 +253,14 @@ class SupabaseRepository {
                 )
                 val upsertResp = api.upsertAccount(apiKey, auth, newAcc)
                 if (!upsertResp.isSuccessful) {
-                    val fallbackAcc = newAcc.copy(fcmToken = null)
+                    val fallbackAcc = newAcc.copy(
+                        username = "${safeUsername}_${System.currentTimeMillis() % 100000}",
+                        fcmToken = null
+                    )
                     api.upsertAccount(apiKey, auth, fallbackAcc)
                 }
+            } else {
+                updateAccountLoginTime(authorId)
             }
         } catch (e: Exception) {
             Log.w(TAG, "ensureAuthorAccountExists warning: ${e.message}")
@@ -273,7 +281,7 @@ class SupabaseRepository {
             val dto = SupabaseMomentDto(
                 id = moment.id,
                 authorId = safeAuthorId,
-                authorName = moment.authorName,
+                authorName = moment.authorName.ifBlank { "Pengguna Lovy" },
                 content = moment.content,
                 likesCount = moment.likesCount,
                 commentsCount = moment.commentsCount,
@@ -286,24 +294,29 @@ class SupabaseRepository {
             val response = api.insertMoment(apiKey, auth, dto)
             if (response.isSuccessful) {
                 Log.d(TAG, "Momen berhasil diinsert ke Supabase: ${moment.id}")
-                true
-            } else if (response.code() == 409) {
-                // Kemungkinan foreign key error, paksa upsert akun penulis dan coba lagi
-                Log.w(TAG, "Momen insert 409 conflict, mendaftarkan ulang akun author dan retry...")
-                ensureAuthorAccountExists(safeAuthorId, moment.authorName, moment.authorAvatarUrl)
-                val retry = api.insertMoment(apiKey, auth, dto)
-                if (retry.isSuccessful) return@withContext true
-                val fallbackDto = dto.copy(locationTag = null, authorAvatarUrl = null)
-                api.insertMoment(apiKey, auth, fallbackDto).isSuccessful
-            } else if (dto.locationTag != null || dto.authorAvatarUrl != null) {
-                // Fallback jika database Supabase versi lama belum memiliki kolom location_tag / author_avatar_url
-                val fallbackDto = dto.copy(locationTag = null, authorAvatarUrl = null)
-                val retry = api.insertMoment(apiKey, auth, fallbackDto)
-                retry.isSuccessful
-            } else {
-                Log.w(TAG, "Gagal insert momen ke Supabase, code=${response.code()}, error=${response.errorBody()?.string()}")
-                false
+                return@withContext true
             }
+
+            // Retry setelah memastikan akun author ada di database
+            ensureAuthorAccountExists(safeAuthorId, moment.authorName, moment.authorAvatarUrl)
+            val retry = api.insertMoment(apiKey, auth, dto)
+            if (retry.isSuccessful) {
+                Log.d(TAG, "Momen berhasil diinsert ke Supabase pada retry: ${moment.id}")
+                return@withContext true
+            }
+
+            // Fallback jika database Supabase belum memiliki kolom location_tag / author_avatar_url
+            if (dto.locationTag != null || dto.authorAvatarUrl != null) {
+                val fallbackDto = dto.copy(locationTag = null, authorAvatarUrl = null)
+                val retryFallback = api.insertMoment(apiKey, auth, fallbackDto)
+                if (retryFallback.isSuccessful) {
+                    Log.d(TAG, "Momen berhasil diinsert dengan fallback kolom standar: ${moment.id}")
+                    return@withContext true
+                }
+            }
+
+            Log.w(TAG, "Gagal insert momen ke Supabase, code=${response.code()}, error=${response.errorBody()?.string()}")
+            false
         } catch (e: Exception) {
             Log.w(TAG, "Gagal menyimpan moment ke Supabase", e)
             false
@@ -904,11 +917,11 @@ class SupabaseRepository {
         val auth = SupabaseClient.getAuthHeader()
 
         try {
-            // Waktu 15 hari yang lalu dalam epoch ms
-            val fifteenDaysAgo = System.currentTimeMillis() - (15L * 24 * 60 * 60 * 1000)
+            // Waktu 90 hari yang lalu dalam epoch ms
+            val ninetyDaysAgo = System.currentTimeMillis() - (90L * 24 * 60 * 60 * 1000)
 
-            // 1. Hapus akun tidak aktif > 15 hari
-            api.purgeInactiveAccounts(apiKey, auth, "lt.$fifteenDaysAgo")
+            // 1. Hapus akun tidak aktif > 90 hari
+            api.purgeInactiveAccounts(apiKey, auth, "lt.$ninetyDaysAgo")
 
             // 2. Hapus fisik chat yang sudah dihapus kedua pihak
             api.purgeFullyDeletedMessages(apiKey, auth)
