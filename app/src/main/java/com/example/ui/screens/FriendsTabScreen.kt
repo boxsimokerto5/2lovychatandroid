@@ -123,9 +123,15 @@ fun FriendsTabScreen(
     // 1. Teman Favorit (⭐) SELALU berada di paling atas (bahkan di atas teman online)!
     // 2. Teman yang sedang ONLINE
     // 3. Nama alfabetis
-    val sortedAndFiltered = remember(friends, searchQuery) {
-        val baseList = if (searchQuery.isBlank()) friends
-        else friends.filter { it.name.contains(searchQuery, ignoreCase = true) }
+    val sortedAndFiltered = remember(friends, searchQuery, myLovyId, myName) {
+        val nonSelf = friends.filterNot { 
+            (myLovyId.isNotBlank() && it.id.equals(myLovyId, ignoreCase = true)) ||
+            (myName.isNotBlank() && it.name.equals(myName, ignoreCase = true)) ||
+            it.id.equals("me", ignoreCase = true) ||
+            it.id.equals("current_user", ignoreCase = true)
+        }
+        val baseList = if (searchQuery.isBlank()) nonSelf
+        else nonSelf.filter { it.name.contains(searchQuery, ignoreCase = true) }
 
         baseList.sortedWith(
             compareByDescending<User> { it.isFavorite }

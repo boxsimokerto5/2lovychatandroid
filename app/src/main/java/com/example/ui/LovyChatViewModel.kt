@@ -338,6 +338,42 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun isSelfUser(userId: String?, userName: String?): Boolean {
+        val state = _uiState.value
+        val cleanId = userId?.trim().orEmpty()
+        val cleanName = userName?.trim().orEmpty()
+        val myLovyId = state.myLovyId.trim()
+        val myName = state.myName.trim()
+        val myDisplayName = state.userProfile.displayName.trim()
+        val profileLovyId = state.userProfile.lovyId.trim()
+        val savedSession = authRepo.getSavedSession()
+        val sessionUsername = savedSession?.username?.trim().orEmpty()
+        val sessionDisplayName = savedSession?.displayName?.trim().orEmpty()
+        val sessionLovyId = savedSession?.lovyId?.trim().orEmpty()
+
+        if (cleanId.isNotBlank()) {
+            if (cleanId.equals("me", ignoreCase = true) || cleanId.equals("current_user", ignoreCase = true)) return true
+            if (myLovyId.isNotBlank() && cleanId.equals(myLovyId, ignoreCase = true)) return true
+            if (profileLovyId.isNotBlank() && cleanId.equals(profileLovyId, ignoreCase = true)) return true
+            if (sessionLovyId.isNotBlank() && cleanId.equals(sessionLovyId, ignoreCase = true)) return true
+            if (myName.isNotBlank() && cleanId.equals(myName, ignoreCase = true)) return true
+            if (myDisplayName.isNotBlank() && cleanId.equals(myDisplayName, ignoreCase = true)) return true
+            if (sessionUsername.isNotBlank() && cleanId.equals(sessionUsername, ignoreCase = true)) return true
+        }
+
+        if (cleanName.isNotBlank()) {
+            if (cleanName.equals("me", ignoreCase = true) || cleanName.equals("saya", ignoreCase = true)) return true
+            if (myName.isNotBlank() && cleanName.equals(myName, ignoreCase = true)) return true
+            if (myDisplayName.isNotBlank() && cleanName.equals(myDisplayName, ignoreCase = true)) return true
+            if (sessionUsername.isNotBlank() && cleanName.equals(sessionUsername, ignoreCase = true)) return true
+            if (sessionDisplayName.isNotBlank() && cleanName.equals(sessionDisplayName, ignoreCase = true)) return true
+            if (myLovyId.isNotBlank() && cleanName.equals(myLovyId, ignoreCase = true)) return true
+            if (profileLovyId.isNotBlank() && cleanName.equals(profileLovyId, ignoreCase = true)) return true
+        }
+
+        return false
+    }
+
     fun isDummyFriend(userId: String, userName: String): Boolean {
         val cleanName = userName.trim().lowercase()
         if (cleanName.isBlank()) return true // Tolak user tak bernama
@@ -359,6 +395,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     val finalFriends = friends
                         .filterNot { it.name.trim().isBlank() }
                         .filterNot { isDummyFriend(it.id, it.name) }
+                        .filterNot { isSelfUser(it.id, it.name) }
                     _uiState.update { it.copy(chattedFriends = finalFriends) }
                     refreshNewFriendRequests(finalFriends)
                 }
@@ -374,14 +411,20 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         val ignoredIds = state.ignoredNewFriendIds
 
         val requestsMap = state.newFriendRequests
-            .filterNot { it.user.id in friendIds || it.user.id in ignoredIds || it.user.name.trim().isBlank() || isDummyFriend(it.user.id, it.user.name) }
+            .filterNot { 
+                it.user.id in friendIds || 
+                it.user.id in ignoredIds || 
+                it.user.name.trim().isBlank() || 
+                isDummyFriend(it.user.id, it.user.name) ||
+                isSelfUser(it.user.id, it.user.name)
+            }
             .associateBy { it.user.id }
             .toMutableMap()
 
         for (conv in state.conversations) {
             val partnerId = conv.partnerId
             val pName = conv.partnerName.trim()
-            if (partnerId.isBlank() || pName.isBlank() || isDummyFriend(partnerId, pName) || partnerId in friendIds || partnerId in ignoredIds) continue
+            if (partnerId.isBlank() || pName.isBlank() || isDummyFriend(partnerId, pName) || isSelfUser(partnerId, pName) || partnerId in friendIds || partnerId in ignoredIds) continue
 
             // Pengguna lain yang mengirimi pesan obrolan tapi belum ada di Kontak Saya
             if (!conv.lastMessageIsFromMe || conv.unreadCount > 0) {
@@ -414,6 +457,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun acceptNewFriend(user: User) {
+        if (isSelfUser(user.id, user.name)) return
         recordFeatureClick()
         saveChatFriend(user)
         _uiState.update { state ->
@@ -423,8 +467,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 state.chattedFriends + user
             }
             state.copy(
-                chattedFriends = updatedFriends,
-                newFriendRequests = state.newFriendRequests.filterNot { it.user.id == user.id }
+                chattedFriends = updatedFriends.filterNot { isSelfUser(it.id, it.name) },
+                newFriendRequests = state.newFriendRequests.filterNot { it.user.id == user.id || isSelfUser(it.user.id, it.user.name) }
             )
         }
     }
@@ -551,6 +595,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun saveChatFriend(user: User) {
+        if (isSelfUser(user.id, user.name)) {
+            Log.d("LovyChatViewModel", "Abaikan menyimpan akun sendiri ke kontak teman: ${user.name} (${user.id})")
+            return
+        }
         if (!_uiState.value.isGuest && isDummyFriend(user.id, user.name)) {
             // Abaikan penyimpanan user dummy jika pengguna sedang berada di akun asli
             return
@@ -658,12 +706,26 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 chatFriendDao.deleteDummyFriends()
+                val state = _uiState.value
+                val session = authRepo.getSavedSession()
+                val myId = state.myLovyId.ifBlank { session?.lovyId.orEmpty() }
+                val myName = state.myName.ifBlank { session?.displayName.orEmpty() }
+                val myDisplay = state.userProfile.displayName
+                val username = session?.username.orEmpty()
+                chatFriendDao.deleteSelfFriend(
+                    myId = myId,
+                    myName = myName,
+                    myDisplayName = myDisplay,
+                    username = username
+                )
             } catch (e: Exception) {
-                Log.w("LovyChatViewModel", "Gagal membersihkan kontak dummy", e)
+                Log.w("LovyChatViewModel", "Gagal membersihkan kontak dummy/self", e)
             }
         }
         _uiState.update { state ->
-            val updated = state.chattedFriends.filterNot { isDummyFriend(it.id, it.name) }
+            val updated = state.chattedFriends
+                .filterNot { isDummyFriend(it.id, it.name) }
+                .filterNot { isSelfUser(it.id, it.name) }
             state.copy(chattedFriends = updated)
         }
     }
@@ -2163,7 +2225,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             lastNearbyScanTime = System.currentTimeMillis()
             val myId = _uiState.value.myLovyId
             val filtered = (remoteUsers ?: emptyList())
-                .filterNot { it.id == myId || it.id == "current_user" }
+                .filterNot { it.id == myId || it.id == "current_user" || isSelfUser(it.id, it.name) }
                 .filterNot { it.name.trim().isBlank() }
                 .filterNot { isUserBlocked(it.id, it.name) }
                 .filterNot { isDummyFriend(it.id, it.name) }
@@ -2191,6 +2253,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             val parts = content.split("__")
             val partner = parts.firstOrNull { !it.equals(cleanMyId, ignoreCase = true) }
             if (!partner.isNullOrBlank()) return partner
+            return ""
         }
 
         // 2. Format single '_' jika myId berada di awal atau di akhir
@@ -2214,17 +2277,21 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         if (lovyMatches.size >= 2) {
             val partner = lovyMatches.firstOrNull { !it.equals(cleanMyId, ignoreCase = true) }
             if (!partner.isNullOrBlank()) return partner
+            return ""
         }
 
         // 4. Fallback legacy jika split 2 bagian
         val parts = content.split("_")
         if (parts.size == 2) {
-            return parts.firstOrNull { !it.equals(cleanMyId, ignoreCase = true) } ?: parts[0]
+            val partner = parts.firstOrNull { !it.equals(cleanMyId, ignoreCase = true) }
+            return if (partner != null && !partner.equals(cleanMyId, ignoreCase = true)) partner else ""
         }
+        if (content.equals(cleanMyId, ignoreCase = true)) return ""
         return content
     }
 
     fun sayHiToUser(user: User) {
+        if (isSelfUser(user.id, user.name)) return
         if (isUserBlocked(user.id, user.name)) return
         recordFeatureClick()
         saveChatFriend(user)
@@ -2298,7 +2365,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     fun openChat(conversationId: String, partnerName: String, partnerAvatarHex: Long) {
         recordFeatureClick()
         val conv = _uiState.value.conversations.find { it.id == conversationId }
-        if (conv != null && _uiState.value.chattedFriends.any { it.id == conv.partnerId }) {
+        if (conv != null && !isSelfUser(conv.partnerId, conv.partnerName) && _uiState.value.chattedFriends.any { it.id == conv.partnerId }) {
             saveChatFriend(
                 User(
                     id = conv.partnerId,
@@ -2581,6 +2648,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun openChatWithBottleSender(bottle: BottleMessage) {
+        if (isSelfUser(bottle.senderId, bottle.senderName)) return
         if (isUserBlocked(bottle.senderId, bottle.senderName)) return
         recordFeatureClick()
         val friendUser = User(
@@ -3481,7 +3549,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     else null
                 } ?: ""
             }
-            if (partnerId.isBlank()) continue
+            if (partnerId.isBlank() || isSelfUser(partnerId, null)) continue
 
             val convDeletedTimestamp = deletedConversationTimestamps[convId] ?: 0L
 
@@ -3579,11 +3647,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     ?: _uiState.value.chattedFriends.find { it.id == partnerId }
                 resolvedPartnerName = partnerUser?.name
                 if (partnerUser != null) {
-                    saveChatFriend(partnerUser)
+                    if (!isSelfUser(partnerUser.id, partnerUser.name)) {
+                        saveChatFriend(partnerUser)
+                    }
                 } else {
                     viewModelScope.launch(Dispatchers.IO) {
                         val cloudUser = supabaseRepo.fetchNearbyUserById(partnerId)
-                        if (cloudUser != null) {
+                        if (cloudUser != null && !isSelfUser(cloudUser.id, cloudUser.name)) {
                             saveChatFriend(cloudUser)
                             withContext(Dispatchers.Main) {
                                 _uiState.update { state ->

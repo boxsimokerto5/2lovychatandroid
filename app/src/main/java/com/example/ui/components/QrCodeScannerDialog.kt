@@ -47,6 +47,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Female
 import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
@@ -575,20 +576,29 @@ fun QrCodeScannerDialog(
 
             // Dialog Hasil Temuan Pengguna (Scanned User Result Card)
             scannedUserResult?.let { foundUser ->
+                val isSelf = (myLovyId.isNotBlank() && foundUser.id.equals(myLovyId, ignoreCase = true)) ||
+                             (myName.isNotBlank() && foundUser.name.equals(myName, ignoreCase = true)) ||
+                             foundUser.id.equals("me", ignoreCase = true) ||
+                             foundUser.id.equals("current_user", ignoreCase = true)
                 ScannedUserBottomSheet(
                     user = foundUser,
                     isAlreadyFriend = isAlreadyFriend(foundUser.id),
+                    isSelf = isSelf,
                     onDismiss = {
                         scannedUserResult = null
                         isAnalyzingActive = true
                     },
                     onAddFriend = {
-                        onUserFound(foundUser)
+                        if (!isSelf) {
+                            onUserFound(foundUser)
+                        }
                         scannedUserResult = null
                         onDismiss()
                     },
                     onStartChat = {
-                        onOpenChatWithUser(foundUser)
+                        if (!isSelf) {
+                            onOpenChatWithUser(foundUser)
+                        }
                         scannedUserResult = null
                         onDismiss()
                     }
@@ -761,6 +771,7 @@ private fun ScannerOverlay(modifier: Modifier = Modifier) {
 private fun ScannedUserBottomSheet(
     user: User,
     isAlreadyFriend: Boolean,
+    isSelf: Boolean = false,
     onDismiss: () -> Unit,
     onAddFriend: () -> Unit,
     onStartChat: () -> Unit
@@ -961,7 +972,47 @@ private fun ScannedUserBottomSheet(
                 Spacer(modifier = Modifier.height(22.dp))
 
                 // Status pertemanan & Aksi
-                if (isAlreadyFriend) {
+                if (isSelf) {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = Color(0xFFF5F5F5),
+                        border = BorderStroke(1.dp, Color(0xFFE0E0E0)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = null,
+                                tint = EmeraldGreen,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Ini adalah kode QR profil akun Anda sendiri",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = NeutralDark
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Button(
+                        onClick = onDismiss,
+                        colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                    ) {
+                        Text("Tutup", fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                } else if (isAlreadyFriend) {
                     Surface(
                         shape = RoundedCornerShape(10.dp),
                         color = EmeraldGreen.copy(alpha = 0.1f),

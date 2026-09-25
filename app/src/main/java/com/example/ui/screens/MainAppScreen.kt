@@ -570,8 +570,10 @@ fun MainAppScreen(
                             }
                         )
                         1 -> {
-                            val friendsList = remember(uiState.chattedFriends, uiState.nearbyUsers, uiState.conversations) {
-                                val baseList = uiState.chattedFriends.filterNot { viewModel.isDummyFriend(it.id, it.name) }
+                            val friendsList = remember(uiState.chattedFriends, uiState.nearbyUsers, uiState.conversations, uiState.myLovyId, uiState.myName) {
+                                val baseList = uiState.chattedFriends
+                                    .filterNot { viewModel.isDummyFriend(it.id, it.name) }
+                                    .filterNot { viewModel.isSelfUser(it.id, it.name) }
                                 // Sinkronkan status online terkini dari radar pengguna sekitar dan obrolan
                                 val onlineIds = uiState.nearbyUsers.filter { it.isOnline }.map { it.id }.toSet()
                                 val onlinePartnerIds = uiState.conversations.filter { it.isOnline }.map { it.partnerId }.toSet()
