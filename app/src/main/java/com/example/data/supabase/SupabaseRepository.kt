@@ -228,15 +228,51 @@ class SupabaseRepository {
         }
     }
 
+    suspend fun ensureAuthorAccountExists(authorId: String, authorName: String, avatarUrl: String? = null) {
+        if (authorId.isBlank() || authorId == "me") return
+        val api = SupabaseClient.getApi() ?: return
+        val apiKey = SupabaseClient.getSupabaseAnonKey()
+        val auth = SupabaseClient.getAuthHeader()
+
+        try {
+            val checkResp = api.getAccountById(apiKey, auth, "eq.$authorId")
+            val exists = checkResp.isSuccessful && !checkResp.body().isNullOrEmpty()
+            if (!exists) {
+                val newAcc = SupabaseAccountDto(
+                    id = authorId,
+                    username = authorName.replace(" ", "_").lowercase().ifBlank { authorId },
+                    displayName = authorName,
+                    gender = "FEMALE",
+                    bio = "Pengguna Lovy Chat ✨",
+                    avatarUrl = avatarUrl,
+                    createdAt = System.currentTimeMillis(),
+                    lastLoginAt = System.currentTimeMillis()
+                )
+                val upsertResp = api.upsertAccount(apiKey, auth, newAcc)
+                if (!upsertResp.isSuccessful) {
+                    val fallbackAcc = newAcc.copy(fcmToken = null)
+                    api.upsertAccount(apiKey, auth, fallbackAcc)
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "ensureAuthorAccountExists warning: ${e.message}")
+        }
+    }
+
     suspend fun sendMoment(moment: MomentItem, authorId: String): Boolean = withContext(Dispatchers.IO) {
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
 
+        val safeAuthorId = if (authorId.isBlank() || authorId == "me") "lovy_${(100000..999999).random()}" else authorId
+
         try {
+            // Pastikan akun penulis ada di app_accounts agar tidak kena error constraint fk_moments_author
+            ensureAuthorAccountExists(safeAuthorId, moment.authorName, moment.authorAvatarUrl)
+
             val dto = SupabaseMomentDto(
                 id = moment.id,
-                authorId = authorId,
+                authorId = safeAuthorId,
                 authorName = moment.authorName,
                 content = moment.content,
                 likesCount = moment.likesCount,
@@ -249,13 +285,23 @@ class SupabaseRepository {
             )
             val response = api.insertMoment(apiKey, auth, dto)
             if (response.isSuccessful) {
+                Log.d(TAG, "Momen berhasil diinsert ke Supabase: ${moment.id}")
                 true
+            } else if (response.code() == 409) {
+                // Kemungkinan foreign key error, paksa upsert akun penulis dan coba lagi
+                Log.w(TAG, "Momen insert 409 conflict, mendaftarkan ulang akun author dan retry...")
+                ensureAuthorAccountExists(safeAuthorId, moment.authorName, moment.authorAvatarUrl)
+                val retry = api.insertMoment(apiKey, auth, dto)
+                if (retry.isSuccessful) return@withContext true
+                val fallbackDto = dto.copy(locationTag = null, authorAvatarUrl = null)
+                api.insertMoment(apiKey, auth, fallbackDto).isSuccessful
             } else if (dto.locationTag != null || dto.authorAvatarUrl != null) {
                 // Fallback jika database Supabase versi lama belum memiliki kolom location_tag / author_avatar_url
                 val fallbackDto = dto.copy(locationTag = null, authorAvatarUrl = null)
                 val retry = api.insertMoment(apiKey, auth, fallbackDto)
                 retry.isSuccessful
             } else {
+                Log.w(TAG, "Gagal insert momen ke Supabase, code=${response.code()}, error=${response.errorBody()?.string()}")
                 false
             }
         } catch (e: Exception) {

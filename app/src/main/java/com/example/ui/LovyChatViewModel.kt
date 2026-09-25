@@ -760,11 +760,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    private fun loadMyMoments() {
+    fun getLocalSavedMoments(): List<MomentItem> {
         try {
-            val savedIds = prefs.getStringSet("my_moment_ids", emptySet()) ?: emptySet()
             val rawMomentsJson = prefs.getString("my_local_moments_json", null)
-            val locallySavedMoments = if (!rawMomentsJson.isNullOrBlank()) {
+            if (!rawMomentsJson.isNullOrBlank()) {
                 val arr = org.json.JSONArray(rawMomentsJson)
                 val list = mutableListOf<MomentItem>()
                 for (i in 0 until arr.length()) {
@@ -786,12 +785,22 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                         )
                     )
                 }
-                list
-            } else emptyList()
+                return list
+            }
+        } catch (_: Throwable) {
+        }
+        return emptyList()
+    }
+
+    private fun loadMyMoments() {
+        try {
+            val savedIds = prefs.getStringSet("my_moment_ids", emptySet()) ?: emptySet()
+            val locallySavedMoments = getLocalSavedMoments()
+            val combinedIds = (savedIds + locallySavedMoments.map { it.id }).toSet()
 
             _uiState.update { 
                 it.copy(
-                    myMomentIds = savedIds,
+                    myMomentIds = combinedIds,
                     moments = (locallySavedMoments + it.moments).distinctBy { m -> m.id }
                 ) 
             }
@@ -1437,11 +1446,28 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             if (forceRefresh || now - lastMomentsSyncTime >= CACHE_DURATION_MS) {
                 val remoteMoments = supabaseRepo.fetchMoments()
                 if (remoteMoments != null) {
-                    val myLocal = _uiState.value.moments.filter { it.id in _uiState.value.myMomentIds }
+                    val locallySaved = getLocalSavedMoments()
+                    val myLocal = (_uiState.value.moments.filter { it.id in _uiState.value.myMomentIds } + locallySaved).distinctBy { it.id }
                     val merged = (myLocal + remoteMoments).distinctBy { it.id }
                     val enriched = enrichMomentsWithAvatars(merged)
                     _uiState.update { it.copy(moments = enriched) }
                     lastMomentsSyncTime = System.currentTimeMillis()
+
+                    // Auto-sync: Unggah otomatis momen lokal ke server Supabase jika belum tersimpan di cloud
+                    if (!_uiState.value.isGuest) {
+                        val remoteIds = remoteMoments.map { it.id }.toSet()
+                        val unsyncedMoments = myLocal.filterNot { it.id in remoteIds }
+                        if (unsyncedMoments.isNotEmpty()) {
+                            viewModelScope.launch(Dispatchers.IO) {
+                                val currentLovyId = _uiState.value.myLovyId
+                                unsyncedMoments.forEach { unposted ->
+                                    val author = unposted.authorId.takeIf { it.isNotBlank() && it != "me" }
+                                        ?: currentLovyId.ifBlank { "lovy_${(100000..999999).random()}" }
+                                    supabaseRepo.sendMoment(unposted, author)
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -1462,12 +1488,27 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 if (!_uiState.value.isGuest && SupabaseClient.isConfigured()) {
                     val remoteMoments = supabaseRepo.fetchMoments()
                     if (remoteMoments != null) {
-                        val myLocal = _uiState.value.moments.filter { it.id in _uiState.value.myMomentIds }
+                        val locallySaved = getLocalSavedMoments()
+                        val myLocal = (_uiState.value.moments.filter { it.id in _uiState.value.myMomentIds } + locallySaved).distinctBy { it.id }
                         val merged = (myLocal + remoteMoments).distinctBy { it.id }
                         val enriched = enrichMomentsWithAvatars(merged)
                         _uiState.update { it.copy(moments = enriched) }
                         lastMomentsSyncTime = System.currentTimeMillis()
                         fetched = true
+
+                        // Auto-sync: Unggah otomatis momen lokal yang belum tersimpan di cloud Supabase
+                        val remoteIds = remoteMoments.map { it.id }.toSet()
+                        val unsyncedMoments = myLocal.filterNot { it.id in remoteIds }
+                        if (unsyncedMoments.isNotEmpty()) {
+                            viewModelScope.launch(Dispatchers.IO) {
+                                val currentLovyId = _uiState.value.myLovyId
+                                unsyncedMoments.forEach { unposted ->
+                                    val author = unposted.authorId.takeIf { it.isNotBlank() && it != "me" }
+                                        ?: currentLovyId.ifBlank { "lovy_${(100000..999999).random()}" }
+                                    supabaseRepo.sendMoment(unposted, author)
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -1634,6 +1675,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             )
             saveUserProfile(newProfile)
             updateUserActivity()
+            loadMyMoments()
             syncFromSupabase(forceRefresh = true)
             syncUserProfileToSupabase()
             startIncomingChatPeriodicSync()
@@ -1648,6 +1690,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             val lovyId = result.lovyId ?: _uiState.value.myLovyId
             val finalName = result.displayName ?: result.username ?: username
             clearDummyFriends()
+            val initialMoments = getLocalSavedMoments()
             _uiState.update {
                 it.copy(
                     isLoggedIn = true,
@@ -1657,7 +1700,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     currentScreen = CurrentScreen.Main,
                     conversations = emptyList(),
                     messagesMap = emptyMap(),
-                    moments = emptyList(),
+                    moments = initialMoments,
                     oceanBottles = emptyList(),
                     nearbyUsers = emptyList()
                 )
@@ -1689,6 +1732,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             val lovyId = result.lovyId ?: _uiState.value.myLovyId
             val finalName = result.displayName ?: googleUser.displayName
             clearDummyFriends()
+            val initialMoments = getLocalSavedMoments()
             _uiState.update {
                 it.copy(
                     isLoggedIn = true,
@@ -1698,7 +1742,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     currentScreen = CurrentScreen.Main,
                     conversations = emptyList(),
                     messagesMap = emptyMap(),
-                    moments = emptyList(),
+                    moments = initialMoments,
                     oceanBottles = emptyList(),
                     nearbyUsers = emptyList()
                 )
@@ -2879,10 +2923,15 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     fun postMoment(content: String, imageUrl: String? = null, locationTag: String? = null) {
         if (content.isBlank()) return
         recordFeatureClick()
-        val authorId = _uiState.value.myLovyId.ifBlank { "me" }
+        val authorId = _uiState.value.myLovyId.ifBlank {
+            val gen = "lovy_${(100000..999999).random()}"
+            _uiState.update { it.copy(myLovyId = gen) }
+            gen
+        }
+        val authorAvatar = _uiState.value.userProfile.profilePicture?.takeIf { it.isNotBlank() }
         val newMoment = MomentItem(
             id = UUID.randomUUID().toString(),
-            authorName = _uiState.value.myName,
+            authorName = _uiState.value.myName.ifBlank { "Pengguna Lovy" },
             authorAvatarHex = 0xFF00A86B,
             timeAgo = "Baru saja",
             content = content.trim(),
@@ -2890,7 +2939,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             isLiked = false,
             commentsCount = 0,
             imageUrl = imageUrl,
-            authorAvatarUrl = null,
+            authorAvatarUrl = authorAvatar,
             locationTag = locationTag?.ifBlank { null }
                 ?: _uiState.value.currentGpsLocation?.cityName?.ifBlank { null }
                 ?: "Surabaya",
@@ -2902,16 +2951,23 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             saveMyLocalMoment(newMoment)
         } catch (_: Throwable) {
         }
-        _uiState.update { it.copy(moments = listOf(newMoment) + it.moments, myMomentIds = newMomentIds) }
+        _uiState.update { 
+            it.copy(
+                moments = listOf(newMoment) + it.moments.filterNot { m -> m.id == newMoment.id }, 
+                myMomentIds = newMomentIds
+            ) 
+        }
 
         // Simpan ke Supabase (hanya jika bukan mode tamu)
         if (!_uiState.value.isGuest) {
-            viewModelScope.launch {
+            viewModelScope.launch(Dispatchers.IO) {
+                // Pastikan akun user tersinkronisasi di tabel app_accounts Supabase
+                syncUserProfileToSupabase()
                 val ok = supabaseRepo.sendMoment(newMoment, authorId)
                 if (ok) {
                     Log.d("LovyChatViewModel", "Momen berhasil disimpan ke server cloud Supabase: ${newMoment.id}")
                 } else {
-                    Log.w("LovyChatViewModel", "Gagal menyimpan momen ke server cloud Supabase: ${newMoment.id}")
+                    Log.w("LovyChatViewModel", "Gagal menyimpan momen ke server cloud Supabase: ${newMoment.id}, akan dicoba ulang otomatis saat sinkronisasi")
                 }
             }
         }

@@ -282,6 +282,7 @@ class AuthRepository(
         val map = getUsersMap()
         map[normalizedKey] = hashedPassword
         saveUsersMap(map)
+        prefs.edit().putString("user_lovy_id_${normalizedKey}", lovyId).apply()
 
         // 3. Simpan sesi aktif
         val userEmail = if (normalizedKey.contains("@")) normalizedKey else null
@@ -400,7 +401,15 @@ class AuthRepository(
             )
         }
 
-        val lovyId = "lovy_${(100000..999999).random()}"
+        val lovyIdKey = "user_lovy_id_${normalizedKey}"
+        val existingLovyId = prefs.getString(lovyIdKey, null)
+        val lovyId = if (!existingLovyId.isNullOrBlank()) {
+            existingLovyId
+        } else {
+            val genId = "lovy_${(100000..999999).random()}"
+            prefs.edit().putString(lovyIdKey, genId).apply()
+            genId
+        }
         val userEmail = if (normalizedKey.contains("@")) normalizedKey else null
         val session = SavedSession(
             isLoggedIn = true,

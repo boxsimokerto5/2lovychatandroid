@@ -196,6 +196,11 @@ fun MomentsScreen(
     var commentInputText by remember { mutableStateOf("") }
     val commentSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
+    // Otomatis segarkan dan sinkronisasikan momen dari server saat membuka layar Momen
+    LaunchedEffect(Unit) {
+        onRefresh?.invoke()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
