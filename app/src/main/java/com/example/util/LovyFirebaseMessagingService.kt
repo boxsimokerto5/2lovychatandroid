@@ -62,14 +62,45 @@ class LovyFirebaseMessagingService : FirebaseMessagingService() {
         super.onMessageReceived(remoteMessage)
         Log.d(TAG, "From: ${remoteMessage.from}")
 
+        val conversationId = remoteMessage.data["conversationId"] ?: "chat_default"
+        val messageId = remoteMessage.data["messageId"] ?: remoteMessage.data["id"] ?: ""
+        val isDeleted = remoteMessage.data["deleted"] == "true"
+        val body = remoteMessage.data["body"]
+            ?: remoteMessage.notification?.body
+            ?: "Anda menerima pesan baru"
+
+        // 1. Jika ini sinyal penghapusan pesan, batalkan notifikasi yang mungkin aktif
+        if (isDeleted || body == "__DELETED_FOR_EVERYONE__") {
+            LovyNotificationHelper.cancelNotification(this, conversationId)
+            return
+        }
+
+        // 2. Cek apakah obrolan ini pernah dihapus oleh pengguna dan pesan ini lebih lama dari waktu hapus
+        val chatPrefs = getSharedPreferences("lovy_chat_prefs", Context.MODE_PRIVATE)
+        val deletedTimestampsJson = chatPrefs.getString("deleted_conversations_map", null)
+        if (!deletedTimestampsJson.isNullOrBlank()) {
+            try {
+                val json = org.json.JSONObject(deletedTimestampsJson)
+                val deletedAt = json.optLong(conversationId, 0L)
+                val msgTimestamp = remoteMessage.data["timestamp"]?.toLongOrNull() ?: System.currentTimeMillis()
+                if (deletedAt > 0L && msgTimestamp <= deletedAt) {
+                    Log.d(TAG, "Mengabaikan notifikasi untuk pesan dari obrolan yang sudah dihapus: $conversationId")
+                    return
+                }
+            } catch (_: Exception) {}
+        }
+
+        // 3. Cek apakah pesan spesifik ini sudah ditandai terhapus
+        val deletedMsgIds = chatPrefs.getStringSet("deleted_message_ids", emptySet()) ?: emptySet()
+        if (messageId.isNotBlank() && deletedMsgIds.contains(messageId)) {
+            Log.d(TAG, "Mengabaikan notifikasi untuk pesan ID yang telah dihapus: $messageId")
+            return
+        }
+
         // Baca title & body baik dari payload data maupun notification
         val title = remoteMessage.data["title"]
             ?: remoteMessage.notification?.title
             ?: "Pesan Baru di Lovy"
-        val body = remoteMessage.data["body"]
-            ?: remoteMessage.notification?.body
-            ?: "Anda menerima pesan baru"
-        val conversationId = remoteMessage.data["conversationId"] ?: "chat_default"
         val senderName = remoteMessage.data["senderName"] ?: title
 
         LovyNotificationHelper.showChatNotification(

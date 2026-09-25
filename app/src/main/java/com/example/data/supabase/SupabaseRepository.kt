@@ -548,7 +548,38 @@ class SupabaseRepository {
             val response = api.markChatMessageDeleted(apiKey, auth, "eq.$messageId", mapOf("deleted_for_sender" to true))
             response.isSuccessful
         } catch (e: Exception) {
-            Log.w(TAG, "Gagal menandai pesan terhapus di Supabase", e)
+            Log.w(TAG, "Gagal menandai pesan terhapus untuk sender di Supabase", e)
+            false
+        }
+    }
+
+    suspend fun markMessageDeletedForReceiver(messageId: String): Boolean = withContext(Dispatchers.IO) {
+        val api = SupabaseClient.getApi() ?: return@withContext false
+        val apiKey = SupabaseClient.getSupabaseAnonKey()
+        val auth = SupabaseClient.getAuthHeader()
+
+        try {
+            val response = api.markChatMessageDeleted(apiKey, auth, "eq.$messageId", mapOf("deleted_for_receiver" to true))
+            response.isSuccessful
+        } catch (e: Exception) {
+            Log.w(TAG, "Gagal menandai pesan terhapus untuk receiver di Supabase", e)
+            false
+        }
+    }
+
+    suspend fun markConversationDeletedForUser(conversationId: String, userId: String): Boolean = withContext(Dispatchers.IO) {
+        val api = SupabaseClient.getApi() ?: return@withContext false
+        val apiKey = SupabaseClient.getSupabaseAnonKey()
+        val auth = SupabaseClient.getAuthHeader()
+
+        try {
+            // Tandai pesan terhapus di mana user adalah receiver
+            api.markMessagesDeletedForReceiver(apiKey, auth, "eq.$conversationId", "eq.$userId", mapOf("deleted_for_receiver" to true))
+            // Tandai pesan terhapus di mana user adalah sender
+            api.markMessagesDeletedForSender(apiKey, auth, "eq.$conversationId", "eq.$userId", mapOf("deleted_for_sender" to true))
+            true
+        } catch (e: Exception) {
+            Log.w(TAG, "Gagal menandai seluruh percakapan $conversationId terhapus untuk $userId", e)
             false
         }
     }

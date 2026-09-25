@@ -136,6 +136,33 @@ object LovyNotificationHelper {
     }
 
     /**
+     * Membatalkan notifikasi sistem untuk percakapan tertentu (misal saat percakapan dibuka atau dihapus).
+     */
+    fun cancelNotification(context: Context, conversationId: String) {
+        try {
+            val notificationManager =
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            val notifId = (conversationId.hashCode() and 0x7FFFFFFF)
+            notificationManager?.cancel(notifId)
+        } catch (e: Throwable) {
+            Log.w(TAG, "Gagal membatalkan notifikasi untuk conversation: $conversationId", e)
+        }
+    }
+
+    /**
+     * Membatalkan seluruh notifikasi obrolan.
+     */
+    fun cancelAllNotifications(context: Context) {
+        try {
+            val notificationManager =
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            notificationManager?.cancelAll()
+        } catch (e: Throwable) {
+            Log.w(TAG, "Gagal membatalkan seluruh notifikasi", e)
+        }
+    }
+
+    /**
      * Mengaktifkan motor getar perangkat secara langsung dengan pola notifikasi pesan masuk.
      */
     fun vibrateChatNotification(context: Context) {

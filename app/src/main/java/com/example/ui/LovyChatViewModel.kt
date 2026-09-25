@@ -145,6 +145,47 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     private var lastTypingSentTime = 0L
     private val typingTimeoutJobs = mutableMapOf<String, kotlinx.coroutines.Job>()
 
+    // Pelacakan pesan dan obrolan yang telah dihapus agar tidak pernah memicu notifikasi atau bangkit kembali saat sync
+    private val deletedMessageIds = java.util.Collections.synchronizedSet(mutableSetOf<String>())
+    private val deletedConversationTimestamps = java.util.Collections.synchronizedMap(mutableMapOf<String, Long>())
+
+    private fun loadDeletedTrackingData() {
+        try {
+            val savedMsgIds = prefs.getStringSet("deleted_message_ids", emptySet()) ?: emptySet()
+            deletedMessageIds.addAll(savedMsgIds)
+
+            val rawConvMap = prefs.getString("deleted_conversations_map", null)
+            if (!rawConvMap.isNullOrBlank()) {
+                val json = org.json.JSONObject(rawConvMap)
+                val keys = json.keys()
+                while (keys.hasNext()) {
+                    val k = keys.next()
+                    deletedConversationTimestamps[k] = json.optLong(k, 0L)
+                }
+            }
+        } catch (e: Exception) {
+            Log.w("LovyChatViewModel", "loadDeletedTrackingData error: ${e.message}")
+        }
+    }
+
+    private fun persistDeletedMessageId(id: String) {
+        if (id.isBlank()) return
+        deletedMessageIds.add(id)
+        try {
+            prefs.edit().putStringSet("deleted_message_ids", HashSet(deletedMessageIds)).apply()
+        } catch (_: Exception) {}
+    }
+
+    private fun persistDeletedConversation(conversationId: String, timestamp: Long = System.currentTimeMillis()) {
+        if (conversationId.isBlank()) return
+        deletedConversationTimestamps[conversationId] = timestamp
+        try {
+            val json = org.json.JSONObject()
+            deletedConversationTimestamps.forEach { (k, v) -> json.put(k, v) }
+            prefs.edit().putString("deleted_conversations_map", json.toString()).apply()
+        } catch (_: Exception) {}
+    }
+
     companion object {
         // Cache data selama 3 menit untuk memangkas 80%+ query baca ke cloud
         private const val CACHE_DURATION_MS = 3 * 60 * 1000L
@@ -169,6 +210,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         loadMyMoments()
         loadSavedBottles()
         loadPrivacySettings()
+        loadDeletedTrackingData()
         refreshSupabaseState()
         refreshR2State()
         detectAndApplyGeoLanguage()
@@ -1733,6 +1775,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
         authRepo.deleteAccount(myName)
 
+        deletedMessageIds.clear()
+        deletedConversationTimestamps.clear()
+        try {
+            prefs.edit().remove("deleted_message_ids").remove("deleted_conversations_map").apply()
+            com.example.util.LovyNotificationHelper.cancelAllNotifications(getApplication())
+        } catch (_: Exception) {}
+
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 localChatRepo.clearAllMessages()
@@ -2139,6 +2188,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
         val partnerId = conv?.partnerId ?: extractPartnerIdFromConvId(conversationId, _uiState.value.myLovyId)
         markConversationAsRead(conversationId, partnerId)
+        com.example.util.LovyNotificationHelper.cancelNotification(getApplication(), conversationId)
 
         // Muat pesan dari cache lokal Room jika state di memori masih kosong agar instan
         if ((_uiState.value.messagesMap[conversationId] ?: emptyList()).isEmpty()) {
@@ -2197,6 +2247,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 supabaseRepo.markMessagesAsRead(conversationId, pid)
             }
         }
+
+        // 4. Batalkan notifikasi sistem untuk percakapan ini
+        com.example.util.LovyNotificationHelper.cancelNotification(getApplication(), conversationId)
     }
 
     fun markSentMessagesAsReadLocal(conversationId: String) {
@@ -2241,7 +2294,15 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             if (!remoteMsgs.isNullOrEmpty()) {
                 withContext(Dispatchers.Main) {
                     val typingSignals = remoteMsgs.filter { it.text.startsWith("__TYPING_") }
-                    val actualChatMsgs = remoteMsgs.filterNot { it.text.startsWith("__TYPING_") }
+                    val convDeletedTimestamp = deletedConversationTimestamps[conversationId] ?: 0L
+                    val actualChatMsgs = remoteMsgs.filterNot { msg ->
+                        msg.text.startsWith("__TYPING_") ||
+                        msg.text == "__DELETED_FOR_EVERYONE__" ||
+                        deletedMessageIds.contains(msg.id) ||
+                        msg.timestamp <= convDeletedTimestamp ||
+                        (msg.isFromMe && msg.deletedForSender) ||
+                        (!msg.isFromMe && msg.deletedForReceiver)
+                    }
 
                     if (typingSignals.isNotEmpty()) {
                         val latestSignal = typingSignals.maxByOrNull { it.timestamp }
@@ -2264,7 +2325,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                         setPartnerTyping(conversationId, false)
                     }
 
-                    if (actualChatMsgs.isNotEmpty()) {
+                    if (actualChatMsgs.isNotEmpty() || remoteMsgs.any { deletedMessageIds.contains(it.id) }) {
                         val isViewing = _uiState.value.activeChatId == conversationId
                         val processedMsgs = if (isViewing) {
                             actualChatMsgs.map { if (!it.isFromMe) it.copy(isRead = true) else it }
@@ -2274,30 +2335,45 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
                         val current = _uiState.value.messagesMap[conversationId] ?: emptyList()
                         val currentIds = current.map { it.id }.toSet()
-                        val newPartnerMsgs = actualChatMsgs.filter { !it.isFromMe && !currentIds.contains(it.id) }
+                        val newPartnerMsgs = actualChatMsgs.filter { 
+                            !it.isFromMe && 
+                            !currentIds.contains(it.id) && 
+                            !deletedMessageIds.contains(it.id) &&
+                            it.timestamp > convDeletedTimestamp &&
+                            !it.deletedForReceiver
+                        }
 
                         val msgMap = current.associateBy { it.id }.toMutableMap()
                         for (m in processedMsgs) {
                             msgMap[m.id] = m
                         }
                         val merged = msgMap.values
-                            .filterNot { it.deletedForSender && it.isFromMe }
+                            .filterNot { 
+                                deletedMessageIds.contains(it.id) ||
+                                (it.deletedForSender && it.isFromMe) ||
+                                (it.deletedForReceiver && !it.isFromMe) ||
+                                it.timestamp <= convDeletedTimestamp
+                            }
                             .sortedBy { it.timestamp }
 
                         val lastMsg = merged.lastOrNull()
                         val convExists = _uiState.value.conversations.any { it.id == conversationId }
                         val updatedConvs = if (convExists) {
-                            _uiState.value.conversations.map { c ->
-                                if (c.id == conversationId && lastMsg != null) {
-                                    c.copy(
-                                        lastMessage = lastMsg.text,
-                                        lastTimestamp = lastMsg.timestamp,
-                                        lastMessageIsFromMe = lastMsg.isFromMe,
-                                        lastMessageIsRead = lastMsg.isRead
-                                    )
-                                } else c
+                            if (merged.isEmpty()) {
+                                _uiState.value.conversations.filterNot { it.id == conversationId }
+                            } else {
+                                _uiState.value.conversations.map { c ->
+                                    if (c.id == conversationId && lastMsg != null) {
+                                        c.copy(
+                                            lastMessage = lastMsg.text,
+                                            lastTimestamp = lastMsg.timestamp,
+                                            lastMessageIsFromMe = lastMsg.isFromMe,
+                                            lastMessageIsRead = lastMsg.isRead
+                                        )
+                                    } else c
+                                }
                             }
-                        } else if (lastMsg != null) {
+                        } else if (lastMsg != null && lastMsg.timestamp > convDeletedTimestamp) {
                             val partnerUser = _uiState.value.nearbyUsers.find { it.id == partnerId }
                                 ?: _uiState.value.chattedFriends.find { it.id == partnerId }
                             listOf(
@@ -2330,7 +2406,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                             } else {
                                 val partnerName = updatedConvs.find { it.id == conversationId }?.partnerName ?: "Teman Lovy"
                                 val latest = newPartnerMsgs.maxByOrNull { it.timestamp }
-                                if (latest != null) {
+                                if (latest != null && latest.timestamp > convDeletedTimestamp) {
                                     com.example.util.LovyNotificationHelper.showChatNotification(
                                         context = appCtx,
                                         conversationId = conversationId,
@@ -2469,11 +2545,21 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             )
         }
 
+        // Catat messageId agar tidak pernah di-fetch atau memicu notifikasi lagi
+        persistDeletedMessageId(messageId)
+
+        // Batalkan notifikasi jika tidak ada lagi pesan belum terbaca dari partner
+        if (updatedMsgs.none { !it.isFromMe && !it.isRead }) {
+            com.example.util.LovyNotificationHelper.cancelNotification(getApplication(), conversationId)
+        }
+
         viewModelScope.launch(Dispatchers.IO) {
             localChatRepo.deleteMessage(messageId)
             if (!_uiState.value.isGuest) {
                 if (targetMsg?.isFromMe == true) {
                     supabaseRepo.markMessageDeletedForSender(messageId)
+                } else {
+                    supabaseRepo.markMessageDeletedForReceiver(messageId)
                 }
             }
         }
@@ -2507,6 +2593,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 conversations = updatedConvs
             )
         }
+
+        persistDeletedMessageId(messageId)
+        com.example.util.LovyNotificationHelper.cancelNotification(getApplication(), conversationId)
 
         viewModelScope.launch(Dispatchers.IO) {
             // Hapus dari database lokal Room
@@ -2548,9 +2637,23 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             )
         }
 
+        val now = System.currentTimeMillis()
+        val myId = _uiState.value.myLovyId
+        val app = getApplication<Application>()
+
+        conversationIds.forEach { convId ->
+            // Simpan timestamp hapus agar pesan-pesan lama di obrolan ini tidak pernah memicu notif / bangkit kembali
+            persistDeletedConversation(convId, now)
+            // Batalkan semua notifikasi sistem yang berkaitan dengan obrolan ini
+            com.example.util.LovyNotificationHelper.cancelNotification(app, convId)
+        }
+
         viewModelScope.launch(Dispatchers.IO) {
             conversationIds.forEach { convId ->
                 localChatRepo.clearConversation(convId)
+                if (!_uiState.value.isGuest && myId.isNotBlank()) {
+                    supabaseRepo.markConversationDeletedForUser(convId, myId)
+                }
             }
         }
     }
@@ -3107,6 +3210,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                             // Cek jika pesan ini adalah perintah hapus untuk semua orang
                             if (messageDto.text == "__DELETED_FOR_EVERYONE__" || 
                                 (messageDto.deletedForSender == true && messageDto.deletedForReceiver == true)) {
+                                persistDeletedMessageId(messageDto.id)
+                                com.example.util.LovyNotificationHelper.cancelNotification(getApplication(), convId)
                                 val currentMsgs = _uiState.value.messagesMap[convId] ?: emptyList()
                                 val updatedMsgs = currentMsgs.filterNot { it.id == messageDto.id }
                                 val lastRemaining = updatedMsgs.lastOrNull()?.text ?: "Tidak ada pesan"
@@ -3205,21 +3310,33 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             }
             if (partnerId.isBlank()) continue
 
-            // Abaikan sinyal ephemeral mengetik dan pesan terhapus untuk semua orang
-            val chatDtos = dtoList.filterNot { 
-                it.text.startsWith("__TYPING_") || 
-                it.text == "__DELETED_FOR_EVERYONE__" ||
-                (it.deletedForSender == true && it.deletedForReceiver == true)
+            val convDeletedTimestamp = deletedConversationTimestamps[convId] ?: 0L
+
+            // Abaikan sinyal ephemeral mengetik, pesan terhapus untuk semua orang, pesan yang sudah dihapus pengguna, atau pesan sebelum obrolan dihapus
+            val chatDtos = dtoList.filterNot { dto ->
+                dto.text.startsWith("__TYPING_") || 
+                dto.text == "__DELETED_FOR_EVERYONE__" ||
+                deletedMessageIds.contains(dto.id) ||
+                dto.createdAt <= convDeletedTimestamp ||
+                (dto.deletedForSender == true && dto.deletedForReceiver == true) ||
+                (isSenderMe(dto.senderId, dto.receiverId, myId) && dto.deletedForSender == true) ||
+                (!isSenderMe(dto.senderId, dto.receiverId, myId) && dto.deletedForReceiver == true)
             }
             if (chatDtos.isEmpty()) {
-                // Jika ada pesan deleted_for_everyone di batch ini, hapus dari list lokal
+                // Jika ada pesan deleted_for_everyone atau pesan yang dihapus di batch ini, bersihkan dari memori lokal
                 val deletedIds = dtoList.filter { 
                     it.text == "__DELETED_FOR_EVERYONE__" || 
-                    (it.deletedForSender == true && it.deletedForReceiver == true) 
+                    (it.deletedForSender == true && it.deletedForReceiver == true) ||
+                    deletedMessageIds.contains(it.id) ||
+                    it.createdAt <= convDeletedTimestamp
                 }.map { it.id }.toSet()
                 if (deletedIds.isNotEmpty()) {
                     val existing = currentMessages[convId] ?: emptyList()
-                    currentMessages[convId] = existing.filterNot { deletedIds.contains(it.id) }
+                    val filtered = existing.filterNot { deletedIds.contains(it.id) }
+                    currentMessages[convId] = filtered
+                    if (filtered.isEmpty()) {
+                        currentConversations.removeAll { it.id == convId }
+                    }
                 }
                 continue
             }
@@ -3244,16 +3361,34 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
             val existingMsgs = currentMessages[convId] ?: emptyList()
             val existingIds = existingMsgs.map { it.id }.toSet()
-            val newIncomingMsgs = sortedMsgs.filter { !it.isFromMe && !existingIds.contains(it.id) }
+            val newIncomingMsgs = sortedMsgs.filter { 
+                !it.isFromMe && 
+                !existingIds.contains(it.id) && 
+                !deletedMessageIds.contains(it.id) &&
+                it.timestamp > convDeletedTimestamp &&
+                !it.deletedForReceiver
+            }
 
             val msgMap = existingMsgs.associateBy { it.id }.toMutableMap()
             for (m in sortedMsgs) {
                 msgMap[m.id] = m
             }
-            val mergedMsgs = msgMap.values.sortedBy { it.timestamp }
+            val mergedMsgs = msgMap.values
+                .filterNot { 
+                    deletedMessageIds.contains(it.id) ||
+                    (it.deletedForSender && it.isFromMe) ||
+                    (it.deletedForReceiver && !it.isFromMe) ||
+                    it.timestamp <= convDeletedTimestamp
+                }
+                .sortedBy { it.timestamp }
             currentMessages[convId] = mergedMsgs
 
-            val lastMsg = mergedMsgs.lastOrNull() ?: continue
+            val lastMsg = mergedMsgs.lastOrNull()
+            if (lastMsg == null) {
+                currentConversations.removeAll { it.id == convId }
+                continue
+            }
+
             val existingConvIndex = currentConversations.indexOfFirst { it.id == convId || it.partnerId == partnerId }
             var resolvedPartnerName: String? = null
             if (existingConvIndex >= 0) {
@@ -3266,7 +3401,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     lastMessageIsFromMe = lastMsg.isFromMe,
                     lastMessageIsRead = lastMsg.isRead
                 )
-            } else {
+            } else if (lastMsg.timestamp > convDeletedTimestamp) {
                 val partnerUser = _uiState.value.nearbyUsers.find { it.id == partnerId } 
                     ?: _uiState.value.chattedFriends.find { it.id == partnerId }
                 resolvedPartnerName = partnerUser?.name
@@ -3318,7 +3453,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
             if (newIncomingMsgs.isNotEmpty()) {
                 val latest = newIncomingMsgs.maxByOrNull { it.timestamp }
-                if (latest != null) {
+                if (latest != null && latest.timestamp > convDeletedTimestamp) {
                     val appCtx = getApplication<Application>()
                     val isViewing = _uiState.value.activeChatId == convId
                     if (isViewing) {

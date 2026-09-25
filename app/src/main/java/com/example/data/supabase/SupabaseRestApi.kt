@@ -113,6 +113,24 @@ interface SupabaseRestApi {
     ): Response<Unit>
 
     @PATCH("rest/v1/chat_messages")
+    suspend fun markMessagesDeletedForReceiver(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("conversation_id") conversationFilter: String,
+        @Query("receiver_id") receiverFilter: String,
+        @Body updates: Map<String, Boolean>
+    ): Response<Unit>
+
+    @PATCH("rest/v1/chat_messages")
+    suspend fun markMessagesDeletedForSender(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("conversation_id") conversationFilter: String,
+        @Query("sender_id") senderFilter: String,
+        @Body updates: Map<String, Boolean>
+    ): Response<Unit>
+
+    @PATCH("rest/v1/chat_messages")
     suspend fun markAllSenderMessagesDeleted(
         @Header("apikey") apiKey: String,
         @Header("Authorization") authHeader: String,
