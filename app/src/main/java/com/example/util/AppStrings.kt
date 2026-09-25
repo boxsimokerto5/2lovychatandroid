@@ -3767,4 +3767,145 @@ object AppStrings {
     fun newFriendsIgnore(lang: AppLanguage): String = newFriendsBtnIgnore(lang)
     fun newFriendsReplyChat(lang: AppLanguage): String = newFriendsBtnReply(lang)
     fun newFriendsAccept(lang: AppLanguage): String = newFriendsBtnAccept(lang)
+
+    // --- GOOGLE SIGN IN EXCLUSIVE SCREEN STRINGS ---
+    fun googleSignInTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "使用 Google 账号登录"
+        AppLanguage.JAPANESE -> "Google アカウントでログイン"
+        AppLanguage.KOREAN -> "Google 계정으로 로그인"
+        AppLanguage.ARABIC -> "تسجيل الدخول بحساب Google"
+        AppLanguage.SPANISH -> "Iniciar sesión con Google"
+        AppLanguage.FRENCH -> "Se connecter avec Google"
+        AppLanguage.GERMAN -> "Mit Google anmelden"
+        AppLanguage.RUSSIAN -> "Войти через Google"
+        AppLanguage.PORTUGUESE -> "Entrar com o Google"
+        AppLanguage.INDONESIAN -> "Masuk dengan Akun Google"
+        else -> "Sign in with Google Account"
+    }
+
+    fun googleSignInSubtitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "使用永久账号畅享即时聊天、附近好友和精彩动态。"
+        AppLanguage.JAPANESE -> "永久アカウントで、チャットや近くの友達、モーメントを安全に保存。"
+        AppLanguage.KOREAN -> "영구 계정으로 채팅, 주변 친구, 소중한 모먼트를 안전하게 관리하세요."
+        AppLanguage.ARABIC -> "حساب دائم لجميع محادثاتك وأصدقائك القريبين ولحظاتك المميزة."
+        AppLanguage.SPANISH -> "Una cuenta permanente para todos tus chats, amigos cercanos y momentos."
+        AppLanguage.FRENCH -> "Un compte permanent pour toutes vos discussions, amis à proximité et moments."
+        AppLanguage.GERMAN -> "Ein dauerhafter Account für alle Ihre Chats, Freunde in der Nähe und Momente."
+        AppLanguage.RUSSIAN -> "Постоянный аккаунт для всех чатов, друзей поблизости и моментов."
+        AppLanguage.PORTUGUESE -> "Uma conta permanente para todos os seus bate-papos, amigos e momentos."
+        AppLanguage.INDONESIAN -> "Satu akun permanen untuk obrolan, teman sekitar, dan momen berharga Anda."
+        else -> "One permanent account for all your chats, nearby friends, and moments."
+    }
+
+    fun googleSignInButton(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "继续使用 Google 账号"
+        AppLanguage.JAPANESE -> "Google で続行"
+        AppLanguage.KOREAN -> "Google로 계속하기"
+        AppLanguage.ARABIC -> "المتابعة باستخدام Google"
+        AppLanguage.SPANISH -> "Continuar con Google"
+        AppLanguage.FRENCH -> "Continuer avec Google"
+        AppLanguage.GERMAN -> "Mit Google fortfahren"
+        AppLanguage.RUSSIAN -> "Продолжить с Google"
+        AppLanguage.PORTUGUESE -> "Continuar com o Google"
+        AppLanguage.INDONESIAN -> "Lanjutkan dengan Google"
+        else -> "Continue with Google"
+    }
+
+    fun googleSignInBenefit1(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "永久 ID 与动态保存"
+        AppLanguage.JAPANESE -> "永久 ID と投稿の保存"
+        AppLanguage.KOREAN -> "영구 ID 및 모먼트 보존"
+        AppLanguage.ARABIC -> "معرّف دائم وحفظ اللحظات"
+        AppLanguage.SPANISH -> "ID permanente y momentos seguros"
+        AppLanguage.FRENCH -> "ID permanent et moments conservés"
+        AppLanguage.GERMAN -> "Dauerhafte ID & sichere Momente"
+        AppLanguage.RUSSIAN -> "Постоянный ID и сохранение данных"
+        AppLanguage.PORTUGUESE -> "ID permanente e momentos salvos"
+        AppLanguage.INDONESIAN -> "ID Akun & Momen Permanen"
+        else -> "Permanent ID & Moments"
+    }
+
+    fun googleSignInBenefit1Desc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "您的动态、照片与聊天记录在重新登录时永不丢失。"
+        AppLanguage.JAPANESE -> "再ログイン時も投稿や写真、チャットが消えることはありません。"
+        AppLanguage.KOREAN -> "다시 로그인해도 모먼트, 사진, 대화 내용이 사라지지 않습니다."
+        AppLanguage.ARABIC -> "لن تضيع لحظاتك أو صورك أو محادثاتك عند تسجيل الدخول مرة أخرى."
+        AppLanguage.SPANISH -> "Tus momentos, fotos y chats permanecen seguros al volver a entrar."
+        AppLanguage.FRENCH -> "Vos moments, photos et discussions restent intacts à chaque reconnexion."
+        AppLanguage.GERMAN -> "Ihre Momente, Fotos und Chats gehen beim erneuten Anmelden nicht verloren."
+        AppLanguage.RUSSIAN -> "Ваши моменты, фото и чаты надежно сохраняются при повторном входе."
+        AppLanguage.PORTUGUESE -> "Seus momentos, fotos e conversas não desaparecem ao entrar novamente."
+        AppLanguage.INDONESIAN -> "Momen, foto, dan cerita Anda tersimpan aman dan tidak akan hilang saat login ulang."
+        else -> "Your moments, photos, and stories are securely preserved and won't vanish when re-logging."
+    }
+
+    fun googleSignInBenefit2(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "一键即开，无需记密码"
+        AppLanguage.JAPANESE -> "パスワード不要のワンタップログイン"
+        AppLanguage.KOREAN -> "비밀번호 없는 원클릭 간편 로그인"
+        AppLanguage.ARABIC -> "تسجيل دخول فوري بنقرة واحدة"
+        AppLanguage.SPANISH -> "Acceso en 1 clic sin contraseñas"
+        AppLanguage.FRENCH -> "Connexion en 1 clic sans mot de passe"
+        AppLanguage.GERMAN -> "1-Klick-Anmeldung ohne Passwort"
+        AppLanguage.RUSSIAN -> "Вход в 1 клик без паролей"
+        AppLanguage.PORTUGUESE -> "Login em 1 clique sem senhas"
+        AppLanguage.INDONESIAN -> "Aman & Bebas Lupa Sandi"
+        else -> "1-Click Password-Free Login"
+    }
+
+    fun googleSignInBenefit2Desc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "受 Google Identity 安全保护，无需繁琐记忆密码。"
+        AppLanguage.JAPANESE -> "Google の高水準セキュリティで、パスワードを忘れる心配がありません。"
+        AppLanguage.KOREAN -> "Google Identity의 검증된 보안으로 비밀번호 분실 걱정 없이 안전합니다."
+        AppLanguage.ARABIC -> "محمي بنظام أمان Google، دون الحاجة لحفظ أو إعادة تعيين كلمات المرور."
+        AppLanguage.SPANISH -> "Protegido por Google Identity, sin el estrés de olvidar contraseñas."
+        AppLanguage.FRENCH -> "Sécurisé par Google Identity, fini les oublis de mot de passe."
+        AppLanguage.GERMAN -> "Geschützt durch Google Identity, kein lästiges Merken von Passwörtern."
+        AppLanguage.RUSSIAN -> "Защищено Google Identity — забудьте о восстановлении паролей."
+        AppLanguage.PORTUGUESE -> "Protegido pelo Google Identity, sem a dor de cabeça de esquecer senhas."
+        AppLanguage.INDONESIAN -> "Masuk instan terlindungi oleh sistem Google Identity, bebas repot lupa sandi."
+        else -> "Instant login protected by Google Identity without password hassles."
+    }
+
+    fun googleSignInBenefit3(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "即时头像与个人资料"
+        AppLanguage.JAPANESE -> "プロフィールの自動設定"
+        AppLanguage.KOREAN -> "프로필 자동 연결"
+        AppLanguage.ARABIC -> "ملف شخصي جاهز فوراً"
+        AppLanguage.SPANISH -> "Perfil listo al instante"
+        AppLanguage.FRENCH -> "Profil prêt instantanément"
+        AppLanguage.GERMAN -> "Profil sofort einsatzbereit"
+        AppLanguage.RUSSIAN -> "Мгновенная настройка профиля"
+        AppLanguage.PORTUGUESE -> "Perfil pronto instantaneamente"
+        AppLanguage.INDONESIAN -> "Profil Otomatis Terhubung"
+        else -> "Instant Profile Connection"
+    }
+
+    fun googleSignInBenefit3Desc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "名称与头像立即可用，轻松结识新朋友。"
+        AppLanguage.JAPANESE -> "お名前やアイコンがそのまま使え、すぐに友達作りをはじめられます。"
+        AppLanguage.KOREAN -> "이름과 프로필 사진이 바로 연동되어 즉시 소통을 시작할 수 있습니다."
+        AppLanguage.ARABIC -> "اسمك وصورتك الشخصية جاهزان مباشرة لبدء التعرف على أصدقاء جدد."
+        AppLanguage.SPANISH -> "Tu nombre y foto de avatar listos para chatear de inmediato."
+        AppLanguage.FRENCH -> "Votre nom et votre avatar sont immédiatement prêts pour échanger."
+        AppLanguage.GERMAN -> "Ihr Name und Avatar sind sofort startklar für neue Bekanntschaften."
+        AppLanguage.RUSSIAN -> "Ваше имя и аватар сразу готовы к общению с новыми людьми."
+        AppLanguage.PORTUGUESE -> "Seu nome e foto prontos para começar a conversar na hora."
+        AppLanguage.INDONESIAN -> "Nama dan foto profil Google langsung siap untuk menyapa teman-teman baru."
+        else -> "Your Google name and avatar are immediately ready to meet new friends."
+    }
+
+    fun googleSignInTrustBadge(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "Google 官方安全验证与隐私保护"
+        AppLanguage.JAPANESE -> "Google 公式認証による高い安全性とプライバシー"
+        AppLanguage.KOREAN -> "Google 공식 인증 및 개인정보 보호"
+        AppLanguage.ARABIC -> "حماية وأمان موثوق به من Google"
+        AppLanguage.SPANISH -> "Autenticación segura y protegida por Google"
+        AppLanguage.FRENCH -> "Authentification sécurisée certifiée par Google"
+        AppLanguage.GERMAN -> "Sichere Authentifizierung durch Google"
+        AppLanguage.RUSSIAN -> "Безопасная аутентификация через сервисы Google"
+        AppLanguage.PORTUGUESE -> "Autenticação segura protegida pelo Google"
+        AppLanguage.INDONESIAN -> "Autentikasi resmi & aman terlindungi Google Identity"
+        else -> "Official secure authentication protected by Google Identity"
+    }
 }
