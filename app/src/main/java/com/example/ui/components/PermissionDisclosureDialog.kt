@@ -10,12 +10,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -488,32 +490,35 @@ fun PermissionDisclosureDialog(
         )
     ) {
         BoxWithConstraints(
-            modifier = modifier.fillMaxSize(),
+            modifier = modifier
+                .fillMaxSize()
+                .statusBarsPadding(),
             contentAlignment = Alignment.BottomCenter
         ) {
-            val minCardHeight = (maxHeight * 0.72f).coerceAtLeast(420.dp)
+            val topPadding = if (maxHeight < 640.dp) 80.dp else 140.dp
             Card(
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .defaultMinSize(minHeight = minCardHeight)
+                    .padding(top = topPadding)
+                    .fillMaxHeight()
                     .testTag("dialog_permission_disclosure_${type.name.lowercase()}")
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .defaultMinSize(minHeight = minCardHeight)
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 24.dp, vertical = 22.dp)
+                        .fillMaxSize()
+                        .padding(start = 24.dp, end = 24.dp, top = 22.dp, bottom = 12.dp)
                         .navigationBarsPadding()
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .verticalScroll(rememberScrollState())
                     ) {
                         // Ikon Ilustrasi Elegan di Lingkaran Lembut
                         Box(
@@ -608,7 +613,7 @@ fun PermissionDisclosureDialog(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 18.dp)
+                            .padding(top = 14.dp)
                     ) {
                         // Tombol Aksi Utama "Mengerti" (Gradient Pill)
                         Button(
