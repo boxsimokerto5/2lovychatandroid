@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -94,6 +95,7 @@ fun LoginScreen(
     onPerformGoogleLogin: suspend (googleUser: com.example.util.GoogleAuthHelper.GoogleUserResult) -> com.example.data.AuthResult,
     onGuestLogin: () -> Unit = {},
     onNavigateToSupabaseConfig: () -> Unit = {},
+    onRequestPermissionSetup: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var usernameInput by remember { mutableStateOf("") }
@@ -640,6 +642,32 @@ fun LoginScreen(
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onRequestPermissionSetup() }
+                            .padding(vertical = 4.dp)
+                            .testTag("btn_login_permission_setup")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Security,
+                            contentDescription = null,
+                            tint = EmeraldGreen,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = if (language == com.example.util.AppLanguage.INDONESIAN) "Izin Akses & Privasi Aplikasi" else "App Permissions & Privacy",
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = EmeraldGreen
+                        )
+                    }
                 }
             }
         }

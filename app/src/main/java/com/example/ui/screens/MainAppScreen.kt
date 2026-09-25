@@ -60,6 +60,16 @@ import com.example.ui.theme.EmeraldGreen
 import com.example.ui.theme.NeutralBorder
 import com.example.ui.theme.NeutralMedium
 
+/**
+ * Langkah tahapan deklarasi izin sebelum login (Prominent Disclosure Onboarding)
+ */
+enum class PreLoginPermissionStep {
+    NONE,
+    NOTIFICATION,
+    CAMERA,
+    LOCATION
+}
+
 @Composable
 fun MainAppScreen(
     viewModel: LovyChatViewModel,
@@ -67,52 +77,179 @@ fun MainAppScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val prefs = remember { context.getSharedPreferences("lovy_prefs", Context.MODE_PRIVATE) }
+    var currentDisclosureStep by remember { mutableStateOf(PreLoginPermissionStep.NONE) }
 
-    // Launcher izin notifikasi dengan alur deklarasi terkemuka
+    fun getNextPermissionStep(afterStep: PreLoginPermissionStep): PreLoginPermissionStep {
+        val needsNotif = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        val needsCamera = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED
+        val needsLocation = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
+
+        return when (afterStep) {
+            PreLoginPermissionStep.NONE -> {
+                when {
+                    needsNotif -> PreLoginPermissionStep.NOTIFICATION
+                    needsCamera -> PreLoginPermissionStep.CAMERA
+                    needsLocation -> PreLoginPermissionStep.LOCATION
+                    else -> PreLoginPermissionStep.NONE
+                }
+            }
+            PreLoginPermissionStep.NOTIFICATION -> {
+                when {
+                    needsCamera -> PreLoginPermissionStep.CAMERA
+                    needsLocation -> PreLoginPermissionStep.LOCATION
+                    else -> PreLoginPermissionStep.NONE
+                }
+            }
+            PreLoginPermissionStep.CAMERA -> {
+                when {
+                    needsLocation -> PreLoginPermissionStep.LOCATION
+                    else -> PreLoginPermissionStep.NONE
+                }
+            }
+            PreLoginPermissionStep.LOCATION -> PreLoginPermissionStep.NONE
+        }
+    }
+
+    // Launcher izin notifikasi
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
         android.util.Log.d("MainAppScreen", "POST_NOTIFICATIONS granted: $granted")
+        val next = getNextPermissionStep(PreLoginPermissionStep.NOTIFICATION)
+        currentDisclosureStep = next
+        if (next == PreLoginPermissionStep.NONE) {
+            prefs.edit()
+                .putBoolean("seen_pre_login_permissions", true)
+                .putBoolean("seen_notif_disclosure", true)
+                .apply()
+        }
     }
 
-    var showNotificationDisclosure by remember { mutableStateOf(false) }
+    // Launcher izin kamera
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        android.util.Log.d("MainAppScreen", "CAMERA granted: $granted")
+        val next = getNextPermissionStep(PreLoginPermissionStep.CAMERA)
+        currentDisclosureStep = next
+        if (next == PreLoginPermissionStep.NONE) {
+            prefs.edit()
+                .putBoolean("seen_pre_login_permissions", true)
+                .apply()
+        }
+    }
+
+    // Launcher izin lokasi
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { results ->
+        val granted = results[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                results[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        viewModel.updateLocationPermission(granted)
+        android.util.Log.d("MainAppScreen", "LOCATION granted: $granted")
+        currentDisclosureStep = PreLoginPermissionStep.NONE
+        prefs.edit()
+            .putBoolean("seen_pre_login_permissions", true)
+            .apply()
+    }
 
     LaunchedEffect(uiState.currentScreen) {
-        if (uiState.currentScreen is CurrentScreen.Main && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        if (uiState.currentScreen is CurrentScreen.Login) {
+            val hasSeenPreLogin = prefs.getBoolean("seen_pre_login_permissions", false)
+            if (!hasSeenPreLogin) {
+                val firstStep = getNextPermissionStep(PreLoginPermissionStep.NONE)
+                if (firstStep != PreLoginPermissionStep.NONE) {
+                    currentDisclosureStep = firstStep
+                } else {
+                    prefs.edit().putBoolean("seen_pre_login_permissions", true).apply()
+                }
+            }
+        } else if (uiState.currentScreen is CurrentScreen.Main && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val isGranted = ContextCompat.checkSelfPermission(
                 context,
                 Manifest.permission.POST_NOTIFICATIONS
             ) == PackageManager.PERMISSION_GRANTED
-            val prefs = context.getSharedPreferences("lovy_prefs", Context.MODE_PRIVATE)
             val hasSeenDisclosure = prefs.getBoolean("seen_notif_disclosure", false)
-            if (!isGranted && !hasSeenDisclosure) {
-                showNotificationDisclosure = true
+            if (!isGranted && !hasSeenDisclosure && currentDisclosureStep == PreLoginPermissionStep.NONE) {
+                currentDisclosureStep = PreLoginPermissionStep.NOTIFICATION
             }
         }
     }
 
-    if (showNotificationDisclosure) {
-        PermissionDisclosureDialog(
-            type = DisclosureType.NOTIFICATION,
-            language = uiState.language,
-            onConfirm = {
-                showNotificationDisclosure = false
-                context.getSharedPreferences("lovy_prefs", Context.MODE_PRIVATE)
-                    .edit()
-                    .putBoolean("seen_notif_disclosure", true)
-                    .apply()
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+    // Tampilkan dialog deklarasi terkemuka berurutan sesuai step aktif
+    when (currentDisclosureStep) {
+        PreLoginPermissionStep.NOTIFICATION -> {
+            PermissionDisclosureDialog(
+                type = DisclosureType.NOTIFICATION,
+                language = uiState.language,
+                onConfirm = {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        val next = getNextPermissionStep(PreLoginPermissionStep.NOTIFICATION)
+                        currentDisclosureStep = next
+                        if (next == PreLoginPermissionStep.NONE) {
+                            prefs.edit()
+                                .putBoolean("seen_pre_login_permissions", true)
+                                .putBoolean("seen_notif_disclosure", true)
+                                .apply()
+                        }
+                    }
+                },
+                onDismiss = {
+                    val next = getNextPermissionStep(PreLoginPermissionStep.NOTIFICATION)
+                    currentDisclosureStep = next
+                    if (next == PreLoginPermissionStep.NONE) {
+                        prefs.edit()
+                            .putBoolean("seen_pre_login_permissions", true)
+                            .putBoolean("seen_notif_disclosure", true)
+                            .apply()
+                    }
                 }
-            },
-            onDismiss = {
-                showNotificationDisclosure = false
-                context.getSharedPreferences("lovy_prefs", Context.MODE_PRIVATE)
-                    .edit()
-                    .putBoolean("seen_notif_disclosure", true)
-                    .apply()
-            }
-        )
+            )
+        }
+        PreLoginPermissionStep.CAMERA -> {
+            PermissionDisclosureDialog(
+                type = DisclosureType.CAMERA,
+                language = uiState.language,
+                onConfirm = {
+                    cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                },
+                onDismiss = {
+                    val next = getNextPermissionStep(PreLoginPermissionStep.CAMERA)
+                    currentDisclosureStep = next
+                    if (next == PreLoginPermissionStep.NONE) {
+                        prefs.edit()
+                            .putBoolean("seen_pre_login_permissions", true)
+                            .apply()
+                    }
+                }
+            )
+        }
+        PreLoginPermissionStep.LOCATION -> {
+            PermissionDisclosureDialog(
+                type = DisclosureType.LOCATION,
+                language = uiState.language,
+                onConfirm = {
+                    locationPermissionLauncher.launch(
+                        arrayOf(
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                        )
+                    )
+                },
+                onDismiss = {
+                    currentDisclosureStep = PreLoginPermissionStep.NONE
+                    prefs.edit()
+                        .putBoolean("seen_pre_login_permissions", true)
+                        .apply()
+                }
+            )
+        }
+        PreLoginPermissionStep.NONE -> { /* Tidak ada dialog ditampilkan */ }
     }
 
     // Handle back button when on child screens
@@ -137,7 +274,10 @@ fun MainAppScreen(
                 onPerformLogin = { username, password -> viewModel.performLogin(username, password) },
                 onPerformRegister = { username, password, gender -> viewModel.performRegister(username, password, gender) },
                 onPerformGoogleLogin = { googleUser -> viewModel.performGoogleLogin(googleUser) },
-                onNavigateToSupabaseConfig = { viewModel.navigateTo(CurrentScreen.SupabaseConfig) }
+                onNavigateToSupabaseConfig = { viewModel.navigateTo(CurrentScreen.SupabaseConfig) },
+                onRequestPermissionSetup = {
+                    currentDisclosureStep = PreLoginPermissionStep.NOTIFICATION
+                }
             )
         }
         is CurrentScreen.Nearby -> {
