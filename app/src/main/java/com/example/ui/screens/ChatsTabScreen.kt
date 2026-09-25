@@ -27,6 +27,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddComment
 import androidx.compose.material.icons.filled.Check
@@ -63,9 +64,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -210,34 +213,70 @@ fun ChatsTabScreen(
 
                     Spacer(modifier = Modifier.height(6.dp))
 
-                    // Search Bar (Compact & Sleek)
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        placeholder = { Text(com.example.util.AppStrings.chatsSearchPlaceholder(language), fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f)) },
-                        leadingIcon = {
+                    // Search Bar (Compact, Sleek, Vertically Centered - Never Submerged)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.White.copy(alpha = 0.2f))
+                            .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
+                            .padding(horizontal = 12.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = null,
-                                tint = Color.White.copy(alpha = 0.8f),
-                                modifier = Modifier.size(16.dp)
+                                tint = Color.White.copy(alpha = 0.85f),
+                                modifier = Modifier.size(18.dp)
                             )
-                        },
-                        singleLine = true,
-                        shape = RoundedCornerShape(10.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = Color.White.copy(alpha = 0.2f),
-                            unfocusedContainerColor = Color.White.copy(alpha = 0.15f),
-                            focusedBorderColor = Color.White.copy(alpha = 0.4f),
-                            unfocusedBorderColor = Color.Transparent,
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(42.dp)
-                            .testTag("chats_search_input")
-                    )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Box(
+                                modifier = Modifier.weight(1f),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                if (searchQuery.isEmpty()) {
+                                    Text(
+                                        text = com.example.util.AppStrings.chatsSearchPlaceholder(language),
+                                        fontSize = 13.5.sp,
+                                        color = Color.White.copy(alpha = 0.7f),
+                                        maxLines = 1
+                                    )
+                                }
+                                BasicTextField(
+                                    value = searchQuery,
+                                    onValueChange = { searchQuery = it },
+                                    singleLine = true,
+                                    textStyle = TextStyle(
+                                        color = Color.White,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Normal
+                                    ),
+                                    cursorBrush = SolidColor(Color.White),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .testTag("chats_search_input")
+                                )
+                            }
+                            if (searchQuery.isNotBlank()) {
+                                IconButton(
+                                    onClick = { searchQuery = "" },
+                                    modifier = Modifier.size(24.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = com.example.util.AppStrings.btnCancel(language),
+                                        tint = Color.White.copy(alpha = 0.85f),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         },
