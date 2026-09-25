@@ -794,9 +794,20 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
     private fun loadMyMoments() {
         try {
-            val savedIds = prefs.getStringSet("my_moment_ids", emptySet()) ?: emptySet()
+            val myId = _uiState.value.myLovyId.trim()
+            if (myId.isBlank()) {
+                _uiState.update { it.copy(myMomentIds = emptySet()) }
+                return
+            }
+            val userMomentIdsKey = "my_moment_ids_${myId}"
+            val savedIds = prefs.getStringSet(userMomentIdsKey, emptySet()) ?: emptySet()
             val locallySavedMoments = getLocalSavedMoments()
-            val combinedIds = (savedIds + locallySavedMoments.map { it.id }).toSet()
+
+            // Filter ketat: HANYA momen yang benar-benar dibuat oleh user aktif ini (berdasarkan authorId)
+            val myLocalMoments = locallySavedMoments.filter { m ->
+                m.authorId.trim().equals(myId, ignoreCase = true)
+            }
+            val combinedIds = (savedIds + myLocalMoments.map { it.id }).toSet()
 
             _uiState.update { 
                 it.copy(
@@ -820,6 +831,11 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 list
             } else mutableListOf()
 
+            val myId = _uiState.value.myLovyId.trim()
+            val resolvedAuthorId = moment.authorId.takeIf { it.isNotBlank() && !it.equals("me", ignoreCase = true) }
+                ?: myId.takeIf { it.isNotBlank() }
+                ?: "me"
+
             // Buat json object untuk moment baru
             val obj = org.json.JSONObject().apply {
                 put("id", moment.id)
@@ -832,7 +848,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 if (moment.imageUrl != null) put("imageUrl", moment.imageUrl)
                 if (moment.authorAvatarUrl != null) put("authorAvatarUrl", moment.authorAvatarUrl)
                 if (moment.locationTag != null) put("locationTag", moment.locationTag)
-                put("authorId", moment.authorId)
+                put("authorId", resolvedAuthorId)
             }
             // Sisipkan di posisi terdepan dan batasi 50 momen terakhir
             val updated = (listOf(obj) + currentList.filterNot { it.optString("id") == moment.id }).take(50)
@@ -1449,19 +1465,27 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     val locallySaved = getLocalSavedMoments()
                     val myId = _uiState.value.myLovyId
                     val myName = _uiState.value.myName
+                    val cleanMyId = myId.trim()
 
-                    // Temukan momen milik pengguna saat ini (dari authorId atau authorName)
+                    // Temukan HANYA momen milik pengguna saat ini (strictly berdasarkan authorId)
                     val myRemoteMoments = remoteMoments.filter { m ->
-                        (myId.isNotBlank() && m.authorId == myId) ||
-                        (myName.isNotBlank() && m.authorName.equals(myName, ignoreCase = true))
+                        cleanMyId.isNotBlank() && m.authorId.trim().equals(cleanMyId, ignoreCase = true)
                     }
                     val myRemoteIds = myRemoteMoments.map { it.id }.toSet()
-                    val allMyIds = (_uiState.value.myMomentIds + myRemoteIds + locallySaved.map { it.id }).toSet()
+                    val myLocalOnlyIds = locallySaved.filter { m ->
+                        cleanMyId.isNotBlank() && m.authorId.trim().equals(cleanMyId, ignoreCase = true)
+                    }.map { it.id }
+                    val allMyIds = (_uiState.value.myMomentIds.filter { id ->
+                        locallySaved.any { it.id == id && cleanMyId.isNotBlank() && it.authorId.trim().equals(cleanMyId, ignoreCase = true) }
+                    } + myRemoteIds + myLocalOnlyIds).toSet()
 
                     // Simpan cadangan lokal momen milik user sendiri
                     myRemoteMoments.forEach { saveMyLocalMoment(it) }
                     try {
-                        prefs.edit().putStringSet("my_moment_ids", allMyIds).apply()
+                        if (cleanMyId.isNotBlank()) {
+                            val userMomentIdsKey = "my_moment_ids_${cleanMyId}"
+                            prefs.edit().putStringSet(userMomentIdsKey, allMyIds).apply()
+                        }
                     } catch (_: Throwable) {}
 
                     val myLocal = (_uiState.value.moments.filter { it.id in allMyIds } + locallySaved).distinctBy { it.id }
@@ -1516,17 +1540,25 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                         val locallySaved = getLocalSavedMoments()
                         val myId = _uiState.value.myLovyId
                         val myName = _uiState.value.myName
+                        val cleanMyId = myId.trim()
 
                         val myRemoteMoments = remoteMoments.filter { m ->
-                            (myId.isNotBlank() && m.authorId == myId) ||
-                            (myName.isNotBlank() && m.authorName.equals(myName, ignoreCase = true))
+                            cleanMyId.isNotBlank() && m.authorId.trim().equals(cleanMyId, ignoreCase = true)
                         }
                         val myRemoteIds = myRemoteMoments.map { it.id }.toSet()
-                        val allMyIds = (_uiState.value.myMomentIds + myRemoteIds + locallySaved.map { it.id }).toSet()
+                        val myLocalOnlyIds = locallySaved.filter { m ->
+                            cleanMyId.isNotBlank() && m.authorId.trim().equals(cleanMyId, ignoreCase = true)
+                        }.map { it.id }
+                        val allMyIds = (_uiState.value.myMomentIds.filter { id ->
+                            locallySaved.any { it.id == id && cleanMyId.isNotBlank() && it.authorId.trim().equals(cleanMyId, ignoreCase = true) }
+                        } + myRemoteIds + myLocalOnlyIds).toSet()
 
                         myRemoteMoments.forEach { saveMyLocalMoment(it) }
                         try {
-                            prefs.edit().putStringSet("my_moment_ids", allMyIds).apply()
+                            if (cleanMyId.isNotBlank()) {
+                                val userMomentIdsKey = "my_moment_ids_${cleanMyId}"
+                                prefs.edit().putStringSet(userMomentIdsKey, allMyIds).apply()
+                            }
                         } catch (_: Throwable) {}
 
                         val myLocal = (_uiState.value.moments.filter { it.id in allMyIds } + locallySaved).distinctBy { it.id }
@@ -1752,6 +1784,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     conversations = emptyList(),
                     messagesMap = emptyMap(),
                     moments = initialMoments,
+                    myMomentIds = emptySet(),
                     oceanBottles = emptyList(),
                     nearbyUsers = emptyList()
                 )
@@ -1794,6 +1827,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     conversations = emptyList(),
                     messagesMap = emptyMap(),
                     moments = initialMoments,
+                    myMomentIds = emptySet(),
                     oceanBottles = emptyList(),
                     nearbyUsers = emptyList()
                 )
@@ -1852,10 +1886,18 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 activeChatId = null,
                 conversations = emptyList(),
                 moments = emptyList(),
+                myMomentIds = emptySet(),
                 oceanBottles = emptyList(),
-                nearbyUsers = emptyList()
+                nearbyUsers = emptyList(),
+                myLovyId = "",
+                myName = "",
+                myBio = "",
+                userProfile = UserProfile()
             )
         }
+        try {
+            prefs.edit().remove("my_moment_ids").apply()
+        } catch (_: Throwable) {}
     }
 
     /**
@@ -2996,9 +3038,12 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 ?: "Surabaya",
             authorId = authorId
         )
+        val userMomentIdsKey = if (authorId.isNotBlank()) "my_moment_ids_${authorId}" else "my_moment_ids"
         val newMomentIds = _uiState.value.myMomentIds + newMoment.id
         try {
-            prefs.edit().putStringSet("my_moment_ids", newMomentIds).apply()
+            if (authorId.isNotBlank()) {
+                prefs.edit().putStringSet(userMomentIdsKey, newMomentIds).apply()
+            }
             saveMyLocalMoment(newMoment)
         } catch (_: Throwable) {
         }
@@ -3026,9 +3071,28 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
     fun deleteMoment(momentId: String) {
         recordFeatureClick()
+        val myId = _uiState.value.myLovyId.trim()
+        val targetMoment = _uiState.value.moments.find { it.id == momentId }
+
+        // Validasi hak kepemilikan: HANYA pembuat momen asli (author) yang boleh menghapus
+        val isAuthor = targetMoment == null ||
+            (myId.isNotBlank() && targetMoment.authorId.trim().equals(myId, ignoreCase = true)) ||
+            (momentId in _uiState.value.myMomentIds && (targetMoment.authorId.isBlank() || targetMoment.authorId.equals("me", ignoreCase = true)))
+
+        if (!isAuthor) {
+            Log.w("LovyChatViewModel", "Percobaan menghapus momen orang lain dibatalkan: momentId=$momentId, user=$myId, author=${targetMoment?.authorId}")
+            try {
+                android.widget.Toast.makeText(getApplication(), "Hanya pembuat momen yang dapat menghapus postingan ini", android.widget.Toast.LENGTH_SHORT).show()
+            } catch (_: Throwable) {}
+            return
+        }
+
+        val userMomentIdsKey = if (myId.isNotBlank()) "my_moment_ids_${myId}" else "my_moment_ids"
         val newMomentIds = _uiState.value.myMomentIds - momentId
         try {
-            prefs.edit().putStringSet("my_moment_ids", newMomentIds).apply()
+            if (myId.isNotBlank()) {
+                prefs.edit().putStringSet(userMomentIdsKey, newMomentIds).apply()
+            }
             removeMyLocalMoment(momentId)
         } catch (_: Throwable) {
         }
@@ -3040,8 +3104,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
         try {
             android.widget.Toast.makeText(getApplication(), "Momen berhasil dihapus", android.widget.Toast.LENGTH_SHORT).show()
-        } catch (_: Throwable) {
-        }
+        } catch (_: Throwable) {}
         // Hapus dari Supabase jika tersambung (hanya jika bukan mode tamu)
         if (!_uiState.value.isGuest) {
             viewModelScope.launch {

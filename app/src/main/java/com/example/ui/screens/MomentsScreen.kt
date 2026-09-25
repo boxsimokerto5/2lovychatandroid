@@ -355,11 +355,21 @@ fun MomentsScreen(
                 }
             } else {
                 moments.forEachIndexed { index, item ->
-                val isMyMoment = item.id in myMomentIds ||
-                        item.authorId == "me" ||
-                        (currentUserId.isNotBlank() && item.authorId == currentUserId) ||
-                        (currentUserName.isNotBlank() && item.authorName.equals(currentUserName, ignoreCase = true))
-                item(key = item.id) {
+                    val cleanMyId = currentUserId.trim()
+                    val cleanAuthorId = item.authorId.trim()
+                    val isMyMoment = when {
+                        // User belum login / ID kosong tidak memiliki hak hapus
+                        cleanMyId.isBlank() -> false
+                        // 1. Pemilik utama: authorId cocok persis dengan currentUserId
+                        cleanAuthorId.isNotBlank() && !cleanAuthorId.equals("me", ignoreCase = true) -> {
+                            cleanAuthorId.equals(cleanMyId, ignoreCase = true)
+                        }
+                        // 2. Cadangan: momen baru diinput di sesi ini pada perangkat ini
+                        else -> {
+                            item.id in myMomentIds && (cleanAuthorId.isBlank() || cleanAuthorId.equals("me", ignoreCase = true) || cleanAuthorId.equals(cleanMyId, ignoreCase = true))
+                        }
+                    }
+                    item(key = item.id) {
                     MomentCard(
                         item = item,
                         isMyMoment = isMyMoment,
@@ -1267,32 +1277,6 @@ fun MomentCard(
                             fontSize = 12.5.sp,
                             color = NeutralMedium,
                             fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-
-                // Delete Button (if my moment)
-                if (isMyMoment && onDeleteClick != null) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable { showDeleteConfirm = true }
-                            .padding(horizontal = 8.dp, vertical = 6.dp)
-                            .testTag("btn_delete_action_${item.id}")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.DeleteOutline,
-                            contentDescription = AppStrings.chatsBtnDelete(language),
-                            tint = Color(0xFFD32F2F),
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = AppStrings.chatsBtnDelete(language),
-                            fontSize = 12.5.sp,
-                            color = Color(0xFFD32F2F),
-                            fontWeight = FontWeight.SemiBold
                         )
                     }
                 }
