@@ -3908,4 +3908,482 @@ object AppStrings {
         AppLanguage.INDONESIAN -> "Autentikasi resmi & aman terlindungi Google Identity"
         else -> "Official secure authentication protected by Google Identity"
     }
+
+    // Privacy Policy & Terms ModalBottomSheet Strings
+    fun privacyPolicyDialogTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "隐私政策与条款"
+        AppLanguage.JAPANESE -> "プライバシーポリシー & 利用規約"
+        AppLanguage.KOREAN -> "개인정보 처리방침 & 이용약관"
+        AppLanguage.ARABIC -> "سياسة الخصوصية والشروط"
+        AppLanguage.SPANISH -> "Política de Privacidad y Términos"
+        AppLanguage.FRENCH -> "Politique de confidentialité & Conditions"
+        AppLanguage.GERMAN -> "Datenschutzerklärung & Bedingungen"
+        AppLanguage.RUSSIAN -> "Политика конфиденциальности и условия"
+        AppLanguage.PORTUGUESE -> "Política de Privacidade e Termos"
+        AppLanguage.INDONESIAN -> "Kebijakan Privasi & Ketentuan"
+        else -> "Privacy Policy & Terms"
+    }
+
+    fun privacyPolicyDialogIntro(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "Lovy Chat 致力于严格遵循 Google Play 开发者政策标准，保护用户数据隐私与安全。"
+        AppLanguage.JAPANESE -> "Lovy Chat は、Google Play デベロッパー ポリシーの基準に準拠し、ユーザーのデータ プライバシーとセキュリティの保護に取り組んでいます。"
+        AppLanguage.KOREAN -> "Lovy Chat은 Google Play 개발자 프로그램 정책 표준에 따라 사용자 개인정보 보호 및 데이터 보안을 준수합니다."
+        AppLanguage.ARABIC -> "يلتزم Lovy Chat بحماية خصوصية بيانات المستخدمين وأمانهم وفقاً لمعايير سياسة مطوري Google Play."
+        AppLanguage.SPANISH -> "Lovy Chat se compromete a proteger la privacidad y seguridad de los datos según las políticas para desarrolladores de Google Play."
+        AppLanguage.FRENCH -> "Lovy Chat s'engage à protéger la confidentialité et la sécurité des données selon les règles du programme pour les développeurs Google Play."
+        AppLanguage.GERMAN -> "Lovy Chat verpflichtet sich zum Schutz der Datenprivatsphäre und -sicherheit gemäß den Google Play-Entwicklerrichtlinien."
+        AppLanguage.RUSSIAN -> "Lovy Chat соблюдает стандарты политики Google Play для разработчиков по защите данных и безопасности."
+        AppLanguage.PORTUGUESE -> "O Lovy Chat tem o compromisso de proteger a privacidade e segurança dos dados conforme as políticas do desenvolvedor do Google Play."
+        AppLanguage.INDONESIAN -> "Lovy Chat berkomitmen melindungi privasi data dan keamanan pengguna sesuai standar Google Play Developer Policy."
+        else -> "Lovy Chat is committed to protecting user data privacy and security in accordance with Google Play Developer Policy standards."
+    }
+
+    fun privacyPolicySec1Title(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "📍 1. 位置权限 (GPS)"
+        AppLanguage.JAPANESE -> "📍 1. 位置情報の権限 (GPS)"
+        AppLanguage.KOREAN -> "📍 1. 위치 권한 (GPS)"
+        AppLanguage.ARABIC -> "📍 1. إذن الموقع (GPS)"
+        AppLanguage.SPANISH -> "📍 1. Permiso de ubicación (GPS)"
+        AppLanguage.FRENCH -> "📍 1. Autorisation de localisation (GPS)"
+        AppLanguage.GERMAN -> "📍 1. Standortberechtigung (GPS)"
+        AppLanguage.RUSSIAN -> "📍 1. Доступ к геоданным (GPS)"
+        AppLanguage.PORTUGUESE -> "📍 1. Permissão de Localização (GPS)"
+        AppLanguage.INDONESIAN -> "📍 1. Penggunaan Izin Lokasi (GPS)"
+        else -> "📍 1. Location Permission (GPS)"
+    }
+
+    fun privacyPolicySec1Content(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "• 仅在应用程序前台打开时访问位置。\n• 仅用于“附近用户”（好友雷达）功能。\n• 您可以随时在“隐私与位置”菜单中开启隐身模式或隐藏精确距离。"
+        AppLanguage.JAPANESE -> "• 位置情報はアプリが起動中で前面にある時のみアクセスされます。\n• 「周辺のユーザー」（友達レーダー）機能のためだけに使用されます。\n• いつでも「プライバシーと位置」設定でゴーストモードの有効化や正確な距離の非表示が可能です。"
+        AppLanguage.KOREAN -> "• 앱이 포그라운드에서 실행 중일 때만 위치에 접근합니다.\n• 오직 '주변 사용자'(친구 레이더) 기능을 위해서만 사용됩니다.\n• 언제든지 '개인정보 및 위치' 메뉴에서 고스트 모드를 켜거나 정확한 거리를 숨길 수 있습니다."
+        AppLanguage.ARABIC -> "• يتم الوصول للموقع فقط أثناء استخدام التطبيق في المقدمة.\n• يُستخدم حصرياً لميزة 'المستخدمون القريبون' (رادار الأصدقاء).\n• يمكنك تفعيل وضع التخفي أو إخفاء المسافة الدقيقة في أي وقت من إعدادات الخصوصية والموقع."
+        AppLanguage.SPANISH -> "• Solo se accede a la ubicación cuando la aplicación está abierta (primer plano).\n• Se utiliza exclusivamente para la función 'Usuarios Cercanos' (Radar de amigos).\n• Puedes activar el Modo Fantasma u ocultar la distancia exacta en Privacidad y Ubicación."
+        AppLanguage.FRENCH -> "• La localisation n'est consultée que lorsque l'application est active (premier plan).\n• Utilisée uniquement pour la fonction 'Utilisateurs proches' (Radar d'amis).\n• Vous pouvez activer le Mode Furtif ou masquer la distance exacte dans Confidentialité et localisation."
+        AppLanguage.GERMAN -> "• Standort wird nur abgefragt, wenn die App aktiv im Vordergrund läuft.\n• Wird ausschließlich für 'Benutzer in der Nähe' (Freunde-Radar) verwendet.\n• Sie können jederzeit den Geistermodus aktivieren oder die genaue Entfernung in den Datenschutz-Einstellungen verbergen."
+        AppLanguage.RUSSIAN -> "• Геолокация используется только при активном приложении (на переднем плане).\n• Используется исключительно для функции «Люди рядом» (Радар друзей).\n• Вы можете включить режим невидимки или скрыть точное расстояние в настройках приватности."
+        AppLanguage.PORTUGUESE -> "• A localização só é acessada quando o app estiver em primeiro plano.\n• Usada apenas para o recurso 'Usuários Próximos' (Radar de Amigos).\n• Você pode ativar o Modo Fantasma ou ocultar a distância exata em Privacidade e Localização."
+        AppLanguage.INDONESIAN -> "• Lokasi hanya diakses saat aplikasi sedang aktif dibuka (Foreground).\n• Digunakan semata-mata untuk fitur 'Pengguna Sekitar' (Radar Teman).\n• Anda dapat mengaktifkan Mode Penyamaran atau menyembunyikan jarak persis kapan saja di menu Privasi & Lokasi."
+        else -> "• Location is accessed only while the app is actively in use (Foreground).\n• Used solely for the 'Nearby Users' feature (Friends Radar).\n• You can enable Ghost Mode or hide exact distance anytime in Privacy & Location settings."
+    }
+
+    fun privacyPolicySec2Title(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "📷 2. 相机权限"
+        AppLanguage.JAPANESE -> "📷 2. カメラの権限"
+        AppLanguage.KOREAN -> "📷 2. 카메라 권한"
+        AppLanguage.ARABIC -> "📷 2. إذن الكاميرا"
+        AppLanguage.SPANISH -> "📷 2. Permiso de cámara"
+        AppLanguage.FRENCH -> "📷 2. Autorisation de l'appareil photo"
+        AppLanguage.GERMAN -> "📷 2. Kamerazugriff"
+        AppLanguage.RUSSIAN -> "📷 2. Доступ к камере"
+        AppLanguage.PORTUGUESE -> "📷 2. Permissão de Câmera"
+        AppLanguage.INDONESIAN -> "📷 2. Penggunaan Izin Kamera"
+        else -> "📷 2. Camera Permission"
+    }
+
+    fun privacyPolicySec2Content(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "• 用于即时扫描好友二维码/条形码。\n• 用于在您选择拍照时直接拍摄头像或聊天图片。\n• 相机绝不在后台运行或录制。"
+        AppLanguage.JAPANESE -> "• 友達のQRコード／バーコードの即座な読み取りに使用されます。\n• カメラ撮影を選んだ場合にプロフィールやチャット用写真の直接撮影に使用されます。\n• バックグラウンドでカメラが動作・録画することは一切ありません。"
+        AppLanguage.KOREAN -> "• 친구의 QR 코드/바코드를 즉시 스캔하는 데 사용됩니다.\n• 카메라 촬영을 선택한 경우 프로필 또는 채팅 사진을 직접 촬영하는 데 사용됩니다.\n• 카메라는 백그라운드에서 절대 작동하지 않습니다."
+        AppLanguage.ARABIC -> "• يُستخدم لمسح رمز الاستجابة السريعة (QR) للأصدقاء فوراً.\n• يُستخدم لالتقاط صورة شخصية أو صور المحادثة مباشرة عند استخدام الكاميرا.\n• لا تسجل الكاميرا أبداً في الخلفية."
+        AppLanguage.SPANISH -> "• Se usa para escanear el código QR/código de barras de amigos al instante.\n• Se usa para tomar fotos de perfil o de chat si decides usar la cámara.\n• La cámara nunca graba en segundo plano."
+        AppLanguage.FRENCH -> "• Utilisé pour scanner instantanément le code QR de vos amis.\n• Utilisé pour prendre des photos de profil ou de discussion avec l'appareil photo.\n• L'appareil photo n'enregistre jamais en arrière-plan."
+        AppLanguage.GERMAN -> "• Wird verwendet, um den QR-Code von Freunden sofort zu scannen.\n• Wird für Profilfotos oder Chat-Aufnahmen bei Kameranutzung verwendet.\n• Die Kamera nimmt niemals im Hintergrund auf."
+        AppLanguage.RUSSIAN -> "• Используется для мгновенного сканирования QR-кода друзей.\n• Используется для фото профиля или снимков для чата при съемке.\n• Камера никогда не работает в фоновом режиме."
+        AppLanguage.PORTUGUESE -> "• Usada para ler QR Codes de amigos instantaneamente.\n• Usada para tirar fotos de perfil ou mensagens ao escolher a câmera.\n• A câmera nunca grava em segundo plano."
+        AppLanguage.INDONESIAN -> "• Digunakan untuk memindai Barcode / QR Code teman secara instan.\n• Digunakan untuk mengambil foto profil atau gambar obrolan secara langsung jika Anda memilih menggunakan kamera.\n• Kamera tidak pernah merekam di latar belakang."
+        else -> "• Used to scan friends' Barcode / QR Code instantly.\n• Used to take profile photos or chat pictures directly when choosing the camera.\n• The camera never records in the background."
+    }
+
+    fun privacyPolicySec3Title(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "📢 3. 广告服务与广告 ID (AD_ID)"
+        AppLanguage.JAPANESE -> "📢 3. 広告配信と広告 ID (AD_ID)"
+        AppLanguage.KOREAN -> "📢 3. 광고 서비스 및 광고 ID (AD_ID)"
+        AppLanguage.ARABIC -> "📢 3. خدمة الإعلانات ومعرّف الإعلانات (AD_ID)"
+        AppLanguage.SPANISH -> "📢 3. Servicio de anuncios e ID de publicidad (AD_ID)"
+        AppLanguage.FRENCH -> "📢 3. Services publicitaires & ID publicitaire (AD_ID)"
+        AppLanguage.GERMAN -> "📢 3. Werbedienste & Werbe-ID (AD_ID)"
+        AppLanguage.RUSSIAN -> "📢 3. Реклама и рекламный идентификатор (AD_ID)"
+        AppLanguage.PORTUGUESE -> "📢 3. Serviços de Anúncios e ID de Publicidade (AD_ID)"
+        AppLanguage.INDONESIAN -> "📢 3. Layanan Iklan & ID Iklan (AD_ID)"
+        else -> "📢 3. Ads & Advertising ID (AD_ID)"
+    }
+
+    fun privacyPolicySec3Content(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "• 应用通过 Unity/ironSource SDK 使用 Google Play 广告 ID (AD_ID) 展示横幅广告。\n• 广告数据严格遵循 Google Play 隐私规范进行处理。"
+        AppLanguage.JAPANESE -> "• バナー広告の表示のため、Unity/ironSource SDK 経由で Google Play 広告 ID (AD_ID) を使用します。\n• 広告データは Google Play のプライバシー規約に従い安全に管理されます。"
+        AppLanguage.KOREAN -> "• 배너 광고 제공을 위해 Unity/ironSource SDK를 통해 Google Play 광고 ID(AD_ID)를 사용합니다.\n• 광고 데이터는 Google Play 개인정보 보호 정책에 따라 관리됩니다."
+        AppLanguage.ARABIC -> "• يستخدم التطبيق معرّف إعلانات Google Play (AD_ID) عبر Unity/ironSource لعرض إعلانات البانر.\n• تُدار بيانات الإعلانات وفق سياسات خصوصية Google Play."
+        AppLanguage.SPANISH -> "• La app usa el ID de publicidad de Google Play (AD_ID) vía Unity/ironSource para banners publicitarios.\n• Los datos publicitarios se gestionan conforme a las directivas de Google Play."
+        AppLanguage.FRENCH -> "• L'application utilise l'identifiant publicitaire Google Play (AD_ID) via Unity/ironSource pour afficher des bannières.\n• Les données sont gérées selon les règles de Google Play."
+        AppLanguage.GERMAN -> "• Die App nutzt die Google Play-Werbe-ID (AD_ID) über das Unity/ironSource SDK für Werbebanner.\n• Werbedaten werden konform zu den Google Play-Richtlinien verarbeitet."
+        AppLanguage.RUSSIAN -> "• Приложение использует рекламный идентификатор Google Play (AD_ID) через SDK Unity/ironSource для баннеров.\n• Данные обрабатываются в соответствии с правилами Google Play."
+        AppLanguage.PORTUGUESE -> "• O aplicativo utiliza o ID de Publicidade do Google Play (AD_ID) via Unity/ironSource para exibir banners.\n• Dados publicitários são geridos conforme as diretrizes do Google Play."
+        AppLanguage.INDONESIAN -> "• Aplikasi menggunakan Google Play Advertising ID (AD_ID) melalui SDK Unity/ironSource untuk menayangkan banner iklan.\n• Data periklanan dikelola sesuai pedoman privasi Google Play."
+        else -> "• The app uses the Google Play Advertising ID (AD_ID) via Unity/ironSource SDK to deliver ad banners.\n• Advertising data is managed in compliance with Google Play privacy policies."
+    }
+
+    fun privacyPolicySec4Title(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "🛡️ 4. 用户内容规范与反骚扰 (UGC)"
+        AppLanguage.JAPANESE -> "🛡️ 4. ユーザーコンテンツと保護方針 (UGC)"
+        AppLanguage.KOREAN -> "🛡️ 4. 사용자 생성 콘텐츠 및 괴롭힘 방지 (UGC)"
+        AppLanguage.ARABIC -> "🛡️ 4. محتوى المستخدمين ومكافحة المضايقة (UGC)"
+        AppLanguage.SPANISH -> "🛡️ 4. Contenido de usuarios y seguridad (UGC)"
+        AppLanguage.FRENCH -> "🛡️ 4. Contenu utilisateur & Sécurité (UGC)"
+        AppLanguage.GERMAN -> "🛡️ 4. Nutzerinhalte & Schutz vor Belästigung (UGC)"
+        AppLanguage.RUSSIAN -> "🛡️ 4. Пользовательский контент и безопасность (UGC)"
+        AppLanguage.PORTUGUESE -> "🛡️ 4. Conteúdo do Usuário e Segurança (UGC)"
+        AppLanguage.INDONESIAN -> "🛡️ 4. Konten Pengguna & Anti-Pelecehan (UGC)"
+        else -> "🛡️ 4. User Content & Safety (UGC)"
+    }
+
+    fun privacyPolicySec4Content(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "• Lovy Chat 严厉禁止垃圾信息、色情、仇恨言论及骚扰行为。\n• 在每个好友资料、聊天和动态中均提供举报和屏蔽按钮。\n• 违规用户将被严厉处罚并封禁。"
+        AppLanguage.JAPANESE -> "• Lovy Chat はスパム、ポルノ、ヘイトスピーチ、嫌がらせ行為を固く禁止しています。\n• すべてのプロフィール、チャット、モーメントに通報・ブロック機能が用意されています。\n• 規約違反者には厳正な対処が行われます。"
+        AppLanguage.KOREAN -> "• Lovy Chat은 스팸, 음란물, 증오 표현 및 괴롭힘을 엄격히 금지합니다.\n• 모든 프로필, 채팅, 모먼트에 신고 및 차단 버튼이 지원됩니다.\n• 위반 행위 적발 시 즉각적인 제재가 적용됩니다."
+        AppLanguage.ARABIC -> "• يحظر Lovy Chat بشدة جميع أنواع الرسائل غير المرغوبة والمحتوى غير اللائق وخطاب الكراهية والمضايقة.\n• أزرار الإبلاغ والحظر متوفرة في كل ملف ومحادثة ولحظة.\n• سيتم اتخاذ إجراءات رادعة بحق المخالفين."
+        AppLanguage.SPANISH -> "• Lovy Chat prohíbe el spam, contenido explícito, odio y acoso.\n• Hay botones de Denunciar y Bloquear en cada perfil, chat y momento.\n• Los infractores serán sancionados rigurosamente."
+        AppLanguage.FRENCH -> "• Lovy Chat interdit strictement le spam, le contenu explicite, la haine et le harcèlement.\n• Des boutons Signaler et Bloquer sont disponibles sur chaque profil, chat et moment.\n• Des mesures fermes sont appliquées aux contrevenants."
+        AppLanguage.GERMAN -> "• Lovy Chat verbietet Spam, Pornografie, Hassrede und jede Form von Belästigung.\n• Melde- und Blockier-Funktionen sind in Profilen, Chats und Momenten verfügbar.\n• Verstöße führen zu sofortigen Sanktionen."
+        AppLanguage.RUSSIAN -> "• Lovy Chat строго запрещает спам, неприемлемый контент, оскорбления и домогательства.\n• Кнопки «Пожаловаться» и «Заблокировать» доступны в каждом профиле, чате и моменте.\n• К нарушителям применяются строгие меры."
+        AppLanguage.PORTUGUESE -> "• O Lovy Chat proíbe qualquer tipo de spam, pornografia, ódio e assédio.\n• Botões de Denunciar e Bloquear estão presentes em perfis, chats e momentos.\n• Usuários que violarem as regras serão suspensos."
+        AppLanguage.INDONESIAN -> "• Lovy Chat melarang segala bentuk spam, pornografi, ujaran kebencian, dan pelecehan.\n• Disediakan tombol Laporkan dan Blokir pada setiap profil teman, obrolan, dan momen.\n• Pengguna yang melanggar akan ditindak tegas."
+        else -> "• Lovy Chat strictly prohibits spam, pornography, hate speech, and harassment.\n• Report and Block buttons are readily available on every user profile, chat, and moment.\n• Violators will be subject to strict disciplinary actions."
+    }
+
+    fun privacyPolicySec5Title(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "🗑️ 5. 账号及数据删除权利"
+        AppLanguage.JAPANESE -> "🗑️ 5. アカウントとデータの削除権"
+        AppLanguage.KOREAN -> "🗑️ 5. 계정 및 데이터 영구 삭제 권리"
+        AppLanguage.ARABIC -> "🗑️ 5. حق حذف الحساب والبيانات"
+        AppLanguage.SPANISH -> "🗑️ 5. Derecho a eliminar cuenta y datos"
+        AppLanguage.FRENCH -> "🗑️ 5. Droit à la suppression du compte & des données"
+        AppLanguage.GERMAN -> "🗑️ 5. Recht auf Kontolöschung & Daten"
+        AppLanguage.RUSSIAN -> "🗑️ 5. Право на удаление аккаунта и данных"
+        AppLanguage.PORTUGUESE -> "🗑️ 5. Direito de Excluir Conta e Dados"
+        AppLanguage.INDONESIAN -> "🗑️ 5. Hak Hapus Akun & Data (Account Deletion)"
+        else -> "🗑️ 5. Account & Data Deletion Rights"
+    }
+
+    fun privacyPolicySec5Content(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "• 您有权随时在“我的”页面通过“永久注销账号”按钮，删除个人账号、所有聊天记录及资料数据。"
+        AppLanguage.JAPANESE -> "• プロフィール画面の「アカウントを完全に削除」ボタンから、いつでもアカウント、全チャット履歴、プロフィールデータを削除できます。"
+        AppLanguage.KOREAN -> "• 프로필 화면의 '계정 영구 삭제' 버튼을 통해 언제든지 계정, 전체 대화 기록 및 프로필 데이터를 삭제할 수 있습니다."
+        AppLanguage.ARABIC -> "• يحق لك حذف حسابك وكافة سجل المحادثات وبيانات الملف الشخصي في أي وقت عبر زر 'حذف الحساب نهائياً' في صفحة الملف الشخصي."
+        AppLanguage.SPANISH -> "• Tienes derecho a eliminar tu cuenta, historial de chats y datos de perfil en cualquier momento mediante el botón 'Eliminar cuenta permanentemente' en Perfil."
+        AppLanguage.FRENCH -> "• Vous avez le droit de supprimer votre compte, l'ensemble de l'historique et vos données à tout moment via le bouton 'Supprimer définitivement le compte'."
+        AppLanguage.GERMAN -> "• Sie haben das Recht, Ihr Konto, alle Chatverläufe und Profildaten jederzeit über die Schaltfläche 'Konto dauerhaft löschen' im Profil zu entfernen."
+        AppLanguage.RUSSIAN -> "• Вы имеете право в любой момент удалить свой аккаунт, историю сообщений и профиль с помощью кнопки «Удалить аккаунт навсегда»."
+        AppLanguage.PORTUGUESE -> "• Você pode excluir sua conta, histórico de conversas e dados de perfil a qualquer momento pelo botão 'Excluir Conta Permanentemente' no Perfil."
+        AppLanguage.INDONESIAN -> "• Anda berhak menghapus akun dan seluruh riwayat obrolan serta data profil kapan saja melalui tombol 'Hapus Akun Permanen' di halaman Profil."
+        else -> "• You have the right to delete your account, entire chat history, and profile data at any time via the 'Delete Account Permanently' button in the Profile tab."
+    }
+
+    fun privacyPolicyUnderstandButton(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "我知道了"
+        AppLanguage.JAPANESE -> "了解しました"
+        AppLanguage.KOREAN -> "확인했습니다"
+        AppLanguage.ARABIC -> "أنا أفهم"
+        AppLanguage.SPANISH -> "Entendido"
+        AppLanguage.FRENCH -> "J'ai compris"
+        AppLanguage.GERMAN -> "Verstanden"
+        AppLanguage.RUSSIAN -> "Понятно"
+        AppLanguage.PORTUGUESE -> "Entendi"
+        AppLanguage.INDONESIAN -> "Saya Mengerti"
+        else -> "I Understand"
+    }
+
+    // About Lovy Chat ModalBottomSheet Strings
+    fun aboutAppDialogTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "关于 Lovy Chat"
+        AppLanguage.JAPANESE -> "Lovy Chat について"
+        AppLanguage.KOREAN -> "Lovy Chat 정보"
+        AppLanguage.ARABIC -> "حول Lovy Chat"
+        AppLanguage.SPANISH -> "Acerca de Lovy Chat"
+        AppLanguage.FRENCH -> "À propos de Lovy Chat"
+        AppLanguage.GERMAN -> "Über Lovy Chat"
+        AppLanguage.RUSSIAN -> "О приложении Lovy Chat"
+        AppLanguage.PORTUGUESE -> "Sobre o Lovy Chat"
+        AppLanguage.INDONESIAN -> "Tentang Lovy Chat"
+        else -> "About Lovy Chat"
+    }
+
+    fun aboutAppTagline(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "新朋友，身边的精彩畅聊 ✨"
+        AppLanguage.JAPANESE -> "新しい友達、身近で楽しいチャット ✨"
+        AppLanguage.KOREAN -> "새로운 친구, 내 주변의 신나는 대화 ✨"
+        AppLanguage.ARABIC -> "أصدقاء جدد ومحادثات ممتعة من حولك ✨"
+        AppLanguage.SPANISH -> "Nuevos amigos y charlas emocionantes a tu alrededor ✨"
+        AppLanguage.FRENCH -> "De nouveaux amis et des discussions passionnantes autour de vous ✨"
+        AppLanguage.GERMAN -> "Neue Freunde, spannende Gespräche in deiner Nähe ✨"
+        AppLanguage.RUSSIAN -> "Новые друзья и яркое общение рядом с вами ✨"
+        AppLanguage.PORTUGUESE -> "Novos amigos e conversas empolgantes ao seu redor ✨"
+        AppLanguage.INDONESIAN -> "Teman baru, obrolan seru di sekitarmu ✨"
+        else -> "New friends, exciting chats all around you ✨"
+    }
+
+    fun aboutAppVersionBadge(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "官方版本 1.0.0 (2026)"
+        AppLanguage.JAPANESE -> "公式バージョン 1.0.0 (2026)"
+        AppLanguage.KOREAN -> "공식 버전 1.0.0 (2026)"
+        AppLanguage.ARABIC -> "الإصدار الرسمي 1.0.0 (2026)"
+        AppLanguage.SPANISH -> "Versión Oficial 1.0.0 (2026)"
+        AppLanguage.FRENCH -> "Version Officielle 1.0.0 (2026)"
+        AppLanguage.GERMAN -> "Offizielle Version 1.0.0 (2026)"
+        AppLanguage.RUSSIAN -> "Официальная версия 1.0.0 (2026)"
+        AppLanguage.PORTUGUESE -> "Versão Oficial 1.0.0 (2026)"
+        AppLanguage.INDONESIAN -> "Versi 1.0.0 Resmi (2026)"
+        else -> "Official Version 1.0.0 (2026)"
+    }
+
+    fun aboutAppOverview(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "Lovy Chat 是一款现代社交聊天平台，让您轻松发现附近的新朋友、分享日常动态，安全快速地畅快交流。"
+        AppLanguage.JAPANESE -> "Lovy Chat は、近くの新しい友達を見つけ、日々の瞬間を共有し、素早く安全に楽しく交流できるモダンなソーシャルチャットアプリです。"
+        AppLanguage.KOREAN -> "Lovy Chat은 주변의 새로운 친구를 찾고 일상을 공유하며 안전하고 즐겁게 소통할 수 있는 현대적인 소셜 채팅 플랫폼입니다."
+        AppLanguage.ARABIC -> "Lovy Chat هي منصة دردشة اجتماعية حديثة تتيح لك العثور على أصدقاء جدد في الجوار ومشاركة اللحظات اليومية بأمان وسرعة ومرح."
+        AppLanguage.SPANISH -> "Lovy Chat es una moderna plataforma de chat social que te permite encontrar nuevos amigos cercanos, compartir momentos diarios y conectar de forma rápida y segura."
+        AppLanguage.FRENCH -> "Lovy Chat est une plateforme de messagerie moderne qui vous permet de trouver de nouveaux amis à proximité, de partager vos moments et d'échanger en toute sécurité."
+        AppLanguage.GERMAN -> "Lovy Chat ist eine moderne soziale Chat-Plattform, mit der Sie neue Freunde in der Nähe finden, tägliche Momente teilen und sicher kommunizieren können."
+        AppLanguage.RUSSIAN -> "Lovy Chat — это современная социальная платформа для поиска друзей поблизости, обмена моментами и безопасного общения."
+        AppLanguage.PORTUGUESE -> "O Lovy Chat é uma plataforma de chat social moderna que facilita encontrar novos amigos por perto, compartilhar momentos e conversar com segurança."
+        AppLanguage.INDONESIAN -> "Lovy Chat adalah platform obrolan sosial modern yang memudahkan kamu menemukan teman baru di sekitar, berbagi momen harian, dan bertukar cerita secara cepat, aman, dan menyenangkan."
+        else -> "Lovy Chat is a modern social chat platform that makes it easy to find new friends nearby, share daily moments, and connect quickly, safely, and joyfully."
+    }
+
+    fun aboutAppCoreFeaturesTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "核心特色"
+        AppLanguage.JAPANESE -> "主な機能"
+        AppLanguage.KOREAN -> "주요 기능"
+        AppLanguage.ARABIC -> "الميزات الرئيسية"
+        AppLanguage.SPANISH -> "Funciones Destacadas"
+        AppLanguage.FRENCH -> "Fonctionnalités principales"
+        AppLanguage.GERMAN -> "Hauptfunktionen"
+        AppLanguage.RUSSIAN -> "Основные функции"
+        AppLanguage.PORTUGUESE -> "Recursos Principais"
+        AppLanguage.INDONESIAN -> "Fitur Unggulan"
+        else -> "Key Features"
+    }
+
+    fun aboutAppFeat1Title(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "附近好友雷达"
+        AppLanguage.JAPANESE -> "周辺の友達レーダー"
+        AppLanguage.KOREAN -> "주변 친구 레이더"
+        AppLanguage.ARABIC -> "رادار الأصدقاء في الجوار"
+        AppLanguage.SPANISH -> "Radar de Amigos Cercanos"
+        AppLanguage.FRENCH -> "Radar d'amis proches"
+        AppLanguage.GERMAN -> "Freunde-Radar in der Nähe"
+        AppLanguage.RUSSIAN -> "Радар друзей поблизости"
+        AppLanguage.PORTUGUESE -> "Radar de Amigos Próximos"
+        AppLanguage.INDONESIAN -> "Radar Teman Sekitar"
+        else -> "Nearby Friends Radar"
+    }
+
+    fun aboutAppFeat1Desc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "基于 GPS 发现身边好友，具备灵活的距离控制和隐私隐身模式。"
+        AppLanguage.JAPANESE -> "GPS を基に近くの友達を発見。距離の調整やゴーストモードによるプライバシー保護に対応。"
+        AppLanguage.KOREAN -> "GPS 기반으로 가까운 친구를 찾으며 거리 제어 및 고스트 모드 프라이버시를 지원합니다."
+        AppLanguage.ARABIC -> "اعثر على أصدقاء مقربين عبر GPS مع التحكم بالمسافة ووضع التخفي لحماية الخصوصية."
+        AppLanguage.SPANISH -> "Encuentra amigos cercanos con GPS, control de distancia y modo fantasma de privacidad."
+        AppLanguage.FRENCH -> "Trouvez des amis proches grâce au GPS avec contrôle de distance et mode furtif."
+        AppLanguage.GERMAN -> "Entdecke Freunde in der Nähe via GPS mit Abstandskontrolle und Geistermodus."
+        AppLanguage.RUSSIAN -> "Находите друзей поблизости через GPS с контролем расстояния и режимом невидимки."
+        AppLanguage.PORTUGUESE -> "Encontre amigos próximos via GPS com controle de distância e modo fantasma."
+        AppLanguage.INDONESIAN -> "Temukan teman terdekat berbasis GPS dengan kendali jarak dan privasi penyamaran."
+        else -> "Discover nearby friends via GPS with distance control and ghost privacy mode."
+    }
+
+    fun aboutAppFeat2Title(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "即时畅聊消息"
+        AppLanguage.JAPANESE -> "高速リアルタイムメッセージ"
+        AppLanguage.KOREAN -> "빠른 실시간 메시지"
+        AppLanguage.ARABIC -> "رسائل فورية سريعة"
+        AppLanguage.SPANISH -> "Mensajería Rápida en Tiempo Real"
+        AppLanguage.FRENCH -> "Messagerie instantanée & temps réel"
+        AppLanguage.GERMAN -> "Schnelle Echtzeit-Nachrichten"
+        AppLanguage.RUSSIAN -> "Быстрые сообщения в реальном времени"
+        AppLanguage.PORTUGUESE -> "Mensagens Rápidas em Tempo Real"
+        AppLanguage.INDONESIAN -> "Pesan Cepat & Realtime"
+        else -> "Fast & Realtime Messaging"
+    }
+
+    fun aboutAppFeat2Desc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "即时发送文字与照片，并配有已读回执标记。"
+        AppLanguage.JAPANESE -> "テキストや写真を即座に送信。メッセージの既読ステータス表示付き。"
+        AppLanguage.KOREAN -> "읽음 확인 표시와 함께 텍스트 및 사진을 즉시 전송합니다."
+        AppLanguage.ARABIC -> "أرسل الرسائل النصية والصور فوراً مع علامات قراءة الرسائل."
+        AppLanguage.SPANISH -> "Envía textos y fotos al instante con indicadores de estado de lectura."
+        AppLanguage.FRENCH -> "Envoyez des textes et des photos instantanément avec accusés de lecture."
+        AppLanguage.GERMAN -> "Sende Texte & Fotos sofort mit Lesebestätigungshäkchen."
+        AppLanguage.RUSSIAN -> "Мгновенная отправка текста и фото с отметками о прочтении."
+        AppLanguage.PORTUGUESE -> "Envie textos e fotos instantaneamente com confirmação de leitura."
+        AppLanguage.INDONESIAN -> "Kirim pesan teks & foto instan dengan tanda centang status pesan terbaca."
+        else -> "Send text & photo messages instantly with read receipt status checks."
+    }
+
+    fun aboutAppFeat3Title(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "扫描条形码与二维码"
+        AppLanguage.JAPANESE -> "バーコード & QR コード読み取り"
+        AppLanguage.KOREAN -> "바코드 & QR 코드 스캔"
+        AppLanguage.ARABIC -> "مسح الباركود ورمز QR"
+        AppLanguage.SPANISH -> "Escanear Código de Barras y QR"
+        AppLanguage.FRENCH -> "Scanner Barcode & Code QR"
+        AppLanguage.GERMAN -> "Barcode- & QR-Code-Scan"
+        AppLanguage.RUSSIAN -> "Сканирование штрихкодов и QR-кодов"
+        AppLanguage.PORTUGUESE -> "Escanear Código de Barras e QR"
+        AppLanguage.INDONESIAN -> "Pindai Barcode & QR Code"
+        else -> "Scan Barcode & QR Code"
+    }
+
+    fun aboutAppFeat3Desc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "无需费力输入号码或账号，秒速完成好友添加。"
+        AppLanguage.JAPANESE -> "番号やIDの手動入力なしで、瞬時に友達を追加できます。"
+        AppLanguage.KOREAN -> "번호나 아이디를 입력할 필요 없이 순식간에 친구를 추가하세요."
+        AppLanguage.ARABIC -> "أضف أصدقاءك في ثوانٍ دون الحاجة لكتابة أرقام أو معرّفات."
+        AppLanguage.SPANISH -> "Agrega amigos al instante sin molestarte en escribir números o identificadores."
+        AppLanguage.FRENCH -> "Ajoutez des amis instantanément sans avoir à saisir de numéros ou d'identifiants."
+        AppLanguage.GERMAN -> "Füge Freunde sofort hinzu, ohne mühsam Nummern oder IDs einzutippen."
+        AppLanguage.RUSSIAN -> "Добавляйте друзей за секунду без необходимости вводить номера или ID."
+        AppLanguage.PORTUGUESE -> "Adicione amigos em um instante sem precisar digitar números ou IDs."
+        AppLanguage.INDONESIAN -> "Tambah teman langsung dalam sekejap tanpa repot mengetik nomor atau ID."
+        else -> "Add friends instantly in a flash without typing phone numbers or IDs."
+    }
+
+    fun aboutAppFeat4Title(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "漂流瓶 (Drift Bottle)"
+        AppLanguage.JAPANESE -> "海流の漂流瓶 (Drift Bottle)"
+        AppLanguage.KOREAN -> "바다 유리병 편지 (Drift Bottle)"
+        AppLanguage.ARABIC -> "زجاجة المحيط (Drift Bottle)"
+        AppLanguage.SPANISH -> "Botella del Océano (Drift Bottle)"
+        AppLanguage.FRENCH -> "Bouteille à la mer (Drift Bottle)"
+        AppLanguage.GERMAN -> "Flaschenpost (Drift Bottle)"
+        AppLanguage.RUSSIAN -> "Бутылка в океане (Drift Bottle)"
+        AppLanguage.PORTUGUESE -> "Garrafa no Oceano (Drift Bottle)"
+        AppLanguage.INDONESIAN -> "Botol Lautan (Drift Bottle)"
+        else -> "Ocean Drift Bottle"
+    }
+
+    fun aboutAppFeat4Desc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "向汪洋大海掷出一条神秘漂流瓶，随机遇见远方新朋友。"
+        AppLanguage.JAPANESE -> "海へランダムなメッセージを流し、新しい友達との偶然の出会いを楽しめます。"
+        AppLanguage.KOREAN -> "바다로 메시지를 띄워 멀리 있는 새로운 친구와 인연을 맺어보세요."
+        AppLanguage.ARABIC -> "ألقِ رسالة عشوائية في المحيط لتتواصل مع أصدقاء جدد حول العالم."
+        AppLanguage.SPANISH -> "Lanza un mensaje aleatorio al mar para conectar con nuevos amigos."
+        AppLanguage.FRENCH -> "Lancez une bouteille à la mer pour vous connecter avec de nouveaux amis."
+        AppLanguage.GERMAN -> "Wirf eine Nachricht ins Meer, um neue Freunde zu finden."
+        AppLanguage.RUSSIAN -> "Отправьте послание через океан, чтобы познакомиться с новыми людьми."
+        AppLanguage.PORTUGUESE -> "Jogue uma mensagem no oceano para se conectar com novas pessoas."
+        AppLanguage.INDONESIAN -> "Lempar pesan acak melintasi lautan untuk terhubung dengan teman baru."
+        else -> "Cast a random message across the ocean to connect with new friends."
+    }
+
+    fun aboutAppFeat5Title(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "动态与故事 (Moments)"
+        AppLanguage.JAPANESE -> "モーメント & ストーリー"
+        AppLanguage.KOREAN -> "모먼트 & 스토리"
+        AppLanguage.ARABIC -> "اللحظات والقصص (Moments)"
+        AppLanguage.SPANISH -> "Momentos e Historias"
+        AppLanguage.FRENCH -> "Moments & Histoires"
+        AppLanguage.GERMAN -> "Momente & Storys"
+        AppLanguage.RUSSIAN -> "Моменты и истории"
+        AppLanguage.PORTUGUESE -> "Momentos e Histórias"
+        AppLanguage.INDONESIAN -> "Momen & Cerita"
+        else -> "Moments & Stories"
+    }
+
+    fun aboutAppFeat5Desc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "分享每日照片与心情，获得好友的真诚点赞与温馨评论。"
+        AppLanguage.JAPANESE -> "日々の写真や近況を投稿し、友達からのいいねやコメントで交流。"
+        AppLanguage.KOREAN -> "일상 사진과 글을 올리고 친구들의 좋아요와 댓글로 소통하세요."
+        AppLanguage.ARABIC -> "شارك صورك ويومياتك وتلقَّ الإعجابات والتعليقات من الأصدقاء."
+        AppLanguage.SPANISH -> "Comparte fotos y estados diarios con me gusta y comentarios de tus amigos."
+        AppLanguage.FRENCH -> "Partagez des photos et des publications avec likes et commentaires de vos amis."
+        AppLanguage.GERMAN -> "Teile tägliche Fotos und Status mit Likes und Kommentaren von Freunden."
+        AppLanguage.RUSSIAN -> "Делитесь фото и статусами, получая лайки и комментарии друзей."
+        AppLanguage.PORTUGUESE -> "Compartilhe fotos e status diários com curtidas e comentários de amigos."
+        AppLanguage.INDONESIAN -> "Bagikan foto dan status harian dengan suka serta komentar dari teman."
+        else -> "Share daily photos and statuses with likes and comments from friends."
+    }
+
+    fun aboutAppSecurityTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "🛡️ 值得信赖的隐私与安全"
+        AppLanguage.JAPANESE -> "🛡️ 信頼のプライバシー & セキュリティ"
+        AppLanguage.KOREAN -> "🛡️ 신뢰할 수 있는 프라이버시 & 보안"
+        AppLanguage.ARABIC -> "🛡️ خصوصية وأمان موثوق"
+        AppLanguage.SPANISH -> "🛡️ Privacidad y Seguridad Confiables"
+        AppLanguage.FRENCH -> "🛡️ Confidentialité & Sécurité de confiance"
+        AppLanguage.GERMAN -> "🛡️ Vertrauenswürdige Privatsphäre & Sicherheit"
+        AppLanguage.RUSSIAN -> "🛡️ Надежная защита и безопасность"
+        AppLanguage.PORTUGUESE -> "🛡️ Privacidade e Segurança Confiáveis"
+        AppLanguage.INDONESIAN -> "🛡️ Privasi & Keamanan Terpercaya"
+        else -> "🛡️ Trusted Privacy & Security"
+    }
+
+    fun aboutAppSecurityDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "所有连接均采用 HTTPS/TLS 安全加密传输。内置用户拉黑、违规举报及一键永久注销账号功能。"
+        AppLanguage.JAPANESE -> "全接続に安全な HTTPS/TLS 暗号化を採用。ユーザーのブロック、違反通報、アカウントの永久削除に対応。"
+        AppLanguage.KOREAN -> "모든 연결은 안전한 HTTPS/TLS 암호화로 보호됩니다. 차단, 신고 및 계정 영구 삭제 기능 탑재."
+        AppLanguage.ARABIC -> "جميع الاتصالات مشفرة ببروتوكول HTTPS/TLS الآمن. يتضمن حظر المستخدمين، الإبلاغ، وحذف الحساب نهائياً."
+        AppLanguage.SPANISH -> "Todas las conexiones usan cifrado seguro HTTPS/TLS. Incluye bloqueo de usuarios, denuncias y eliminación permanente de cuenta."
+        AppLanguage.FRENCH -> "Toutes les connexions utilisent le chiffrement HTTPS/TLS. Comprend le blocage d'utilisateurs, le signalement et la suppression définitive du compte."
+        AppLanguage.GERMAN -> "Alle Verbindungen sind mit HTTPS/TLS verschlüsselt. Inklusive Blockierfunktion, Meldungen und dauerhafter Kontolöschung."
+        AppLanguage.RUSSIAN -> "Все соединения защищены шифрованием HTTPS/TLS. Встроены функции блокировки, жалоб и полного удаления аккаунта."
+        AppLanguage.PORTUGUESE -> "Todas as conexões usam criptografia segura HTTPS/TLS. Inclui bloqueio de usuários, denúncias e exclusão permanente de conta."
+        AppLanguage.INDONESIAN -> "Seluruh koneksi menggunakan enkripsi aman HTTPS/TLS. Dilengkapi sistem pemblokiran pengguna, pelaporan pelanggaran, dan penghapusan akun permanen mandiri."
+        else -> "All connections use secure HTTPS/TLS encryption. Features user blocking, violation reporting, and permanent account deletion."
+    }
+
+    fun aboutAppDevCredit(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "由 Geccko Creator 精心开发"
+        AppLanguage.JAPANESE -> "Geccko Creator により開発"
+        AppLanguage.KOREAN -> "Geccko Creator 제작"
+        AppLanguage.ARABIC -> "تم التطوير بواسطة Geccko Creator"
+        AppLanguage.SPANISH -> "Desarrollado por Geccko Creator"
+        AppLanguage.FRENCH -> "Développé par Geccko Creator"
+        AppLanguage.GERMAN -> "Entwickelt von Geccko Creator"
+        AppLanguage.RUSSIAN -> "Разработано Geccko Creator"
+        AppLanguage.PORTUGUESE -> "Desenvolvido por Geccko Creator"
+        AppLanguage.INDONESIAN -> "Dikembangkan oleh Geccko Creator"
+        else -> "Developed by Geccko Creator"
+    }
+
+    fun aboutAppCopyright(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "© 2026 Lovy Chat. 保留所有权利。"
+        AppLanguage.JAPANESE -> "© 2026 Lovy Chat. 無断転載を禁じます。"
+        AppLanguage.KOREAN -> "© 2026 Lovy Chat. 모든 권리 보유."
+        AppLanguage.ARABIC -> "© 2026 Lovy Chat. جميع الحقوق محفوظة."
+        AppLanguage.SPANISH -> "© 2026 Lovy Chat. Todos los derechos reservados."
+        AppLanguage.FRENCH -> "© 2026 Lovy Chat. Tous droits réservés."
+        AppLanguage.GERMAN -> "© 2026 Lovy Chat. Alle Rechte vorbehalten."
+        AppLanguage.RUSSIAN -> "© 2026 Lovy Chat. Все права защищены."
+        AppLanguage.PORTUGUESE -> "© 2026 Lovy Chat. Todos os direitos reservados."
+        AppLanguage.INDONESIAN -> "© 2026 Lovy Chat. Hak cipta dilindungi undang-undang."
+        else -> "© 2026 Lovy Chat. All rights reserved."
+    }
+
+    fun aboutAppPrivacyPolicyButton(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "隐私政策"
+        AppLanguage.JAPANESE -> "プライバシーポリシー"
+        AppLanguage.KOREAN -> "개인정보 처리방침"
+        AppLanguage.ARABIC -> "سياسة الخصوصية"
+        AppLanguage.SPANISH -> "Política de Privacidad"
+        AppLanguage.FRENCH -> "Politique de confidentialité"
+        AppLanguage.GERMAN -> "Datenschutzerklärung"
+        AppLanguage.RUSSIAN -> "Политика конфиденциальности"
+        AppLanguage.PORTUGUESE -> "Política de Privacidade"
+        AppLanguage.INDONESIAN -> "Kebijakan Privasi"
+        else -> "Privacy Policy"
+    }
+
+    fun aboutAppCloseButton(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "关闭"
+        AppLanguage.JAPANESE -> "閉じる"
+        AppLanguage.KOREAN -> "닫기"
+        AppLanguage.ARABIC -> "إغلاق"
+        AppLanguage.SPANISH -> "Cerrar"
+        AppLanguage.FRENCH -> "Fermer"
+        AppLanguage.GERMAN -> "Schließen"
+        AppLanguage.RUSSIAN -> "Закрыть"
+        AppLanguage.PORTUGUESE -> "Fechar"
+        AppLanguage.INDONESIAN -> "Tutup"
+        else -> "Close"
+    }
 }

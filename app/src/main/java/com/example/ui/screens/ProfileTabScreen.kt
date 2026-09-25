@@ -626,11 +626,15 @@ fun ProfileTabScreen(
     }
 
     if (showPrivacyPolicyDialog) {
-        PrivacyPolicyDialog(onDismiss = { showPrivacyPolicyDialog = false })
+        PrivacyPolicyDialog(
+            language = language,
+            onDismiss = { showPrivacyPolicyDialog = false }
+        )
     }
 
     if (showAboutAppDialog) {
         AboutAppDialog(
+            language = language,
             onDismiss = { showAboutAppDialog = false },
             onOpenPrivacyPolicy = {
                 showAboutAppDialog = false
@@ -1232,23 +1236,59 @@ fun BlockedUsersDialog(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrivacyPolicyDialog(
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = {
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        containerColor = Color.White,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(top = 10.dp, bottom = 6.dp)
+                    .width(36.dp)
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(Color(0xFFDADCE0))
+            )
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("privacy_policy_bottom_sheet")
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .navigationBarsPadding()
+                .padding(bottom = 20.dp)
+        ) {
+            // Header Bar: Shield Icon, Title, and Google Maps circular close button (X)
             Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp, bottom = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Surface(
-                    shape = CircleShape,
-                    color = EmeraldGreen.copy(alpha = 0.15f),
-                    modifier = Modifier.size(38.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(EmeraldGreen.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Icon(
                             imageVector = Icons.Default.Security,
                             contentDescription = null,
@@ -1256,171 +1296,314 @@ fun PrivacyPolicyDialog(
                             modifier = Modifier.size(20.dp)
                         )
                     }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = com.example.util.AppStrings.privacyPolicyDialogTitle(language),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = NeutralDark
+                    )
                 }
-                Text(
-                    text = "Kebijakan Privasi & Ketentuan",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 17.sp,
-                    color = NeutralDark
-                )
+
+                // Circular close button (Google Maps style)
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFF1F3F4))
+                        .testTag("btn_close_privacy_policy_sheet")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Tutup",
+                        tint = NeutralDark,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
-        },
-        text = {
+
+            HorizontalDivider(
+                color = NeutralBorder.copy(alpha = 0.5f),
+                thickness = 0.8.dp,
+                modifier = Modifier.padding(bottom = 14.dp)
+            )
+
+            // Scrollable Content
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .weight(1f, fill = false)
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "Lovy Chat berkomitmen melindungi privasi data dan keamanan pengguna sesuai standar Google Play Developer Policy.",
+                    text = com.example.util.AppStrings.privacyPolicyDialogIntro(language),
                     fontSize = 13.sp,
                     color = NeutralMedium,
                     lineHeight = 18.sp
                 )
 
+                // 1. Location (GPS)
                 Card(
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = ScreenBackground)
                 ) {
-                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         Text(
-                            text = "📍 1. Penggunaan Izin Lokasi (GPS)",
+                            text = com.example.util.AppStrings.privacyPolicySec1Title(language),
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.5.sp,
+                            fontSize = 14.sp,
                             color = NeutralDark
                         )
                         Text(
-                            text = "• Lokasi hanya diakses saat aplikasi sedang aktif dibuka (Foreground).\n• Digunakan semata-mata untuk fitur 'Pengguna Sekitar' (Radar Teman).\n• Anda dapat mengaktifkan Mode Penyamaran atau menyembunyikan jarak persis kapan saja di menu Privasi & Lokasi.",
-                            fontSize = 12.sp,
+                            text = com.example.util.AppStrings.privacyPolicySec1Content(language),
+                            fontSize = 12.5.sp,
                             color = NeutralDark,
-                            lineHeight = 17.sp
+                            lineHeight = 18.sp
                         )
                     }
                 }
 
+                // 2. Camera
                 Card(
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = ScreenBackground)
                 ) {
-                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         Text(
-                            text = "📷 2. Penggunaan Izin Kamera",
+                            text = com.example.util.AppStrings.privacyPolicySec2Title(language),
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.5.sp,
+                            fontSize = 14.sp,
                             color = NeutralDark
                         )
                         Text(
-                            text = "• Digunakan untuk memindai Barcode / QR Code teman secara instan.\n• Digunakan untuk mengambil foto profil atau gambar obrolan secara langsung jika Anda memilih menggunakan kamera.\n• Kamera tidak pernah merekam di latar belakang.",
-                            fontSize = 12.sp,
+                            text = com.example.util.AppStrings.privacyPolicySec2Content(language),
+                            fontSize = 12.5.sp,
                             color = NeutralDark,
-                            lineHeight = 17.sp
+                            lineHeight = 18.sp
                         )
                     }
                 }
 
+                // 3. Advertising & AD_ID
                 Card(
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = ScreenBackground)
                 ) {
-                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         Text(
-                            text = "📢 3. Layanan Iklan & ID Iklan (AD_ID)",
+                            text = com.example.util.AppStrings.privacyPolicySec3Title(language),
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.5.sp,
+                            fontSize = 14.sp,
                             color = NeutralDark
                         )
                         Text(
-                            text = "• Aplikasi menggunakan Google Play Advertising ID (AD_ID) melalui SDK Unity/ironSource untuk menayangkan banner iklan.\n• Data periklanan dikelola sesuai pedoman privasi Google Play.",
-                            fontSize = 12.sp,
+                            text = com.example.util.AppStrings.privacyPolicySec3Content(language),
+                            fontSize = 12.5.sp,
                             color = NeutralDark,
-                            lineHeight = 17.sp
+                            lineHeight = 18.sp
                         )
                     }
                 }
 
+                // 4. UGC & Safety
                 Card(
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = ScreenBackground)
                 ) {
-                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         Text(
-                            text = "🛡️ 4. Konten Pengguna & Anti-Pelecehan (UGC)",
+                            text = com.example.util.AppStrings.privacyPolicySec4Title(language),
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.5.sp,
+                            fontSize = 14.sp,
                             color = NeutralDark
                         )
                         Text(
-                            text = "• Lovy Chat melarang segala bentuk spam, pornografi, ujaran kebencian, dan pelecehan.\n• Disediakan tombol Laporkan dan Blokir pada setiap profil teman, obrolan, dan momen.\n• Pengguna yang melanggar akan ditindak tegas.",
-                            fontSize = 12.sp,
+                            text = com.example.util.AppStrings.privacyPolicySec4Content(language),
+                            fontSize = 12.5.sp,
                             color = NeutralDark,
-                            lineHeight = 17.sp
+                            lineHeight = 18.sp
                         )
                     }
                 }
 
+                // 5. Account & Data Deletion
                 Card(
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = ScreenBackground)
                 ) {
-                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         Text(
-                            text = "🗑️ 5. Hak Hapus Akun & Data (Account Deletion)",
+                            text = com.example.util.AppStrings.privacyPolicySec5Title(language),
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.5.sp,
+                            fontSize = 14.sp,
                             color = NeutralDark
                         )
                         Text(
-                            text = "• Anda berhak menghapus akun dan seluruh riwayat obrolan serta data profil kapan saja melalui tombol 'Hapus Akun Permanen' di halaman Profil.",
-                            fontSize = 12.sp,
+                            text = com.example.util.AppStrings.privacyPolicySec5Content(language),
+                            fontSize = 12.5.sp,
                             color = NeutralDark,
-                            lineHeight = 17.sp
+                            lineHeight = 18.sp
                         )
                     }
                 }
             }
-        },
-        confirmButton = {
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Action button "Saya Mengerti" / "I Understand"
             Button(
                 onClick = onDismiss,
                 colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .testTag("btn_privacy_policy_understand")
             ) {
-                Text("Saya Mengerti", color = Color.White, fontWeight = FontWeight.Bold)
+                Text(
+                    text = com.example.util.AppStrings.privacyPolicyUnderstandButton(language),
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp
+                )
             }
         }
-    )
+    }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutAppDialog(
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     onDismiss: () -> Unit,
     onOpenPrivacyPolicy: () -> Unit,
     onOpenServerConfig: () -> Unit
 ) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
     var devClickCount by remember { mutableIntStateOf(0) }
     var lastDevClick by remember { mutableLongStateOf(0L) }
 
-    AlertDialog(
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = null,
-        text = {
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        containerColor = Color.White,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(top = 10.dp, bottom = 6.dp)
+                    .width(36.dp)
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(Color(0xFFDADCE0))
+            )
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("about_app_bottom_sheet")
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .navigationBarsPadding()
+                .padding(bottom = 20.dp)
+        ) {
+            // Header Bar: Small App Logo + Title + Google Maps style circular Close Button (X)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp, bottom = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = Color.White,
+                        shadowElevation = 2.dp,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_lovy_logo),
+                            contentDescription = "Logo Lovy Chat",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(10.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = com.example.util.AppStrings.aboutAppDialogTitle(language),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = NeutralDark
+                    )
+                }
+
+                // Circular close button (Google Maps style)
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFF1F3F4))
+                        .testTag("btn_close_about_sheet")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Tutup",
+                        tint = NeutralDark,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
+            HorizontalDivider(
+                color = NeutralBorder.copy(alpha = 0.5f),
+                thickness = 0.8.dp,
+                modifier = Modifier.padding(bottom = 14.dp)
+            )
+
+            // Scrollable Content
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .weight(1f, fill = false)
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
 
-                // App Logo with Soft Elevation
+                // Big App Logo with Elevation
                 Surface(
                     shape = RoundedCornerShape(22.dp),
                     color = Color.White,
                     shadowElevation = 6.dp,
-                    modifier = Modifier.size(80.dp)
+                    modifier = Modifier.size(76.dp)
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.ic_lovy_logo),
@@ -1466,7 +1649,7 @@ fun AboutAppDialog(
                             }
                     ) {
                         Text(
-                            text = "Versi 1.0.0 Resmi (2026)",
+                            text = com.example.util.AppStrings.aboutAppVersionBadge(language),
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = EmeraldGreen,
@@ -1475,7 +1658,7 @@ fun AboutAppDialog(
                     }
 
                     Text(
-                        text = "Teman baru, obrolan seru di sekitarmu ✨",
+                        text = com.example.util.AppStrings.aboutAppTagline(language),
                         fontSize = 12.5.sp,
                         color = NeutralMedium,
                         fontWeight = FontWeight.Medium
@@ -1488,7 +1671,7 @@ fun AboutAppDialog(
                     colors = CardDefaults.cardColors(containerColor = ScreenBackground)
                 ) {
                     Text(
-                        text = "Lovy Chat adalah platform obrolan sosial modern yang memudahkan kamu menemukan teman baru di sekitar, berbagi momen harian, dan bertukar cerita secara cepat, aman, dan menyenangkan.",
+                        text = com.example.util.AppStrings.aboutAppOverview(language),
                         fontSize = 12.5.sp,
                         color = NeutralDark,
                         lineHeight = 18.sp,
@@ -1502,36 +1685,36 @@ fun AboutAppDialog(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Fitur Unggulan",
-                        fontSize = 13.sp,
+                        text = com.example.util.AppStrings.aboutAppCoreFeaturesTitle(language),
+                        fontSize = 13.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeutralDark
                     )
 
                     AboutFeatureRow(
                         iconEmoji = "📍",
-                        title = "Radar Teman Sekitar",
-                        desc = "Temukan teman terdekat berbasis GPS dengan kendali jarak dan privasi penyamaran."
+                        title = com.example.util.AppStrings.aboutAppFeat1Title(language),
+                        desc = com.example.util.AppStrings.aboutAppFeat1Desc(language)
                     )
                     AboutFeatureRow(
                         iconEmoji = "💬",
-                        title = "Pesan Cepat & Realtime",
-                        desc = "Kirim pesan teks & foto instan dengan tanda centang status pesan terbaca."
+                        title = com.example.util.AppStrings.aboutAppFeat2Title(language),
+                        desc = com.example.util.AppStrings.aboutAppFeat2Desc(language)
                     )
                     AboutFeatureRow(
                         iconEmoji = "📷",
-                        title = "Pindai Barcode & QR Code",
-                        desc = "Tambah teman langsung dalam sekejap tanpa repot mengetik nomor atau ID."
+                        title = com.example.util.AppStrings.aboutAppFeat3Title(language),
+                        desc = com.example.util.AppStrings.aboutAppFeat3Desc(language)
                     )
                     AboutFeatureRow(
                         iconEmoji = "🌊",
-                        title = "Botol Lautan (Drift Bottle)",
-                        desc = "Lempar pesan acak melintasi lautan untuk terhubung dengan teman baru."
+                        title = com.example.util.AppStrings.aboutAppFeat4Title(language),
+                        desc = com.example.util.AppStrings.aboutAppFeat4Desc(language)
                     )
                     AboutFeatureRow(
                         iconEmoji = "📸",
-                        title = "Momen & Cerita",
-                        desc = "Bagikan foto dan status harian dengan suka serta komentar dari teman."
+                        title = com.example.util.AppStrings.aboutAppFeat5Title(language),
+                        desc = com.example.util.AppStrings.aboutAppFeat5Desc(language)
                     )
                 }
 
@@ -1545,13 +1728,13 @@ fun AboutAppDialog(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = "🛡️ Privasi & Keamanan Terpercaya",
+                            text = com.example.util.AppStrings.aboutAppSecurityTitle(language),
                             fontSize = 12.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = EmeraldGreen
                         )
                         Text(
-                            text = "Seluruh koneksi menggunakan enkripsi aman HTTPS/TLS. Dilengkapi sistem pemblokiran pengguna, pelaporan pelanggaran, dan penghapusan akun permanen mandiri.",
+                            text = com.example.util.AppStrings.aboutAppSecurityDesc(language),
                             fontSize = 11.5.sp,
                             color = NeutralDark,
                             lineHeight = 16.sp
@@ -1566,36 +1749,63 @@ fun AboutAppDialog(
                     modifier = Modifier.padding(top = 2.dp)
                 ) {
                     Text(
-                        text = "Dikembangkan oleh Geccko Creator",
+                        text = com.example.util.AppStrings.aboutAppDevCredit(language),
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeutralDark
                     )
                     Text(
-                        text = "© 2026 Lovy Chat. Hak cipta dilindungi undang-undang.",
+                        text = com.example.util.AppStrings.aboutAppCopyright(language),
                         fontSize = 10.5.sp,
                         color = NeutralMedium
                     )
                 }
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = onDismiss,
-                colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
-                shape = RoundedCornerShape(8.dp)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Action Buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Tutup", color = Color.White, fontWeight = FontWeight.Bold)
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onOpenPrivacyPolicy
-            ) {
-                Text("Kebijakan Privasi", color = EmeraldGreen, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                OutlinedButton(
+                    onClick = onOpenPrivacyPolicy,
+                    shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldGreen.copy(alpha = 0.6f)),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = EmeraldGreen),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                        .testTag("btn_about_privacy_policy")
+                ) {
+                    Text(
+                        text = com.example.util.AppStrings.aboutAppPrivacyPolicyButton(language),
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp
+                    )
+                }
+
+                Button(
+                    onClick = onDismiss,
+                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                        .testTag("btn_about_close")
+                ) {
+                    Text(
+                        text = com.example.util.AppStrings.aboutAppCloseButton(language),
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                }
             }
         }
-    )
+    }
 }
 
 @Composable
