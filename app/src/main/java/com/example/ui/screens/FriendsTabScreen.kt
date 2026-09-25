@@ -86,6 +86,7 @@ fun FriendsTabScreen(
     myName: String = "",
     myAvatarUrl: String? = null,
     myAvatarColorHex: String? = null,
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -136,7 +137,7 @@ fun FriendsTabScreen(
                     .padding(horizontal = 16.dp, vertical = 14.dp)
             ) {
                 Text(
-                    text = "Teman",
+                    text = com.example.util.AppStrings.friendsTitle(language),
                     color = Color.White,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
@@ -161,7 +162,7 @@ fun FriendsTabScreen(
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Default.QrCodeScanner,
-                                contentDescription = "Pindai Barcode / QR Tambah Teman",
+                                contentDescription = com.example.util.AppStrings.qrScanPrompt(language),
                                 tint = Color.White,
                                 modifier = Modifier.size(24.dp)
                             )
@@ -173,7 +174,7 @@ fun FriendsTabScreen(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        placeholder = { Text("Cari teman...", fontSize = 13.sp, color = Color.White.copy(alpha = 0.7f)) },
+                        placeholder = { Text(com.example.util.AppStrings.friendsSearchPlaceholder(language), fontSize = 13.sp, color = Color.White.copy(alpha = 0.7f)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Search,
@@ -187,7 +188,7 @@ fun FriendsTabScreen(
                                 IconButton(onClick = { searchQuery = "" }) {
                                     Icon(
                                         imageVector = Icons.Default.Close,
-                                        contentDescription = "Hapus",
+                                        contentDescription = com.example.util.AppStrings.btnCancel(language),
                                         tint = Color.White.copy(alpha = 0.8f),
                                         modifier = Modifier.size(16.dp)
                                     )
@@ -229,7 +230,7 @@ fun FriendsTabScreen(
                         icon = Icons.Default.PersonAdd,
                         iconBgColor = Color(0xFFE8F5E9),
                         iconTint = EmeraldGreen,
-                        title = "Teman Baru",
+                        title = com.example.util.AppStrings.friendsNewFriends(language),
                         badge = if (newFriendsCount > 0) newFriendsCount.toString() else null,
                         onClick = onNavigateToNewFriends
                     )
@@ -239,7 +240,7 @@ fun FriendsTabScreen(
                         icon = Icons.Default.LocationOn,
                         iconBgColor = Color(0xFFE0F7FA),
                         iconTint = Color(0xFF00ACC1),
-                        title = "Cari Teman Sekitar",
+                        title = com.example.util.AppStrings.friendsNearby(language),
                         onClick = onNavigateToNearby
                     )
                 }
@@ -253,7 +254,7 @@ fun FriendsTabScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Text(
-                        text = "Kontak Saya (${sortedAndFiltered.size})",
+                        text = "${com.example.util.AppStrings.friendsMyContacts(language)} (${sortedAndFiltered.size})",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeutralMedium
@@ -261,7 +262,7 @@ fun FriendsTabScreen(
 
                     if (sortedAndFiltered.isNotEmpty()) {
                         Text(
-                            text = "Hapus Semua",
+                            text = com.example.util.AppStrings.friendsClearAll(language),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFFE53935),
@@ -290,14 +291,14 @@ fun FriendsTabScreen(
                         )
                         Spacer(modifier = Modifier.height(14.dp))
                         Text(
-                            text = "Belum Ada Kontak Teman",
+                            text = com.example.util.AppStrings.friendsEmptyTitle(language),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = NeutralDark
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Mulai percakapan dengan menyapa pengguna di sekitar melalui fitur radar untuk menambahkan teman ke kontak.",
+                            text = com.example.util.AppStrings.friendsEmptyDesc(language),
                             fontSize = 13.sp,
                             color = NeutralMedium,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -311,7 +312,7 @@ fun FriendsTabScreen(
                         ) {
                             Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Cari Teman Sekitar", fontSize = 13.sp)
+                            Text(com.example.util.AppStrings.friendsFindNearbyBtn(language), fontSize = 13.sp)
                         }
                     }
                 }
@@ -432,7 +433,7 @@ fun FriendsTabScreen(
                                             )
                                             Spacer(modifier = Modifier.width(2.dp))
                                             Text(
-                                                text = "Favorit",
+                                                text = com.example.util.AppStrings.friendsFavorite(language),
                                                 fontSize = 10.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = Color(0xFFE65100)
@@ -446,7 +447,7 @@ fun FriendsTabScreen(
                                         shape = RoundedCornerShape(6.dp)
                                     ) {
                                         Text(
-                                            text = "Online",
+                                            text = com.example.util.AppStrings.friendsOnline(language),
                                             fontSize = 10.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = Color(0xFF2E7D32),
@@ -473,7 +474,7 @@ fun FriendsTabScreen(
                         ) {
                             Icon(
                                 imageVector = if (user.isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
-                                contentDescription = if (user.isFavorite) "Hapus dari Favorit" else "Jadikan Favorit",
+                                contentDescription = if (user.isFavorite) com.example.util.AppStrings.friendsRemoveFavorite(language) else com.example.util.AppStrings.friendsAddFavorite(language),
                                 tint = if (user.isFavorite) Color(0xFFFFB300) else NeutralMedium.copy(alpha = 0.45f),
                                 modifier = Modifier.size(22.dp)
                             )
@@ -488,7 +489,7 @@ fun FriendsTabScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.DeleteOutline,
-                                contentDescription = "Hapus Kontak Teman",
+                                contentDescription = com.example.util.AppStrings.friendsDeleteFriendDialogTitle(language),
                                 tint = NeutralMedium.copy(alpha = 0.55f),
                                 modifier = Modifier.size(20.dp)
                             )
@@ -506,11 +507,11 @@ fun FriendsTabScreen(
         AlertDialog(
             onDismissRequest = { friendToDelete = null },
             title = {
-                Text(text = "Hapus Kontak Teman", fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                Text(text = com.example.util.AppStrings.friendsDeleteFriendDialogTitle(language), fontWeight = FontWeight.Bold, fontSize = 17.sp)
             },
             text = {
                 Text(
-                    text = "Apakah Anda yakin ingin menghapus \"${target.name}\" dari daftar kontak teman? Kontak tidak akan menyampah di halaman ini lagi.",
+                    text = com.example.util.AppStrings.friendsDeleteFriendDialogMessage(language, target.name),
                     fontSize = 14.sp,
                     color = NeutralDark,
                     lineHeight = 20.sp
@@ -525,12 +526,12 @@ fun FriendsTabScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935)),
                     shape = RoundedCornerShape(10.dp)
                 ) {
-                    Text("Hapus", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(com.example.util.AppStrings.btnDelete(language), color = Color.White, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { friendToDelete = null }) {
-                    Text("Batal", color = NeutralMedium)
+                    Text(com.example.util.AppStrings.btnCancel(language), color = NeutralMedium)
                 }
             }
         )
@@ -541,11 +542,11 @@ fun FriendsTabScreen(
         AlertDialog(
             onDismissRequest = { showClearAllDialog = false },
             title = {
-                Text(text = "Bersihkan Semua Teman", fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                Text(text = com.example.util.AppStrings.friendsClearAllDialogTitle(language), fontWeight = FontWeight.Bold, fontSize = 17.sp)
             },
             text = {
                 Text(
-                    text = "Hapus semua kontak teman dari daftar ini? Anda tetap dapat menyapa dan mencari teman baru kapan saja melalui radar.",
+                    text = com.example.util.AppStrings.friendsClearAllDialogMessage(language),
                     fontSize = 14.sp,
                     color = NeutralDark,
                     lineHeight = 20.sp
@@ -560,12 +561,12 @@ fun FriendsTabScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935)),
                     shape = RoundedCornerShape(10.dp)
                 ) {
-                    Text("Hapus Semua", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(com.example.util.AppStrings.friendsClearAll(language), color = Color.White, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showClearAllDialog = false }) {
-                    Text("Batal", color = NeutralMedium)
+                    Text(com.example.util.AppStrings.btnCancel(language), color = NeutralMedium)
                 }
             }
         )

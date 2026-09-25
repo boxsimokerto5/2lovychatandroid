@@ -89,6 +89,7 @@ fun ChatsTabScreen(
     onStartNewChat: () -> Unit,
     onDeleteConversations: ((Set<String>) -> Unit)? = null,
     onRefresh: (() -> Unit)? = null,
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -124,7 +125,7 @@ fun ChatsTabScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = "Batal",
+                            contentDescription = com.example.util.AppStrings.btnCancel(language),
                             tint = Color.White,
                             modifier = Modifier.size(22.dp)
                         )
@@ -154,7 +155,7 @@ fun ChatsTabScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.SelectAll,
-                            contentDescription = "Pilih Semua",
+                            contentDescription = com.example.util.AppStrings.chatsSelectAll(language),
                             tint = Color.White,
                             modifier = Modifier.size(21.dp)
                         )
@@ -167,7 +168,7 @@ fun ChatsTabScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Delete,
-                            contentDescription = "Hapus Obrolan",
+                            contentDescription = com.example.util.AppStrings.chatsBtnDelete(language),
                             tint = Color.White,
                             modifier = Modifier.size(22.dp)
                         )
@@ -186,7 +187,7 @@ fun ChatsTabScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = "Obrolan",
+                            text = com.example.util.AppStrings.chatsTitle(language),
                             color = Color.White,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
@@ -199,7 +200,7 @@ fun ChatsTabScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Refresh,
-                                    contentDescription = "Perbarui Obrolan",
+                                    contentDescription = com.example.util.AppStrings.btnRefreshGps(language),
                                     tint = Color.White,
                                     modifier = Modifier.size(18.dp)
                                 )
@@ -213,7 +214,7 @@ fun ChatsTabScreen(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        placeholder = { Text("Cari percakapan...", fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f)) },
+                        placeholder = { Text(com.example.util.AppStrings.chatsSearchPlaceholder(language), fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Search,
@@ -249,7 +250,7 @@ fun ChatsTabScreen(
                     shape = CircleShape,
                     modifier = Modifier.testTag("fab_new_chat")
                 ) {
-                    Icon(imageVector = Icons.Default.AddComment, contentDescription = "Mulai Chat")
+                    Icon(imageVector = Icons.Default.AddComment, contentDescription = com.example.util.AppStrings.chatsStartChat(language))
                 }
             }
         },
@@ -268,14 +269,14 @@ fun ChatsTabScreen(
                     Text(text = "💬", fontSize = 42.sp)
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        text = "Belum ada obrolan",
+                        text = com.example.util.AppStrings.chatsEmptyTitle(language),
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeutralDark
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Sapa teman di sekitar atau pancing botol untuk mulai mengobrol!",
+                        text = com.example.util.AppStrings.chatsEmptyDesc(language),
                         fontSize = 12.5.sp,
                         color = NeutralMedium
                     )
@@ -356,7 +357,7 @@ fun ChatsTabScreen(
             },
             title = {
                 Text(
-                    text = if (count == 1) "Hapus 1 obrolan?" else "Hapus $count obrolan terpilih?",
+                    text = com.example.util.AppStrings.chatsDeleteConfirmTitle(language, count),
                     fontWeight = FontWeight.Bold,
                     fontSize = 17.5.sp,
                     color = NeutralDark
@@ -364,7 +365,7 @@ fun ChatsTabScreen(
             },
             text = {
                 Text(
-                    text = "Riwayat pesan dengan pengguna ini akan dihapus dari perangkat Anda.",
+                    text = com.example.util.AppStrings.chatsDeleteConfirmDesc(language),
                     fontSize = 13.5.sp,
                     color = NeutralMedium,
                     lineHeight = 18.sp
@@ -381,7 +382,7 @@ fun ChatsTabScreen(
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
-                        text = "Hapus Obrolan",
+                        text = com.example.util.AppStrings.chatsBtnDelete(language),
                         color = Color.White,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 13.5.sp
@@ -393,7 +394,7 @@ fun ChatsTabScreen(
                     onClick = { showDeleteConfirmDialog = false }
                 ) {
                     Text(
-                        text = "Batal",
+                        text = com.example.util.AppStrings.btnCancel(language),
                         color = NeutralMedium,
                         fontSize = 13.5.sp
                     )
@@ -406,7 +407,7 @@ fun ChatsTabScreen(
     viewingAvatarPhoto?.let { (partnerName, photoUrl) ->
         com.example.ui.components.ZoomablePhotoViewerDialog(
             photoUrl = photoUrl,
-            title = "Foto Profil $partnerName",
+            title = "${com.example.util.AppStrings.profileTitle(language)} $partnerName",
             onDismiss = { viewingAvatarPhoto = null }
         )
     }
@@ -418,6 +419,7 @@ fun ChatConversationItem(
     conversation: ChatConversation,
     isSelected: Boolean = false,
     isSelectionMode: Boolean = false,
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     onAvatarClick: (() -> Unit)? = null,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,

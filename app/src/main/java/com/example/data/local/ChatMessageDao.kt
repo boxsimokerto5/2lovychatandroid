@@ -27,6 +27,9 @@ interface ChatMessageDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMessage(message: ChatMessageEntity)
 
+    @Query("UPDATE local_chat_messages SET isRead = 1 WHERE conversationId = :conversationId AND isFromMe = 1")
+    suspend fun markMessagesAsReadForConversation(conversationId: String)
+
     @Query("UPDATE local_chat_messages SET deletedForSender = 1 WHERE id = :messageId")
     suspend fun markDeletedForSender(messageId: String)
 

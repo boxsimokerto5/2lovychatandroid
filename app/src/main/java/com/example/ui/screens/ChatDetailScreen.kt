@@ -149,6 +149,8 @@ import com.example.model.ChatMessage
 import com.example.model.Gender
 import com.example.model.MomentItem
 import com.example.ui.components.LovyAvatar
+import com.example.util.AppLanguage
+import com.example.util.AppStrings
 import com.example.ui.theme.ChatBubbleOther
 import com.example.ui.theme.ChatBubbleSelf
 import com.example.ui.theme.EmeraldGreen
@@ -196,6 +198,7 @@ fun ChatDetailScreen(
     onUserTyping: ((Boolean) -> Unit)? = null,
     isFriend: Boolean = true,
     onAddFriend: (() -> Unit)? = null,
+    language: AppLanguage = AppLanguage.INDONESIAN,
     modifier: Modifier = Modifier
 ) {
     var inputText by remember { mutableStateOf("") }
@@ -344,7 +347,7 @@ fun ChatDetailScreen(
                                             .padding(horizontal = 5.dp, vertical = 1.dp)
                                     ) {
                                         Text(
-                                            text = "Diblokir",
+                                            text = AppStrings.tagBlocked(language),
                                             color = Color.White,
                                             fontSize = 9.5.sp,
                                             fontWeight = FontWeight.Bold
@@ -354,14 +357,14 @@ fun ChatDetailScreen(
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Icon(
                                     imageVector = Icons.Default.Info,
-                                    contentDescription = "Profil",
+                                    contentDescription = AppStrings.chatProfileDetail(language),
                                     tint = Color.White.copy(alpha = 0.85f),
                                     modifier = Modifier.size(15.dp)
                                 )
                             }
                             if (isPartnerBlocked) {
                                 Text(
-                                    text = "Kontak Diblokir • Ketuk lihat profil",
+                                    text = AppStrings.chatBlockedSubtitle(language),
                                     fontSize = 11.sp,
                                     color = Color(0xFFFFCDD2)
                                 )
@@ -378,7 +381,7 @@ fun ChatDetailScreen(
                                     )
                                     Spacer(modifier = Modifier.width(5.dp))
                                     Text(
-                                        text = "sedang mengetik...",
+                                        text = AppStrings.chatsTyping(language),
                                         fontSize = 11.5.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color = Color(0xFFE8F5E9)
@@ -386,7 +389,7 @@ fun ChatDetailScreen(
                                 }
                             } else {
                                 Text(
-                                    text = "Online • Ketuk lihat profil",
+                                    text = AppStrings.chatOnlineSubtitle(language),
                                     fontSize = 11.sp,
                                     color = Color.White.copy(alpha = 0.88f)
                                 )
@@ -401,7 +404,7 @@ fun ChatDetailScreen(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali",
+                            contentDescription = AppStrings.btnBack(language),
                             tint = Color.White
                         )
                     }
@@ -416,7 +419,7 @@ fun ChatDetailScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Info,
-                            contentDescription = "Lihat Profil Lawan Bicara",
+                            contentDescription = AppStrings.chatProfileDetail(language),
                             tint = Color.White
                         )
                     }
@@ -457,7 +460,7 @@ fun ChatDetailScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Pengguna belum ada di Kontak Saya",
+                                text = AppStrings.chatNotFriendNotice(language),
                                 fontSize = 12.sp,
                                 color = NeutralDark
                             )
@@ -469,7 +472,7 @@ fun ChatDetailScreen(
                             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                             modifier = Modifier.height(32.dp)
                         ) {
-                            Text(text = "Tambah Teman", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+                            Text(text = AppStrings.chatAddFriendBtn(language), fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -492,6 +495,7 @@ fun ChatDetailScreen(
                     key = { it.id }
                 ) { msg ->
                     SwipeableChatBubble(
+                        language = language,
                         message = msg,
                         onReply = { targetMsg ->
                             replyingToMessage = targetMsg
@@ -542,7 +546,7 @@ fun ChatDetailScreen(
                     },
                     title = {
                         Text(
-                            text = "Hapus pesan?",
+                            text = AppStrings.chatDeleteDialogTitle(language),
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
                             color = NeutralDark
@@ -558,7 +562,7 @@ fun ChatDetailScreen(
                                     .padding(vertical = 4.dp)
                             ) {
                                 Text(
-                                    text = if (msg.text.isNotBlank()) "\"${msg.text}\"" else "📷 Foto",
+                                    text = if (msg.text.isNotBlank()) "\"${msg.text}\"" else "📷 ${AppStrings.commonPhoto(language)}",
                                     fontSize = 13.5.sp,
                                     color = NeutralDark,
                                     fontWeight = FontWeight.Medium,
@@ -570,9 +574,9 @@ fun ChatDetailScreen(
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
                                 text = if (msg.isFromMe) {
-                                    "Anda dapat menghapus pesan ini hanya untuk Anda, atau untuk semua orang di obrolan ini."
+                                    AppStrings.chatDeleteDialogDescEveryone(language)
                                 } else {
-                                    "Pesan ini akan dihapus dari obrolan Anda dan tidak akan terlihat lagi oleh Anda."
+                                    AppStrings.chatDeleteDialogDescMe(language)
                                 },
                                 fontSize = 12.5.sp,
                                 color = NeutralMedium,
@@ -608,7 +612,7 @@ fun ChatDetailScreen(
                                             modifier = Modifier.size(17.dp)
                                         )
                                         Text(
-                                            text = "Hapus untuk Semua Orang",
+                                            text = AppStrings.chatDeleteForEveryone(language),
                                             color = Color.White,
                                             fontWeight = FontWeight.SemiBold,
                                             fontSize = 13.5.sp
@@ -639,7 +643,7 @@ fun ChatDetailScreen(
                                         modifier = Modifier.size(17.dp)
                                     )
                                     Text(
-                                        text = "Hapus untuk Saya",
+                                        text = AppStrings.chatDeleteForMe(language),
                                         color = Color(0xFFD32F2F),
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 13.5.sp
@@ -653,7 +657,7 @@ fun ChatDetailScreen(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
-                                    text = "Batal",
+                                    text = AppStrings.btnCancel(language),
                                     color = NeutralMedium,
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 13.sp
@@ -685,7 +689,7 @@ fun ChatDetailScreen(
                             .horizontalScroll(rememberScrollState())
                             .padding(bottom = 4.dp)
                     ) {
-                        val suggestions = listOf("Halo! 👋", "Lagi di mana?", "Kenalan dong 😊", "Asik nih!")
+                        val suggestions = AppStrings.chatQuickSuggestions(language)
                         suggestions.forEach { suggestion ->
                             SuggestionChip(
                                 onClick = {
@@ -735,7 +739,7 @@ fun ChatDetailScreen(
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = "Pengguna diblokir. Tidak dapat mengirim pesan.",
+                                        text = AppStrings.chatBlockedNotice(language),
                                         fontSize = 12.sp,
                                         color = Color(0xFFC62828)
                                     )
@@ -746,7 +750,7 @@ fun ChatDetailScreen(
                                     modifier = Modifier.testTag("btn_unblock_partner_chat")
                                 ) {
                                     Text(
-                                        text = "Buka Blokir",
+                                        text = AppStrings.chatUnblockBtn(language),
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFFD32F2F)
@@ -798,14 +802,14 @@ fun ChatDetailScreen(
 
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
-                                                text = "Membalas ${if (target.isFromMe) "Anda" else partnerName}",
+                                                text = AppStrings.chatReplyingTo(language, if (target.isFromMe) AppStrings.chatYou(language) else partnerName),
                                                 fontSize = 12.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = EmeraldGreen
                                             )
                                             Spacer(modifier = Modifier.height(2.dp))
                                             Text(
-                                                text = if (!target.imageUrl.isNullOrBlank() && target.text.isBlank()) "📷 Foto" else target.text,
+                                                text = if (!target.imageUrl.isNullOrBlank() && target.text.isBlank()) "📷 ${AppStrings.commonPhoto(language)}" else target.text,
                                                 fontSize = 11.5.sp,
                                                 color = NeutralDark.copy(alpha = 0.85f),
                                                 maxLines = 1,
@@ -838,7 +842,7 @@ fun ChatDetailScreen(
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Close,
-                                                contentDescription = "Batal Balas",
+                                                contentDescription = AppStrings.chatCancelReply(language),
                                                 tint = NeutralMedium,
                                                 modifier = Modifier.size(16.dp)
                                             )
@@ -868,7 +872,7 @@ fun ChatDetailScreen(
                                             .size(54.dp)
                                             .clip(RoundedCornerShape(8.dp))
                                             .background(Color.LightGray)
-                                    ) {
+                                        ) {
                                         AsyncImage(
                                             model = pendingPhotoUri,
                                             contentDescription = "Foto yang akan dikirim",
@@ -879,13 +883,13 @@ fun ChatDetailScreen(
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
-                                            text = "Foto siap dikirim",
+                                            text = AppStrings.chatPhotoReady(language),
                                             fontSize = 12.5.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = EmeraldGreen
                                         )
                                         Text(
-                                            text = if (isUploadingPhoto) (uploadProgressText ?: "Mengunggah ke Cloudflare R2...") else "Ketik keterangan atau tekan tombol kirim",
+                                            text = if (isUploadingPhoto) (uploadProgressText ?: AppStrings.momentsUploading(language)) else AppStrings.chatPhotoInputHint(language),
                                             fontSize = 11.sp,
                                             color = NeutralMedium
                                         )
@@ -904,7 +908,7 @@ fun ChatDetailScreen(
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Close,
-                                                contentDescription = "Batal",
+                                                contentDescription = AppStrings.btnCancel(language),
                                                 tint = NeutralMedium,
                                                 modifier = Modifier.size(16.dp)
                                             )
@@ -935,7 +939,7 @@ fun ChatDetailScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.AddPhotoAlternate,
-                                    contentDescription = "Kirim Foto",
+                                    contentDescription = AppStrings.chatSendPhotoTooltip(language),
                                     tint = EmeraldGreen,
                                     modifier = Modifier.size(24.dp)
                                 )
@@ -952,7 +956,7 @@ fun ChatDetailScreen(
                                 ),
                                 placeholder = {
                                     Text(
-                                        text = if (pendingPhotoUri != null) "Tambah keterangan foto..." else "Ketik pesan...",
+                                        text = AppStrings.chatTypePlaceholder(language, pendingPhotoUri != null),
                                         fontSize = 14.sp,
                                         color = Color(0xFF94A3B8)
                                     )
@@ -1026,7 +1030,7 @@ fun ChatDetailScreen(
                                 } else {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.Send,
-                                        contentDescription = "Kirim",
+                                        contentDescription = AppStrings.chatSendBtn(language),
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -1042,7 +1046,7 @@ fun ChatDetailScreen(
     viewingPhotoUrl?.let { photoUrl ->
         com.example.ui.components.ZoomablePhotoViewerDialog(
             photoUrl = photoUrl,
-            title = "Foto Obrolan",
+            title = AppStrings.chatPhotoTitle(language),
             onDismiss = { viewingPhotoUrl = null }
         )
     }
@@ -1050,6 +1054,7 @@ fun ChatDetailScreen(
     // Modal Bottom Sheet displaying Partner Profile details
     if (showPartnerProfileSheet) {
         PartnerProfileBottomSheet(
+            language = language,
             partnerName = partnerName,
             partnerAvatarHex = partnerAvatarHex,
             partnerAvatarUrl = partnerAvatarUrl,
@@ -1076,6 +1081,7 @@ fun ChatDetailScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PartnerProfileBottomSheet(
+    language: AppLanguage = AppLanguage.INDONESIAN,
     partnerName: String,
     partnerAvatarHex: Long,
     partnerAvatarUrl: String?,
@@ -1121,7 +1127,7 @@ fun PartnerProfileBottomSheet(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "Profil Teman Obrolan",
+                    text = AppStrings.partnerProfileSheetTitle(language),
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
                     color = NeutralDark
@@ -1132,7 +1138,7 @@ fun PartnerProfileBottomSheet(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Tutup",
+                        contentDescription = AppStrings.commonClose(language),
                         tint = NeutralMedium,
                         modifier = Modifier.size(20.dp)
                     )
@@ -1161,7 +1167,7 @@ fun PartnerProfileBottomSheet(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Pengguna ini berada dalam daftar blokir Anda. Tidak dapat mengirim pesan dan tidak muncul di Orang di Sekitar.",
+                            text = AppStrings.partnerProfileBlockedBanner(language),
                             fontSize = 11.5.sp,
                             color = Color(0xFFC62828),
                             lineHeight = 15.sp
@@ -1204,7 +1210,7 @@ fun PartnerProfileBottomSheet(
                 Spacer(modifier = Modifier.width(6.dp))
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
-                    contentDescription = "Terverifikasi",
+                    contentDescription = AppStrings.commonVerified(language),
                     tint = EmeraldGreen,
                     modifier = Modifier.size(18.dp)
                 )
@@ -1213,14 +1219,15 @@ fun PartnerProfileBottomSheet(
             Spacer(modifier = Modifier.height(6.dp))
 
             // Gender and Age pill
-            val genderText = if (partnerGender == Gender.FEMALE) "♀ Perempuan" else "♂ Laki-laki"
+            val genderText = AppStrings.genderLabel(language, partnerGender)
+            val ageText = AppStrings.ageYears(language, partnerAge)
             Surface(
                 shape = RoundedCornerShape(12.dp),
                 color = if (partnerGender == Gender.FEMALE) Color(0xFFFCE4EC) else Color(0xFFE3F2FD),
                 modifier = Modifier.padding(bottom = 4.dp)
             ) {
                 Text(
-                    text = "$genderText • $partnerAge thn",
+                    text = "$genderText • $ageText",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = if (partnerGender == Gender.FEMALE) Color(0xFFC2185B) else Color(0xFF1976D2),
@@ -1243,7 +1250,7 @@ fun PartnerProfileBottomSheet(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "$partnerCity • Jarak $partnerDistance",
+                    text = AppStrings.locationDistance(language, partnerCity, partnerDistance),
                     fontSize = 12.5.sp,
                     color = NeutralMedium
                 )
@@ -1271,7 +1278,7 @@ fun PartnerProfileBottomSheet(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Bio & Status",
+                            text = AppStrings.partnerProfileBio(language),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = NeutralDark
@@ -1308,7 +1315,7 @@ fun PartnerProfileBottomSheet(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Momen & Foto Terbaru",
+                        text = AppStrings.partnerProfileRecentMoments(language),
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeutralDark
@@ -1320,7 +1327,7 @@ fun PartnerProfileBottomSheet(
                     color = EmeraldGreen.copy(alpha = 0.12f)
                 ) {
                     Text(
-                        text = "${activeMoments.size} Momen",
+                        text = AppStrings.partnerProfileMomentsCount(language, activeMoments.size),
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = EmeraldGreen,
@@ -1359,14 +1366,14 @@ fun PartnerProfileBottomSheet(
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Belum Ada Momen",
+                            text = AppStrings.partnerProfileNoMoments(language),
                             fontSize = 13.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = NeutralDark
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "$partnerName belum membagikan foto atau momen yang aktif.",
+                            text = AppStrings.partnerProfileNoMomentsDesc(language, partnerName),
                             fontSize = 12.sp,
                             color = NeutralMedium,
                             textAlign = TextAlign.Center
@@ -1380,6 +1387,7 @@ fun PartnerProfileBottomSheet(
                 ) {
                     activeMoments.forEach { moment ->
                         PartnerMomentItemCard(
+                            language = language,
                             moment = moment,
                             onPhotoClick = { previewMoment = moment },
                             onToggleLike = {
@@ -1405,12 +1413,12 @@ fun PartnerProfileBottomSheet(
                         .height(44.dp)
                         .testTag("btn_close_partner_profile")
                 ) {
-                    Text("Lanjutkan Chat", fontSize = 13.5.sp, color = NeutralDark)
+                    Text(AppStrings.partnerProfileContinueChat(language), fontSize = 13.5.sp, color = NeutralDark)
                 }
 
                 Button(
                     onClick = {
-                        onSendGreeting("Halo $partnerName! Senang bisa menyapamu 👋✨")
+                        onSendGreeting(AppStrings.partnerProfileGreetingText(language, partnerName))
                     },
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
@@ -1419,7 +1427,7 @@ fun PartnerProfileBottomSheet(
                         .height(44.dp)
                         .testTag("btn_send_greeting_partner")
                 ) {
-                    Text("Sapa Balik 👋", fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
+                    Text(AppStrings.partnerProfileSendGreeting(language), fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -1449,7 +1457,7 @@ fun PartnerProfileBottomSheet(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Buka Blokir Pengguna",
+                        text = AppStrings.partnerProfileUnblockUser(language),
                         fontSize = 13.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = EmeraldGreen
@@ -1478,7 +1486,7 @@ fun PartnerProfileBottomSheet(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Blokir Pengguna Ini",
+                        text = AppStrings.partnerProfileBlockUser(language),
                         fontSize = 13.5.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFFD32F2F)
@@ -1506,7 +1514,7 @@ fun PartnerProfileBottomSheet(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Laporkan Pengguna Ini",
+                        text = AppStrings.partnerProfileReportUser(language),
                         fontSize = 13.5.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFFC62828)
@@ -1520,6 +1528,7 @@ fun PartnerProfileBottomSheet(
         ReportDialog(
             targetName = partnerName,
             reportType = ReportType.USER,
+            language = language,
             onDismiss = { showReportDialog = false },
             onSubmitReport = { reason, notes, alsoBlock ->
                 onReportUser?.invoke(reason, notes, alsoBlock)
@@ -1542,7 +1551,7 @@ fun PartnerProfileBottomSheet(
             },
             title = {
                 Text(
-                    text = "Blokir $partnerName?",
+                    text = AppStrings.partnerProfileBlockConfirmTitle(language, partnerName),
                     fontWeight = FontWeight.Bold,
                     fontSize = 17.sp,
                     textAlign = TextAlign.Center
@@ -1550,7 +1559,7 @@ fun PartnerProfileBottomSheet(
             },
             text = {
                 Text(
-                    text = "Pengguna ini tidak akan dapat mengirim pesan lagi kepadamu dan tidak akan muncul di daftar Orang di Sekitar.",
+                    text = AppStrings.partnerProfileBlockConfirmDesc(language),
                     fontSize = 13.5.sp,
                     color = NeutralMedium,
                     textAlign = TextAlign.Center
@@ -1567,7 +1576,7 @@ fun PartnerProfileBottomSheet(
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.testTag("btn_confirm_block_user")
                 ) {
-                    Text("Blokir", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(AppStrings.btnBlock(language), color = Color.White, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -1575,7 +1584,7 @@ fun PartnerProfileBottomSheet(
                     onClick = { showBlockConfirmDialog = false },
                     modifier = Modifier.testTag("btn_cancel_block_user")
                 ) {
-                    Text("Batal", color = NeutralDark)
+                    Text(AppStrings.btnCancel(language), color = NeutralDark)
                 }
             },
             containerColor = Color.White,
@@ -1586,6 +1595,7 @@ fun PartnerProfileBottomSheet(
     // Photo Preview Lightbox Dialog
     previewMoment?.let { moment ->
         PartnerPhotoPreviewDialog(
+            language = language,
             moment = moment,
             partnerAvatarHex = partnerAvatarHex,
             onDismiss = { previewMoment = null },
@@ -1599,7 +1609,7 @@ fun PartnerProfileBottomSheet(
     viewingAvatarUrl?.let { avatarUrl ->
         com.example.ui.components.ZoomablePhotoViewerDialog(
             photoUrl = avatarUrl,
-            title = "Foto Profil $partnerName",
+            title = AppStrings.partnerProfilePhotoTitle(language, partnerName),
             onDismiss = { viewingAvatarUrl = null }
         )
     }
@@ -1607,6 +1617,7 @@ fun PartnerProfileBottomSheet(
 
 @Composable
 fun PartnerMomentItemCard(
+    language: AppLanguage = AppLanguage.INDONESIAN,
     moment: MomentItem,
     onPhotoClick: () -> Unit,
     onToggleLike: () -> Unit,
@@ -1651,13 +1662,13 @@ fun PartnerMomentItemCard(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Fullscreen,
-                                contentDescription = "Perbesar Foto",
+                                contentDescription = AppStrings.commonZoomPhoto(language),
                                 tint = Color.White,
                                 modifier = Modifier.size(15.dp)
                             )
                             Spacer(modifier = Modifier.width(3.dp))
                             Text(
-                                text = "Foto",
+                                text = AppStrings.commonPhoto(language),
                                 fontSize = 11.sp,
                                 color = Color.White,
                                 fontWeight = FontWeight.Medium
@@ -1763,7 +1774,7 @@ fun PartnerMomentItemCard(
                         ) {
                             Icon(
                                 imageVector = if (moment.isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                contentDescription = "Suka",
+                                contentDescription = AppStrings.momentsLike(language),
                                 tint = if (moment.isLiked) Color(0xFFE91E63) else NeutralMedium,
                                 modifier = Modifier.size(16.dp)
                             )
@@ -1780,7 +1791,7 @@ fun PartnerMomentItemCard(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Default.ChatBubbleOutline,
-                                contentDescription = "Komentar",
+                                contentDescription = AppStrings.momentsComment(language),
                                 tint = NeutralMedium,
                                 modifier = Modifier.size(15.dp)
                             )
@@ -1800,6 +1811,7 @@ fun PartnerMomentItemCard(
 
 @Composable
 fun PartnerPhotoPreviewDialog(
+    language: AppLanguage = AppLanguage.INDONESIAN,
     moment: MomentItem,
     partnerAvatarHex: Long,
     onDismiss: () -> Unit,
@@ -1862,7 +1874,7 @@ fun PartnerPhotoPreviewDialog(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = "Tutup",
+                            contentDescription = AppStrings.commonClose(language),
                             tint = Color.White,
                             modifier = Modifier.size(20.dp)
                         )
@@ -1997,7 +2009,7 @@ fun PartnerPhotoPreviewDialog(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "${moment.likesCount} Suka",
+                                    text = AppStrings.partnerMomentLikesCount(language, moment.likesCount),
                                     fontSize = 12.5.sp,
                                     color = Color.White,
                                     fontWeight = FontWeight.SemiBold
@@ -2005,7 +2017,7 @@ fun PartnerPhotoPreviewDialog(
                             }
 
                             Text(
-                                text = "${moment.commentsCount} Komentar",
+                                text = AppStrings.partnerMomentCommentsCount(language, moment.commentsCount),
                                 fontSize = 12.sp,
                                 color = Color.White.copy(alpha = 0.7f)
                             )
@@ -2024,6 +2036,7 @@ fun PartnerPhotoPreviewDialog(
  */
 @Composable
 fun SwipeableChatBubble(
+    language: AppLanguage = AppLanguage.INDONESIAN,
     message: ChatMessage,
     onReply: (ChatMessage) -> Unit,
     modifier: Modifier = Modifier,
@@ -2105,7 +2118,7 @@ fun SwipeableChatBubble(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Reply,
-                    contentDescription = "Balas Pesan",
+                    contentDescription = AppStrings.chatReplyingTo(language),
                     tint = if (swipeProgress >= 0.95f) Color.White else EmeraldGreen,
                     modifier = Modifier.size(18.dp)
                 )
@@ -2119,6 +2132,7 @@ fun SwipeableChatBubble(
                 .offset { IntOffset(animatedOffset.roundToInt(), 0) }
         ) {
             ChatBubble(
+                language = language,
                 message = message,
                 onClick = onClick,
                 onLongClick = onLongClick,
@@ -2132,6 +2146,7 @@ fun SwipeableChatBubble(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ChatBubble(
+    language: AppLanguage = AppLanguage.INDONESIAN,
     message: ChatMessage,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
@@ -2208,7 +2223,7 @@ fun ChatBubble(
                                     .weight(1f)
                             ) {
                                 Text(
-                                    text = message.replyToSender ?: "Pesan",
+                                    text = message.replyToSender ?: AppStrings.chatMessageFallback(language),
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = if (message.isFromMe) Color(0xFF1B5E20) else Color(0xFF00695C),
@@ -2241,13 +2256,13 @@ fun ChatBubble(
                     ) {
                         AsyncImage(
                             model = message.imageUrl,
-                            contentDescription = "Foto Obrolan",
+                            contentDescription = AppStrings.chatPhotoPreviewTitle(language),
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
 
-                    if (message.text.isNotBlank() && message.text != "📷 Foto") {
+                    if (message.text.isNotBlank() && !message.text.startsWith("📷")) {
                         Spacer(modifier = Modifier.height(6.dp))
                         MessageTextWithLinks(
                             text = message.text,
@@ -2288,7 +2303,7 @@ fun ChatBubble(
                         )
                         Icon(
                             imageVector = Icons.Default.DoneAll,
-                            contentDescription = if (message.isRead) "Pesan dibaca (Centang dua biru)" else "Pesan terkirim (Centang dua abu-abu)",
+                            contentDescription = if (message.isRead) AppStrings.chatStatusRead(language) else AppStrings.chatStatusSent(language),
                             tint = tickColor,
                             modifier = Modifier.size(14.dp)
                         )

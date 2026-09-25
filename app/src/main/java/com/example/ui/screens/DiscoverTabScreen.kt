@@ -124,7 +124,7 @@ fun DiscoverTabScreen(
                                 .padding(horizontal = 10.dp, vertical = 3.dp)
                         ) {
                             Text(
-                                text = stringResource(R.string.banner_tag),
+                                text = com.example.util.AppStrings.bannerTag(language),
                                 color = Color.White,
                                 fontSize = 9.5.sp,
                                 fontWeight = FontWeight.Bold,
@@ -136,7 +136,7 @@ fun DiscoverTabScreen(
 
                         // Title
                         Text(
-                            text = stringResource(R.string.banner_title),
+                            text = com.example.util.AppStrings.bannerTitle(language),
                             color = Color.White,
                             fontSize = 15.5.sp,
                             fontWeight = FontWeight.Bold,
@@ -147,7 +147,7 @@ fun DiscoverTabScreen(
 
                         // Desc
                         Text(
-                            text = stringResource(R.string.banner_desc),
+                            text = com.example.util.AppStrings.bannerDesc(language),
                             color = Color.White.copy(alpha = 0.9f),
                             fontSize = 11.5.sp,
                             lineHeight = 15.sp

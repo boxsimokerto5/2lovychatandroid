@@ -105,6 +105,8 @@ import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.example.model.MomentItem
 import com.example.model.MomentComment
+import com.example.util.AppLanguage
+import com.example.util.AppStrings
 import com.example.ui.components.IronSourceBannerView
 import com.example.ui.components.LevelPlayNativeAdCard
 import com.example.ui.components.LovyAvatar
@@ -131,6 +133,7 @@ fun MomentsScreen(
     currentUserName: String = "",
     currentUserAvatarUrl: String? = null,
     currentGpsLocation: com.example.util.UserGpsLocation? = null,
+    language: AppLanguage = AppLanguage.INDONESIAN,
     onBack: () -> Unit,
     onToggleLike: (String) -> Unit,
     onAddComment: ((momentId: String, text: String) -> Unit)? = null,
@@ -199,13 +202,13 @@ fun MomentsScreen(
                 title = {
                     Column {
                         Text(
-                            text = "Momen",
+                            text = AppStrings.momentsTitle(language),
                             fontSize = 19.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
                         Text(
-                            text = "Foto & cerita dari teman sekitarmu",
+                            text = AppStrings.momentsSubtitle(language),
                             fontSize = 11.5.sp,
                             color = Color.White.copy(alpha = 0.85f)
                         )
@@ -218,7 +221,7 @@ fun MomentsScreen(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali",
+                            contentDescription = AppStrings.btnBack(language),
                             tint = Color.White
                         )
                     }
@@ -237,7 +240,7 @@ fun MomentsScreen(
                         )
                         IconButton(
                             onClick = {
-                                Toast.makeText(context, "Memperbarui momen terbaru...", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, AppStrings.momentsRefreshToast(language), Toast.LENGTH_SHORT).show()
                                 onRefresh()
                             },
                             enabled = !isRefreshing,
@@ -245,7 +248,7 @@ fun MomentsScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
-                                contentDescription = "Muat Ulang Momen",
+                                contentDescription = AppStrings.btnRefreshGps(language),
                                 tint = Color.White,
                                 modifier = if (isRefreshing) Modifier.rotate(rotation) else Modifier
                             )
@@ -266,7 +269,7 @@ fun MomentsScreen(
                 shape = CircleShape,
                 modifier = Modifier.testTag("fab_post_moment")
             ) {
-                Icon(imageVector = Icons.Default.CameraAlt, contentDescription = "Buat Momen")
+                Icon(imageVector = Icons.Default.CameraAlt, contentDescription = AppStrings.momentsCreateTitle(language))
             }
         },
         containerColor = ScreenBackground,
@@ -295,7 +298,7 @@ fun MomentsScreen(
                         Text(text = "✨", fontSize = 16.sp)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Melihat ${moments.size} momen terbaru di sekitar",
+                            text = AppStrings.momentsViewingCount(language, moments.size),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFF2E7D32)
@@ -320,14 +323,14 @@ fun MomentsScreen(
                         )
                         Spacer(modifier = Modifier.height(14.dp))
                         Text(
-                            text = "Belum Ada Momen",
+                            text = AppStrings.momentsEmptyTitle(language),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = NeutralDark
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Belum ada cerita atau foto yang dibagikan. Jadilah yang pertama membagikan momen seru!",
+                            text = AppStrings.momentsEmptyDesc(language),
                             fontSize = 13.sp,
                             color = NeutralMedium,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -341,7 +344,7 @@ fun MomentsScreen(
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Bagikan Momen", fontSize = 13.sp)
+                            Text(AppStrings.momentsShareBtn(language), fontSize = 13.sp)
                         }
                     }
                 }
@@ -356,6 +359,7 @@ fun MomentsScreen(
                         item = item,
                         isMyMoment = isMyMoment,
                         currentUserAvatarUrl = currentUserAvatarUrl,
+                        language = language,
                         onToggleLike = { onToggleLike(item.id) },
                         onPhotoClick = { url -> fullscreenPhotoUrl = url },
                         onCommentClick = { activeMomentIdForComments = item.id },
@@ -389,8 +393,9 @@ fun MomentsScreen(
     if (reportingMoment != null) {
         val target = reportingMoment!!
         ReportDialog(
-            targetName = "Momen oleh ${target.authorName}",
+            targetName = "${AppStrings.reportTypeMoment(language)} (${target.authorName})",
             reportType = ReportType.MOMENT,
+            language = language,
             onDismiss = { reportingMoment = null },
             onSubmitReport = { reason, notes, _ ->
                 onReportMoment?.invoke(target.id, target.authorName, reason, notes)
@@ -413,7 +418,7 @@ fun MomentsScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Bagikan Momen Baru",
+                        text = AppStrings.momentsCreateTitle(language),
                         fontWeight = FontWeight.Bold,
                         fontSize = 17.sp,
                         color = NeutralDark
@@ -448,7 +453,7 @@ fun MomentsScreen(
                                 color = NeutralDark
                             )
                             Text(
-                                text = "Berbagi momen ke linimasa",
+                                text = AppStrings.momentsTimelineNotice(language),
                                 fontSize = 12.sp,
                                 color = NeutralMedium
                             )
@@ -458,7 +463,7 @@ fun MomentsScreen(
                     OutlinedTextField(
                         value = postText,
                         onValueChange = { postText = it },
-                        placeholder = { Text("Apa ceritamu hari ini? Ceritakan aktivitasmu...", color = NeutralMedium) },
+                        placeholder = { Text(AppStrings.momentsInputPlaceholder(language), color = NeutralMedium) },
                         minLines = 3,
                         maxLines = 5,
                         shape = RoundedCornerShape(12.dp),
@@ -475,7 +480,7 @@ fun MomentsScreen(
                     OutlinedTextField(
                         value = postLocation,
                         onValueChange = { postLocation = it },
-                        label = { Text("Lokasi Momen") },
+                        label = { Text(AppStrings.momentsLocationLabel(language)) },
                         leadingIcon = {
                             Icon(Icons.Default.LocationOn, contentDescription = null, tint = EmeraldGreen, modifier = Modifier.size(18.dp))
                         },
@@ -485,7 +490,7 @@ fun MomentsScreen(
                                     val lastLoc = com.example.util.AndroidGpsTracker.getLastKnownLocation(context)
                                     val city = if (lastLoc != null) {
                                         lastLoc.cityName.ifBlank {
-                                            com.example.util.AndroidGpsTracker.getCityName(context, lastLoc.latitude, lastLoc.longitude)
+                                             com.example.util.AndroidGpsTracker.getCityName(context, lastLoc.latitude, lastLoc.longitude)
                                         }
                                     } else {
                                         resolvedGpsCity ?: "Surabaya"
@@ -497,7 +502,7 @@ fun MomentsScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.MyLocation,
-                                    contentDescription = "Deteksi Lokasi GPS",
+                                    contentDescription = AppStrings.btnRefreshGps(language),
                                     tint = EmeraldGreen,
                                     modifier = Modifier.size(18.dp)
                                 )
@@ -534,7 +539,7 @@ fun MomentsScreen(
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Pilih Foto dari Galeri", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text(AppStrings.momentsPickPhoto(language), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     }
 
                     // Pratinjau Foto Galeri yang dipilih
@@ -548,7 +553,7 @@ fun MomentsScreen(
                         ) {
                             AsyncImage(
                                 model = selectedPhotoUri,
-                                contentDescription = "Pratinjau Foto Momen",
+                                contentDescription = AppStrings.momentsPickPhoto(language),
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
                             )
@@ -565,7 +570,7 @@ fun MomentsScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
-                                    contentDescription = "Hapus Foto",
+                                    contentDescription = AppStrings.chatsBtnDelete(language),
                                     tint = Color.White,
                                     modifier = Modifier.size(14.dp)
                                 )
@@ -585,7 +590,7 @@ fun MomentsScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = uploadProgressText ?: "Mengunggah foto...",
+                                text = uploadProgressText ?: AppStrings.momentsUploading(language),
                                 fontSize = 12.sp,
                                 color = EmeraldGreen,
                                 fontWeight = FontWeight.Medium
@@ -614,12 +619,12 @@ fun MomentsScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
                     shape = RoundedCornerShape(10.dp)
                 ) {
-                    Text("Bagikan", fontWeight = FontWeight.Bold)
+                    Text(AppStrings.momentsShareBtn(language), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showPostDialog = false }) {
-                    Text("Batal", color = NeutralMedium)
+                    Text(AppStrings.btnCancel(language), color = NeutralMedium)
                 }
             }
         )
@@ -680,7 +685,7 @@ fun MomentsScreen(
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "Komentar",
+                                text = AppStrings.momentsCommentsTitle(language),
                                 fontSize = 17.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = NeutralDark
@@ -700,7 +705,7 @@ fun MomentsScreen(
                             }
                         }
                         Text(
-                            text = "Momen oleh ${activeMoment.authorName}",
+                            text = "${AppStrings.reportTypeMoment(language)} (${activeMoment.authorName})",
                             fontSize = 12.sp,
                             color = NeutralMedium
                         )
@@ -714,7 +719,7 @@ fun MomentsScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = "Tutup Komentar",
+                            contentDescription = AppStrings.btnCancel(language),
                             tint = NeutralDark
                         )
                     }
@@ -751,14 +756,14 @@ fun MomentsScreen(
                             }
                             Spacer(modifier = Modifier.height(10.dp))
                             Text(
-                                text = "Belum Ada Komentar",
+                                text = AppStrings.momentsNoCommentsTitle(language),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = NeutralDark
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Jadilah yang pertama menyapa dan memberi komentar!",
+                                text = AppStrings.momentsNoCommentsDesc(language),
                                 fontSize = 12.sp,
                                 color = NeutralMedium,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -850,7 +855,7 @@ fun MomentsScreen(
                             onValueChange = { commentInputText = it },
                             placeholder = {
                                 Text(
-                                    "Tulis komentar ramah...",
+                                    AppStrings.momentsWriteComment(language),
                                     fontSize = 13.sp,
                                     color = NeutralMedium
                                 )
@@ -880,7 +885,7 @@ fun MomentsScreen(
                                 if (textToSend.isNotBlank()) {
                                     onAddComment?.invoke(activeMoment.id, textToSend)
                                     commentInputText = ""
-                                    Toast.makeText(context, "Komentar terkirim!", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, AppStrings.momentsCommentSent(language), Toast.LENGTH_SHORT).show()
                                 }
                             },
                             enabled = commentInputText.isNotBlank(),
@@ -894,7 +899,7 @@ fun MomentsScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Send,
-                                contentDescription = "Kirim Komentar",
+                                contentDescription = AppStrings.momentsWriteComment(language),
                                 tint = if (commentInputText.isNotBlank()) Color.White else NeutralMedium,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -911,6 +916,7 @@ fun MomentCard(
     item: MomentItem,
     isMyMoment: Boolean = false,
     currentUserAvatarUrl: String? = null,
+    language: AppLanguage = AppLanguage.INDONESIAN,
     onToggleLike: () -> Unit,
     onPhotoClick: (String) -> Unit,
     onShareClick: (() -> Unit)? = null,
@@ -931,7 +937,7 @@ fun MomentCard(
             onDismissRequest = { showDeleteConfirm = false },
             title = {
                 Text(
-                    text = "Hapus Momen?",
+                    text = AppStrings.momentsDeleteTitle(language),
                     fontWeight = FontWeight.Bold,
                     fontSize = 17.sp,
                     color = NeutralDark
@@ -939,7 +945,7 @@ fun MomentCard(
             },
             text = {
                 Text(
-                    text = "Apakah kamu yakin ingin menghapus momen ini? Tindakan ini tidak dapat dibatalkan.",
+                    text = AppStrings.momentsDeleteDesc(language),
                     fontSize = 14.sp,
                     color = NeutralMedium
                 )
@@ -952,12 +958,12 @@ fun MomentCard(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935))
                 ) {
-                    Text("Hapus", color = Color.White)
+                    Text(AppStrings.chatsBtnDelete(language), color = Color.White)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirm = false }) {
-                    Text("Batal", color = NeutralMedium)
+                    Text(AppStrings.btnCancel(language), color = NeutralMedium)
                 }
             }
         )
@@ -1051,7 +1057,7 @@ fun MomentCard(
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Default.DeleteOutline,
-                                contentDescription = "Hapus Momen",
+                                contentDescription = AppStrings.chatsBtnDelete(language),
                                 tint = Color(0xFFD32F2F),
                                 modifier = Modifier.size(17.dp)
                             )
@@ -1070,7 +1076,7 @@ fun MomentCard(
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Default.Flag,
-                                contentDescription = "Laporkan Momen",
+                                contentDescription = AppStrings.sheetReport(language),
                                 tint = Color(0xFF94A3B8),
                                 modifier = Modifier.size(16.dp)
                             )
@@ -1198,7 +1204,7 @@ fun MomentCard(
                 ) {
                     Icon(
                         imageVector = if (item.isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = "Suka",
+                        contentDescription = AppStrings.sheetLike(language),
                         tint = heartColor,
                         modifier = Modifier.size(20.dp)
                     )
@@ -1222,7 +1228,7 @@ fun MomentCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.ChatBubbleOutline,
-                        contentDescription = "Komentar",
+                        contentDescription = AppStrings.sheetComments(language),
                         tint = NeutralMedium,
                         modifier = Modifier.size(19.dp)
                     )
@@ -1246,13 +1252,13 @@ fun MomentCard(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Share,
-                            contentDescription = "Bagikan",
+                            contentDescription = AppStrings.sheetShare(language),
                             tint = NeutralMedium,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "Bagikan",
+                            text = AppStrings.sheetShare(language),
                             fontSize = 12.5.sp,
                             color = NeutralMedium,
                             fontWeight = FontWeight.Medium
@@ -1272,13 +1278,13 @@ fun MomentCard(
                     ) {
                         Icon(
                             imageVector = Icons.Default.DeleteOutline,
-                            contentDescription = "Hapus Momen",
+                            contentDescription = AppStrings.chatsBtnDelete(language),
                             tint = Color(0xFFD32F2F),
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "Hapus",
+                            text = AppStrings.chatsBtnDelete(language),
                             fontSize = 12.5.sp,
                             color = Color(0xFFD32F2F),
                             fontWeight = FontWeight.SemiBold

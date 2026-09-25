@@ -187,6 +187,7 @@ fun MainAppScreen(
         }
         is CurrentScreen.Moments -> {
             MomentsScreen(
+                language = uiState.language,
                 moments = uiState.moments,
                 myMomentIds = uiState.myMomentIds,
                 momentComments = uiState.momentComments,
@@ -243,6 +244,7 @@ fun MainAppScreen(
                 it.authorName.equals(screen.partnerName, ignoreCase = true) && !it.isDeleted
             }
             ChatDetailScreen(
+                language = uiState.language,
                 conversationId = screen.conversationId,
                 partnerName = screen.partnerName,
                 partnerAvatarHex = screen.partnerAvatarHex,
@@ -412,6 +414,7 @@ fun MainAppScreen(
                     when (uiState.currentTab) {
                         0 -> ChatsTabScreen(
                             conversations = uiState.conversations,
+                            language = uiState.language,
                             onOpenChat = { conv ->
                                 viewModel.openChat(conv.id, conv.partnerName, conv.partnerAvatarHex)
                             },
@@ -450,6 +453,7 @@ fun MainAppScreen(
                             FriendsTabScreen(
                                 friends = friendsList,
                                 newFriendsCount = uiState.newFriendRequests.size,
+                                language = uiState.language,
                                 onSelectFriend = { user ->
                                     viewModel.sayHiToUser(user)
                                 },

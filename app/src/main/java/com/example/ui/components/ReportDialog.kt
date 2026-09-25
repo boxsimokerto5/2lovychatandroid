@@ -43,10 +43,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.util.AppLanguage
 import com.example.ui.theme.EmeraldGreen
 import com.example.ui.theme.NeutralBorder
 import com.example.ui.theme.NeutralDark
 import com.example.ui.theme.NeutralMedium
+import com.example.util.AppStrings
 
 enum class ReportType {
     USER,
@@ -58,32 +60,16 @@ enum class ReportType {
 fun ReportDialog(
     targetName: String,
     reportType: ReportType,
+    language: AppLanguage = AppLanguage.INDONESIAN,
     onDismiss: () -> Unit,
     onSubmitReport: (reason: String, notes: String, alsoBlock: Boolean) -> Unit
 ) {
     val context = LocalContext.current
-    val reasons = remember(reportType) {
+    val reasons = remember(reportType, language) {
         when (reportType) {
-            ReportType.USER -> listOf(
-                "Pelecehan / Ujaran Kebencian / Ancaman",
-                "Spam / Penipuan Komersial",
-                "Foto Profil Tidak Pantas / Vulgar",
-                "Akun Palsu / Meniru Orang Lain",
-                "Perilaku Mencurigakan Lainnya"
-            )
-            ReportType.MOMENT -> listOf(
-                "Konten Vulgar / Pornografi",
-                "Spam / Iklan Ilegal / Scam",
-                "Ujaran Kebencian / Diskriminasi",
-                "Kekerasan / Konten Berbahaya",
-                "Pelanggaran Hak Cipta / Lainnya"
-            )
-            ReportType.MESSAGE -> listOf(
-                "Pesan Mengandung Pelecehan / Ancaman",
-                "Spam / Tautan Phishing / Penipuan",
-                "Konten Tidak Senonoh",
-                "Lainnya"
-            )
+            ReportType.USER -> AppStrings.reportReasonsUser(language)
+            ReportType.MOMENT -> AppStrings.reportReasonsMoment(language)
+            ReportType.MESSAGE -> AppStrings.reportReasonsMessage(language)
         }
     }
 
@@ -104,9 +90,9 @@ fun ReportDialog(
         title = {
             Text(
                 text = when (reportType) {
-                    ReportType.USER -> "Laporkan $targetName"
-                    ReportType.MOMENT -> "Laporkan Postingan Momen"
-                    ReportType.MESSAGE -> "Laporkan Pesan"
+                    ReportType.USER -> "${AppStrings.reportTitleUser(language)}: $targetName"
+                    ReportType.MOMENT -> AppStrings.reportTitleMoment(language)
+                    ReportType.MESSAGE -> AppStrings.reportTitleMessage(language)
                 },
                 fontWeight = FontWeight.Bold,
                 fontSize = 17.sp,
@@ -120,7 +106,7 @@ fun ReportDialog(
                     .verticalScroll(rememberScrollState())
             ) {
                 Text(
-                    text = "Pilih alasan pelaporan agar ditinjau oleh tim moderasi komunitas Lovy Chat dalam 24 jam:",
+                    text = AppStrings.reportSubtitle(language, targetName),
                     fontSize = 12.5.sp,
                     color = NeutralMedium,
                     lineHeight = 18.sp
@@ -175,8 +161,8 @@ fun ReportDialog(
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { if (it.length <= 250) notes = it },
-                    label = { Text("Keterangan tambahan (opsional)", fontSize = 12.sp) },
-                    placeholder = { Text("Jelaskan detail pelanggaran jika perlu...", fontSize = 12.sp) },
+                    label = { Text(AppStrings.reportNotesPlaceholder(language).removeSuffix("..."), fontSize = 12.sp) },
+                    placeholder = { Text(AppStrings.reportNotesPlaceholder(language), fontSize = 12.sp) },
                     maxLines = 3,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
@@ -202,7 +188,7 @@ fun ReportDialog(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "Sekaligus blokir kontak $targetName",
+                            text = AppStrings.reportAlsoBlockCheckbox(language),
                             fontSize = 12.5.sp,
                             color = NeutralDark
                         )
@@ -215,7 +201,7 @@ fun ReportDialog(
                 onClick = {
                     Toast.makeText(
                         context,
-                        "Laporan Anda telah diterima. Tim pengawas Lovy Chat akan meninjau dalam 24 jam.",
+                        AppStrings.reportSuccessToast(language),
                         Toast.LENGTH_LONG
                     ).show()
                     onSubmitReport(selectedReason, notes, alsoBlock)
@@ -225,7 +211,7 @@ fun ReportDialog(
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.testTag("btn_submit_report")
             ) {
-                Text("Kirim Laporan", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                Text(AppStrings.reportSubmitBtn(language), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
             }
         },
         dismissButton = {
@@ -233,7 +219,7 @@ fun ReportDialog(
                 onClick = onDismiss,
                 modifier = Modifier.testTag("btn_cancel_report")
             ) {
-                Text("Batal", color = NeutralMedium, fontSize = 13.sp)
+                Text(AppStrings.btnCancel(language), color = NeutralMedium, fontSize = 13.sp)
             }
         },
         shape = RoundedCornerShape(18.dp),

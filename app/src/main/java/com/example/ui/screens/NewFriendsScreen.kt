@@ -82,6 +82,7 @@ fun NewFriendsScreen(
     myName: String = "",
     myAvatarUrl: String? = null,
     myAvatarColorHex: String? = null,
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     modifier: Modifier = Modifier
 ) {
     var viewingAvatarPhoto by remember { mutableStateOf<Pair<String, String>?>(null) }
@@ -112,7 +113,7 @@ fun NewFriendsScreen(
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "Teman Baru",
+                                text = com.example.util.AppStrings.newFriendsTitle(language),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 18.sp,
                                 color = Color.White
@@ -136,7 +137,7 @@ fun NewFriendsScreen(
                             }
                         }
                         Text(
-                            text = "Pengguna yang mengirim chat tapi belum berteman",
+                            text = com.example.util.AppStrings.newFriendsSubtitle(language),
                             fontSize = 11.5.sp,
                             color = Color.White.copy(alpha = 0.85f)
                         )
@@ -149,7 +150,7 @@ fun NewFriendsScreen(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali",
+                            contentDescription = com.example.util.AppStrings.btnBack(language),
                             tint = Color.White
                         )
                     }
@@ -161,7 +162,7 @@ fun NewFriendsScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.QrCodeScanner,
-                            contentDescription = "Pindai Barcode / QR",
+                            contentDescription = com.example.util.AppStrings.qrScanPrompt(language),
                             tint = Color.White
                         )
                     }
@@ -199,7 +200,7 @@ fun NewFriendsScreen(
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = "Pengguna di bawah ini mengirimi Anda pesan obrolan atau salam, namun belum ada di Kontak Saya. Terima permintaan untuk menjadikannya teman resmi.",
+                            text = com.example.util.AppStrings.newFriendsInfoBanner(language),
                             fontSize = 12.sp,
                             color = NeutralDark,
                             lineHeight = 16.5.sp
@@ -232,14 +233,14 @@ fun NewFriendsScreen(
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Belum Ada Teman Baru",
+                            text = com.example.util.AppStrings.newFriendsEmptyTitle(language),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = NeutralDark
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Jika ada pengguna lain yang belum Anda simpan mengirimkan chat atau salam, mereka akan langsung masuk ke halaman ini.",
+                            text = com.example.util.AppStrings.newFriendsEmptyDesc(language),
                             fontSize = 13.sp,
                             color = NeutralMedium,
                             textAlign = TextAlign.Center,
@@ -260,7 +261,7 @@ fun NewFriendsScreen(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Cari Teman Sekitar", fontSize = 13.sp)
+                                Text(com.example.util.AppStrings.newFriendsFindNearbyBtn(language), fontSize = 13.sp)
                             }
                             if (onSimulateIncomingChat != null) {
                                 OutlinedButton(
@@ -275,7 +276,7 @@ fun NewFriendsScreen(
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Uji Chat Masuk", fontSize = 13.sp, color = EmeraldGreen)
+                                    Text(com.example.util.AppStrings.newFriendsSimulateBtn(language), fontSize = 13.sp, color = EmeraldGreen)
                                 }
                             }
                         }
@@ -285,6 +286,7 @@ fun NewFriendsScreen(
                 items(requests, key = { it.id }) { request ->
                     NewFriendRequestCard(
                         request = request,
+                        language = language,
                         onAvatarClick = {
                             if (!request.user.avatarUrl.isNullOrBlank()) {
                                 viewingAvatarPhoto = Pair(request.user.name, request.user.avatarUrl)
@@ -312,6 +314,7 @@ fun NewFriendsScreen(
 @Composable
 private fun NewFriendRequestCard(
     request: NewFriendRequest,
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     onAvatarClick: (() -> Unit)? = null,
     onAccept: () -> Unit,
     onIgnore: () -> Unit,
@@ -433,7 +436,7 @@ private fun NewFriendRequestCard(
                         tint = NeutralMedium
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = "Abaikan", fontSize = 12.5.sp)
+                    Text(text = com.example.util.AppStrings.newFriendsIgnore(language), fontSize = 12.5.sp)
                 }
 
                 Spacer(modifier = Modifier.width(8.dp))
@@ -446,7 +449,7 @@ private fun NewFriendRequestCard(
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
                     modifier = Modifier.testTag("btn_open_chat_${request.user.id}")
                 ) {
-                    Text(text = "Balas Chat", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
+                    Text(text = com.example.util.AppStrings.newFriendsReplyChat(language), fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
                 }
 
                 Spacer(modifier = Modifier.width(8.dp))
@@ -465,7 +468,7 @@ private fun NewFriendRequestCard(
                         tint = Color.White
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = "Terima", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                    Text(text = com.example.util.AppStrings.newFriendsAccept(language), fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
