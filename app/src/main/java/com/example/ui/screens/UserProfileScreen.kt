@@ -167,7 +167,7 @@ fun UserProfileScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Detail Profil Pengguna",
+                        text = com.example.util.AppStrings.profileDetailTitle(language),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -180,7 +180,7 @@ fun UserProfileScreen(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali",
+                            contentDescription = com.example.util.AppStrings.btnBack(language),
                             tint = Color.White
                         )
                     }
@@ -192,7 +192,7 @@ fun UserProfileScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.QrCode,
-                            contentDescription = "Kode QR Profil Saya",
+                            contentDescription = com.example.util.AppStrings.profileQrCodeDesc(language),
                             tint = Color.White
                         )
                     }
@@ -202,7 +202,7 @@ fun UserProfileScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit Profil",
+                            contentDescription = com.example.util.AppStrings.profileEditButton(language),
                             tint = Color.White
                         )
                     }
@@ -311,7 +311,7 @@ fun UserProfileScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.CameraAlt,
-                                contentDescription = "Ubah Foto",
+                                contentDescription = com.example.util.AppStrings.profileChangePhoto(language),
                                 tint = Color.White,
                                 modifier = Modifier.size(16.dp)
                             )
@@ -345,7 +345,7 @@ fun UserProfileScreen(
                         Spacer(modifier = Modifier.width(6.dp))
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
-                            contentDescription = "Terverifikasi",
+                            contentDescription = com.example.util.AppStrings.commonVerified(language),
                             tint = EmeraldGreen,
                             modifier = Modifier.size(20.dp)
                         )
@@ -376,7 +376,7 @@ fun UserProfileScreen(
                             Spacer(modifier = Modifier.width(5.dp))
                             Icon(
                                 imageVector = Icons.Default.QrCode,
-                                contentDescription = "Lihat Kode QR",
+                                contentDescription = com.example.util.AppStrings.profileQrCodeDesc(language),
                                 tint = EmeraldGreen,
                                 modifier = Modifier.size(15.dp)
                             )
@@ -412,7 +412,7 @@ fun UserProfileScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Tentang Saya (Bio)",
+                            text = com.example.util.AppStrings.profileAboutMe(language),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = NeutralDark
@@ -422,7 +422,7 @@ fun UserProfileScreen(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     Text(
-                        text = userProfile.bio.ifBlank { "Belum ada bio yang ditulis. Ketuk tombol edit untuk menambahkan bio." },
+                        text = userProfile.bio.ifBlank { com.example.util.AppStrings.profileEmptyBioHint(language) },
                         fontSize = 14.sp,
                         lineHeight = 20.sp,
                         fontStyle = if (userProfile.bio.isBlank()) FontStyle.Italic else FontStyle.Normal,
@@ -451,7 +451,7 @@ fun UserProfileScreen(
                         .padding(16.dp)
                 ) {
                     Text(
-                        text = "Informasi Akun",
+                        text = com.example.util.AppStrings.profileAccountInfo(language),
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = NeutralDark,
@@ -485,7 +485,7 @@ fun UserProfileScreen(
                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 Text(
-                                    text = "Kota Domisili",
+                                    text = com.example.util.AppStrings.profileCityDomicile(language),
                                     fontSize = 11.5.sp,
                                     color = NeutralMedium
                                 )
@@ -505,7 +505,7 @@ fun UserProfileScreen(
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text(
-                                            text = "Otomatis Peta",
+                                            text = com.example.util.AppStrings.profileAutoGps(language),
                                             fontSize = 9.5.sp,
                                             fontWeight = FontWeight.SemiBold,
                                             color = EmeraldGreen
@@ -515,14 +515,14 @@ fun UserProfileScreen(
                             }
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = userProfile.city.ifBlank { "Mendeteksi posisi GPS..." },
+                                text = userProfile.city.ifBlank { com.example.util.AppStrings.profileGpsDetecting(language) },
                                 fontSize = 14.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = NeutralDark,
                                 modifier = Modifier.testTag("text_profile_city")
                             )
                             Text(
-                                text = "Dilihat oleh pengguna lain di radar & obrolan",
+                                text = com.example.util.AppStrings.profileCityHint(language),
                                 fontSize = 11.sp,
                                 color = NeutralMedium
                             )
@@ -540,7 +540,7 @@ fun UserProfileScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.MyLocation,
-                                contentDescription = "Sinkronkan Lokasi Peta",
+                                contentDescription = com.example.util.AppStrings.profileSyncGps(language),
                                 tint = EmeraldGreen,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -549,26 +549,25 @@ fun UserProfileScreen(
 
                     HorizontalDivider(color = NeutralBorder, thickness = 0.6.dp, modifier = Modifier.padding(vertical = 8.dp))
 
-                    val genderLabel = if (userProfile.gender.equals("MALE", ignoreCase = true) || userProfile.gender.equals("Laki-laki", ignoreCase = true)) "Laki-laki" else "Perempuan"
                     ProfileDetailRow(
                         icon = Icons.Default.Wc,
-                        label = "Jenis Kelamin & Usia",
-                        value = "$genderLabel • ${userProfile.age} tahun"
+                        label = com.example.util.AppStrings.profileGenderAge(language),
+                        value = "${com.example.util.AppStrings.genderLabel(language, userProfile.gender)} • ${com.example.util.AppStrings.ageYears(language, userProfile.age)}"
                     )
 
                     HorizontalDivider(color = NeutralBorder, thickness = 0.6.dp, modifier = Modifier.padding(vertical = 8.dp))
 
                     ProfileDetailRow(
                         icon = Icons.Default.Email,
-                        label = "Email Akun",
-                        value = userProfile.email ?: "Belum terhubung"
+                        label = com.example.util.AppStrings.profileEmail(language),
+                        value = userProfile.email ?: com.example.util.AppStrings.profileNotConnected(language)
                     )
 
                     HorizontalDivider(color = NeutralBorder, thickness = 0.6.dp, modifier = Modifier.padding(vertical = 8.dp))
 
                     ProfileDetailRow(
                         icon = Icons.Default.Badge,
-                        label = "Lovy ID Unik",
+                        label = com.example.util.AppStrings.profileLovyId(language),
                         value = userProfile.lovyId
                     )
                 }
@@ -593,7 +592,7 @@ fun UserProfileScreen(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Edit Detail Profil",
+                    text = com.example.util.AppStrings.profileEditDialogTitle(language),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -618,7 +617,7 @@ fun UserProfileScreen(
             },
             title = {
                 Text(
-                    text = "Foto Profil",
+                    text = com.example.util.AppStrings.profilePhotoSection(language),
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
                     textAlign = TextAlign.Center
@@ -630,7 +629,7 @@ fun UserProfileScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
-                        text = "Kelola foto profil Anda. Anda dapat mengunggah foto baru atau mengosongkan foto profil untuk menggunakan logo resmi Lovy Chat sebagai profil default.",
+                        text = com.example.util.AppStrings.profilePhotoSectionDesc(language),
                         fontSize = 13.sp,
                         color = NeutralMedium,
                         lineHeight = 18.sp
@@ -658,7 +657,7 @@ fun UserProfileScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Lihat & Perbesar Foto Profil (Zoom 2 Jari)",
+                                text = com.example.util.AppStrings.profileViewZoomPhoto(language),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.sp
                             )
@@ -687,7 +686,7 @@ fun UserProfileScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Pilih Foto Baru dari Galeri",
+                            text = com.example.util.AppStrings.profilePickGalleryPhoto(language),
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp
                         )
@@ -700,7 +699,7 @@ fun UserProfileScreen(
                             onClearPhoto?.invoke()
                             Toast.makeText(
                                 context,
-                                "Foto profil dikosongkan. Logo Lovy Chat aktif sebagai foto profil Anda.",
+                                com.example.util.AppStrings.profilePhotoClearedToast(language),
                                 Toast.LENGTH_SHORT
                             ).show()
                         },
@@ -718,7 +717,7 @@ fun UserProfileScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Kosongkan (Gunakan Logo Lovy Chat)",
+                            text = com.example.util.AppStrings.profileClearPhotoOption(language),
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 12.5.sp
                         )
@@ -728,7 +727,7 @@ fun UserProfileScreen(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { showPhotoOptionsDialog = false }) {
-                    Text("Tutup", color = NeutralDark)
+                    Text(com.example.util.AppStrings.commonClose(language), color = NeutralDark)
                 }
             }
         )
@@ -738,7 +737,7 @@ fun UserProfileScreen(
     viewingPhotoUrl?.let { photoUrl ->
         com.example.ui.components.ZoomablePhotoViewerDialog(
             photoUrl = photoUrl,
-            title = "Foto Profil ${userProfile.displayName}",
+            title = "${com.example.util.AppStrings.profilePhotoSection(language)}: ${userProfile.displayName}",
             onDismiss = { viewingPhotoUrl = null }
         )
     }
@@ -747,6 +746,7 @@ fun UserProfileScreen(
     if (showEditDialog) {
         EditProfileDialog(
             currentProfile = userProfile,
+            language = language,
             onDismiss = { showEditDialog = false },
             onPickPhotoFromGallery = {
                 photoPickerLauncher.launch(

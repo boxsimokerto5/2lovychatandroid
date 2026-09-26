@@ -133,7 +133,7 @@ fun UserProfileBottomSheet(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "Profil Pengguna",
+                    text = com.example.util.AppStrings.userProfileSheetTitle(language),
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
                     color = NeutralDark
@@ -144,7 +144,7 @@ fun UserProfileBottomSheet(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Tutup",
+                        contentDescription = com.example.util.AppStrings.commonClose(language),
                         tint = NeutralMedium,
                         modifier = Modifier.size(20.dp)
                     )
@@ -171,7 +171,7 @@ fun UserProfileBottomSheet(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Pengguna ini berada dalam daftar blokir Anda.",
+                            text = com.example.util.AppStrings.userProfileBlockedBanner(language),
                             fontSize = 12.sp,
                             color = Color(0xFFC62828)
                         )
@@ -213,7 +213,7 @@ fun UserProfileBottomSheet(
                 Spacer(modifier = Modifier.width(6.dp))
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
-                    contentDescription = "Terverifikasi",
+                    contentDescription = com.example.util.AppStrings.commonVerified(language),
                     tint = EmeraldGreen,
                     modifier = Modifier.size(18.dp)
                 )
@@ -243,7 +243,7 @@ fun UserProfileBottomSheet(
                             modifier = Modifier.size(12.dp)
                         )
                         Text(
-                            text = if (user.gender == Gender.FEMALE) "Perempuan ${user.age} thn" else "Laki-laki ${user.age} thn",
+                            text = "${com.example.util.AppStrings.genderLabel(language, user.gender)} ${com.example.util.AppStrings.ageYears(language, user.age)}",
                             color = Color.White,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
@@ -259,7 +259,7 @@ fun UserProfileBottomSheet(
                     color = if (user.isOnline) Color(0xFFE8F5E9) else Color(0xFFF5F5F5)
                 ) {
                     Text(
-                        text = if (user.isOnline) "● Online" else "Offline",
+                        text = if (user.isOnline) com.example.util.AppStrings.statusOnline(language) else com.example.util.AppStrings.statusOffline(language),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (user.isOnline) EmeraldGreen else NeutralMedium,
@@ -283,7 +283,7 @@ fun UserProfileBottomSheet(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "${user.city} • Jarak ${user.formattedDistance}",
+                    text = com.example.util.AppStrings.locationDistance(language, user.city, user.formattedDistance),
                     fontSize = 13.sp,
                     color = NeutralMedium,
                     fontWeight = FontWeight.Medium
@@ -312,7 +312,7 @@ fun UserProfileBottomSheet(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Bio & Tentang",
+                            text = com.example.util.AppStrings.sheetBioTitle(language),
                             fontSize = 12.5.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = NeutralMedium
@@ -320,7 +320,7 @@ fun UserProfileBottomSheet(
                     }
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = user.bio.ifBlank { "Pengguna aktif di Lovy Chat" },
+                        text = user.bio.ifBlank { com.example.util.AppStrings.momentsDefaultUserBio(language) },
                         fontSize = 14.sp,
                         lineHeight = 20.sp,
                         color = NeutralDark
@@ -351,7 +351,7 @@ fun UserProfileBottomSheet(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Sapa & Mulai Chat 👋",
+                    text = com.example.util.AppStrings.userProfileStartChat(language),
                     fontSize = 14.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -375,7 +375,7 @@ fun UserProfileBottomSheet(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Foto Momen Terbaru",
+                        text = com.example.util.AppStrings.userProfileRecentMoments(language),
                         fontSize = 15.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeutralDark
@@ -388,7 +388,7 @@ fun UserProfileBottomSheet(
                         color = EmeraldGreen.copy(alpha = 0.12f)
                     ) {
                         Text(
-                            text = "${userMoments.size} Foto Momen",
+                            text = com.example.util.AppStrings.userProfileMomentsCount(language, userMoments.size),
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = EmeraldGreen,
@@ -431,14 +431,14 @@ fun UserProfileBottomSheet(
                         }
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = "Belum Ada Momen",
+                            text = com.example.util.AppStrings.userProfileNoMoments(language),
                             fontSize = 14.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = NeutralDark
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "${user.name} belum membagikan foto atau cerita momen.",
+                            text = com.example.util.AppStrings.userProfileNoMomentsDesc(language, user.name),
                             fontSize = 12.5.sp,
                             color = NeutralMedium,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -464,6 +464,7 @@ fun UserProfileBottomSheet(
                             isLiked = isLocallyLiked,
                             likesCount = currentLikes,
                             commentsCount = accurateCommentsCount,
+                            language = language,
                             onPhotoClick = { previewMoment = displayMoment },
                             onToggleLike = {
                                 val nextState = !isLocallyLiked
@@ -502,7 +503,7 @@ fun UserProfileBottomSheet(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Buka Blokir Pengguna", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    Text(com.example.util.AppStrings.userProfileUnblockBtn(language), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                 }
             } else {
                 OutlinedButton(
@@ -521,7 +522,7 @@ fun UserProfileBottomSheet(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Blokir Pengguna Ini", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    Text(com.example.util.AppStrings.userProfileBlockBtn(language), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -542,7 +543,7 @@ fun UserProfileBottomSheet(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Laporkan Pengguna Ini", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    Text(com.example.util.AppStrings.userProfileReportBtn(language), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -552,6 +553,7 @@ fun UserProfileBottomSheet(
         ReportDialog(
             targetName = user.name,
             reportType = ReportType.USER,
+            language = language,
             onDismiss = { showReportDialog = false },
             onSubmitReport = { reason, notes, alsoBlock ->
                 onReportUser?.invoke(reason, notes, alsoBlock)
@@ -574,7 +576,7 @@ fun UserProfileBottomSheet(
             },
             title = {
                 Text(
-                    text = "Blokir ${user.name}?",
+                    text = com.example.util.AppStrings.userProfileBlockConfirmTitle(language, user.name),
                     fontWeight = FontWeight.Bold,
                     fontSize = 17.sp,
                     textAlign = TextAlign.Center
@@ -582,7 +584,7 @@ fun UserProfileBottomSheet(
             },
             text = {
                 Text(
-                    text = "Pengguna ini tidak akan dapat mengirim pesan lagi dan tidak akan muncul di radar sekitar Anda.",
+                    text = com.example.util.AppStrings.userProfileBlockConfirmDesc(language),
                     fontSize = 13.sp,
                     color = NeutralMedium,
                     textAlign = TextAlign.Center
@@ -598,12 +600,12 @@ fun UserProfileBottomSheet(
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
                     shape = RoundedCornerShape(10.dp)
                 ) {
-                    Text("Blokir", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(com.example.util.AppStrings.btnBlock(language), color = Color.White, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showBlockConfirmDialog = false }) {
-                    Text("Batal", color = NeutralDark)
+                    Text(com.example.util.AppStrings.btnCancel(language), color = NeutralDark)
                 }
             }
         )
@@ -613,7 +615,7 @@ fun UserProfileBottomSheet(
     previewMoment?.let { moment ->
         com.example.ui.components.ZoomablePhotoViewerDialog(
             photoUrl = moment.imageUrl,
-            title = "Momen ${moment.authorName}",
+            title = com.example.util.AppStrings.partnerProfilePhotoTitle(language, moment.authorName),
             onDismiss = { previewMoment = null }
         )
     }
@@ -622,7 +624,7 @@ fun UserProfileBottomSheet(
     viewingAvatarPhoto?.let { photoUrl ->
         com.example.ui.components.ZoomablePhotoViewerDialog(
             photoUrl = photoUrl,
-            title = "Foto Profil ${user.name}",
+            title = com.example.util.AppStrings.partnerProfilePhotoTitle(language, user.name),
             onDismiss = { viewingAvatarPhoto = null }
         )
     }
@@ -648,6 +650,7 @@ fun UserProfileMomentCard(
     isLiked: Boolean,
     likesCount: Int,
     commentsCount: Int = moment.commentsCount,
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     onPhotoClick: () -> Unit,
     onToggleLike: () -> Unit,
     onCommentClick: () -> Unit = {},
@@ -690,12 +693,12 @@ fun UserProfileMomentCard(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Fullscreen,
-                                contentDescription = "Lihat Foto Penuh",
+                                contentDescription = com.example.util.AppStrings.commonZoomPhoto(language),
                                 tint = Color.White,
                                 modifier = Modifier.size(15.dp)
                             )
                             Spacer(modifier = Modifier.width(3.dp))
-                            Text("Buka", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Medium)
+                            Text(com.example.util.AppStrings.commonOpen(language), fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Medium)
                         }
                     }
 
@@ -773,7 +776,7 @@ fun UserProfileMomentCard(
                         ) {
                             Icon(
                                 imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                contentDescription = "Suka",
+                                contentDescription = com.example.util.AppStrings.commonLike(language),
                                 tint = if (isLiked) Color(0xFFE91E63) else NeutralMedium,
                                 modifier = Modifier.size(16.dp)
                             )
@@ -796,7 +799,7 @@ fun UserProfileMomentCard(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.ChatBubbleOutline,
-                                contentDescription = "Komentar",
+                                contentDescription = com.example.util.AppStrings.commonComment(language),
                                 tint = EmeraldGreen,
                                 modifier = Modifier.size(15.dp)
                             )
@@ -817,6 +820,7 @@ fun UserProfileMomentCard(
 @Composable
 fun UserPhotoPreviewDialog(
     moment: MomentItem,
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     onDismiss: () -> Unit
 ) {
     Dialog(
@@ -876,7 +880,7 @@ fun UserPhotoPreviewDialog(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = "Tutup",
+                            contentDescription = com.example.util.AppStrings.commonClose(language),
                             tint = Color.White,
                             modifier = Modifier.size(20.dp)
                         )
@@ -893,7 +897,7 @@ fun UserPhotoPreviewDialog(
                 ) {
                     AsyncImage(
                         model = moment.imageUrl,
-                        contentDescription = "Foto Penuh",
+                        contentDescription = com.example.util.AppStrings.commonPhoto(language),
                         contentScale = ContentScale.Fit,
                         modifier = Modifier
                             .fillMaxSize()

@@ -4386,4 +4386,1785 @@ object AppStrings {
         AppLanguage.INDONESIAN -> "Tutup"
         else -> "Close"
     }
+
+    // --- ADDITIONAL MULTI-LANGUAGE STRINGS ---
+
+    fun qrAccessCameraRequired(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "需要相机权限"
+        AppLanguage.JAPANESE -> "カメラへのアクセスが必要です"
+        AppLanguage.KOREAN -> "카메라 접근 권한 필요"
+        AppLanguage.ARABIC -> "مطلوب إذن الكاميرا"
+        AppLanguage.SPANISH -> "Acceso a la Cámara Requerido"
+        AppLanguage.FRENCH -> "Accès à la caméra requis"
+        AppLanguage.GERMAN -> "Kamerazugriff erforderlich"
+        AppLanguage.RUSSIAN -> "Требуется доступ к камере"
+        AppLanguage.PORTUGUESE -> "Acesso à Câmera Necessário"
+        AppLanguage.INDONESIAN -> "Akses Kamera Diperlukan"
+        else -> "Camera Access Required"
+    }
+
+    fun qrAccessCameraDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "如需直接扫描二维码或条形码，请允许相机权限。您也可以从相册上传二维码图片。"
+        AppLanguage.JAPANESE -> "QRコードを直接スキャンするには、カメラへのアクセスを許可してください。ギャラリーから画像をアップロードすることもできます。"
+        AppLanguage.KOREAN -> "QR 코드를 직접 스캔하려면 카메라 접근을 허용하세요. 갤러리에서 QR 이미지를 업로드할 수도 있습니다."
+        AppLanguage.ARABIC -> "لمسح رموز QR مباشرة، يرجى السماح للتطبيق بالوصول إلى الكاميرا. يمكنك أيضاً رفع صورة من المعرض."
+        AppLanguage.SPANISH -> "Para escanear códigos QR directamente, permite el acceso a la cámara. También puedes subir una imagen desde la galería."
+        AppLanguage.FRENCH -> "Pour scanner directement les codes QR, autorisez l'accès à la caméra. Vous pouvez aussi importer une image depuis la galerie."
+        AppLanguage.GERMAN -> "Um QR-Codes direkt zu scannen, erlaube den Kamerazugriff. Du kannst auch ein Bild aus der Galerie hochladen."
+        AppLanguage.RUSSIAN -> "Чтобы сканировать QR-коды напрямую, разрешите доступ к камере. Вы также можете загрузить изображение из галереи."
+        AppLanguage.PORTUGUESE -> "Para escanear códigos QR diretamente, permita o acesso à câmera. Você também pode enviar uma imagem da galeria."
+        AppLanguage.INDONESIAN -> "Untuk memindai kode QR atau barcode secara langsung, izinkan aplikasi mengakses kamera. Anda juga tetap dapat mengunggah gambar kode QR dari galeri foto."
+        else -> "To scan QR codes or barcodes directly, allow camera access. You can also upload a QR image from your gallery."
+    }
+
+    fun qrGrantCameraBtn(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "允许相机"
+        AppLanguage.JAPANESE -> "カメラを許可"
+        AppLanguage.KOREAN -> "카메라 허용"
+        AppLanguage.ARABIC -> "السماح بالكاميرا"
+        AppLanguage.SPANISH -> "Permitir Cámara"
+        AppLanguage.FRENCH -> "Autoriser la caméra"
+        AppLanguage.GERMAN -> "Kamera erlauben"
+        AppLanguage.RUSSIAN -> "Разрешить камеру"
+        AppLanguage.PORTUGUESE -> "Permitir Câmera"
+        AppLanguage.INDONESIAN -> "Izinkan Kamera"
+        else -> "Allow Camera"
+    }
+
+    fun qrUploadFromGalleryBtn(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "从相册上传"
+        AppLanguage.JAPANESE -> "ギャラリーから選択"
+        AppLanguage.KOREAN -> "갤러리에서 업로드"
+        AppLanguage.ARABIC -> "تحميل من المعرض"
+        AppLanguage.SPANISH -> "Subir desde Galería"
+        AppLanguage.FRENCH -> "Importer depuis la galerie"
+        AppLanguage.GERMAN -> "Aus Galerie hochladen"
+        AppLanguage.RUSSIAN -> "Загрузить из галереи"
+        AppLanguage.PORTUGUESE -> "Enviar da Galeria"
+        AppLanguage.INDONESIAN -> "Unggah dari Galeri"
+        else -> "Upload from Gallery"
+    }
+
+    fun qrUploadPhotoBtn(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "上传照片"
+        AppLanguage.JAPANESE -> "写真をアップロード"
+        AppLanguage.KOREAN -> "사진 업로드"
+        AppLanguage.ARABIC -> "تحميل صورة"
+        AppLanguage.SPANISH -> "Subir Foto"
+        AppLanguage.FRENCH -> "Télécharger une photo"
+        AppLanguage.GERMAN -> "Foto hochladen"
+        AppLanguage.RUSSIAN -> "Загрузить фото"
+        AppLanguage.PORTUGUESE -> "Enviar Foto"
+        AppLanguage.INDONESIAN -> "Unggah Foto"
+        else -> "Upload Photo"
+    }
+
+    fun qrMyQrBtn(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "我的二维码"
+        AppLanguage.JAPANESE -> "マイクルコード"
+        AppLanguage.KOREAN -> "내 QR"
+        AppLanguage.ARABIC -> "رمزي"
+        AppLanguage.SPANISH -> "Mi QR"
+        AppLanguage.FRENCH -> "Mon QR"
+        AppLanguage.GERMAN -> "Mein QR"
+        AppLanguage.RUSSIAN -> "Мой QR"
+        AppLanguage.PORTUGUESE -> "Meu QR"
+        AppLanguage.INDONESIAN -> "QR Saya"
+        else -> "My QR"
+    }
+
+    fun qrScanSubtitlePrompt(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "将相机对准好友的二维码"
+        AppLanguage.JAPANESE -> "カメラを友達のQRコードに向けてください"
+        AppLanguage.KOREAN -> "친구의 QR 코드에 카메라를 맞춰주세요"
+        AppLanguage.ARABIC -> "وجّه الكاميرا نحو رمز صديقك"
+        AppLanguage.SPANISH -> "Apunta la cámara al código QR de tu amigo"
+        AppLanguage.FRENCH -> "Pointez la caméra vers le code QR d'un ami"
+        AppLanguage.GERMAN -> "Richte die Kamera auf den QR-Code deines Freundes"
+        AppLanguage.RUSSIAN -> "Наведите камеру на QR-код друга"
+        AppLanguage.PORTUGUESE -> "Aponte a câmera para o código QR do amigo"
+        AppLanguage.INDONESIAN -> "Arahkan kamera ke Kode QR teman"
+        else -> "Point camera at friend's QR code"
+    }
+
+    fun qrScannedSuccessTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "二维码扫描成功"
+        AppLanguage.JAPANESE -> "スキャンに成功しました"
+        AppLanguage.KOREAN -> "코드 스캔 성공"
+        AppLanguage.ARABIC -> "تم مسح الرمز بنجاح"
+        AppLanguage.SPANISH -> "Código Escaneado con Éxito"
+        AppLanguage.FRENCH -> "Code scanné avec succès"
+        AppLanguage.GERMAN -> "Code erfolgreich gescannt"
+        AppLanguage.RUSSIAN -> "Код успешно отсканирован"
+        AppLanguage.PORTUGUESE -> "Código Escaneado com Sucesso"
+        AppLanguage.INDONESIAN -> "Kode Berhasil Dipindai"
+        else -> "Code Successfully Scanned"
+    }
+
+    fun qrIsSelfNotice(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "这是您自己的个人主页二维码"
+        AppLanguage.JAPANESE -> "これはあなた自身のプロフィールQRコードです"
+        AppLanguage.KOREAN -> "이것은 회원님 본인의 프로필 QR 코드입니다"
+        AppLanguage.ARABIC -> "هذا هو رمز QR لملفك الشخصي الخاص"
+        AppLanguage.SPANISH -> "Este es el código QR de tu propio perfil"
+        AppLanguage.FRENCH -> "Ceci est le code QR de votre propre profil"
+        AppLanguage.GERMAN -> "Dies ist dein eigener Profil-QR-Code"
+        AppLanguage.RUSSIAN -> "Это ваш собственный QR-код профиля"
+        AppLanguage.PORTUGUESE -> "Este é o código QR do seu próprio perfil"
+        AppLanguage.INDONESIAN -> "Ini adalah kode QR profil akun Anda sendiri"
+        else -> "This is your own profile QR code"
+    }
+
+    fun qrAlreadyFriendNotice(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "已在您的好友列表中"
+        AppLanguage.JAPANESE -> "すでに友達リストに登録されています"
+        AppLanguage.KOREAN -> "이미 친구 목록에 등록되어 있습니다"
+        AppLanguage.ARABIC -> "موجود بالفعل في قائمة أصدقائك"
+        AppLanguage.SPANISH -> "Ya está en tu lista de amigos"
+        AppLanguage.FRENCH -> "Déjà dans votre liste d'amis"
+        AppLanguage.GERMAN -> "Bereits in deiner Freundesliste"
+        AppLanguage.RUSSIAN -> "Уже в вашем списке друзей"
+        AppLanguage.PORTUGUESE -> "Já está na sua lista de amigos"
+        AppLanguage.INDONESIAN -> "Sudah ada di daftar Teman Anda"
+        else -> "Already in your Friends list"
+    }
+
+    fun qrAddAsFriendBtn(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "添加为好友"
+        AppLanguage.JAPANESE -> "友達に追加"
+        AppLanguage.KOREAN -> "친구로 추가"
+        AppLanguage.ARABIC -> "إضافة كصديق"
+        AppLanguage.SPANISH -> "Agregar como Amigo"
+        AppLanguage.FRENCH -> "Ajouter en ami"
+        AppLanguage.GERMAN -> "Als Freund hinzufügen"
+        AppLanguage.RUSSIAN -> "Добавить в друзья"
+        AppLanguage.PORTUGUESE -> "Adicionar como Amigo"
+        AppLanguage.INDONESIAN -> "Tambahkan Sebagai Teman"
+        else -> "Add as Friend"
+    }
+
+    fun qrSayHiDirectBtn(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "打招呼并直接发消息"
+        AppLanguage.JAPANESE -> "挨拶して直接メッセージを送る"
+        AppLanguage.KOREAN -> "인사하고 바로 메시지 보내기"
+        AppLanguage.ARABIC -> "التحية وإرسال رسالة مباشرة"
+        AppLanguage.SPANISH -> "Saludar y Enviar Mensaje Directo"
+        AppLanguage.FRENCH -> "Dire bonjour et envoyer un message"
+        AppLanguage.GERMAN -> "Hallo sagen & direkt schreiben"
+        AppLanguage.RUSSIAN -> "Поздороваться и написать напрямую"
+        AppLanguage.PORTUGUESE -> "Cumprimentar e Enviar Mensagem Direta"
+        AppLanguage.INDONESIAN -> "Sapa & Kirim Pesan Langsung"
+        else -> "Say Hi & Message Directly"
+    }
+
+    fun qrOpenChatBtn(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "打开聊天"
+        AppLanguage.JAPANESE -> "チャットを開く"
+        AppLanguage.KOREAN -> "채팅 열기"
+        AppLanguage.ARABIC -> "فتح الدردشة"
+        AppLanguage.SPANISH -> "Abrir Chat"
+        AppLanguage.FRENCH -> "Ouvrir la discussion"
+        AppLanguage.GERMAN -> "Chat öffnen"
+        AppLanguage.RUSSIAN -> "Открыть чат"
+        AppLanguage.PORTUGUESE -> "Abrir Conversa"
+        AppLanguage.INDONESIAN -> "Buka Obrolan"
+        else -> "Open Chat"
+    }
+
+    fun qrCameraPermissionDenied(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "相机权限被拒绝。您仍可从相册上传二维码图片。"
+        AppLanguage.JAPANESE -> "カメラの権限が拒否されました。ギャラリーから画像をアップロードできます。"
+        AppLanguage.KOREAN -> "카메라 권한이 거부되었습니다. 갤러리에서 QR 이미지를 업로드할 수 있습니다."
+        AppLanguage.ARABIC -> "تم رفض إذن الكاميرا. يمكنك مع ذلك تحميل صورة رمز QR من المعرض."
+        AppLanguage.SPANISH -> "Permiso de cámara denegado. Aún puedes subir una imagen de QR desde la galería."
+        AppLanguage.FRENCH -> "Permission caméra refusée. Vous pouvez toujours importer une image QR depuis la galerie."
+        AppLanguage.GERMAN -> "Kameraberechtigung verweigert. Du kannst weiterhin ein QR-Bild aus der Galerie hochladen."
+        AppLanguage.RUSSIAN -> "В разрешении камеры отказано. Вы всё ещё можете загрузить QR-код из галереи."
+        AppLanguage.PORTUGUESE -> "Permissão de câmera negada. Você ainda pode enviar uma imagem QR da galeria."
+        AppLanguage.INDONESIAN -> "Izin kamera ditolak. Anda tetap dapat mengunggah gambar QR dari galeri."
+        else -> "Camera permission denied. You can still upload a QR image from your gallery."
+    }
+
+    fun qrNoCodeFoundInImage(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "所选图片中未找到二维码或条形码"
+        AppLanguage.JAPANESE -> "選択した画像にQRコードまたはバーコードが見つかりません"
+        AppLanguage.KOREAN -> "선택한 이미지에서 QR 코드 또는 바코드를 찾을 수 없습니다"
+        AppLanguage.ARABIC -> "لم يتم العثور على رمز QR أو باركود في الصورة المحددة"
+        AppLanguage.SPANISH -> "No se encontró ningún código QR o de barras en la imagen seleccionada"
+        AppLanguage.FRENCH -> "Aucun code QR ou code-barres trouvé dans l'image sélectionnée"
+        AppLanguage.GERMAN -> "Kein QR-Code oder Barcode im ausgewählten Bild gefunden"
+        AppLanguage.RUSSIAN -> "В выбранном изображении не найден QR-код или штрихкод"
+        AppLanguage.PORTUGUESE -> "Nenhum código QR ou código de barras encontrado na imagem selecionada"
+        AppLanguage.INDONESIAN -> "Tidak ditemukan Kode QR atau Barcode pada gambar yang dipilih"
+        else -> "No QR code or Barcode found in selected image"
+    }
+
+    fun qrProcessingGalleryImage(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "正在处理相册图片..."
+        AppLanguage.JAPANESE -> "ギャラリー画像を処理中..."
+        AppLanguage.KOREAN -> "갤러리 이미지 처리 중..."
+        AppLanguage.ARABIC -> "جاري معالجة صورة المعرض..."
+        AppLanguage.SPANISH -> "Procesando imagen de la galería..."
+        AppLanguage.FRENCH -> "Traitement de l'image de la galerie..."
+        AppLanguage.GERMAN -> "Galeriebild wird verarbeitet..."
+        AppLanguage.RUSSIAN -> "Обработка изображения из галереи..."
+        AppLanguage.PORTUGUESE -> "Processando imagem da galeria..."
+        AppLanguage.INDONESIAN -> "Memproses gambar galeri..."
+        else -> "Processing gallery image..."
+    }
+
+    fun qrSearchingUserData(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "正在查找好友信息..."
+        AppLanguage.JAPANESE -> "友達のデータを検索中..."
+        AppLanguage.KOREAN -> "친구 정보 검색 중..."
+        AppLanguage.ARABIC -> "جاري البحث عن بيانات الصديق..."
+        AppLanguage.SPANISH -> "Buscando datos de tu amigo..."
+        AppLanguage.FRENCH -> "Recherche des informations de l'ami..."
+        AppLanguage.GERMAN -> "Freundesdaten werden gesucht..."
+        AppLanguage.RUSSIAN -> "Поиск данных друга..."
+        AppLanguage.PORTUGUESE -> "Buscando dados do amigo..."
+        AppLanguage.INDONESIAN -> "Mencari data teman..."
+        else -> "Searching friend data..."
+    }
+
+    fun qrInvalidUserId(lang: AppLanguage, code: String): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "无效的用户 ID: $code"
+        AppLanguage.JAPANESE -> "無効なユーザーID: $code"
+        AppLanguage.KOREAN -> "유효하지 않은 사용자 ID: $code"
+        AppLanguage.ARABIC -> "معرف مستخدم غير صالح: $code"
+        AppLanguage.SPANISH -> "ID de usuario no válido: $code"
+        AppLanguage.FRENCH -> "Identifiant utilisateur invalide : $code"
+        AppLanguage.GERMAN -> "Ungültige Benutzer-ID: $code"
+        AppLanguage.RUSSIAN -> "Недействительный ID пользователя: $code"
+        AppLanguage.PORTUGUESE -> "ID de usuário inválido: $code"
+        AppLanguage.INDONESIAN -> "ID pengguna tidak valid: $code"
+        else -> "Invalid user ID: $code"
+    }
+
+    fun qrUserNotFoundWithCode(lang: AppLanguage, code: String): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "未找到用户: $code"
+        AppLanguage.JAPANESE -> "ユーザーが見つかりません: $code"
+        AppLanguage.KOREAN -> "사용자를 찾을 수 없습니다: $code"
+        AppLanguage.ARABIC -> "المستخدم غير موجود: $code"
+        AppLanguage.SPANISH -> "Usuario no encontrado: $code"
+        AppLanguage.FRENCH -> "Utilisateur non trouvé : $code"
+        AppLanguage.GERMAN -> "Benutzer nicht gefunden: $code"
+        AppLanguage.RUSSIAN -> "Пользователь не найден: $code"
+        AppLanguage.PORTUGUESE -> "Usuário não encontrado: $code"
+        AppLanguage.INDONESIAN -> "Pengguna tidak ditemukan: $code"
+        else -> "User not found: $code"
+    }
+
+    fun blockedUsersTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "已屏蔽用户列表"
+        AppLanguage.JAPANESE -> "ブロックしたユーザー一覧"
+        AppLanguage.KOREAN -> "차단된 사용자 목록"
+        AppLanguage.ARABIC -> "قائمة المستخدمين المحظورين"
+        AppLanguage.SPANISH -> "Lista de Usuarios Bloqueados"
+        AppLanguage.FRENCH -> "Liste des utilisateurs bloqués"
+        AppLanguage.GERMAN -> "Liste blockierter Benutzer"
+        AppLanguage.RUSSIAN -> "Список заблокированных пользователей"
+        AppLanguage.PORTUGUESE -> "Lista de Usuários Bloqueados"
+        AppLanguage.INDONESIAN -> "Daftar Pengguna Diblokir"
+        else -> "Blocked Users List"
+    }
+
+    fun blockedUsersCount(lang: AppLanguage, count: Int): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "$count 位用户已被屏蔽"
+        AppLanguage.JAPANESE -> "$count 人のユーザーをブロック中"
+        AppLanguage.KOREAN -> "$count 명의 사용자 차단됨"
+        AppLanguage.ARABIC -> "تم حظر $count مستخدم"
+        AppLanguage.SPANISH -> "$count usuarios bloqueados"
+        AppLanguage.FRENCH -> "$count utilisateurs bloqués"
+        AppLanguage.GERMAN -> "$count Benutzer blockiert"
+        AppLanguage.RUSSIAN -> "$count пользователей заблокировано"
+        AppLanguage.PORTUGUESE -> "$count usuários bloqueados"
+        AppLanguage.INDONESIAN -> "$count pengguna diblokir"
+        else -> "$count users blocked"
+    }
+
+    fun blockedUsersEmptyTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "没有被屏蔽的用户"
+        AppLanguage.JAPANESE -> "ブロックしたユーザーはいません"
+        AppLanguage.KOREAN -> "차단된 사용자가 없습니다"
+        AppLanguage.ARABIC -> "لا يوجد مستخدمون محظورون"
+        AppLanguage.SPANISH -> "No hay usuarios bloqueados"
+        AppLanguage.FRENCH -> "Aucun utilisateur bloqué"
+        AppLanguage.GERMAN -> "Keine blockierten Benutzer"
+        AppLanguage.RUSSIAN -> "Нет заблокированных пользователей"
+        AppLanguage.PORTUGUESE -> "Nenhum usuário bloqueado"
+        AppLanguage.INDONESIAN -> "Tidak ada pengguna yang diblokir"
+        else -> "No blocked users"
+    }
+
+    fun blockedUsersEmptyDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "您在聊天中屏蔽的用户将显示在此处。"
+        AppLanguage.JAPANESE -> "チャットでブロックしたユーザーはここに表示されます。"
+        AppLanguage.KOREAN -> "채팅에서 차단한 사용자가 여기에 표시됩니다."
+        AppLanguage.ARABIC -> "المستخدمون الذين تحظرهم في الدردشة سيظهرون هنا."
+        AppLanguage.SPANISH -> "Los usuarios que bloquees en los chats aparecerán aquí."
+        AppLanguage.FRENCH -> "Les utilisateurs que vous bloquez apparaîtront ici."
+        AppLanguage.GERMAN -> "Benutzer, die du im Chat blockierst, erscheinen hier."
+        AppLanguage.RUSSIAN -> "Пользователи, которых вы заблокировали в чате, появятся здесь."
+        AppLanguage.PORTUGUESE -> "Os usuários que você bloquear no chat aparecerão aqui."
+        AppLanguage.INDONESIAN -> "Pengguna yang Anda blokir di ruang chat akan muncul di sini."
+        else -> "Users you block in chats will appear here."
+    }
+
+    fun blockedUsersNotice(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "以下用户无法向您发送消息或在“附近”中看到您："
+        AppLanguage.JAPANESE -> "以下のユーザーはあなたにメッセージを送信したり、周辺検索であなたを表示したりできません："
+        AppLanguage.KOREAN -> "아래 사용자는 회원님에게 메시지를 보내거나 주변에서 회원님을 볼 수 없습니다:"
+        AppLanguage.ARABIC -> "لا يمكن للمستخدمين أدناه مراسلتك أو رؤيتك في ميزة بالقرب مني:"
+        AppLanguage.SPANISH -> "Los siguientes usuarios no pueden enviarte mensajes ni verte en Cerca:"
+        AppLanguage.FRENCH -> "Les utilisateurs ci-dessous ne peuvent pas vous envoyer de messages ni vous voir dans À proximité :"
+        AppLanguage.GERMAN -> "Die folgenden Benutzer können dir keine Nachrichten senden oder dich in der Nähe sehen:"
+        AppLanguage.RUSSIAN -> "Пользователи ниже не могут отправлять вам сообщения или видеть вас в «Рядом»:"
+        AppLanguage.PORTUGUESE -> "Os usuários abaixo não podem enviar mensagens para você nem ver você no Perto de Mim:"
+        AppLanguage.INDONESIAN -> "Pengguna di bawah ini tidak dapat mengirimi Anda pesan atau melihat Anda di Sekitar Saya:"
+        else -> "The users below cannot send you messages or view you in Nearby:"
+    }
+
+    fun blockedUserUnblockedToast(lang: AppLanguage, name: String): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "已解除对 $name 的屏蔽"
+        AppLanguage.JAPANESE -> "$name のブロックを解除しました"
+        AppLanguage.KOREAN -> "$name 님의 차단이 해제되었습니다"
+        AppLanguage.ARABIC -> "تم إلغاء حظر $name"
+        AppLanguage.SPANISH -> "$name desbloqueado"
+        AppLanguage.FRENCH -> "$name a été débloqué"
+        AppLanguage.GERMAN -> "Blockierung für $name aufgehoben"
+        AppLanguage.RUSSIAN -> "Блокировка с $name снята"
+        AppLanguage.PORTUGUESE -> "Bloqueio de $name removido"
+        AppLanguage.INDONESIAN -> "Blokir untuk $name dibuka"
+        else -> "Unblocked $name"
+    }
+
+    fun privacyShowOnlineStatusTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "显示在线状态"
+        AppLanguage.JAPANESE -> "オンライン状態を表示"
+        AppLanguage.KOREAN -> "온라인 상태 표시"
+        AppLanguage.ARABIC -> "إظهار حالة الاتصال"
+        AppLanguage.SPANISH -> "Mostrar Estado en Línea"
+        AppLanguage.FRENCH -> "Afficher le statut en ligne"
+        AppLanguage.GERMAN -> "Online-Status anzeigen"
+        AppLanguage.RUSSIAN -> "Показывать статус «В сети»"
+        AppLanguage.PORTUGUESE -> "Mostrar Status Online"
+        AppLanguage.INDONESIAN -> "Tampilkan Status Online"
+        else -> "Show Online Status"
+    }
+
+    fun privacyShowOnlineStatusDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "在您活跃使用 Lovy Chat 时显示在线徽标。"
+        AppLanguage.JAPANESE -> "Lovy Chatを開いているときにオンラインバッジを表示します。"
+        AppLanguage.KOREAN -> "Lovy Chat을 사용 중일 때 온라인 표시를 보여줍니다."
+        AppLanguage.ARABIC -> "يعرض شارة الاتصال عندما تستخدم Lovy Chat بنشاط."
+        AppLanguage.SPANISH -> "Muestra una insignia en línea cuando estás usando Lovy Chat activamente."
+        AppLanguage.FRENCH -> "Affiche un badge en ligne lorsque vous utilisez activement Lovy Chat."
+        AppLanguage.GERMAN -> "Zeigt einen Online-Status an, wenn du Lovy Chat aktiv nutzt."
+        AppLanguage.RUSSIAN -> "Показывает значок «В сети», когда вы активно используете Lovy Chat."
+        AppLanguage.PORTUGUESE -> "Exibe o selo online quando você estiver usando o Lovy Chat ativamente."
+        AppLanguage.INDONESIAN -> "Menampilkan tanda online ketika Anda sedang aktif membuka Lovy Chat."
+        else -> "Displays an online badge when you are actively using Lovy Chat."
+    }
+
+    fun privacyNearbyRadarTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "在附近中展示我"
+        AppLanguage.JAPANESE -> "周辺レーダーに自分を表示"
+        AppLanguage.KOREAN -> "주변 레이더에 나 표시"
+        AppLanguage.ARABIC -> "إظهاري في ميزة بالقرب مني"
+        AppLanguage.SPANISH -> "Mostrarme en Cerca"
+        AppLanguage.FRENCH -> "Me montrer dans À proximité"
+        AppLanguage.GERMAN -> "Mich in der Nähe anzeigen"
+        AppLanguage.RUSSIAN -> "Показывать меня в «Рядом»"
+        AppLanguage.PORTUGUESE -> "Mostrar-me no Perto de Mim"
+        AppLanguage.INDONESIAN -> "Tampilkan Saya di Sekitar"
+        else -> "Show Me in Nearby"
+    }
+
+    fun privacyNearbyRadarDescVisible(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "您的主页处于活跃状态，其他人可在附近雷达中发现您。"
+        AppLanguage.JAPANESE -> "プロフィールが公開され、周辺レーダーで他のユーザーに見つけてもらえます。"
+        AppLanguage.KOREAN -> "프로필이 활성화되어 주변 레이더에서 다른 사용자가 나를 찾을 수 있습니다."
+        AppLanguage.ARABIC -> "ملفك الشخصي نشط ويمكن للآخرين العثور عليك في رادار بالقرب مني."
+        AppLanguage.SPANISH -> "Tu perfil está activo y otras personas pueden descubrirte en el radar de Cerca."
+        AppLanguage.FRENCH -> "Votre profil est actif et détectable par les autres sur le radar À proximité."
+        AppLanguage.GERMAN -> "Dein Profil ist aktiv und für andere im Umkreis-Radar sichtbar."
+        AppLanguage.RUSSIAN -> "Ваш профиль активен и виден другим на радаре «Рядом»."
+        AppLanguage.PORTUGUESE -> "Seu perfil está ativo e pode ser encontrado por outras pessoas no radar Perto de Mim."
+        AppLanguage.INDONESIAN -> "Profil Anda aktif dan dapat ditemukan oleh pengguna lain di radar 'Di Sekitar Saya'."
+        else -> "Your profile is active and discoverable by others on the Nearby radar."
+    }
+
+    fun privacyNearbyRadarDescHidden(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "隐身模式已开启。您的主页在附近雷达中已隐藏。"
+        AppLanguage.JAPANESE -> "ステルスモード有効。周辺レーダーからプロフィールが隠されます。"
+        AppLanguage.KOREAN -> "시크릿 모드 활성화. 주변 레이더에서 프로필이 숨겨집니다."
+        AppLanguage.ARABIC -> "وضع التخفي نشط. تم إخفاء ملفك الشخصي من رادار بالقرب مني."
+        AppLanguage.SPANISH -> "Modo incógnito activo. Tu perfil está oculto del radar de Cerca."
+        AppLanguage.FRENCH -> "Mode incognito actif. Votre profil est masqué du radar À proximité."
+        AppLanguage.GERMAN -> "Inkognito-Modus aktiv. Dein Profil ist im Umkreis-Radar unsichtbar."
+        AppLanguage.RUSSIAN -> "Режим невидимки активен. Ваш профиль скрыт от радара «Рядом»."
+        AppLanguage.PORTUGUESE -> "Modo incógnito ativo. Seu perfil está oculto no radar Perto de Mim."
+        AppLanguage.INDONESIAN -> "Mode Penyamaran aktif. Profil Anda disembunyikan dari radar pencarian orang sekitar."
+        else -> "Incognito mode active. Your profile is hidden from the Nearby radar."
+    }
+
+    fun privacyHideDistanceTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "隐藏精确距离"
+        AppLanguage.JAPANESE -> "正確な距離を非公開"
+        AppLanguage.KOREAN -> "정확한 거리 숨기기"
+        AppLanguage.ARABIC -> "إخفاء المسافة الدقيقة"
+        AppLanguage.SPANISH -> "Ocultar Distancia Exacta"
+        AppLanguage.FRENCH -> "Masquer la distance exacte"
+        AppLanguage.GERMAN -> "Genaue Entfernung verbergen"
+        AppLanguage.RUSSIAN -> "Скрыть точное расстояние"
+        AppLanguage.PORTUGUESE -> "Ocultar Distância Exata"
+        AppLanguage.INDONESIAN -> "Sembunyikan Jarak Persis"
+        else -> "Hide Exact Distance"
+    }
+
+    fun privacyHideDistanceDescHidden(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "精确距离已隐藏。其他人只能看到您的城市或区域名称。"
+        AppLanguage.JAPANESE -> "正確な距離を非公開にします。他のユーザーには都市名またはエリア名のみが表示されます。"
+        AppLanguage.KOREAN -> "정확한 거리가 숨겨집니다. 다른 사용자에게는 도시 또는 지역 이름만 표시됩니다."
+        AppLanguage.ARABIC -> "المسافة الدقيقة مخفية. يمكن للآخرين فقط رؤية اسم مدينتك أو منطقتك."
+        AppLanguage.SPANISH -> "La distancia exacta está oculta. Los demás solo pueden ver tu ciudad o región."
+        AppLanguage.FRENCH -> "La distance exacte est masquée. Les autres ne peuvent voir que le nom de votre ville ou région."
+        AppLanguage.GERMAN -> "Die genaue Entfernung ist verborgen. Andere sehen nur deinen Stadt- oder Gebietsnamen."
+        AppLanguage.RUSSIAN -> "Точное расстояние скрыто. Другие видят только название вашего города или региона."
+        AppLanguage.PORTUGUESE -> "A distância exata está oculta. Outros só podem ver o nome da sua cidade ou região."
+        AppLanguage.INDONESIAN -> "Jarak meter/km disembunyikan. Orang lain hanya dapat melihat nama kota/wilayah Anda."
+        else -> "Exact distance is hidden. Others can only see your city or area name."
+    }
+
+    fun privacyHideDistanceDescVisible(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "其他用户可以查看与您的预估距离（米或公里）。"
+        AppLanguage.JAPANESE -> "他のユーザーはあなたからの推定距離（メートルまたはキロメートル）を確認できます。"
+        AppLanguage.KOREAN -> "다른 사용자가 회원님과의 예상 거리(미터 또는 킬로미터)를 볼 수 있습니다."
+        AppLanguage.ARABIC -> "يمكن للمستخدمين الآخرين رؤية مسافة تقديرية بالأمتار أو الكيلومترات منك."
+        AppLanguage.SPANISH -> "Otros usuarios pueden ver una distancia estimada en metros o kilómetros desde tu ubicación."
+        AppLanguage.FRENCH -> "Les autres utilisateurs peuvent voir une distance approximative en mètres ou kilomètres."
+        AppLanguage.GERMAN -> "Andere Benutzer können eine geschätzte Entfernung in Metern oder Kilometern sehen."
+        AppLanguage.RUSSIAN -> "Другие пользователи могут видеть примерное расстояние в метрах или километрах до вас."
+        AppLanguage.PORTUGUESE -> "Outros usuários podem ver uma distância estimada em metros ou quilômetros de você."
+        AppLanguage.INDONESIAN -> "Pengguna lain dapat melihat perkiraan jarak meter atau kilometer dari lokasi Anda."
+        else -> "Other users can see an estimated distance in meters or kilometers from you."
+    }
+
+    fun privacyLocationPermissionTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "设备 GPS 与位置权限"
+        AppLanguage.JAPANESE -> "端末のGPS・位置情報権限"
+        AppLanguage.KOREAN -> "기기 GPS 및 위치 권한"
+        AppLanguage.ARABIC -> "إذن موقع GPS للجهاز"
+        AppLanguage.SPANISH -> "Permiso de GPS y Ubicación del Dispositivo"
+        AppLanguage.FRENCH -> "Permission de localisation et GPS"
+        AppLanguage.GERMAN -> "GPS- & Standortberechtigung des Geräts"
+        AppLanguage.RUSSIAN -> "Разрешение на местоположение и GPS"
+        AppLanguage.PORTUGUESE -> "Permissão de GPS e Localização do Dispositivo"
+        AppLanguage.INDONESIAN -> "Izin Lokasi & GPS Perangkat"
+        else -> "Device GPS & Location Permission"
+    }
+
+    fun privacyLocationPermissionGranted(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "已授予 GPS 权限 • 启用"
+        AppLanguage.JAPANESE -> "GPS権限許可済み • 有効"
+        AppLanguage.KOREAN -> "GPS 권한 허용됨 • 활성"
+        AppLanguage.ARABIC -> "تم منح إذن GPS • نشط"
+        AppLanguage.SPANISH -> "Permiso de GPS concedido • Activo"
+        AppLanguage.FRENCH -> "Permission GPS accordée • Actif"
+        AppLanguage.GERMAN -> "GPS-Berechtigung erteilt • Aktiv"
+        AppLanguage.RUSSIAN -> "Разрешение GPS предоставлено • Активно"
+        AppLanguage.PORTUGUESE -> "Permissão de GPS concedida • Ativo"
+        AppLanguage.INDONESIAN -> "Izin GPS diberikan • Aktif"
+        else -> "GPS permission granted • Active"
+    }
+
+    fun privacyLocationPermissionDenied(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "未授予位置权限"
+        AppLanguage.JAPANESE -> "位置情報権限が許可されていません"
+        AppLanguage.KOREAN -> "위치 권한이 허용되지 않음"
+        AppLanguage.ARABIC -> "لم يتم منح إذن الموقع"
+        AppLanguage.SPANISH -> "Permiso de ubicación no concedido"
+        AppLanguage.FRENCH -> "Permission de localisation non accordée"
+        AppLanguage.GERMAN -> "Standortberechtigung nicht erteilt"
+        AppLanguage.RUSSIAN -> "Разрешение на местоположение не предоставлено"
+        AppLanguage.PORTUGUESE -> "Permissão de localização não concedida"
+        AppLanguage.INDONESIAN -> "Izin lokasi belum diberikan"
+        else -> "Location permission not granted"
+    }
+
+    fun privacyUpdatedToast(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "隐私与位置设置已更新"
+        AppLanguage.JAPANESE -> "プライバシーと位置情報の設定を更新しました"
+        AppLanguage.KOREAN -> "개인정보 및 위치 설정이 업데이트되었습니다"
+        AppLanguage.ARABIC -> "تم تحديث إعدادات الخصوصية والموقع"
+        AppLanguage.SPANISH -> "Ajustes de privacidad y ubicación actualizados"
+        AppLanguage.FRENCH -> "Paramètres de confidentialité et de localisation mis à jour"
+        AppLanguage.GERMAN -> "Datenschutz- und Standorteinstellungen aktualisiert"
+        AppLanguage.RUSSIAN -> "Настройки конфиденциальности и местоположения обновлены"
+        AppLanguage.PORTUGUESE -> "Configurações de privacidade e localização atualizadas"
+        AppLanguage.INDONESIAN -> "Pengaturan privasi & lokasi diperbarui"
+        else -> "Privacy and location settings updated"
+    }
+
+    fun momentsDeletedToast(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "动态已成功删除"
+        AppLanguage.JAPANESE -> "モーメントを削除しました"
+        AppLanguage.KOREAN -> "모먼트가 삭제되었습니다"
+        AppLanguage.ARABIC -> "تم حذف المنشور بنجاح"
+        AppLanguage.SPANISH -> "Momento eliminado con éxito"
+        AppLanguage.FRENCH -> "Moment supprimé avec succès"
+        AppLanguage.GERMAN -> "Moment erfolgreich gelöscht"
+        AppLanguage.RUSSIAN -> "Момент успешно удален"
+        AppLanguage.PORTUGUESE -> "Momento excluído com sucesso"
+        AppLanguage.INDONESIAN -> "Momen berhasil dihapus"
+        else -> "Moment deleted successfully"
+    }
+
+    fun momentsDeleteOnlyAuthor(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "仅动态发布者可以删除此内容"
+        AppLanguage.JAPANESE -> "このモーメントを削除できるのは投稿者のみです"
+        AppLanguage.KOREAN -> "작성자만 이 모먼트를 삭제할 수 있습니다"
+        AppLanguage.ARABIC -> "يمكن للكاتب فقط حذف هذا المنشور"
+        AppLanguage.SPANISH -> "Solo el autor puede eliminar este momento"
+        AppLanguage.FRENCH -> "Seul l'auteur peut supprimer ce moment"
+        AppLanguage.GERMAN -> "Nur der Autor kann diesen Moment löschen"
+        AppLanguage.RUSSIAN -> "Только автор может удалить этот момент"
+        AppLanguage.PORTUGUESE -> "Apenas o autor pode excluir este momento"
+        AppLanguage.INDONESIAN -> "Hanya pembuat momen yang dapat menghapus postingan ini"
+        else -> "Only the author can delete this moment"
+    }
+
+    fun profilePhotoClearedToast(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "头像已清除，现使用 Lovy Chat 图标作为头像。"
+        AppLanguage.JAPANESE -> "プロフィール写真をリセットしました。Lovy Chatロゴが使用されます。"
+        AppLanguage.KOREAN -> "프로필 사진이 초기화되었습니다. Lovy Chat 로고가 프로필로 사용됩니다."
+        AppLanguage.ARABIC -> "تمت إزالة صورة الملف الشخصي. شعار Lovy Chat أصبح صورتك الشخصية."
+        AppLanguage.SPANISH -> "Foto de perfil eliminada. El logo de Lovy Chat es ahora tu foto de perfil."
+        AppLanguage.FRENCH -> "Photo de profil supprimée. Le logo Lovy Chat est maintenant votre photo de profil."
+        AppLanguage.GERMAN -> "Profilbild zurückgesetzt. Das Lovy Chat Logo ist nun dein Profilbild."
+        AppLanguage.RUSSIAN -> "Фото профиля удалено. Логотип Lovy Chat теперь ваше фото профиля."
+        AppLanguage.PORTUGUESE -> "Foto de perfil removida. O logotipo do Lovy Chat agora é sua foto de perfil."
+        AppLanguage.INDONESIAN -> "Foto profil dikosongkan. Logo Lovy Chat aktif sebagai foto profil Anda."
+        else -> "Profile picture cleared. Lovy Chat logo is now your profile picture."
+    }
+
+    fun profileClearPhotoOption(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "清除头像（使用 Lovy Chat 图标）"
+        AppLanguage.JAPANESE -> "リセット（Lovy Chatロゴを使用）"
+        AppLanguage.KOREAN -> "사진 지우기 (Lovy Chat 로고 사용)"
+        AppLanguage.ARABIC -> "إزالة الصورة (استخدام شعار Lovy Chat)"
+        AppLanguage.SPANISH -> "Quitar Foto (Usar Logo de Lovy Chat)"
+        AppLanguage.FRENCH -> "Effacer la photo (utiliser le logo Lovy Chat)"
+        AppLanguage.GERMAN -> "Foto löschen (Lovy Chat Logo verwenden)"
+        AppLanguage.RUSSIAN -> "Удалить фото (использовать логотип Lovy Chat)"
+        AppLanguage.PORTUGUESE -> "Remover Foto (Usar Logo do Lovy Chat)"
+        AppLanguage.INDONESIAN -> "Kosongkan (Gunakan Logo Lovy Chat)"
+        else -> "Clear Photo (Use Lovy Chat Logo)"
+    }
+
+    fun chatCannotOpenLink(lang: AppLanguage, url: String): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "无法打开链接: $url"
+        AppLanguage.JAPANESE -> "リンクを開けません: $url"
+        AppLanguage.KOREAN -> "링크를 열 수 없습니다: $url"
+        AppLanguage.ARABIC -> "تعذر فتح الرابط: $url"
+        AppLanguage.SPANISH -> "No se puede abrir el enlace: $url"
+        AppLanguage.FRENCH -> "Impossible d'ouvrir le lien : $url"
+        AppLanguage.GERMAN -> "Link kann nicht geöffnet werden: $url"
+        AppLanguage.RUSSIAN -> "Не удалось открыть ссылку: $url"
+        AppLanguage.PORTUGUESE -> "Não foi possível abrir o link: $url"
+        AppLanguage.INDONESIAN -> "Tidak dapat membuka tautan: $url"
+        else -> "Cannot open link: $url"
+    }
+
+    // --- USER PROFILE BOTTOM SHEET ---
+    fun userProfileSheetTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "用户资料"
+        AppLanguage.JAPANESE -> "ユーザープロフィール"
+        AppLanguage.KOREAN -> "사용자 프로필"
+        AppLanguage.ARABIC -> "الملف الشخصي للمستخدم"
+        AppLanguage.SPANISH -> "Perfil de Usuario"
+        AppLanguage.FRENCH -> "Profil de l'utilisateur"
+        AppLanguage.GERMAN -> "Benutzerprofil"
+        AppLanguage.RUSSIAN -> "Профиль пользователя"
+        AppLanguage.PORTUGUESE -> "Perfil do Usuário"
+        AppLanguage.INDONESIAN -> "Profil Pengguna"
+        else -> "User Profile"
+    }
+
+    fun userProfileBlockedBanner(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "此用户在您的黑名单中。"
+        AppLanguage.JAPANESE -> "このユーザーはブロックリストに入っています。"
+        AppLanguage.KOREAN -> "이 사용자는 차단 목록에 있습니다."
+        AppLanguage.ARABIC -> "هذا المستخدم في قائمة الحظر الخاصة بك."
+        AppLanguage.SPANISH -> "Este usuario está en tu lista de bloqueados."
+        AppLanguage.FRENCH -> "Cet utilisateur est sur votre liste de blocage."
+        AppLanguage.GERMAN -> "Dieser Benutzer ist auf deiner Blockierliste."
+        AppLanguage.RUSSIAN -> "Этот пользователь находится в черном списке."
+        AppLanguage.PORTUGUESE -> "Este usuário está na sua lista de bloqueados."
+        AppLanguage.INDONESIAN -> "Pengguna ini berada dalam daftar blokir Anda."
+        else -> "This user is on your block list."
+    }
+
+    fun statusOnline(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "● 在线"
+        AppLanguage.JAPANESE -> "● オンライン"
+        AppLanguage.KOREAN -> "● 온라인"
+        AppLanguage.ARABIC -> "● متصل"
+        AppLanguage.SPANISH -> "● En línea"
+        AppLanguage.FRENCH -> "● En ligne"
+        AppLanguage.GERMAN -> "● Online"
+        AppLanguage.RUSSIAN -> "● В сети"
+        AppLanguage.PORTUGUESE -> "● Online"
+        AppLanguage.INDONESIAN -> "● Online"
+        else -> "● Online"
+    }
+
+    fun statusOffline(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "离线"
+        AppLanguage.JAPANESE -> "オフライン"
+        AppLanguage.KOREAN -> "오프라인"
+        AppLanguage.ARABIC -> "غير متصل"
+        AppLanguage.SPANISH -> "Desconectado"
+        AppLanguage.FRENCH -> "Hors ligne"
+        AppLanguage.GERMAN -> "Offline"
+        AppLanguage.RUSSIAN -> "Не в сети"
+        AppLanguage.PORTUGUESE -> "Desconectado"
+        AppLanguage.INDONESIAN -> "Offline"
+        else -> "Offline"
+    }
+
+    fun userProfileStartChat(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "打招呼并开始聊天 👋"
+        AppLanguage.JAPANESE -> "挨拶してチャット開始 👋"
+        AppLanguage.KOREAN -> "인사하고 대화 시작하기 👋"
+        AppLanguage.ARABIC -> "إلقاء التحية وبدء المحادثة 👋"
+        AppLanguage.SPANISH -> "Saludar e Iniciar Chat 👋"
+        AppLanguage.FRENCH -> "Dire bonjour & discuter 👋"
+        AppLanguage.GERMAN -> "Grüßen & Chat starten 👋"
+        AppLanguage.RUSSIAN -> "Поздороваться и начать чат 👋"
+        AppLanguage.PORTUGUESE -> "Dar Olá e Iniciar Chat 👋"
+        AppLanguage.INDONESIAN -> "Sapa & Mulai Chat 👋"
+        else -> "Say Hi & Start Chat 👋"
+    }
+
+    fun userProfileRecentMoments(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "最新动态照片"
+        AppLanguage.JAPANESE -> "最近のモーメント写真"
+        AppLanguage.KOREAN -> "최근 모먼트 사진"
+        AppLanguage.ARABIC -> "أحدث صور اللحظات"
+        AppLanguage.SPANISH -> "Fotos de Momentos Recientes"
+        AppLanguage.FRENCH -> "Photos de moments récents"
+        AppLanguage.GERMAN -> "Neueste Moment-Fotos"
+        AppLanguage.RUSSIAN -> "Свежие фото моментов"
+        AppLanguage.PORTUGUESE -> "Fotos de Momentos Recentes"
+        AppLanguage.INDONESIAN -> "Foto Momen Terbaru"
+        else -> "Recent Moment Photos"
+    }
+
+    fun userProfileMomentsCount(lang: AppLanguage, count: Int): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "$count 张动态照片"
+        AppLanguage.JAPANESE -> "$count 枚のモーメント写真"
+        AppLanguage.KOREAN -> "$count 장의 모먼트 사진"
+        AppLanguage.ARABIC -> "$count صورة لحظة"
+        AppLanguage.SPANISH -> "$count fotos de momentos"
+        AppLanguage.FRENCH -> "$count photos de moments"
+        AppLanguage.GERMAN -> "$count Moment-Fotos"
+        AppLanguage.RUSSIAN -> "$count фото моментов"
+        AppLanguage.PORTUGUESE -> "$count fotos de momentos"
+        AppLanguage.INDONESIAN -> "$count Foto Momen"
+        else -> "$count Moment Photos"
+    }
+
+    fun userProfileNoMoments(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "暂无动态"
+        AppLanguage.JAPANESE -> "モーメントがまだありません"
+        AppLanguage.KOREAN -> "아직 모먼트가 없습니다"
+        AppLanguage.ARABIC -> "لا توجد لحظات بعد"
+        AppLanguage.SPANISH -> "Aún no hay momentos"
+        AppLanguage.FRENCH -> "Aucun moment pour le moment"
+        AppLanguage.GERMAN -> "Noch keine Momente"
+        AppLanguage.RUSSIAN -> "Пока нет моментов"
+        AppLanguage.PORTUGUESE -> "Ainda não há momentos"
+        AppLanguage.INDONESIAN -> "Belum Ada Momen"
+        else -> "No Moments Yet"
+    }
+
+    fun userProfileNoMomentsDesc(lang: AppLanguage, name: String): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "$name 还没有分享过照片或动态故事。"
+        AppLanguage.JAPANESE -> "$name はまだモーメント写真や投稿をシェアしていません。"
+        AppLanguage.KOREAN -> "$name 님이 아직 모먼트 사진이나 이야기를 공유하지 않았습니다."
+        AppLanguage.ARABIC -> "لم يشارك $name أي صور أو قصص للحظات بعد."
+        AppLanguage.SPANISH -> "$name aún no ha compartido fotos ni historias de momentos."
+        AppLanguage.FRENCH -> "$name n'a pas encore partagé de photos ou d'histoires."
+        AppLanguage.GERMAN -> "$name hat noch keine Moment-Fotos oder Geschichten geteilt."
+        AppLanguage.RUSSIAN -> "$name еще не делился(ась) фотографиями или историями моментов."
+        AppLanguage.PORTUGUESE -> "$name ainda não compartilhou fotos ou histórias de momentos."
+        AppLanguage.INDONESIAN -> "$name belum membagikan foto atau cerita momen."
+        else -> "$name hasn't shared any moment photos or stories yet."
+    }
+
+    fun userProfileUnblockBtn(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "解除用户拉黑"
+        AppLanguage.JAPANESE -> "ブロックを解除"
+        AppLanguage.KOREAN -> "사용자 차단 해제"
+        AppLanguage.ARABIC -> "إلغاء حظر المستخدم"
+        AppLanguage.SPANISH -> "Desbloquear usuario"
+        AppLanguage.FRENCH -> "Débloquer l'utilisateur"
+        AppLanguage.GERMAN -> "Benutzer freigeben"
+        AppLanguage.RUSSIAN -> "Разблокировать пользователя"
+        AppLanguage.PORTUGUESE -> "Desbloquear Usuário"
+        AppLanguage.INDONESIAN -> "Buka Blokir Pengguna"
+        else -> "Unblock User"
+    }
+
+    fun userProfileBlockBtn(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "拉黑此用户"
+        AppLanguage.JAPANESE -> "このユーザーをブロック"
+        AppLanguage.KOREAN -> "이 사용자 차단하기"
+        AppLanguage.ARABIC -> "حظر هذا المستخدم"
+        AppLanguage.SPANISH -> "Bloquear a este usuario"
+        AppLanguage.FRENCH -> "Bloquer cet utilisateur"
+        AppLanguage.GERMAN -> "Diesen Benutzer blockieren"
+        AppLanguage.RUSSIAN -> "Заблокировать пользователя"
+        AppLanguage.PORTUGUESE -> "Bloquear este usuário"
+        AppLanguage.INDONESIAN -> "Blokir Pengguna Ini"
+        else -> "Block This User"
+    }
+
+    fun userProfileReportBtn(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "举报此用户"
+        AppLanguage.JAPANESE -> "このユーザーを通報"
+        AppLanguage.KOREAN -> "이 사용자 신고하기"
+        AppLanguage.ARABIC -> "إبلاغ عن هذا المستخدم"
+        AppLanguage.SPANISH -> "Denunciar a este usuario"
+        AppLanguage.FRENCH -> "Signaler cet utilisateur"
+        AppLanguage.GERMAN -> "Diesen Benutzer melden"
+        AppLanguage.RUSSIAN -> "Пожаловаться на пользователя"
+        AppLanguage.PORTUGUESE -> "Denunciar este usuário"
+        AppLanguage.INDONESIAN -> "Laporkan Pengguna Ini"
+        else -> "Report This User"
+    }
+
+    fun userProfileBlockConfirmTitle(lang: AppLanguage, name: String): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "拉黑 $name？"
+        AppLanguage.JAPANESE -> "「$name」をブロックしますか？"
+        AppLanguage.KOREAN -> "$name 님을 차단하시겠습니까?"
+        AppLanguage.ARABIC -> "حظر $name؟"
+        AppLanguage.SPANISH -> "¿Bloquear a $name?"
+        AppLanguage.FRENCH -> "Bloquer $name ?"
+        AppLanguage.GERMAN -> "$name blockieren?"
+        AppLanguage.RUSSIAN -> "Заблокировать $name?"
+        AppLanguage.PORTUGUESE -> "Bloquear $name?"
+        AppLanguage.INDONESIAN -> "Blokir $name?"
+        else -> "Block $name?"
+    }
+
+    fun userProfileBlockConfirmDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "拉黑后此用户将无法向您发送消息，也不会出现在附近雷达中。"
+        AppLanguage.JAPANESE -> "ブロックすると、このユーザーはメッセージを送信できなくなり、レーダーにも表示されなくなります。"
+        AppLanguage.KOREAN -> "이 사용자는 더 이상 메시지를 보낼 수 없으며 주변 레이더에도 나타나지 않습니다."
+        AppLanguage.ARABIC -> "لن يتمكن هذا المستخدم من إرسال رسائل ولن يظهر في رادار الأشخاص القريبين منك."
+        AppLanguage.SPANISH -> "Este usuario ya no podrá enviarte mensajes y no aparecerá en tu radar cercano."
+        AppLanguage.FRENCH -> "Cet utilisateur ne pourra plus envoyer de messages et n'apparaîtra plus sur votre radar."
+        AppLanguage.GERMAN -> "Dieser Benutzer kann keine Nachrichten mehr senden und wird nicht mehr auf deinem Radar angezeigt."
+        AppLanguage.RUSSIAN -> "Этот пользователь не сможет отправлять вам сообщения и не появится на радаре поблизости."
+        AppLanguage.PORTUGUESE -> "Este usuário não poderá mais enviar mensagens e não aparecerá no seu radar próximo."
+        AppLanguage.INDONESIAN -> "Pengguna ini tidak akan dapat mengirim pesan lagi dan tidak akan muncul di radar sekitar Anda."
+        else -> "This user will no longer be able to send messages and won't appear on your nearby radar."
+    }
+
+    fun commonOpen(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "打开"
+        AppLanguage.JAPANESE -> "開く"
+        AppLanguage.KOREAN -> "열기"
+        AppLanguage.ARABIC -> "فتح"
+        AppLanguage.SPANISH -> "Abrir"
+        AppLanguage.FRENCH -> "Ouvrir"
+        AppLanguage.GERMAN -> "Öffnen"
+        AppLanguage.RUSSIAN -> "Открыть"
+        AppLanguage.PORTUGUESE -> "Abrir"
+        AppLanguage.INDONESIAN -> "Buka"
+        else -> "Open"
+    }
+
+    fun commonLike(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "赞"
+        AppLanguage.JAPANESE -> "いいね"
+        AppLanguage.KOREAN -> "좋아요"
+        AppLanguage.ARABIC -> "إعجاب"
+        AppLanguage.SPANISH -> "Me gusta"
+        AppLanguage.FRENCH -> "J'aime"
+        AppLanguage.GERMAN -> "Gefällt mir"
+        AppLanguage.RUSSIAN -> "Нравится"
+        AppLanguage.PORTUGUESE -> "Curtir"
+        AppLanguage.INDONESIAN -> "Suka"
+        else -> "Like"
+    }
+
+    fun commonComment(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "评论"
+        AppLanguage.JAPANESE -> "コメント"
+        AppLanguage.KOREAN -> "댓글"
+        AppLanguage.ARABIC -> "تعليق"
+        AppLanguage.SPANISH -> "Comentar"
+        AppLanguage.FRENCH -> "Commentaire"
+        AppLanguage.GERMAN -> "Kommentar"
+        AppLanguage.RUSSIAN -> "Комментарий"
+        AppLanguage.PORTUGUESE -> "Comentar"
+        AppLanguage.INDONESIAN -> "Komentar"
+        else -> "Comment"
+    }
+
+    // --- USER PROFILE EDIT & DETAIL SCREEN ---
+    fun profileDetailTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "用户个人资料"
+        AppLanguage.JAPANESE -> "プロフィール詳細"
+        AppLanguage.KOREAN -> "사용자 프로필 상세"
+        AppLanguage.ARABIC -> "تفاصيل الملف الشخصي"
+        AppLanguage.SPANISH -> "Detalles del Perfil"
+        AppLanguage.FRENCH -> "Détails du profil"
+        AppLanguage.GERMAN -> "Benutzerprofil-Details"
+        AppLanguage.RUSSIAN -> "Детали профиля"
+        AppLanguage.PORTUGUESE -> "Detalhes do Perfil"
+        AppLanguage.INDONESIAN -> "Detail Profil Pengguna"
+        else -> "User Profile Details"
+    }
+
+    fun profileQrCodeDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "我的个人二维码"
+        AppLanguage.JAPANESE -> "マイプロフィールQRコード"
+        AppLanguage.KOREAN -> "내 프로필 QR 코드"
+        AppLanguage.ARABIC -> "رمز QR لملفي الشخصي"
+        AppLanguage.SPANISH -> "Código QR de Mi Perfil"
+        AppLanguage.FRENCH -> "Mon QR code de profil"
+        AppLanguage.GERMAN -> "Mein Profil-QR-Code"
+        AppLanguage.RUSSIAN -> "QR-код моего профиля"
+        AppLanguage.PORTUGUESE -> "Código QR do Meu Perfil"
+        AppLanguage.INDONESIAN -> "Kode QR Profil Saya"
+        else -> "My Profile QR Code"
+    }
+
+    fun profileEditButton(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "编辑资料"
+        AppLanguage.JAPANESE -> "プロフィール編集"
+        AppLanguage.KOREAN -> "프로필 수정"
+        AppLanguage.ARABIC -> "تعديل الملف الشخصي"
+        AppLanguage.SPANISH -> "Editar Perfil"
+        AppLanguage.FRENCH -> "Modifier le profil"
+        AppLanguage.GERMAN -> "Profil bearbeiten"
+        AppLanguage.RUSSIAN -> "Редактировать профиль"
+        AppLanguage.PORTUGUESE -> "Editar Perfil"
+        AppLanguage.INDONESIAN -> "Edit Profil"
+        else -> "Edit Profile"
+    }
+
+    fun profileChangePhoto(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "更换头像"
+        AppLanguage.JAPANESE -> "写真を変更"
+        AppLanguage.KOREAN -> "사진 변경"
+        AppLanguage.ARABIC -> "تغيير الصورة"
+        AppLanguage.SPANISH -> "Cambiar Foto"
+        AppLanguage.FRENCH -> "Changer de photo"
+        AppLanguage.GERMAN -> "Foto ändern"
+        AppLanguage.RUSSIAN -> "Сменить фото"
+        AppLanguage.PORTUGUESE -> "Mudar Foto"
+        AppLanguage.INDONESIAN -> "Ubah Foto"
+        else -> "Change Photo"
+    }
+
+    fun profileAboutMe(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "关于我（个性签名）"
+        AppLanguage.JAPANESE -> "自己紹介（バイオ）"
+        AppLanguage.KOREAN -> "자기소개 (소개글)"
+        AppLanguage.ARABIC -> "نبذة عني (السيرة)"
+        AppLanguage.SPANISH -> "Sobre Mí (Biografía)"
+        AppLanguage.FRENCH -> "À propos de moi (Bio)"
+        AppLanguage.GERMAN -> "Über mich (Bio)"
+        AppLanguage.RUSSIAN -> "О себе (Статус)"
+        AppLanguage.PORTUGUESE -> "Sobre Mim (Biografia)"
+        AppLanguage.INDONESIAN -> "Tentang Saya (Bio)"
+        else -> "About Me (Bio)"
+    }
+
+    fun profileEmptyBioHint(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "暂未填写个性签名。点击编辑按钮添加简介。"
+        AppLanguage.JAPANESE -> "まだ自己紹介が書かれていません。編集ボタンを押して追加しましょう。"
+        AppLanguage.KOREAN -> "작성된 소개글이 없습니다. 수정 버튼을 눌러 추가해보세요."
+        AppLanguage.ARABIC -> "لم تتم كتابة نبذة شخصية بعد. انقر على زر التعديل لإضافة نبذة."
+        AppLanguage.SPANISH -> "Aún no hay biografía escrita. Toca el botón editar para agregar una."
+        AppLanguage.FRENCH -> "Aucune bio écrite pour le moment. Appuyez sur modifier pour en ajouter une."
+        AppLanguage.GERMAN -> "Noch keine Biografie vorhanden. Tippe auf Bearbeiten, um eine hinzuzufügen."
+        AppLanguage.RUSSIAN -> "Статус еще не написан. Нажмите редактировать, чтобы добавить информацию."
+        AppLanguage.PORTUGUESE -> "Nenhuma biografia escrita ainda. Toque em editar para adicionar uma."
+        AppLanguage.INDONESIAN -> "Belum ada bio yang ditulis. Ketuk tombol edit untuk menambahkan bio."
+        else -> "No bio written yet. Tap edit to add a bio."
+    }
+
+    fun profileAccountInfo(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "账户信息"
+        AppLanguage.JAPANESE -> "アカウント情報"
+        AppLanguage.KOREAN -> "계정 정보"
+        AppLanguage.ARABIC -> "معلومات الحساب"
+        AppLanguage.SPANISH -> "Información de la Cuenta"
+        AppLanguage.FRENCH -> "Informations du compte"
+        AppLanguage.GERMAN -> "Kontoinformationen"
+        AppLanguage.RUSSIAN -> "Информация об аккаунте"
+        AppLanguage.PORTUGUESE -> "Informações da Conta"
+        AppLanguage.INDONESIAN -> "Informasi Akun"
+        else -> "Account Information"
+    }
+
+    fun profileCityDomicile(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "常住城市"
+        AppLanguage.JAPANESE -> "居住都市"
+        AppLanguage.KOREAN -> "거주 도시"
+        AppLanguage.ARABIC -> "مدينة الإقامة"
+        AppLanguage.SPANISH -> "Ciudad de Residencia"
+        AppLanguage.FRENCH -> "Ville de résidence"
+        AppLanguage.GERMAN -> "Wohnort"
+        AppLanguage.RUSSIAN -> "Город проживания"
+        AppLanguage.PORTUGUESE -> "Cidade de Residência"
+        AppLanguage.INDONESIAN -> "Kota Domisili"
+        else -> "City of Domicile"
+    }
+
+    fun profileAutoGps(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "自动定位"
+        AppLanguage.JAPANESE -> "地図自動"
+        AppLanguage.KOREAN -> "지도 자동"
+        AppLanguage.ARABIC -> "تحديد تلقائي"
+        AppLanguage.SPANISH -> "GPS Automático"
+        AppLanguage.FRENCH -> "GPS automatique"
+        AppLanguage.GERMAN -> "Karten-Automatik"
+        AppLanguage.RUSSIAN -> "Авто-GPS"
+        AppLanguage.PORTUGUESE -> "GPS Automático"
+        AppLanguage.INDONESIAN -> "Otomatis Peta"
+        else -> "Auto GPS"
+    }
+
+    fun profileGpsDetecting(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "正在检测 GPS 位置..."
+        AppLanguage.JAPANESE -> "GPS位置情報を検出中..."
+        AppLanguage.KOREAN -> "GPS 위치 감지 중..."
+        AppLanguage.ARABIC -> "جارٍ تحديد موقع GPS..."
+        AppLanguage.SPANISH -> "Detectando ubicación GPS..."
+        AppLanguage.FRENCH -> "Détection de la position GPS..."
+        AppLanguage.GERMAN -> "GPS-Standort wird ermittelt..."
+        AppLanguage.RUSSIAN -> "Определение GPS-координат..."
+        AppLanguage.PORTUGUESE -> "Detectando localização GPS..."
+        AppLanguage.INDONESIAN -> "Mendeteksi posisi GPS..."
+        else -> "Detecting GPS location..."
+    }
+
+    fun profileCityHint(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "其他用户将在雷达和聊天中看到此信息"
+        AppLanguage.JAPANESE -> "レーダーやチャットで他のユーザーに表示されます"
+        AppLanguage.KOREAN -> "레이더 및 대화에서 다른 사용자에게 표시됩니다"
+        AppLanguage.ARABIC -> "مرئي للمستخدمين الآخرين في الرادار والمحادثات"
+        AppLanguage.SPANISH -> "Visible para otros usuarios en radar y chats"
+        AppLanguage.FRENCH -> "Visible par les autres utilisateurs sur le radar & les chats"
+        AppLanguage.GERMAN -> "Sichtbar für andere Benutzer auf Radar und in Chats"
+        AppLanguage.RUSSIAN -> "Видно другим пользователям на радаре и в чатах"
+        AppLanguage.PORTUGUESE -> "Visível para outros usuários no radar e conversas"
+        AppLanguage.INDONESIAN -> "Dilihat oleh pengguna lain di radar & obrolan"
+        else -> "Visible to other users on radar & chats"
+    }
+
+    fun profileSyncGps(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "同步地图位置"
+        AppLanguage.JAPANESE -> "地図の位置を同期"
+        AppLanguage.KOREAN -> "지도 위치 동기화"
+        AppLanguage.ARABIC -> "مزامنة موقع الخريطة"
+        AppLanguage.SPANISH -> "Sincronizar Ubicación de Mapa"
+        AppLanguage.FRENCH -> "Synchroniser la position"
+        AppLanguage.GERMAN -> "Standort synchronisieren"
+        AppLanguage.RUSSIAN -> "Синхронизировать координаты"
+        AppLanguage.PORTUGUESE -> "Sincronizar Localização do Mapa"
+        AppLanguage.INDONESIAN -> "Sinkronkan Lokasi Peta"
+        else -> "Sync Map Location"
+    }
+
+    fun profileGenderAge(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "性别与年龄"
+        AppLanguage.JAPANESE -> "性別 & 年齢"
+        AppLanguage.KOREAN -> "성별 & 나이"
+        AppLanguage.ARABIC -> "الجنس والعمر"
+        AppLanguage.SPANISH -> "Género y Edad"
+        AppLanguage.FRENCH -> "Sexe & Âge"
+        AppLanguage.GERMAN -> "Geschlecht & Alter"
+        AppLanguage.RUSSIAN -> "Пол и возраст"
+        AppLanguage.PORTUGUESE -> "Gênero e Idade"
+        AppLanguage.INDONESIAN -> "Jenis Kelamin & Usia"
+        else -> "Gender & Age"
+    }
+
+    fun profileEmail(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "账户邮箱"
+        AppLanguage.JAPANESE -> "アカウントメール"
+        AppLanguage.KOREAN -> "계정 이메일"
+        AppLanguage.ARABIC -> "البريد الإلكتروني للحساب"
+        AppLanguage.SPANISH -> "Correo de la Cuenta"
+        AppLanguage.FRENCH -> "E-mail du compte"
+        AppLanguage.GERMAN -> "Konto-E-Mail"
+        AppLanguage.RUSSIAN -> "Электронная почта"
+        AppLanguage.PORTUGUESE -> "E-mail da Conta"
+        AppLanguage.INDONESIAN -> "Email Akun"
+        else -> "Account Email"
+    }
+
+    fun profileNotConnected(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "未连接"
+        AppLanguage.JAPANESE -> "未連携"
+        AppLanguage.KOREAN -> "연결되지 않음"
+        AppLanguage.ARABIC -> "غير متصل"
+        AppLanguage.SPANISH -> "No conectado"
+        AppLanguage.FRENCH -> "Non connecté"
+        AppLanguage.GERMAN -> "Nicht verbunden"
+        AppLanguage.RUSSIAN -> "Не подключен"
+        AppLanguage.PORTUGUESE -> "Não conectado"
+        AppLanguage.INDONESIAN -> "Belum terhubung"
+        else -> "Not connected"
+    }
+
+    fun profileLovyId(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "唯一 Lovy ID"
+        AppLanguage.JAPANESE -> "固有のLovy ID"
+        AppLanguage.KOREAN -> "고유 Lovy ID"
+        AppLanguage.ARABIC -> "معرف Lovy الفريد"
+        AppLanguage.SPANISH -> "Lovy ID Único"
+        AppLanguage.FRENCH -> "ID Lovy Unique"
+        AppLanguage.GERMAN -> "Eindeutige Lovy-ID"
+        AppLanguage.RUSSIAN -> "Уникальный Lovy ID"
+        AppLanguage.PORTUGUESE -> "Lovy ID Único"
+        AppLanguage.INDONESIAN -> "Lovy ID Unik"
+        else -> "Unique Lovy ID"
+    }
+
+    fun profileEditDialogTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "编辑个人资料"
+        AppLanguage.JAPANESE -> "プロフィール詳細を編集"
+        AppLanguage.KOREAN -> "프로필 상세 수정"
+        AppLanguage.ARABIC -> "تعديل تفاصيل الملف الشخصي"
+        AppLanguage.SPANISH -> "Editar Detalles del Perfil"
+        AppLanguage.FRENCH -> "Modifier les détails du profil"
+        AppLanguage.GERMAN -> "Profildetails bearbeiten"
+        AppLanguage.RUSSIAN -> "Редактировать профиль"
+        AppLanguage.PORTUGUESE -> "Editar Detalhes do Perfil"
+        AppLanguage.INDONESIAN -> "Edit Detail Profil"
+        else -> "Edit Profile Details"
+    }
+
+    fun profilePhotoSection(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "个人头像"
+        AppLanguage.JAPANESE -> "プロフィール写真"
+        AppLanguage.KOREAN -> "프로필 사진"
+        AppLanguage.ARABIC -> "صورة الملف الشخصي"
+        AppLanguage.SPANISH -> "Foto de Perfil"
+        AppLanguage.FRENCH -> "Photo de profil"
+        AppLanguage.GERMAN -> "Profilbild"
+        AppLanguage.RUSSIAN -> "Фото профиля"
+        AppLanguage.PORTUGUESE -> "Foto de Perfil"
+        AppLanguage.INDONESIAN -> "Foto Profil"
+        else -> "Profile Photo"
+    }
+
+    fun profilePhotoSectionDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "管理您的头像。您可以上传新照片，或清除头像以使用 Lovy Chat 官方图标作为默认头像。"
+        AppLanguage.JAPANESE -> "プロフィール写真を管理します。新しい写真をアップロードするか、リセットしてLovy Chatの公式ロゴを使用できます。"
+        AppLanguage.KOREAN -> "프로필 사진을 관리합니다. 새 사진을 업로드하거나 초기화하여 기본 Lovy Chat 로고를 사용할 수 있습니다."
+        AppLanguage.ARABIC -> "إدارة صورتك الشخصية. يمكنك تحميل صورة جديدة أو إزالتها لاستخدام شعار Lovy Chat كافتراضي."
+        AppLanguage.SPANISH -> "Administra tu foto de perfil. Sube una nueva o quítala para usar el logo oficial de Lovy Chat."
+        AppLanguage.FRENCH -> "Gérez votre photo. Téléversez-en une nouvelle ou effacez-la pour utiliser le logo officiel Lovy Chat."
+        AppLanguage.GERMAN -> "Verwalte dein Profilbild. Lade ein neues Foto hoch oder nutze das offizielle Lovy Chat Logo als Standard."
+        AppLanguage.RUSSIAN -> "Управляйте фото профиля. Загрузите новое фото или используйте официальный логотип Lovy Chat."
+        AppLanguage.PORTUGUESE -> "Gerencie sua foto de perfil. Carregue uma nova foto ou use o logotipo oficial do Lovy Chat."
+        AppLanguage.INDONESIAN -> "Kelola foto profil Anda. Anda dapat mengunggah foto baru atau mengosongkan foto profil untuk menggunakan logo resmi Lovy Chat sebagai profil default."
+        else -> "Manage your profile picture. Upload a new photo or clear it to use the official Lovy Chat logo as default."
+    }
+
+    fun profileViewZoomPhoto(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "查看并缩放头像（双指缩放）"
+        AppLanguage.JAPANESE -> "写真を表示＆拡大（ピンチズーム）"
+        AppLanguage.KOREAN -> "사진 보기 및 확대 (두 손가락 줌)"
+        AppLanguage.ARABIC -> "عرض وتكبير الصورة (تكبير بإصبعين)"
+        AppLanguage.SPANISH -> "Ver y Ampliar Foto (Zoom con 2 dedos)"
+        AppLanguage.FRENCH -> "Afficher & agrandir la photo (zoom)"
+        AppLanguage.GERMAN -> "Foto ansehen & vergrößern (Zweifinger-Zoom)"
+        AppLanguage.RUSSIAN -> "Просмотр и масштабирование (зум 2 пальцами)"
+        AppLanguage.PORTUGUESE -> "Ver e Ampliar Foto (Zoom com 2 dedos)"
+        AppLanguage.INDONESIAN -> "Lihat & Perbesar Foto Profil (Zoom 2 Jari)"
+        else -> "View & Enlarge Profile Photo (2-Finger Zoom)"
+    }
+
+    fun profilePickGalleryPhoto(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "从相册选择新照片"
+        AppLanguage.JAPANESE -> "ギャラリーから新しい写真を選択"
+        AppLanguage.KOREAN -> "갤러리에서 새 사진 선택"
+        AppLanguage.ARABIC -> "اختيار صورة جديدة من المعرض"
+        AppLanguage.SPANISH -> "Elegir Nueva Foto de la Galería"
+        AppLanguage.FRENCH -> "Choisir une nouvelle photo de la galerie"
+        AppLanguage.GERMAN -> "Neues Foto aus der Galerie wählen"
+        AppLanguage.RUSSIAN -> "Выбрать новое фото из галереи"
+        AppLanguage.PORTUGUESE -> "Escolher Nova Foto da Galeria"
+        AppLanguage.INDONESIAN -> "Pilih Foto Baru dari Galeri"
+        else -> "Choose New Photo from Gallery"
+    }
+
+    fun profileLogoActive(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "官方 Lovy Chat 图标已设为您的头像"
+        AppLanguage.JAPANESE -> "公式Lovy Chatロゴがプロフィール写真として有効です"
+        AppLanguage.KOREAN -> "공식 Lovy Chat 로고가 프로필 사진으로 설정되어 있습니다"
+        AppLanguage.ARABIC -> "شعار Lovy Chat الرسمي مفعل كصورتك الشخصية"
+        AppLanguage.SPANISH -> "El logo oficial de Lovy Chat está activo como tu foto de perfil"
+        AppLanguage.FRENCH -> "Le logo officiel Lovy Chat est actif comme photo de profil"
+        AppLanguage.GERMAN -> "Das offizielle Lovy Chat Logo ist als dein Profilbild aktiv"
+        AppLanguage.RUSSIAN -> "Официальный логотип Lovy Chat активен как фото профиля"
+        AppLanguage.PORTUGUESE -> "O logotipo oficial do Lovy Chat está ativo como sua foto de perfil"
+        AppLanguage.INDONESIAN -> "Logo Resmi Lovy Chat aktif sebagai foto profil Anda"
+        else -> "Official Lovy Chat logo is active as your profile picture"
+    }
+
+    fun profileDisplayNameLabel(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "显示名称 (Display Name)"
+        AppLanguage.JAPANESE -> "表示名 (Display Name)"
+        AppLanguage.KOREAN -> "표시 이름 (Display Name)"
+        AppLanguage.ARABIC -> "اسم العرض (Display Name)"
+        AppLanguage.SPANISH -> "Nombre para Mostrar"
+        AppLanguage.FRENCH -> "Nom d'affichage"
+        AppLanguage.GERMAN -> "Anzeigename"
+        AppLanguage.RUSSIAN -> "Отображаемое имя"
+        AppLanguage.PORTUGUESE -> "Nome de Exibição"
+        AppLanguage.INDONESIAN -> "Nama Tampilan (Display Name)"
+        else -> "Display Name"
+    }
+
+    fun profileEmailLabel(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "绑定邮箱 (Connected)"
+        AppLanguage.JAPANESE -> "連携メールアドレス"
+        AppLanguage.KOREAN -> "연결된 이메일"
+        AppLanguage.ARABIC -> "البريد المتصل"
+        AppLanguage.SPANISH -> "Correo Vinculado"
+        AppLanguage.FRENCH -> "E-mail connecté"
+        AppLanguage.GERMAN -> "Verknüpfte E-Mail"
+        AppLanguage.RUSSIAN -> "Привязанная почта"
+        AppLanguage.PORTUGUESE -> "E-mail Conectado"
+        AppLanguage.INDONESIAN -> "Email Akun (Terkoneksi)"
+        else -> "Connected Account Email"
+    }
+
+    fun profileGenderLabel(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "性别"
+        AppLanguage.JAPANESE -> "性別"
+        AppLanguage.KOREAN -> "성별"
+        AppLanguage.ARABIC -> "الجنس"
+        AppLanguage.SPANISH -> "Género"
+        AppLanguage.FRENCH -> "Sexe"
+        AppLanguage.GERMAN -> "Geschlecht"
+        AppLanguage.RUSSIAN -> "Пол"
+        AppLanguage.PORTUGUESE -> "Gênero"
+        AppLanguage.INDONESIAN -> "Jenis Kelamin"
+        else -> "Gender"
+    }
+
+    fun profileAgeLabel(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "年龄（周岁）"
+        AppLanguage.JAPANESE -> "年齢（歳）"
+        AppLanguage.KOREAN -> "나이 (세)"
+        AppLanguage.ARABIC -> "العمر (بالسنوات)"
+        AppLanguage.SPANISH -> "Edad (Años)"
+        AppLanguage.FRENCH -> "Âge (Années)"
+        AppLanguage.GERMAN -> "Alter (Jahre)"
+        AppLanguage.RUSSIAN -> "Возраст (лет)"
+        AppLanguage.PORTUGUESE -> "Idade (Anos)"
+        AppLanguage.INDONESIAN -> "Usia (Tahun)"
+        else -> "Age (Years)"
+    }
+
+    fun profileBioLabel(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "个性签名 / 简短状态"
+        AppLanguage.JAPANESE -> "自己紹介 / 短いひとこと"
+        AppLanguage.KOREAN -> "소개글 / 짧은 상태메시지"
+        AppLanguage.ARABIC -> "النبذة / الحالة القصيرة"
+        AppLanguage.SPANISH -> "Biografía / Estado Corto"
+        AppLanguage.FRENCH -> "Bio / Statut court"
+        AppLanguage.GERMAN -> "Bio / Kurzer Status"
+        AppLanguage.RUSSIAN -> "Статус / О себе"
+        AppLanguage.PORTUGUESE -> "Biografia / Status Curto"
+        AppLanguage.INDONESIAN -> "Bio / Status Singkat"
+        else -> "Bio / Short Status"
+    }
+
+    fun profileCityLabel(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "常住城市 / 区域位置"
+        AppLanguage.JAPANESE -> "居住都市 / 地域"
+        AppLanguage.KOREAN -> "거주 도시 / 지역"
+        AppLanguage.ARABIC -> "مدينة الإقامة / الموقع"
+        AppLanguage.SPANISH -> "Ciudad / Ubicación de Domicilio"
+        AppLanguage.FRENCH -> "Ville / Lieu de domicile"
+        AppLanguage.GERMAN -> "Stadt / Wohnort"
+        AppLanguage.RUSSIAN -> "Город / Местоположение"
+        AppLanguage.PORTUGUESE -> "Cidade / Localização de Domicílio"
+        AppLanguage.INDONESIAN -> "Kota / Lokasi Domisili"
+        else -> "City / Domicile Location"
+    }
+
+    fun profileUseGpsLocation(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "使用检测到的 GPS 位置"
+        AppLanguage.JAPANESE -> "検出されたGPS位置を使用"
+        AppLanguage.KOREAN -> "감지된 GPS 위치 사용"
+        AppLanguage.ARABIC -> "استخدام موقع GPS المكتشف"
+        AppLanguage.SPANISH -> "Usar Ubicación GPS Detectada"
+        AppLanguage.FRENCH -> "Utiliser la position GPS détectée"
+        AppLanguage.GERMAN -> "Ermittelten GPS-Standort nutzen"
+        AppLanguage.RUSSIAN -> "Использовать определенный GPS"
+        AppLanguage.PORTUGUESE -> "Usar Localização GPS Detectada"
+        AppLanguage.INDONESIAN -> "Gunakan Lokasi GPS Terdeteksi"
+        else -> "Use Detected GPS Location"
+    }
+
+    fun profileApplyGps(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "应用"
+        AppLanguage.JAPANESE -> "適用"
+        AppLanguage.KOREAN -> "적용"
+        AppLanguage.ARABIC -> "تطبيق"
+        AppLanguage.SPANISH -> "Aplicar"
+        AppLanguage.FRENCH -> "Appliquer"
+        AppLanguage.GERMAN -> "Anwenden"
+        AppLanguage.RUSSIAN -> "Применить"
+        AppLanguage.PORTUGUESE -> "Aplicar"
+        AppLanguage.INDONESIAN -> "Terapkan"
+        else -> "Apply"
+    }
+
+    fun profileGpsNotice(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "您的常住位置会根据地图 GPS 自动精确到区县和城市级别。"
+        AppLanguage.JAPANESE -> "あなたの居住位置は地図GPSによって市区町村レベルまで自動検出されます。"
+        AppLanguage.KOREAN -> "거주 위치는 지도 GPS를 통해 구/군 및 도시 수준까지 자동 감지됩니다."
+        AppLanguage.ARABIC -> "يتم تحديد موقع إقامتك تلقائياً من خريطة GPS حتى مستوى المنطقة والمدينة."
+        AppLanguage.SPANISH -> "Tu ubicación de domicilio se detecta automáticamente desde el GPS del mapa hasta el nivel de distrito y ciudad."
+        AppLanguage.FRENCH -> "Votre domicile est automatiquement détecté à partir du GPS jusqu'au niveau du quartier et de la ville."
+        AppLanguage.GERMAN -> "Dein Wohnort wird automatisch über das Karten-GPS bis auf Bezirks- und Stadtebene ermittelt."
+        AppLanguage.RUSSIAN -> "Ваше местоположение автоматически определяется по GPS до уровня района и города."
+        AppLanguage.PORTUGUESE -> "Sua localização de domicílio é detectada automaticamente do GPS do mapa até o nível de distrito e cidade."
+        AppLanguage.INDONESIAN -> "Lokasi domisili Anda terdeteksi otomatis dari GPS peta hingga tingkat kecamatan & kota."
+        else -> "Your domicile location is automatically detected from map GPS up to district & city level."
+    }
+
+    fun profileUpdatedSuccess(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "资料更新成功！"
+        AppLanguage.JAPANESE -> "プロフィールを更新しました！"
+        AppLanguage.KOREAN -> "프로필이 성공적으로 업데이트되었습니다!"
+        AppLanguage.ARABIC -> "تم تحديث الملف الشخصي بنجاح!"
+        AppLanguage.SPANISH -> "¡Perfil actualizado con éxito!"
+        AppLanguage.FRENCH -> "Profil mis à jour avec succès !"
+        AppLanguage.GERMAN -> "Profil erfolgreich aktualisiert!"
+        AppLanguage.RUSSIAN -> "Профиль успешно обновлен!"
+        AppLanguage.PORTUGUESE -> "Perfil atualizado com sucesso!"
+        AppLanguage.INDONESIAN -> "Profil berhasil diperbarui!"
+        else -> "Profile updated successfully!"
+    }
+
+    fun profileUpdateFailed(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "保存资料失败"
+        AppLanguage.JAPANESE -> "プロフィールの保存に失敗しました"
+        AppLanguage.KOREAN -> "프로필 저장에 실패했습니다"
+        AppLanguage.ARABIC -> "فشل حفظ الملف الشخصي"
+        AppLanguage.SPANISH -> "Error al guardar el perfil"
+        AppLanguage.FRENCH -> "Échec de l'enregistrement du profil"
+        AppLanguage.GERMAN -> "Profil konnte nicht gespeichert werden"
+        AppLanguage.RUSSIAN -> "Не удалось сохранить профиль"
+        AppLanguage.PORTUGUESE -> "Falha ao salvar perfil"
+        AppLanguage.INDONESIAN -> "Gagal menyimpan profil"
+        else -> "Failed to save profile"
+    }
+
+    // --- MOMENTS SCREEN ---
+    fun momentsPhotoTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "动态照片"
+        AppLanguage.JAPANESE -> "モーメント写真"
+        AppLanguage.KOREAN -> "모먼트 사진"
+        AppLanguage.ARABIC -> "صورة اللحظة"
+        AppLanguage.SPANISH -> "Foto del Momento"
+        AppLanguage.FRENCH -> "Photo du moment"
+        AppLanguage.GERMAN -> "Moment-Foto"
+        AppLanguage.RUSSIAN -> "Фото момента"
+        AppLanguage.PORTUGUESE -> "Foto do Momento"
+        AppLanguage.INDONESIAN -> "Foto Momen"
+        else -> "Moment Photo"
+    }
+
+    fun momentsImageLoadFailed(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "图片加载失败"
+        AppLanguage.JAPANESE -> "画像を読み込めませんでした"
+        AppLanguage.KOREAN -> "이미지를 불러오지 못했습니다"
+        AppLanguage.ARABIC -> "فشل تحميل الصورة"
+        AppLanguage.SPANISH -> "Error al cargar la imagen"
+        AppLanguage.FRENCH -> "Échec du chargement de l'image"
+        AppLanguage.GERMAN -> "Bild konnte nicht geladen werden"
+        AppLanguage.RUSSIAN -> "Не удалось загрузить фото"
+        AppLanguage.PORTUGUESE -> "Falha ao carregar imagem"
+        AppLanguage.INDONESIAN -> "Gagal memuat gambar"
+        else -> "Failed to load image"
+    }
+
+    fun momentsDefaultMyBio(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "我在 Lovy Chat 的个人主页 ✨"
+        AppLanguage.JAPANESE -> "Lovy Chatのマイプロフィール ✨"
+        AppLanguage.KOREAN -> "Lovy Chat 프로필입니다 ✨"
+        AppLanguage.ARABIC -> "ملفي الشخصي في Lovy Chat ✨"
+        AppLanguage.SPANISH -> "Mi perfil en Lovy Chat ✨"
+        AppLanguage.FRENCH -> "Mon profil sur Lovy Chat ✨"
+        AppLanguage.GERMAN -> "Mein Profil auf Lovy Chat ✨"
+        AppLanguage.RUSSIAN -> "Мой профиль в Lovy Chat ✨"
+        AppLanguage.PORTUGUESE -> "Meu perfil no Lovy Chat ✨"
+        AppLanguage.INDONESIAN -> "Profil saya di Lovy Chat ✨"
+        else -> "My profile on Lovy Chat ✨"
+    }
+
+    fun momentsDefaultUserBio(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "你好！很高兴在 Lovy Chat 分享精彩动态和故事 ✨"
+        AppLanguage.JAPANESE -> "こんにちは！Lovy Chatでモーメントや日常をシェアできて嬉しいです ✨"
+        AppLanguage.KOREAN -> "안녕하세요! Lovy Chat에서 모먼트와 이야기를 함께 나눠요 ✨"
+        AppLanguage.ARABIC -> "مرحباً! سعيد بمشاركة اللحظات والقصص الممتعة في Lovy Chat ✨"
+        AppLanguage.SPANISH -> "¡Hola! Encantado de compartir momentos e historias divertidas en Lovy Chat ✨"
+        AppLanguage.FRENCH -> "Bonjour ! Heureux de partager des moments et des histoires sur Lovy Chat ✨"
+        AppLanguage.GERMAN -> "Hallo! Freue mich, tolle Momente auf Lovy Chat zu teilen ✨"
+        AppLanguage.RUSSIAN -> "Привет! Рад делиться яркими моментами и историями в Lovy Chat ✨"
+        AppLanguage.PORTUGUESE -> "Olá! Adoro compartilhar momentos e histórias no Lovy Chat ✨"
+        AppLanguage.INDONESIAN -> "Halo! Senang bisa berbagi momen dan cerita seru di Lovy Chat ✨"
+        else -> "Hello! Glad to share moments and fun stories on Lovy Chat ✨"
+    }
+
+    // --- NEARBY SCREEN ENHANCEMENTS ---
+    fun nearbyOnlineOnlyFilter(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "🟢 仅看在线"
+        AppLanguage.JAPANESE -> "🟢 オンラインのみ"
+        AppLanguage.KOREAN -> "🟢 온라인만"
+        AppLanguage.ARABIC -> "🟢 المتصلون فقط"
+        AppLanguage.SPANISH -> "🟢 Solo en línea"
+        AppLanguage.FRENCH -> "🟢 En ligne seulement"
+        AppLanguage.GERMAN -> "🟢 Nur online"
+        AppLanguage.RUSSIAN -> "🟢 Только в сети"
+        AppLanguage.PORTUGUESE -> "🟢 Apenas online"
+        AppLanguage.INDONESIAN -> "🟢 Hanya Online"
+        else -> "🟢 Online Only"
+    }
+
+    fun nearbyUnlockMoreTitle(lang: AppLanguage, hiddenCount: Int, tier: Int, nextTargetLimit: Int): String {
+        return when (resolveLang(lang)) {
+            AppLanguage.CHINESE -> if (tier >= 4) "解锁全部附近好友 ($nextTargetLimit 人)" else "多解锁 $hiddenCount 位附近好友"
+            AppLanguage.JAPANESE -> if (tier >= 4) "近くのユーザーを最大解放 ($nextTargetLimit 人)" else "近くの友達をあと $hiddenCount 人アンロック"
+            AppLanguage.KOREAN -> if (tier >= 4) "주변 친구 최대 잠금 해제 ($nextTargetLimit 명)" else "주변 친구 $hiddenCount 명 더 잠금 해제"
+            AppLanguage.ARABIC -> if (tier >= 4) "فتح الحد الأقصى للمستخدمين القريبين ($nextTargetLimit شخص)" else "فتح $hiddenCount صديق إضافي بالجوار"
+            AppLanguage.SPANISH -> if (tier >= 4) "Desbloquear Máximo de Personas Cercanas ($nextTargetLimit)" else "Desbloquear $hiddenCount Amigos Cercanos Más"
+            AppLanguage.FRENCH -> if (tier >= 4) "Débloquer le maximum de personnes proches ($nextTargetLimit)" else "Débloquer $hiddenCount amis de plus"
+            AppLanguage.GERMAN -> if (tier >= 4) "Maximale Personen in der Nähe freischalten ($nextTargetLimit)" else "Noch $hiddenCount Freunde in der Nähe freischalten"
+            AppLanguage.RUSSIAN -> if (tier >= 4) "Открыть максимум пользователей поблизости ($nextTargetLimit чел.)" else "Открыть еще $hiddenCount чел. поблизости"
+            AppLanguage.PORTUGUESE -> if (tier >= 4) "Desbloquear Máximo de Pessoas Próximas ($nextTargetLimit)" else "Desbloquear Mais $hiddenCount Amigos Próximos"
+            AppLanguage.INDONESIAN -> if (tier >= 4) "Buka Maksimal Teman Sekitar ($nextTargetLimit User)" else "Buka $hiddenCount Teman Sekitar Lagi"
+            else -> if (tier >= 4) "Unlock Maximum Nearby Friends ($nextTargetLimit Users)" else "Unlock $hiddenCount More Nearby Friends"
+        }
+    }
+
+    fun nearbyUnlockMoreDesc(lang: AppLanguage, tier: Int): String {
+        val count = when (tier) {
+            0 -> 30
+            1 -> 45
+            2 -> 70
+            3 -> 100
+            else -> 125
+        }
+        return when (resolveLang(lang)) {
+            AppLanguage.CHINESE -> "观看简短视频即可展示多达 $count 位身边的活跃用户！"
+            AppLanguage.JAPANESE -> "短い動画を視聴して、周囲のアクティブユーザーを最大 $count 人まで表示！"
+            AppLanguage.KOREAN -> "짧은 영상을 시청하고 주변 활동 사용자 최대 $count 명을 확인해보세요!"
+            AppLanguage.ARABIC -> "شاهد فيديو قصير لعرض ما يصل إلى $count مستخدم نشط في منطقتك!"
+            AppLanguage.SPANISH -> "¡Mira un video corto para mostrar hasta $count personas activas cerca!"
+            AppLanguage.FRENCH -> "Regardez une courte vidéo pour afficher jusqu'à $count personnes actives près de chez vous !"
+            AppLanguage.GERMAN -> "Schau ein kurzes Video, um bis zu $count aktive Personen in deiner Nähe zu sehen!"
+            AppLanguage.RUSSIAN -> "Посмотрите короткое видео, чтобы открыть до $count активных пользователей поблизости!"
+            AppLanguage.PORTUGUESE -> "Assista a um vídeo curto para exibir até $count pessoas ativas perto de você!"
+            AppLanguage.INDONESIAN -> "Tonton video singkat untuk menampilkan hingga $count pengguna aktif di sekitar Anda."
+            else -> "Watch a short video to display up to $count active nearby users."
+        }
+    }
+
+    fun nearbyUnlockSuccessToast(lang: AppLanguage, tier: Int, nextTargetLimit: Int): String {
+        return when (resolveLang(lang)) {
+            AppLanguage.CHINESE -> if (tier >= 4) "恭喜！已解锁最大附近用户（$nextTargetLimit 人）🎉" else "恭喜！附近用户数量已提升至 $nextTargetLimit 人 🎉"
+            AppLanguage.JAPANESE -> if (tier >= 4) "おめでとうございます！最大の $nextTargetLimit 人をアンロックしました 🎉" else "周囲のユーザー表示数が $nextTargetLimit 人に増加しました 🎉"
+            AppLanguage.KOREAN -> if (tier >= 4) "축하합니다! 최대 주변 인원 ($nextTargetLimit 명)이 잠금 해제되었습니다 🎉" else "주변 인원이 $nextTargetLimit 명으로 늘어났습니다 🎉"
+            AppLanguage.ARABIC -> if (tier >= 4) "تهانينا! تم فتح الحد الأقصى للمستخدمين ($nextTargetLimit شخص) 🎉" else "تهانينا! تم زيادة المستخدمين في منطقتك إلى $nextTargetLimit 🎉"
+            AppLanguage.SPANISH -> if (tier >= 4) "¡Felicidades! Se desbloqueó el máximo de personas ($nextTargetLimit) 🎉" else "¡Éxito! Usuarios cercanos ampliados a $nextTargetLimit personas 🎉"
+            AppLanguage.FRENCH -> if (tier >= 4) "Félicitations ! Le maximum de personnes ($nextTargetLimit) est débloqué 🎉" else "Succès ! Utilisateurs proches étendus à $nextTargetLimit personnes 🎉"
+            AppLanguage.GERMAN -> if (tier >= 4) "Glückwunsch! Maximal $nextTargetLimit Personen freigeschaltet 🎉" else "Erfolg! Personen in der Nähe auf $nextTargetLimit erweitert 🎉"
+            AppLanguage.RUSSIAN -> if (tier >= 4) "Поздравляем! Открыт максимум пользователей ($nextTargetLimit чел.) 🎉" else "Успешно! Количество пользователей расширено до $nextTargetLimit 🎉"
+            AppLanguage.PORTUGUESE -> if (tier >= 4) "Parabéns! Desbloqueado o máximo de pessoas ($nextTargetLimit) 🎉" else "Sucesso! Usuários próximos expandidos para $nextTargetLimit 🎉"
+            AppLanguage.INDONESIAN -> if (tier >= 4) "Selamat! Pengguna sekitar maksimal ($nextTargetLimit orang) telah terbuka 🎉" else "Selamat! Pengguna sekitar ditambah menjadi $nextTargetLimit orang 🎉"
+            else -> if (tier >= 4) "Success! Maximum nearby users ($nextTargetLimit people) unlocked 🎉" else "Success! Nearby users expanded to $nextTargetLimit people 🎉"
+        }
+    }
+
+    fun nearbyWatchAdButton(lang: AppLanguage, tier: Int): String {
+        val extra = when (tier) {
+            0 -> "+18"
+            1 -> "+15"
+            2 -> "+25"
+            3 -> "+30"
+            else -> "+25"
+        }
+        return when (resolveLang(lang)) {
+            AppLanguage.CHINESE -> "观看广告 ($extra 用户)"
+            AppLanguage.JAPANESE -> "広告を見る ($extra 人)"
+            AppLanguage.KOREAN -> "광고 시청 ($extra 명)"
+            AppLanguage.ARABIC -> "مشاهدة إعلان ($extra مستخدم)"
+            AppLanguage.SPANISH -> "Ver Anuncio ($extra Usuarios)"
+            AppLanguage.FRENCH -> "Regarder la pub ($extra utilisateurs)"
+            AppLanguage.GERMAN -> "Werbung ansehen ($extra Benutzer)"
+            AppLanguage.RUSSIAN -> "Смотреть рекламу ($extra чел.)"
+            AppLanguage.PORTUGUESE -> "Ver Anúncio ($extra Usuários)"
+            AppLanguage.INDONESIAN -> "Tonton Iklan ($extra Pengguna)"
+            else -> "Watch Ad ($extra Users)"
+        }
+    }
+
+    // --- PRIVACY & LOCATION SETTINGS ---
+    fun privacyLocationTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "隐私与定位"
+        AppLanguage.JAPANESE -> "プライバシー & 位置情報"
+        AppLanguage.KOREAN -> "개인정보 & 위치"
+        AppLanguage.ARABIC -> "الخصوصية والموقع"
+        AppLanguage.SPANISH -> "Privacidad y Ubicación"
+        AppLanguage.FRENCH -> "Confidentialité & Localisation"
+        AppLanguage.GERMAN -> "Datenschutz & Standort"
+        AppLanguage.RUSSIAN -> "Конфиденциальность и гео"
+        AppLanguage.PORTUGUESE -> "Privacidade e Localização"
+        AppLanguage.INDONESIAN -> "Privasi & Lokasi"
+        else -> "Privacy & Location"
+    }
+
+    fun privacyShowMeNearby(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "在附近雷达中显示我"
+        AppLanguage.JAPANESE -> "近くのレーダーに自分を表示"
+        AppLanguage.KOREAN -> "내 주변 레이더에 나를 표시"
+        AppLanguage.ARABIC -> "إظهاري في الرادار القريب"
+        AppLanguage.SPANISH -> "Mostrarme en Radar Cercano"
+        AppLanguage.FRENCH -> "M'afficher sur le radar"
+        AppLanguage.GERMAN -> "Mich auf dem Radar anzeigen"
+        AppLanguage.RUSSIAN -> "Показывать меня на радаре"
+        AppLanguage.PORTUGUESE -> "Mostrar-me no Radar Próximo"
+        AppLanguage.INDONESIAN -> "Tampilkan Saya di Sekitar"
+        else -> "Show Me in Nearby Radar"
+    }
+
+    fun privacyShowMeNearbyDesc(lang: AppLanguage, isVisible: Boolean): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> if (isVisible) "您的资料已启用，其他用户可在“附近的人”雷达中发现您。" else "隐身模式已激活。您的资料已从附近雷达中隐藏。"
+        AppLanguage.JAPANESE -> if (isVisible) "プロフィールは公開されており、近くのレーダーで他のユーザーに見つけてもらえます。" else "ゴーストモード有効中。近くのレーダーから非表示になっています。"
+        AppLanguage.KOREAN -> if (isVisible) "프로필이 공개되어 '내 주변' 레이더에서 다른 사용자가 나를 찾을 수 있습니다." else "고스트 모드 활성화됨. 주변 탐색 레이더에서 프로필이 숨겨집니다."
+        AppLanguage.ARABIC -> if (isVisible) "ملفك الشخصي نشط ويمكن للمستخدمين الآخرين العثور عليك في الرادار." else "وضع التخفي مفعل. تم إخفاء ملفك الشخصي من رادار البحث."
+        AppLanguage.SPANISH -> if (isVisible) "Tu perfil está activo y otras personas pueden encontrarte en el radar cercano." else "Modo incógnito activo. Tu perfil está oculto del radar de personas cercanas."
+        AppLanguage.FRENCH -> if (isVisible) "Votre profil est visible et trouvable par les autres utilisateurs à proximité." else "Mode fantôme actif. Votre profil est masqué du radar."
+        AppLanguage.GERMAN -> if (isVisible) "Dein Profil ist aktiv und andere können dich auf dem Radar finden." else "Geist-Modus aktiv. Dein Profil ist auf dem Umgebungsradar unsichtbar."
+        AppLanguage.RUSSIAN -> if (isVisible) "Ваш профиль виден другим пользователям на радаре поблизости." else "Режим инкогнито включен. Профиль скрыт с радара поблизости."
+        AppLanguage.PORTUGUESE -> if (isVisible) "Seu perfil está ativo e outras pessoas podem encontrá-lo no radar." else "Modo invisível ativo. Seu perfil está oculto do radar próximo."
+        AppLanguage.INDONESIAN -> if (isVisible) "Profil Anda aktif dan dapat ditemukan oleh pengguna lain di radar 'Di Sekitar Saya'." else "Mode Penyamaran aktif. Profil Anda disembunyikan dari radar pencarian orang sekitar."
+        else -> if (isVisible) "Your profile is active and can be found by others in the nearby radar." else "Incognito mode active. Your profile is hidden from the nearby radar."
+    }
+
+    fun privacyHideExactDistance(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "隐藏精确距离"
+        AppLanguage.JAPANESE -> "正確な距離を非表示"
+        AppLanguage.KOREAN -> "정확한 거리 숨기기"
+        AppLanguage.ARABIC -> "إخفاء المسافة الدقيقة"
+        AppLanguage.SPANISH -> "Ocultar Distancia Exacta"
+        AppLanguage.FRENCH -> "Masquer la distance exacte"
+        AppLanguage.GERMAN -> "Genaue Entfernung verbergen"
+        AppLanguage.RUSSIAN -> "Скрыть точное расстояние"
+        AppLanguage.PORTUGUESE -> "Ocultar Distância Exata"
+        AppLanguage.INDONESIAN -> "Sembunyikan Jarak Persis"
+        else -> "Hide Exact Distance"
+    }
+
+    fun privacyHideExactDistanceDesc(lang: AppLanguage, isHidden: Boolean): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> if (isHidden) "距离已隐藏，他人仅能看到您的城市或地区名称。" else "其他用户可以看到您的大致米数或公里数距离。"
+        AppLanguage.JAPANESE -> if (isHidden) "距離は非表示になり、他の人にはあなたの都市/地域名のみが表示されます。" else "他のユーザーはおよその距離（メートル/km）を確認できます。"
+        AppLanguage.KOREAN -> if (isHidden) "정확한 거리가 숨겨지며 도시/지역 이름만 표시됩니다." else "다른 사용자가 대략적인 거리(m/km)를 확인할 수 있습니다."
+        AppLanguage.ARABIC -> if (isHidden) "المسافة بالأمتار/الكيلومترات مخفية، يرى الآخرون اسم مدينتك فقط." else "يمكن للمستخدمين الآخرين رؤية المسافة التقريبية بالأمتار أو الكيلومترات."
+        AppLanguage.SPANISH -> if (isHidden) "Distancia oculta. Los demás solo verán tu ciudad o región." else "Otras personas pueden ver la distancia estimada en metros o km."
+        AppLanguage.FRENCH -> if (isHidden) "Distance masquée. Seul le nom de votre ville/région sera visible." else "Les autres peuvent voir la distance estimée en mètres ou km."
+        AppLanguage.GERMAN -> if (isHidden) "Genaue Distanz verborgen. Andere sehen nur deine Stadt/Region." else "Andere Benutzer können die ungefähre Entfernung in Metern/km sehen."
+        AppLanguage.RUSSIAN -> if (isHidden) "Расстояние скрыто. Другие видят только название города/региона." else "Другие пользователи могут видеть примерное расстояние в метрах или км."
+        AppLanguage.PORTUGUESE -> if (isHidden) "Distância oculta. Outras pessoas verão apenas sua cidade ou região." else "Outros usuários podem ver a distância aproximada em metros ou km."
+        AppLanguage.INDONESIAN -> if (isHidden) "Jarak meter/km disembunyikan. Orang lain hanya dapat melihat nama kota/wilayah Anda." else "Pengguna lain dapat melihat perkiraan jarak meter atau kilometer dari lokasi Anda."
+        else -> if (isHidden) "Exact distance is hidden. Others will only see your city/region name." else "Other users can see an estimated distance in meters or kilometers."
+    }
+
+    fun privacyShowOnlineStatus(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "显示在线状态"
+        AppLanguage.JAPANESE -> "オンライン状態を表示"
+        AppLanguage.KOREAN -> "온라인 상태 표시"
+        AppLanguage.ARABIC -> "إظهار حالة الاتصال"
+        AppLanguage.SPANISH -> "Mostrar Estado en Línea"
+        AppLanguage.FRENCH -> "Afficher le statut en ligne"
+        AppLanguage.GERMAN -> "Online-Status anzeigen"
+        AppLanguage.RUSSIAN -> "Показывать статус «В сети»"
+        AppLanguage.PORTUGUESE -> "Mostrar Status Online"
+        AppLanguage.INDONESIAN -> "Tampilkan Status Online"
+        else -> "Show Online Status"
+    }
+
+    fun privacyShowOnlineStatusDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "当您打开 Lovy Chat 活跃时显示在线指示标志。"
+        AppLanguage.JAPANESE -> "Lovy Chatを開いて利用しているときにオンラインマークを表示します。"
+        AppLanguage.KOREAN -> "Lovy Chat을 이용 중일 때 온라인 표시를 나타냅니다."
+        AppLanguage.ARABIC -> "يعرض علامة الاتصال عندما تكون نشطاً في تطبيق Lovy Chat."
+        AppLanguage.SPANISH -> "Muestra un indicador en línea cuando estás activo en Lovy Chat."
+        AppLanguage.FRENCH -> "Affiche une pastille en ligne lorsque vous utilisez Lovy Chat."
+        AppLanguage.GERMAN -> "Zeigt einen Online-Punkt, wenn du in Lovy Chat aktiv bist."
+        AppLanguage.RUSSIAN -> "Отображает отметку в сети, когда вы активно пользуетесь Lovy Chat."
+        AppLanguage.PORTUGUESE -> "Exibe um indicador online quando você está usando o Lovy Chat."
+        AppLanguage.INDONESIAN -> "Menampilkan tanda online ketika Anda sedang aktif membuka Lovy Chat."
+        else -> "Shows an online indicator when you are active on Lovy Chat."
+    }
+
+    fun privacyGpsPermissionTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "设备位置权限 (GPS)"
+        AppLanguage.JAPANESE -> "デバイスの位置情報権限 (GPS)"
+        AppLanguage.KOREAN -> "기기 위치 권한 (GPS)"
+        AppLanguage.ARABIC -> "إذن موقع الجهاز (GPS)"
+        AppLanguage.SPANISH -> "Permiso de Ubicación del Dispositivo (GPS)"
+        AppLanguage.FRENCH -> "Autorisation de localisation (GPS)"
+        AppLanguage.GERMAN -> "Gerätestandort-Berechtigung (GPS)"
+        AppLanguage.RUSSIAN -> "Разрешение на геолокацию (GPS)"
+        AppLanguage.PORTUGUESE -> "Permissão de Localização do Dispositivo (GPS)"
+        AppLanguage.INDONESIAN -> "Izin Lokasi Perangkat (GPS)"
+        else -> "Device Location Permission (GPS)"
+    }
+
+    fun privacyGpsStatus(lang: AppLanguage, hasPermission: Boolean): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> if (hasPermission) "GPS 权限已授予 • 正常工作" else "未授予位置权限"
+        AppLanguage.JAPANESE -> if (hasPermission) "GPS権限許可済み • アクティブ" else "位置情報の権限がありません"
+        AppLanguage.KOREAN -> if (hasPermission) "GPS 권한 허용됨 • 활성" else "위치 권한이 허용되지 않음"
+        AppLanguage.ARABIC -> if (hasPermission) "تم منح إذن GPS • نشط" else "لم يتم منح إذن الموقع"
+        AppLanguage.SPANISH -> if (hasPermission) "Permiso GPS concedido • Activo" else "Permiso de ubicación no concedido"
+        AppLanguage.FRENCH -> if (hasPermission) "Autorisation GPS accordée • Actif" else "Autorisation de localisation manquante"
+        AppLanguage.GERMAN -> if (hasPermission) "GPS-Berechtigung erteilt • Aktiv" else "Standortberechtigung nicht erteilt"
+        AppLanguage.RUSSIAN -> if (hasPermission) "Доступ к GPS предоставлен • Активен" else "Доступ к геолокации не предоставлен"
+        AppLanguage.PORTUGUESE -> if (hasPermission) "Permissão GPS concedida • Ativo" else "Permissão de localização não concedida"
+        AppLanguage.INDONESIAN -> if (hasPermission) "Izin GPS diberikan • Aktif" else "Izin lokasi belum diberikan"
+        else -> if (hasPermission) "GPS permission granted • Active" else "Location permission not granted"
+    }
+
+    fun privacyGrantGpsButton(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "授予 GPS 访问权限"
+        AppLanguage.JAPANESE -> "GPSアクセスを許可"
+        AppLanguage.KOREAN -> "GPS 접근 권한 허용"
+        AppLanguage.ARABIC -> "السماح بالوصول إلى GPS"
+        AppLanguage.SPANISH -> "Permitir Acceso a GPS"
+        AppLanguage.FRENCH -> "Autoriser l'accès GPS"
+        AppLanguage.GERMAN -> "GPS-Zugriff erlauben"
+        AppLanguage.RUSSIAN -> "Разрешить доступ к GPS"
+        AppLanguage.PORTUGUESE -> "Permitir Acesso ao GPS"
+        AppLanguage.INDONESIAN -> "Izinkan Akses GPS"
+        else -> "Grant GPS Access"
+    }
+
+    fun privacyOpenGpsSettings(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "打开手机定位设置"
+        AppLanguage.JAPANESE -> "端末の位置情報設定を開く"
+        AppLanguage.KOREAN -> "휴대폰 위치 설정 열기"
+        AppLanguage.ARABIC -> "فتح إعدادات موقع الهاتف"
+        AppLanguage.SPANISH -> "Abrir Ajustes de Ubicación del Teléfono"
+        AppLanguage.FRENCH -> "Ouvrir les paramètres de localisation"
+        AppLanguage.GERMAN -> "Standorteinstellungen öffnen"
+        AppLanguage.RUSSIAN -> "Открыть настройки геопозиции"
+        AppLanguage.PORTUGUESE -> "Abrir Configurações de Localização"
+        AppLanguage.INDONESIAN -> "Buka Pengaturan Lokasi HP"
+        else -> "Open Phone Location Settings"
+    }
+
+    fun privacySettingsUpdatedToast(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "隐私与定位设置已更新"
+        AppLanguage.JAPANESE -> "プライバシーと位置情報の設定を更新しました"
+        AppLanguage.KOREAN -> "개인정보 및 위치 설정이 업데이트되었습니다"
+        AppLanguage.ARABIC -> "تم تحديث إعدادات الخصوصية والموقع"
+        AppLanguage.SPANISH -> "Configuración de privacidad y ubicación actualizada"
+        AppLanguage.FRENCH -> "Paramètres de confidentialité & localisation mis à jour"
+        AppLanguage.GERMAN -> "Datenschutz- und Standorteinstellungen aktualisiert"
+        AppLanguage.RUSSIAN -> "Настройки конфиденциальности и локации обновлены"
+        AppLanguage.PORTUGUESE -> "Configurações de privacidade e localização atualizadas"
+        AppLanguage.INDONESIAN -> "Pengaturan privasi & lokasi diperbarui"
+        else -> "Privacy & location settings updated"
+    }
+
+    fun commonDone(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "完成"
+        AppLanguage.JAPANESE -> "完了"
+        AppLanguage.KOREAN -> "완료"
+        AppLanguage.ARABIC -> "تم"
+        AppLanguage.SPANISH -> "Listo"
+        AppLanguage.FRENCH -> "Terminé"
+        AppLanguage.GERMAN -> "Fertig"
+        AppLanguage.RUSSIAN -> "Готово"
+        AppLanguage.PORTUGUESE -> "Concluído"
+        AppLanguage.INDONESIAN -> "Selesai"
+        else -> "Done"
+    }
+
+    fun blockedUsersTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "黑名单列表"
+        AppLanguage.JAPANESE -> "ブロック中ユーザー一覧"
+        AppLanguage.KOREAN -> "차단된 사용자 목록"
+        AppLanguage.ARABIC -> "قائمة المستخدمين المحظورين"
+        AppLanguage.SPANISH -> "Lista de Usuarios Bloqueados"
+        AppLanguage.FRENCH -> "Liste des utilisateurs bloqués"
+        AppLanguage.GERMAN -> "Liste blockierter Benutzer"
+        AppLanguage.RUSSIAN -> "Список заблокированных пользователей"
+        AppLanguage.PORTUGUESE -> "Lista de Usuários Bloqueados"
+        AppLanguage.INDONESIAN -> "Daftar Pengguna Diblokir"
+        else -> "Blocked Users List"
+    }
+
+    fun blockedUsersEmptyDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "您在聊天室中拉黑的用户将显示在此处。"
+        AppLanguage.JAPANESE -> "チャットルームでブロックしたユーザーはここに表示されます。"
+        AppLanguage.KOREAN -> "채팅방에서 차단한 사용자가 여기에 표시됩니다."
+        AppLanguage.ARABIC -> "المستخدمون الذين قمت بحظرهم في الدردشة سيظهرون هنا."
+        AppLanguage.SPANISH -> "Los usuarios que bloquees en el chat aparecerán aquí."
+        AppLanguage.FRENCH -> "Les utilisateurs bloqués dans les discussions apparaîtront ici."
+        AppLanguage.GERMAN -> "Benutzer, die du im Chat blockiert hast, erscheinen hier."
+        AppLanguage.RUSSIAN -> "Пользователи, которых вы заблокировали в чате, появятся здесь."
+        AppLanguage.PORTUGUESE -> "Os usuários que você bloquear no chat aparecerão aqui."
+        AppLanguage.INDONESIAN -> "Pengguna yang Anda blokir di ruang chat akan muncul di sini."
+        else -> "Users you blocked in chats will appear here."
+    }
+
+    fun unblockDialogTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "解除用户拉黑？"
+        AppLanguage.JAPANESE -> "ブロックを解除しますか？"
+        AppLanguage.KOREAN -> "사용자 차단을 해제하시겠습니까?"
+        AppLanguage.ARABIC -> "إلغاء حظر المستخدم؟"
+        AppLanguage.SPANISH -> "¿Desbloquear usuario?"
+        AppLanguage.FRENCH -> "Débloquer l'utilisateur ?"
+        AppLanguage.GERMAN -> "Benutzer freigeben?"
+        AppLanguage.RUSSIAN -> "Разблокировать пользователя?"
+        AppLanguage.PORTUGUESE -> "Desbloquear usuário?"
+        AppLanguage.INDONESIAN -> "Buka Blokir Pengguna?"
+        else -> "Unblock User?"
+    }
+
+    fun unblockDialogDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "解除后，该用户将能够再次向您发送消息。"
+        AppLanguage.JAPANESE -> "解除すると、このユーザーはあなたに再度メッセージを送信できるようになります。"
+        AppLanguage.KOREAN -> "차단을 해제하면 이 사용자가 회원님께 다시 메시지를 보낼 수 있습니다."
+        AppLanguage.ARABIC -> "سيتمكن هذا المستخدم من إرسال رسائل إليك مرة أخرى."
+        AppLanguage.SPANISH -> "Este usuario podrá enviarte mensajes de nuevo."
+        AppLanguage.FRENCH -> "Cet utilisateur pourra de nouveau vous envoyer des messages."
+        AppLanguage.GERMAN -> "Dieser Benutzer kann dir wieder Nachrichten senden."
+        AppLanguage.RUSSIAN -> "Этот пользователь снова сможет отправлять вам сообщения."
+        AppLanguage.PORTUGUESE -> "Este usuário poderá enviar mensagens para você novamente."
+        AppLanguage.INDONESIAN -> "Pengguna ini akan dapat mengirim pesan kepada Anda lagi."
+        else -> "This user will be able to send you messages again."
+    }
+
+    fun unblockSuccessToast(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "已成功解除拉黑"
+        AppLanguage.JAPANESE -> "ブロックを解除しました"
+        AppLanguage.KOREAN -> "차단이 해제되었습니다"
+        AppLanguage.ARABIC -> "تم إلغاء الحظر بنجاح"
+        AppLanguage.SPANISH -> "Usuario desbloqueado"
+        AppLanguage.FRENCH -> "Utilisateur débloqué"
+        AppLanguage.GERMAN -> "Benutzer freigegeben"
+        AppLanguage.RUSSIAN -> "Пользователь разблокирован"
+        AppLanguage.PORTUGUESE -> "Usuário desbloqueado"
+        AppLanguage.INDONESIAN -> "Pengguna dibuka dari blokir"
+        else -> "User unblocked"
+    }
+
+    // --- BOTTLE SCREEN ---
+    fun bottleFishedSuccessTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "成功打捞到一个漂流瓶！"
+        AppLanguage.JAPANESE -> "ボトルメッセージを釣り上げました！"
+        AppLanguage.KOREAN -> "유리병 편지를 성공적으로 건졌습니다!"
+        AppLanguage.ARABIC -> "تم اصطياد زجاجة بنجاح!"
+        AppLanguage.SPANISH -> "¡Botella Pescada con Éxito!"
+        AppLanguage.FRENCH -> "Bouteille pêchée avec succès !"
+        AppLanguage.GERMAN -> "Flaschenpost erfolgreich gefischt!"
+        AppLanguage.RUSSIAN -> "Бутылка успешно выловлена!"
+        AppLanguage.PORTUGUESE -> "Garrafa Pescada com Sucesso!"
+        AppLanguage.INDONESIAN -> "Botol Berhasil Dipancing!"
+        else -> "Bottle Fished Successfully!"
+    }
+
+    fun bottleFoundAt(lang: AppLanguage, location: String): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "发现于 $location"
+        AppLanguage.JAPANESE -> "$location で発見"
+        AppLanguage.KOREAN -> "$location 에서 발견됨"
+        AppLanguage.ARABIC -> "تم العثور عليها في $location"
+        AppLanguage.SPANISH -> "Encontrada en $location"
+        AppLanguage.FRENCH -> "Trouvée à $location"
+        AppLanguage.GERMAN -> "Gefunden in $location"
+        AppLanguage.RUSSIAN -> "Найдено в $location"
+        AppLanguage.PORTUGUESE -> "Encontrada em $location"
+        AppLanguage.INDONESIAN -> "Ditemukan di $location"
+        else -> "Found in $location"
+    }
+
+    fun bottleDriftingAt(lang: AppLanguage, location: String): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "漂流在 $location"
+        AppLanguage.JAPANESE -> "$location を漂流中"
+        AppLanguage.KOREAN -> "$location 에서 표류 중"
+        AppLanguage.ARABIC -> "تطفو في $location"
+        AppLanguage.SPANISH -> "Flotando en $location"
+        AppLanguage.FRENCH -> "Dérive à $location"
+        AppLanguage.GERMAN -> "Treibt in $location"
+        AppLanguage.RUSSIAN -> "Дрейфует в $location"
+        AppLanguage.PORTUGUESE -> "Derivando em $location"
+        AppLanguage.INDONESIAN -> "Hanyut di $location"
+        else -> "Drifting in $location"
+    }
+
+    fun bottleTakenFromOcean(lang: AppLanguage, location: String): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "$location • 打捞自海洋"
+        AppLanguage.JAPANESE -> "$location • 海から釣り上げました"
+        AppLanguage.KOREAN -> "$location • 바다에서 건져냄"
+        AppLanguage.ARABIC -> "$location • تم التقاطها من المحيط"
+        AppLanguage.SPANISH -> "$location • Rescatada del Océano"
+        AppLanguage.FRENCH -> "$location • Pêchée dans l'océan"
+        AppLanguage.GERMAN -> "$location • Aus dem Meer gefischt"
+        AppLanguage.RUSSIAN -> "$location • Выловлено из океана"
+        AppLanguage.PORTUGUESE -> "$location • Pescada no Oceano"
+        AppLanguage.INDONESIAN -> "$location • Diambil dari Lautan"
+        else -> "$location • Fished from the Ocean"
+    }
+
+    fun bottleMyBottleTag(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "🍾 我的漂流瓶"
+        AppLanguage.JAPANESE -> "🍾 マイボトル"
+        AppLanguage.KOREAN -> "🍾 내 유리병"
+        AppLanguage.ARABIC -> "🍾 زجاجتي"
+        AppLanguage.SPANISH -> "🍾 Mi Botella"
+        AppLanguage.FRENCH -> "🍾 Ma bouteille"
+        AppLanguage.GERMAN -> "🍾 Meine Flaschenpost"
+        AppLanguage.RUSSIAN -> "🍾 Моя бутылка"
+        AppLanguage.PORTUGUESE -> "🍾 Minha Garrafa"
+        AppLanguage.INDONESIAN -> "🍾 Botol Saya"
+        else -> "🍾 My Bottle"
+    }
+
+    fun bottleFishedTag(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "🎣 已打捞"
+        AppLanguage.JAPANESE -> "🎣 釣り上げ済み"
+        AppLanguage.KOREAN -> "🎣 건져냄"
+        AppLanguage.ARABIC -> "🎣 تم الاصطياد"
+        AppLanguage.SPANISH -> "🎣 Pescada"
+        AppLanguage.FRENCH -> "🎣 Pêchée"
+        AppLanguage.GERMAN -> "🎣 Gefischt"
+        AppLanguage.RUSSIAN -> "🎣 Выловлено"
+        AppLanguage.PORTUGUESE -> "🎣 Pescada"
+        AppLanguage.INDONESIAN -> "🎣 Diambil"
+        else -> "🎣 Fished"
+    }
 }
+
