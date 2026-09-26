@@ -379,6 +379,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
     fun isDummyFriend(userId: String, userName: String): Boolean {
         val cleanName = userName.trim().lowercase()
+        val cleanId = userId.trim()
         if (cleanName.isBlank()) return true // Tolak user tak bernama
         val dummyNames = setOf(
             "siti rahma", "rian pratama", "nadia putri", "dimas anggara", 
@@ -386,8 +387,11 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             "dimas danendra", "clarissa aurelia", "salma salsabil",
             "tanpa nama", "user tak bernama", "pengguna", "unknown user", "anonymous"
         )
-        val isMockId = userId.matches(Regex("^u[0-9]+$"))
-        return isMockId || dummyNames.contains(cleanName)
+        val isMockId = cleanId.matches(Regex("^u[0-9]+$"))
+        // Tolak hasil scan barcode yang berupa nomor produk/angka acak (seperti "29146369")
+        val isPureBarcodeDigits = cleanName.matches(Regex("^[0-9]{4,}$")) && (cleanId == userName.trim() || cleanId.matches(Regex("^[0-9]{4,}$")))
+        val isFallbackBarcodeName = cleanName.startsWith("teman lovy (") && cleanName.endsWith(")")
+        return isMockId || isPureBarcodeDigits || isFallbackBarcodeName || dummyNames.contains(cleanName)
     }
 
     private fun observeChatFriends() {
@@ -526,6 +530,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
     fun acceptNewFriend(user: User) {
         if (isSelfUser(user.id, user.name)) return
+        if (isDummyFriend(user.id, user.name)) return
+        if (isUserBlocked(user.id, user.name)) return
         recordFeatureClick()
         saveChatFriend(user)
         _uiState.update { state ->
@@ -535,116 +541,124 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 state.chattedFriends + user
             }
             state.copy(
-                chattedFriends = updatedFriends.filterNot { isSelfUser(it.id, it.name) },
-                newFriendRequests = state.newFriendRequests.filterNot { it.user.id == user.id || isSelfUser(it.user.id, it.user.name) }
+                chattedFriends = updatedFriends.filterNot { isSelfUser(it.id, it.name) || isDummyFriend(it.id, it.name) },
+                newFriendRequests = state.newFriendRequests.filterNot { it.user.id == user.id || isSelfUser(it.user.id, it.user.name) || isDummyFriend(it.user.id, it.user.name) }
             )
         }
     }
 
     /**
      * Mencari pengguna berdasarkan kode QR / Barcode yang dipindai (baik kamera live atau unggah galeri).
+     * Wajib memverifikasi ke database (Supabase / Room) terlebih dahulu sebelum mengembalikan pengguna.
      */
     fun searchUserByQrCode(rawCode: String, onResult: (User?) -> Unit) {
-        val cleanId = com.example.util.QrCodeDecoder.extractUserId(rawCode)
+        val cleanId = com.example.util.QrCodeDecoder.extractUserId(rawCode).trim()
         if (cleanId.isBlank()) {
             onResult(null)
             return
         }
 
-        // 1. Cek di daftar teman yang sudah tersimpan
-        val existingFriend = _uiState.value.chattedFriends.find {
-            it.id.equals(cleanId, ignoreCase = true) || it.name.equals(cleanId, ignoreCase = true)
-        }
-        if (existingFriend != null) {
-            onResult(existingFriend)
-            return
-        }
-
-        // 2. Cek di daftar pengguna sekitar
-        val nearbyMatch = _uiState.value.nearbyUsers.find {
-            it.id.equals(cleanId, ignoreCase = true) || it.name.equals(cleanId, ignoreCase = true)
-        }
-        if (nearbyMatch != null) {
-            onResult(nearbyMatch)
-            return
-        }
-
-        // 3. Cek di daftar obrolan aktif
-        val convMatch = _uiState.value.conversations.find {
-            it.partnerId.equals(cleanId, ignoreCase = true) || it.partnerName.equals(cleanId, ignoreCase = true)
-        }
-        if (convMatch != null) {
-            val convUser = User(
-                id = convMatch.partnerId,
-                name = convMatch.partnerName,
-                gender = convMatch.partnerGender,
-                age = convMatch.partnerAge,
-                distanceMeters = convMatch.partnerDistanceMeters,
-                bio = "Teman obrolan Lovy",
-                avatarColorHex = convMatch.partnerAvatarHex,
-                isOnline = convMatch.isOnline,
-                avatarUrl = convMatch.partnerAvatarUrl,
-                city = convMatch.partnerCity ?: "Indonesia"
-            )
-            onResult(convUser)
-            return
-        }
-
-        // 4. Cari dari database Supabase jika tersambung
-        if (com.example.data.supabase.SupabaseClient.isConfigured() && !_uiState.value.isGuest) {
-            viewModelScope.launch(Dispatchers.IO) {
-                val cloudUser = supabaseRepo.fetchNearbyUserById(cleanId)
-                val accountUser = if (cloudUser == null) {
-                    val acc = supabaseRepo.findAccountById(cleanId) ?: supabaseRepo.findAccountByUsername(cleanId)
-                    if (acc != null) {
-                        User(
-                            id = acc.id,
-                            name = acc.displayName?.ifBlank { acc.username } ?: acc.username,
-                            gender = if (acc.gender.equals("male", true)) Gender.MALE else Gender.FEMALE,
-                            age = 22,
-                            distanceMeters = 100,
-                            bio = acc.bio ?: "Pengguna Lovy Chat",
-                            avatarColorHex = 0xFF00A86B,
-                            isOnline = true,
-                            city = "Indonesia",
-                            avatarUrl = acc.avatarUrl
-                        )
-                    } else null
-                } else null
-
-                val foundUser = cloudUser ?: accountUser
-                withContext(Dispatchers.Main) {
-                    if (foundUser != null) {
-                        onResult(foundUser)
-                    } else {
-                        val fallbackUser = User(
-                            id = cleanId,
-                            name = if (cleanId.startsWith("lovy_")) "Teman Lovy (${cleanId.takeLast(4)})" else cleanId,
-                            gender = Gender.FEMALE,
-                            age = 22,
-                            distanceMeters = 100,
-                            bio = "Teman ditemukan lewat pemindaian barcode",
-                            avatarColorHex = 0xFF00A86B,
-                            isOnline = true,
-                            city = "Indonesia"
-                        )
-                        onResult(fallbackUser)
-                    }
-                }
-            }
-        } else {
-            val fallbackUser = User(
-                id = cleanId,
-                name = if (cleanId.startsWith("lovy_")) "Teman Lovy (${cleanId.takeLast(4)})" else cleanId,
-                gender = Gender.FEMALE,
-                age = 22,
-                distanceMeters = 100,
-                bio = "Teman ditemukan lewat pemindaian barcode",
+        // Cek jika yang discan adalah akun sendiri
+        if (isSelfUser(cleanId, cleanId)) {
+            val selfUser = User(
+                id = _uiState.value.myLovyId.ifBlank { "me" },
+                name = _uiState.value.myName.ifBlank { _uiState.value.userProfile.displayName },
+                gender = if (_uiState.value.userProfile.gender.equals("male", true)) Gender.MALE else Gender.FEMALE,
+                age = _uiState.value.userProfile.age,
+                distanceMeters = 0,
+                bio = _uiState.value.userProfile.bio,
                 avatarColorHex = 0xFF00A86B,
                 isOnline = true,
-                city = "Indonesia"
+                avatarUrl = _uiState.value.userProfile.profilePicture,
+                city = _uiState.value.userProfile.city
             )
-            onResult(fallbackUser)
+            onResult(selfUser)
+            return
+        }
+
+        // Wajib verifikasi ke database terlebih dahulu (Supabase atau Room DB lokal)
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                var verifiedUser: User? = null
+
+                // 1. Cek di database Supabase (app_accounts & nearby_users)
+                if (com.example.data.supabase.SupabaseClient.isConfigured()) {
+                    // Cek di tabel app_accounts terlebih dahulu (akun pengguna terdaftar resmi)
+                    val acc = supabaseRepo.findAccountById(cleanId)
+                        ?: supabaseRepo.findAccountByUsername(cleanId)
+                        ?: (if (!cleanId.startsWith("lovy_")) supabaseRepo.findAccountById("lovy_$cleanId") else null)
+                        ?: (if (cleanId.startsWith("lovy_")) supabaseRepo.findAccountById(cleanId.removePrefix("lovy_")) else null)
+
+                    if (acc != null && !acc.username.equals(_uiState.value.myName, ignoreCase = true) && !acc.id.equals(_uiState.value.myLovyId, ignoreCase = true)) {
+                        val accName = acc.displayName?.takeIf { it.isNotBlank() } ?: acc.username
+                        if (accName.isNotBlank() && !isDummyFriend(acc.id, accName) && !isSelfUser(acc.id, accName)) {
+                            verifiedUser = User(
+                                id = acc.id,
+                                name = accName,
+                                gender = if (acc.gender.equals("male", true)) Gender.MALE else Gender.FEMALE,
+                                age = 22,
+                                distanceMeters = 100,
+                                bio = acc.bio ?: "Pengguna Lovy Chat",
+                                avatarColorHex = 0xFF00A86B,
+                                isOnline = true,
+                                city = "Indonesia",
+                                avatarUrl = acc.avatarUrl
+                            )
+                        }
+                    }
+
+                    // Jika belum ditemukan di app_accounts, cek di nearby_users tabel Supabase
+                    if (verifiedUser == null) {
+                        var cloudUser = supabaseRepo.fetchNearbyUserById(cleanId)
+                        if (cloudUser == null && !cleanId.startsWith("lovy_")) {
+                            cloudUser = supabaseRepo.fetchNearbyUserById("lovy_$cleanId")
+                        }
+                        if (cloudUser == null && cleanId.startsWith("lovy_")) {
+                            cloudUser = supabaseRepo.fetchNearbyUserById(cleanId.removePrefix("lovy_"))
+                        }
+
+                        if (cloudUser != null && !isSelfUser(cloudUser.id, cloudUser.name) && !isDummyFriend(cloudUser.id, cloudUser.name)) {
+                            verifiedUser = cloudUser
+                        }
+                    }
+                }
+
+                // 2. Jika tidak ditemukan di Supabase atau Supabase offline, cek database lokal Room (chat_friends)
+                if (verifiedUser == null) {
+                    val localFriends = chatFriendDao.getAllFriends()
+                    val matchedLocal = localFriends.find {
+                        (it.id.equals(cleanId, ignoreCase = true) ||
+                         (!cleanId.startsWith("lovy_") && it.id.equals("lovy_$cleanId", ignoreCase = true)) ||
+                         (cleanId.startsWith("lovy_") && it.id.equals(cleanId.removePrefix("lovy_"), ignoreCase = true))) &&
+                        !isDummyFriend(it.id, it.name) &&
+                        !isSelfUser(it.id, it.name)
+                    }
+                    if (matchedLocal != null && matchedLocal.name.isNotBlank()) {
+                        verifiedUser = matchedLocal.toUser()
+                    }
+                }
+
+                // 3. Pastikan pengguna yang ditemukan tidak diblokir
+                if (verifiedUser != null && isUserBlocked(verifiedUser.id, verifiedUser.name)) {
+                    Log.w("LovyChatViewModel", "Pengguna ${verifiedUser.name} (${verifiedUser.id}) berada dalam daftar blokir")
+                    verifiedUser = null
+                }
+
+                withContext(Dispatchers.Main) {
+                    if (verifiedUser != null) {
+                        Log.d("LovyChatViewModel", "Pengguna barcode/QR terverifikasi di database: ${verifiedUser.name} (${verifiedUser.id})")
+                        onResult(verifiedUser)
+                    } else {
+                        Log.w("LovyChatViewModel", "Kode barcode/QR '$cleanId' tidak ditemukan di database resmi")
+                        onResult(null)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("LovyChatViewModel", "Gagal memverifikasi barcode di database", e)
+                withContext(Dispatchers.Main) {
+                    onResult(null)
+                }
+            }
         }
     }
 
@@ -667,8 +681,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             Log.d("LovyChatViewModel", "Abaikan menyimpan akun sendiri ke kontak teman: ${user.name} (${user.id})")
             return
         }
-        if (!_uiState.value.isGuest && isDummyFriend(user.id, user.name)) {
-            // Abaikan penyimpanan user dummy jika pengguna sedang berada di akun asli
+        if (isDummyFriend(user.id, user.name)) {
+            Log.d("LovyChatViewModel", "Abaikan menyimpan akun dummy/barcode ke kontak teman: ${user.name} (${user.id})")
             return
         }
         viewModelScope.launch(Dispatchers.IO) {
@@ -786,15 +800,24 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     myDisplayName = myDisplay,
                     username = username
                 )
+                val allFriends = chatFriendDao.getAllFriends()
+                for (f in allFriends) {
+                    if (isDummyFriend(f.id, f.name) || isSelfUser(f.id, f.name)) {
+                        chatFriendDao.deleteFriendById(f.id)
+                    }
+                }
             } catch (e: Exception) {
                 Log.w("LovyChatViewModel", "Gagal membersihkan kontak dummy/self", e)
             }
         }
         _uiState.update { state ->
-            val updated = state.chattedFriends
+            val updatedFriends = state.chattedFriends
                 .filterNot { isDummyFriend(it.id, it.name) }
                 .filterNot { isSelfUser(it.id, it.name) }
-            state.copy(chattedFriends = updated)
+            val updatedConversations = state.conversations
+                .filterNot { isDummyFriend(it.partnerId, it.partnerName) }
+                .filterNot { isSelfUser(it.partnerId, it.partnerName) }
+            state.copy(chattedFriends = updatedFriends, conversations = updatedConversations)
         }
     }
 

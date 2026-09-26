@@ -4645,6 +4645,34 @@ object AppStrings {
         else -> "User not found: $code"
     }
 
+    fun qrBarcodeNotRegisteredDesc(lang: AppLanguage, code: String): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "条形码或二维码 '$code' 未在 Lovy Chat 用户数据库中注册。\n\n请确保扫描好友官方的 Lovy Chat 个人资料二维码。"
+        AppLanguage.JAPANESE -> "バーコードまたはQRコード '$code' は Lovy Chat データベースに登録されていません。\n\nお友達の公式 Lovy Chat プロフィールのQRコードをスキャンしてください。"
+        AppLanguage.KOREAN -> "바코드 또는 QR 코드 '$code'는 Lovy Chat 사용자 데이터베이스에 등록되어 있지 않습니다.\n\n친구의 공식 Lovy Chat 프로필 QR 코드를 스캔했는지 확인해 주세요."
+        AppLanguage.ARABIC -> "الرمز الشريطي أو رمز QR '$code' غير مسجل في قاعدة بيانات مستخدمي Lovy Chat.\n\nيرجى التأكد من مسح رمز QR الرسمي لملف صديقك في Lovy Chat."
+        AppLanguage.SPANISH -> "El código de barras o QR '$code' no está registrado en la base de datos de usuarios de Lovy Chat.\n\nAsegúrate de escanear el código QR oficial de Lovy Chat de tu amigo."
+        AppLanguage.FRENCH -> "Le code-barres ou QR '$code' n'est pas enregistré dans la base de données de Lovy Chat.\n\nVeuillez scanner le code QR officiel du profil Lovy Chat de votre ami."
+        AppLanguage.GERMAN -> "Der Barcode oder QR-Code '$code' ist nicht in der Lovy Chat-Nutzerdatenbank registriert.\n\nBitte scannen Sie den offiziellen Lovy Chat-Profil-QR-Code Ihres Freundes."
+        AppLanguage.RUSSIAN -> "Штрихкод или QR-код «$code» не зарегистрирован в базе данных пользователей Lovy Chat.\n\nУбедитесь, что вы сканируете официальный QR-код профиля друга в Lovy Chat."
+        AppLanguage.PORTUGUESE -> "O código de barras ou QR code '$code' não está registrado no banco de dados do Lovy Chat.\n\nCertifique-se de escanear o QR code oficial do perfil do Lovy Chat do seu amigo."
+        AppLanguage.INDONESIAN -> "Barcode atau Kode QR '$code' tidak terdaftar dalam database pengguna Lovy Chat.\n\nPastikan Anda memindai Kode QR profil Lovy Chat resmi teman Anda."
+        else -> "Barcode or QR code '$code' is not registered in the Lovy Chat user database.\n\nPlease make sure to scan your friend's official Lovy Chat profile QR code."
+    }
+
+    fun qrScanAgainBtn(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "重新扫描"
+        AppLanguage.JAPANESE -> "もう一度スキャン"
+        AppLanguage.KOREAN -> "다시 스캔"
+        AppLanguage.ARABIC -> "إعادة المسح"
+        AppLanguage.SPANISH -> "Escanear de Nuevo"
+        AppLanguage.FRENCH -> "Scanner à nouveau"
+        AppLanguage.GERMAN -> "Erneut scannen"
+        AppLanguage.RUSSIAN -> "Сканировать снова"
+        AppLanguage.PORTUGUESE -> "Escanear Novamente"
+        AppLanguage.INDONESIAN -> "Pindai Lagi"
+        else -> "Scan Again"
+    }
+
     fun blockedUsersTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
         AppLanguage.CHINESE -> "已屏蔽用户列表"
         AppLanguage.JAPANESE -> "ブロックしたユーザー一覧"

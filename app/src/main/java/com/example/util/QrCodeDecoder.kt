@@ -18,21 +18,31 @@ import java.io.InputStream
 
 object QrCodeDecoder {
 
+    // Format untuk pemindaian gambar galeri (fokus utama QR Code resmi)
     private val supportedFormats = listOf(
         BarcodeFormat.QR_CODE,
         BarcodeFormat.DATA_MATRIX,
-        BarcodeFormat.AZTEC,
-        BarcodeFormat.CODE_128,
-        BarcodeFormat.CODE_39,
-        BarcodeFormat.EAN_13,
-        BarcodeFormat.EAN_8,
-        BarcodeFormat.UPC_A,
-        BarcodeFormat.UPC_E
+        BarcodeFormat.AZTEC
     )
 
     private val decodeHints = mapOf(
         DecodeHintType.POSSIBLE_FORMATS to supportedFormats,
         DecodeHintType.TRY_HARDER to java.lang.Boolean.TRUE,
+        DecodeHintType.CHARACTER_SET to "UTF-8"
+    )
+
+    // Format khusus pemindaian kamera langsung (real-time CameraX):
+    // HANYA gunakan QR_CODE, DATA_MATRIX, AZTEC (2D Matrix Code dengan Reed-Solomon Error Correction).
+    // JANGAN gunakan barcode 1D (Code 128, Code 39, EAN, UPC) pada kamera langsung karena menghasilkan false positive
+    // saat kamera mengarah ke objek acak bukan barcode (tekstur kain, keyboard, pola garis, lantai, dll).
+    private val cameraFormats = listOf(
+        BarcodeFormat.QR_CODE,
+        BarcodeFormat.DATA_MATRIX,
+        BarcodeFormat.AZTEC
+    )
+
+    private val cameraDecodeHints = mapOf(
+        DecodeHintType.POSSIBLE_FORMATS to cameraFormats,
         DecodeHintType.CHARACTER_SET to "UTF-8"
     )
 
@@ -201,8 +211,9 @@ object QrCodeDecoder {
         val reader = MultiFormatReader()
         return try {
             val binaryBitmap = BinaryBitmap(HybridBinarizer(source))
-            val result = reader.decode(binaryBitmap, decodeHints)
-            result?.text
+            val result = reader.decode(binaryBitmap, cameraDecodeHints)
+            val text = result?.text?.trim()
+            if (!text.isNullOrBlank()) text else null
         } catch (_: Exception) {
             null
         } finally {
@@ -265,29 +276,52 @@ object QrCodeDecoder {
      */
     fun extractUserId(rawText: String): String {
         val trimmed = rawText.trim()
+        if (trimmed.isBlank()) return ""
 
-        // 1. Cek URI schema lovy://user/{id} atau https://.../u/{id}
+        // 1. Cek URI schema lovy://user/{id} atau https://.../u/{id} atau https://.../user/{id}
         val urlPattern = Regex("""(?:lovy:\/\/user\/|https?:\/\/[^\/]+\/(?:u|user)\/)([a-zA-Z0-9_\-]+)""")
         val urlMatch = urlPattern.find(trimmed)
         if (urlMatch != null) {
-            return urlMatch.groupValues[1]
+            val id = urlMatch.groupValues[1].trim()
+            if (id.isNotBlank()) return id
         }
 
         // 2. Cek format json sederhana {"id":"...", ...}
         if (trimmed.startsWith("{") && trimmed.contains("\"id\"")) {
             val jsonIdMatch = Regex(""""id"\s*:\s*"([^"]+)"""").find(trimmed)
             if (jsonIdMatch != null) {
-                return jsonIdMatch.groupValues[1]
+                val id = jsonIdMatch.groupValues[1].trim()
+                if (id.isNotBlank()) return id
             }
         }
 
-        // 3. Pola lovy_{id}
-        val lovyPattern = Regex("""(lovy_[0-9a-zA-Z_]+)""")
+        // 3. Pola resmi lovy_{id}
+        val lovyPattern = Regex("""\b(lovy_[0-9a-zA-Z_]+)\b""")
         val lovyMatch = lovyPattern.find(trimmed)
         if (lovyMatch != null) {
-            return lovyMatch.groupValues[1]
+            return lovyMatch.groupValues[1].trim()
         }
 
-        return trimmed
+        // 4. Tolak tautan URL ke domain lain (misal https://google.com), WiFi, kontak vCard, dll
+        if (trimmed.startsWith("http://", ignoreCase = true) ||
+            trimmed.startsWith("https://", ignoreCase = true) ||
+            trimmed.startsWith("WIFI:", ignoreCase = true) ||
+            trimmed.startsWith("BEGIN:VCARD", ignoreCase = true) ||
+            trimmed.startsWith("mailto:", ignoreCase = true) ||
+            trimmed.startsWith("tel:", ignoreCase = true)) {
+            return ""
+        }
+
+        // 5. Tolak angka barcode produk murni (misal EAN-13, UPC, Code 128 yang hanya berupa nomor produk toko/supermarket)
+        if (trimmed.matches(Regex("^[0-9]{5,}$"))) {
+            return ""
+        }
+
+        // 6. Format ID atau username alfanumerik pengguna Lovy yang valid (3-50 karakter alfanumerik, garis bawah, atau strip)
+        if (trimmed.matches(Regex("^[a-zA-Z0-9_-]{3,50}$"))) {
+            return trimmed
+        }
+
+        return ""
     }
 }

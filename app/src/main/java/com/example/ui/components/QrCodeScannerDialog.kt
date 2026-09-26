@@ -59,6 +59,7 @@ import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.filled.WavingHand
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -69,6 +70,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -172,6 +174,7 @@ fun QrCodeScannerDialog(
 
     // Dialog profil pengguna yang berhasil dipindai
     var scannedUserResult by remember { mutableStateOf<User?>(null) }
+    var notFoundCode by remember { mutableStateOf<String?>(null) }
     var isSearchingUser by remember { mutableStateOf(false) }
     var showMyQrDialog by remember { mutableStateOf(false) }
 
@@ -195,12 +198,12 @@ fun QrCodeScannerDialog(
                         if (user != null) {
                             scannedUserResult = user
                         } else {
-                            Toast.makeText(context, "ID pengguna tidak valid: $decodedText", Toast.LENGTH_SHORT).show()
-                            isAnalyzingActive = true
+                            notFoundCode = decodedText
+                            isAnalyzingActive = false
                         }
                     }
                 } else {
-                    Toast.makeText(context, "Tidak ditemukan Kode QR atau Barcode pada gambar yang dipilih", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, com.example.util.AppStrings.qrNoCodeFoundInImage(language), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -213,6 +216,7 @@ fun QrCodeScannerDialog(
             lovyId = myLovyId.ifBlank { "lovy_user" },
             avatarUrl = myAvatarUrl,
             avatarColorHex = myAvatarColorHex,
+            language = language,
             onDismiss = { showMyQrDialog = false }
         )
     }
@@ -265,7 +269,7 @@ fun QrCodeScannerDialog(
                                 .build()
 
                             imageAnalysis.setAnalyzer(cameraExecutor) { imageProxy ->
-                                if (isAnalyzingActive && !isSearchingUser && scannedUserResult == null) {
+                                if (isAnalyzingActive && !isSearchingUser && scannedUserResult == null && notFoundCode == null) {
                                     val code = QrCodeDecoder.decodeImageProxy(imageProxy)
                                     if (!code.isNullOrBlank()) {
                                         isAnalyzingActive = false
@@ -277,8 +281,8 @@ fun QrCodeScannerDialog(
                                                 if (user != null) {
                                                     scannedUserResult = user
                                                 } else {
-                                                    Toast.makeText(context, "Pengguna tidak ditemukan: $code", Toast.LENGTH_SHORT).show()
-                                                    isAnalyzingActive = true
+                                                    notFoundCode = code
+                                                    isAnalyzingActive = false
                                                 }
                                             }
                                         }
@@ -601,6 +605,18 @@ fun QrCodeScannerDialog(
                         }
                         scannedUserResult = null
                         onDismiss()
+                    }
+                )
+            }
+
+            // Dialog informasi jika Barcode / QR tidak terdaftar di database
+            notFoundCode?.let { code ->
+                NotFoundCodeDialog(
+                    code = code,
+                    language = language,
+                    onDismiss = {
+                        notFoundCode = null
+                        isAnalyzingActive = true
                     }
                 )
             }
@@ -1088,6 +1104,118 @@ private fun ScannedUserBottomSheet(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Sapa & Kirim Pesan Langsung", fontWeight = FontWeight.SemiBold)
                     }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Dialog peringatan jika kode barcode / QR yang dipindai tidak terdaftar di database pengguna resmi Lovy Chat
+ */
+@Composable
+private fun NotFoundCodeDialog(
+    code: String,
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
+            modifier = Modifier
+                .fillMaxWidth(0.92f)
+                .padding(vertical = 24.dp)
+                .testTag("dialog_barcode_not_found")
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+            ) {
+                // Ikon bulat merah lembut
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFFFEBEE))
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null,
+                        tint = Color(0xFFD32F2F),
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Judul "Pengguna tidak ditemukan"
+                Text(
+                    text = com.example.util.AppStrings.qrUserNotFoundWithCode(language, code),
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = NeutralDark,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Penjelasan bahwa barcode / QR tidak terdaftar di database pengguna Lovy Chat
+                Text(
+                    text = com.example.util.AppStrings.qrBarcodeNotRegisteredDesc(language, code),
+                    fontSize = 13.sp,
+                    color = NeutralMedium,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 19.sp,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Tombol "Pindai Lagi" (Aksi Utama)
+                Button(
+                    onClick = onDismiss,
+                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .testTag("btn_qr_scan_again")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.QrCodeScanner,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = com.example.util.AppStrings.qrScanAgainBtn(language),
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        fontSize = 14.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Tombol Tutup Sekunder
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = com.example.util.AppStrings.commonClose(language),
+                        color = NeutralMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.sp
+                    )
                 }
             }
         }
