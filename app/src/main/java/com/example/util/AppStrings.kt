@@ -4645,34 +4645,6 @@ object AppStrings {
         else -> "User not found: $code"
     }
 
-    fun qrBarcodeNotRegisteredDesc(lang: AppLanguage, code: String): String = when (resolveLang(lang)) {
-        AppLanguage.CHINESE -> "条形码或二维码 '$code' 未在 Lovy Chat 用户数据库中注册。\n\n请确保扫描好友官方的 Lovy Chat 个人资料二维码。"
-        AppLanguage.JAPANESE -> "バーコードまたはQRコード '$code' は Lovy Chat データベースに登録されていません。\n\nお友達の公式 Lovy Chat プロフィールのQRコードをスキャンしてください。"
-        AppLanguage.KOREAN -> "바코드 또는 QR 코드 '$code'는 Lovy Chat 사용자 데이터베이스에 등록되어 있지 않습니다.\n\n친구의 공식 Lovy Chat 프로필 QR 코드를 스캔했는지 확인해 주세요."
-        AppLanguage.ARABIC -> "الرمز الشريطي أو رمز QR '$code' غير مسجل في قاعدة بيانات مستخدمي Lovy Chat.\n\nيرجى التأكد من مسح رمز QR الرسمي لملف صديقك في Lovy Chat."
-        AppLanguage.SPANISH -> "El código de barras o QR '$code' no está registrado en la base de datos de usuarios de Lovy Chat.\n\nAsegúrate de escanear el código QR oficial de Lovy Chat de tu amigo."
-        AppLanguage.FRENCH -> "Le code-barres ou QR '$code' n'est pas enregistré dans la base de données de Lovy Chat.\n\nVeuillez scanner le code QR officiel du profil Lovy Chat de votre ami."
-        AppLanguage.GERMAN -> "Der Barcode oder QR-Code '$code' ist nicht in der Lovy Chat-Nutzerdatenbank registriert.\n\nBitte scannen Sie den offiziellen Lovy Chat-Profil-QR-Code Ihres Freundes."
-        AppLanguage.RUSSIAN -> "Штрихкод или QR-код «$code» не зарегистрирован в базе данных пользователей Lovy Chat.\n\nУбедитесь, что вы сканируете официальный QR-код профиля друга в Lovy Chat."
-        AppLanguage.PORTUGUESE -> "O código de barras ou QR code '$code' não está registrado no banco de dados do Lovy Chat.\n\nCertifique-se de escanear o QR code oficial do perfil do Lovy Chat do seu amigo."
-        AppLanguage.INDONESIAN -> "Barcode atau Kode QR '$code' tidak terdaftar dalam database pengguna Lovy Chat.\n\nPastikan Anda memindai Kode QR profil Lovy Chat resmi teman Anda."
-        else -> "Barcode or QR code '$code' is not registered in the Lovy Chat user database.\n\nPlease make sure to scan your friend's official Lovy Chat profile QR code."
-    }
-
-    fun qrScanAgainBtn(lang: AppLanguage): String = when (resolveLang(lang)) {
-        AppLanguage.CHINESE -> "重新扫描"
-        AppLanguage.JAPANESE -> "もう一度スキャン"
-        AppLanguage.KOREAN -> "다시 스캔"
-        AppLanguage.ARABIC -> "إعادة المسح"
-        AppLanguage.SPANISH -> "Escanear de Nuevo"
-        AppLanguage.FRENCH -> "Scanner à nouveau"
-        AppLanguage.GERMAN -> "Erneut scannen"
-        AppLanguage.RUSSIAN -> "Сканировать снова"
-        AppLanguage.PORTUGUESE -> "Escanear Novamente"
-        AppLanguage.INDONESIAN -> "Pindai Lagi"
-        else -> "Scan Again"
-    }
-
     fun blockedUsersTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
         AppLanguage.CHINESE -> "已屏蔽用户列表"
         AppLanguage.JAPANESE -> "ブロックしたユーザー一覧"
@@ -6284,6 +6256,20 @@ object AppStrings {
         else -> "System"
     }
 
+    fun notificationsCategoryRadar(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "附近雷达"
+        AppLanguage.JAPANESE -> "レーダー"
+        AppLanguage.KOREAN -> "주변 레이더"
+        AppLanguage.ARABIC -> "الرادار"
+        AppLanguage.SPANISH -> "Radar"
+        AppLanguage.FRENCH -> "Radar"
+        AppLanguage.GERMAN -> "Radar"
+        AppLanguage.RUSSIAN -> "Радар"
+        AppLanguage.PORTUGUESE -> "Radar"
+        AppLanguage.INDONESIAN -> "Radar Sekitar"
+        else -> "Nearby Radar"
+    }
+
     fun notificationsEmptyTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
         AppLanguage.CHINESE -> "暂无通知"
         AppLanguage.JAPANESE -> "通知はまだありません"
@@ -6479,6 +6465,118 @@ object AppStrings {
         AppLanguage.PORTUGUESE -> "$name quer ser seu amigo(a)."
         AppLanguage.INDONESIAN -> "$name ingin berteman dengan Anda."
         else -> "$name wants to be friends with you."
+    }
+
+    fun notifBottleCaughtTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "捞到了漂流瓶 🌊"
+        AppLanguage.JAPANESE -> "漂流ボトルを拾いました 🌊"
+        AppLanguage.KOREAN -> "바다의 유리병을 건졌습니다 🌊"
+        AppLanguage.ARABIC -> "تم اصطياد زجاجة أمنيات 🌊"
+        AppLanguage.SPANISH -> "¡Mensaje en botella pescado! 🌊"
+        AppLanguage.FRENCH -> "Une bouteille à la mer repêchée 🌊"
+        AppLanguage.GERMAN -> "Eine Flaschenpost geangelt 🌊"
+        AppLanguage.RUSSIAN -> "Выловлено послание в бутылке 🌊"
+        AppLanguage.PORTUGUESE -> "Mensagem na garrafa pescada! 🌊"
+        AppLanguage.INDONESIAN -> "Pesan Botol Samudra Terjaring 🌊"
+        else -> "Ocean Bottle Message Caught 🌊"
+    }
+
+    fun notifBottleCaughtDesc(lang: AppLanguage, name: String): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "来自 $name 的漂流瓶已从海洋中被捞起，快来看看吧。"
+        AppLanguage.JAPANESE -> "$name さんからの漂流ボトルが海から引き揚げられました。内容を確認しましょう。"
+        AppLanguage.KOREAN -> "$name 님의 바다 유리병 편지가 건져졌습니다. 확인해보세요."
+        AppLanguage.ARABIC -> "تم التقاط رسالة الزجاجة من $name من المحيط، تحقق منها الآن."
+        AppLanguage.SPANISH -> "El mensaje en botella de $name ha sido sacado del océano."
+        AppLanguage.FRENCH -> "La bouteille à la mer de $name a été repêchée dans l'océan."
+        AppLanguage.GERMAN -> "Die Flaschenpost von $name wurde aus dem Ozean gefischt."
+        AppLanguage.RUSSIAN -> "Послание в бутылке от $name было выловлено из океана."
+        AppLanguage.PORTUGUESE -> "A mensagem na garrafa de $name foi retirada do oceano."
+        AppLanguage.INDONESIAN -> "Pesan botol dari $name telah terangkat dari samudra, buka untuk membacanya."
+        else -> "A bottle message from $name was fished from the ocean, open to read it."
+    }
+
+    fun notifNearbyGreetTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "附近好友的新问候 👋"
+        AppLanguage.JAPANESE -> "近くの友達からの挨拶 👋"
+        AppLanguage.KOREAN -> "주변 친구의 인사 👋"
+        AppLanguage.ARABIC -> "تحية من صديق قريب 👋"
+        AppLanguage.SPANISH -> "Saludo de un amigo cercano 👋"
+        AppLanguage.FRENCH -> "Salut d'un ami proche 👋"
+        AppLanguage.GERMAN -> "Gruß von einem Freund in der Nähe 👋"
+        AppLanguage.RUSSIAN -> "Приветствие от друга поблизости 👋"
+        AppLanguage.PORTUGUESE -> "Saudação de um amigo próximo 👋"
+        AppLanguage.INDONESIAN -> "Sapaan dari Teman Sekitar 👋"
+        else -> "Greeting from Nearby Friend 👋"
+    }
+
+    fun notifNearbyGreetDesc(lang: AppLanguage, name: String): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "$name 在附近雷达向您打了个招呼！"
+        AppLanguage.JAPANESE -> "$name さんが周辺レーダーであなたに挨拶しました！"
+        AppLanguage.KOREAN -> "$name 님이 주변 탐색 레이더에서 인사를 건넸습니다!"
+        AppLanguage.ARABIC -> "$name يلقي عليك التحية في رادار الأصدقاء القريبين!"
+        AppLanguage.SPANISH -> "¡$name te ha saludado en el radar cercano!"
+        AppLanguage.FRENCH -> "$name vous a salué sur le radar de proximité !"
+        AppLanguage.GERMAN -> "$name hat dich auf dem Umgebungsradar gegrüßt!"
+        AppLanguage.RUSSIAN -> "$name поприветствовал(а) вас на радаре поблизости!"
+        AppLanguage.PORTUGUESE -> "$name enviou uma saudação no radar próximo!"
+        AppLanguage.INDONESIAN -> "$name menyapa Anda melalui radar sekitar!"
+        else -> "$name waved at you on the nearby radar!"
+    }
+
+    fun notifNewChatMessageTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "新聊天消息 💬"
+        AppLanguage.JAPANESE -> "新着メッセージ 💬"
+        AppLanguage.KOREAN -> "새 채팅 메시지 💬"
+        AppLanguage.ARABIC -> "رسالة دردشة جديدة 💬"
+        AppLanguage.SPANISH -> "Nuevo mensaje de chat 💬"
+        AppLanguage.FRENCH -> "Nouveau message de discussion 💬"
+        AppLanguage.GERMAN -> "Neue Chat-Nachricht 💬"
+        AppLanguage.RUSSIAN -> "Новое сообщение в чате 💬"
+        AppLanguage.PORTUGUESE -> "Nova mensagem de conversa 💬"
+        AppLanguage.INDONESIAN -> "Pesan Obrolan Baru 💬"
+        else -> "New Chat Message 💬"
+    }
+
+    fun notifNewChatMessageDesc(lang: AppLanguage, name: String): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "您收到了来自 $name 的新消息。"
+        AppLanguage.JAPANESE -> "$name さんから新しいメッセージが届きました。"
+        AppLanguage.KOREAN -> "$name 님으로부터 새 메시지가 도착했습니다."
+        AppLanguage.ARABIC -> "وصلتك رسالة جديدة من $name."
+        AppLanguage.SPANISH -> "Has recibido un nuevo mensaje de $name."
+        AppLanguage.FRENCH -> "Vous avez reçu un nouveau message de $name."
+        AppLanguage.GERMAN -> "Du hast eine neue Nachricht von $name erhalten."
+        AppLanguage.RUSSIAN -> "Вы получили новое сообщение от $name."
+        AppLanguage.PORTUGUESE -> "Você recebeu uma nova mensagem de $name."
+        AppLanguage.INDONESIAN -> "Anda menerima pesan baru dari $name."
+        else -> "You received a new message from $name."
+    }
+
+    fun notificationChannelName(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "Lovy Chat 消息与通知"
+        AppLanguage.JAPANESE -> "Lovy Chat メッセージと通知"
+        AppLanguage.KOREAN -> "Lovy Chat 메시지 및 알림"
+        AppLanguage.ARABIC -> "رسائل وإشعارات Lovy Chat"
+        AppLanguage.SPANISH -> "Mensajes y Notificaciones de Lovy Chat"
+        AppLanguage.FRENCH -> "Messages et notifications Lovy Chat"
+        AppLanguage.GERMAN -> "Lovy Chat Nachrichten & Benachrichtigungen"
+        AppLanguage.RUSSIAN -> "Сообщения и уведомления Lovy Chat"
+        AppLanguage.PORTUGUESE -> "Mensagens e Notificações do Lovy Chat"
+        AppLanguage.INDONESIAN -> "Pesan & Notifikasi Lovy Chat"
+        else -> "Lovy Chat Messages & Notifications"
+    }
+
+    fun notificationChannelDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "双向聊天消息、附近好友问候及动态通知"
+        AppLanguage.JAPANESE -> "ダイレクトメッセージ、近くの友達の挨拶、モーメントの通知"
+        AppLanguage.KOREAN -> "양방향 채팅 메시지, 주변 친구 인사 및 모먼트 알림"
+        AppLanguage.ARABIC -> "إشعارات رسائل الدردشة المباشرة وتحيات الأصدقاء واللحظات"
+        AppLanguage.SPANISH -> "Notificaciones de mensajes de chat, saludos de amigos cercanos y momentos"
+        AppLanguage.FRENCH -> "Notifications de messages, saluts d'amis proches et moments"
+        AppLanguage.GERMAN -> "Benachrichtigungen für Chat-Nachrichten, Radar-Grüße und Momente"
+        AppLanguage.RUSSIAN -> "Уведомления о сообщениях, приветствиях поблизости и моментах"
+        AppLanguage.PORTUGUESE -> "Notificações de mensagens de chat, saudações de amigos próximos e momentos"
+        AppLanguage.INDONESIAN -> "Notifikasi pesan obrolan 2 arah, sapaan teman sekitar, dan momen"
+        else -> "Notifications for 2-way chat messages, nearby friend greetings, and moments"
     }
 
     fun loginPermissionsAndPrivacyBtn(lang: AppLanguage): String = when (resolveLang(lang)) {

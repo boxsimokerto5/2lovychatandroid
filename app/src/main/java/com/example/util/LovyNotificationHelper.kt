@@ -34,7 +34,7 @@ object LovyNotificationHelper {
     /**
      * Membuat NotificationChannel dengan konfigurasi getar & suara berprioritas tinggi.
      */
-    fun createNotificationChannel(context: Context) {
+    fun createNotificationChannel(context: Context, language: AppLanguage? = null) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val audioAttributes = AudioAttributes.Builder()
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
@@ -43,12 +43,16 @@ object LovyNotificationHelper {
 
             val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
 
+            val resolvedLang = language ?: GeoLanguageDetector.detectLocalLanguage(context)
+            val channelName = AppStrings.notificationChannelName(resolvedLang)
+            val channelDesc = AppStrings.notificationChannelDesc(resolvedLang)
+
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                CHANNEL_NAME,
+                channelName,
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Notifikasi pesan obrolan 2 arah, sapaan teman sekitar, dan momen"
+                description = channelDesc
                 enableLights(true)
                 lightColor = Color.parseColor("#00C853")
                 enableVibration(true)

@@ -243,7 +243,7 @@ fun ActivityNotificationsBottomSheet(
                 }
                 item {
                     CategoryChip(
-                        title = "Radar",
+                        title = com.example.util.AppStrings.notificationsCategoryRadar(language),
                         isSelected = selectedCategory == NotificationCategory.NEARBY,
                         onClick = { selectedCategory = NotificationCategory.NEARBY }
                     )
@@ -387,7 +387,7 @@ private fun NotificationCard(
 ) {
     val (categoryColor, categoryIcon, categoryLabel) = when (notification.category) {
         NotificationCategory.FRIEND -> Triple(Color(0xFF00A86B), Icons.Default.PersonAdd, com.example.util.AppStrings.notificationsCategoryFriends(language))
-        NotificationCategory.NEARBY -> Triple(Color(0xFF2E7D32), Icons.Default.NearMe, "Radar")
+        NotificationCategory.NEARBY -> Triple(Color(0xFF2E7D32), Icons.Default.NearMe, com.example.util.AppStrings.notificationsCategoryRadar(language))
         NotificationCategory.BOTTLE -> Triple(Color(0xFF0288D1), Icons.Default.Waves, com.example.util.AppStrings.bottleTitle(language))
         NotificationCategory.SYSTEM -> Triple(Color(0xFFF57C00), Icons.Default.Info, com.example.util.AppStrings.notificationsCategorySystem(language))
     }
@@ -435,7 +435,7 @@ private fun NotificationCard(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = notification.title,
+                        text = notification.getDisplayTitle(language),
                         fontSize = 13.sp,
                         fontWeight = if (notification.isRead) FontWeight.SemiBold else FontWeight.Bold,
                         color = NeutralDark,
@@ -456,7 +456,7 @@ private fun NotificationCard(
                 Spacer(modifier = Modifier.height(3.dp))
 
                 Text(
-                    text = notification.message,
+                    text = notification.getDisplayMessage(language),
                     fontSize = 12.sp,
                     color = if (notification.isRead) NeutralMedium else Color(0xFF424242),
                     maxLines = 2,

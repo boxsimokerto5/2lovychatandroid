@@ -379,7 +379,6 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
     fun isDummyFriend(userId: String, userName: String): Boolean {
         val cleanName = userName.trim().lowercase()
-        val cleanId = userId.trim()
         if (cleanName.isBlank()) return true // Tolak user tak bernama
         val dummyNames = setOf(
             "siti rahma", "rian pratama", "nadia putri", "dimas anggara", 
@@ -387,11 +386,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             "dimas danendra", "clarissa aurelia", "salma salsabil",
             "tanpa nama", "user tak bernama", "pengguna", "unknown user", "anonymous"
         )
-        val isMockId = cleanId.matches(Regex("^u[0-9]+$"))
-        // Tolak hasil scan barcode yang berupa nomor produk/angka acak (seperti "29146369")
-        val isPureBarcodeDigits = cleanName.matches(Regex("^[0-9]{4,}$")) && (cleanId == userName.trim() || cleanId.matches(Regex("^[0-9]{4,}$")))
-        val isFallbackBarcodeName = cleanName.startsWith("teman lovy (") && cleanName.endsWith(")")
-        return isMockId || isPureBarcodeDigits || isFallbackBarcodeName || dummyNames.contains(cleanName)
+        val isMockId = userId.matches(Regex("^u[0-9]+$"))
+        return isMockId || dummyNames.contains(cleanName)
     }
 
     private fun observeChatFriends() {
@@ -463,16 +459,18 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         _uiState.update { it.copy(newFriendRequests = sortedList) }
 
         // Tambahkan notifikasi aktivitas ringan untuk permintaan teman baru
+        val currentLang = _uiState.value.language
         for (req in sortedList.take(3)) {
             addActivityNotification(
                 com.example.model.ActivityNotification(
                     id = "friend_req_${req.id}",
-                    title = "Permintaan Pertemanan Baru 🤝",
-                    message = "${req.user.name} ingin berteman dengan Anda.",
+                    title = com.example.util.AppStrings.notifFriendRequestTitle(currentLang),
+                    message = com.example.util.AppStrings.notifFriendRequestDesc(currentLang, req.user.name),
                     timestamp = req.timestamp,
                     isRead = false,
                     category = com.example.model.NotificationCategory.FRIEND,
-                    senderName = req.user.name
+                    senderName = req.user.name,
+                    translationKey = "friend_request"
                 )
             )
         }
@@ -505,21 +503,24 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun initDefaultNotifications() {
+        val currentLang = _uiState.value.language
         val welcomeNotif = com.example.model.ActivityNotification(
             id = "sys_welcome",
-            title = "Selamat Datang di Lovy Chat ✨",
-            message = "Mulai temukan teman baru di sekitar, bagikan momen, dan nikmati obrolan!",
+            title = com.example.util.AppStrings.notifWelcomeTitle(currentLang),
+            message = com.example.util.AppStrings.notifWelcomeDesc(currentLang),
             timestamp = System.currentTimeMillis() - 120000L,
             isRead = false,
-            category = com.example.model.NotificationCategory.SYSTEM
+            category = com.example.model.NotificationCategory.SYSTEM,
+            translationKey = "welcome"
         )
         val radarNotif = com.example.model.ActivityNotification(
             id = "sys_radar_active",
-            title = "Radar Sekitar Aktif 📍",
-            message = "Sistem pelacak teman siap menemukan pengguna terdekat dengan aman.",
+            title = com.example.util.AppStrings.notifRadarActiveTitle(currentLang),
+            message = com.example.util.AppStrings.notifRadarActiveDesc(currentLang),
             timestamp = System.currentTimeMillis() - 60000L,
             isRead = false,
-            category = com.example.model.NotificationCategory.NEARBY
+            category = com.example.model.NotificationCategory.NEARBY,
+            translationKey = "radar_active"
         )
         _uiState.update {
             if (it.activityNotifications.isEmpty()) {
@@ -530,8 +531,6 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
     fun acceptNewFriend(user: User) {
         if (isSelfUser(user.id, user.name)) return
-        if (isDummyFriend(user.id, user.name)) return
-        if (isUserBlocked(user.id, user.name)) return
         recordFeatureClick()
         saveChatFriend(user)
         _uiState.update { state ->
@@ -541,124 +540,116 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 state.chattedFriends + user
             }
             state.copy(
-                chattedFriends = updatedFriends.filterNot { isSelfUser(it.id, it.name) || isDummyFriend(it.id, it.name) },
-                newFriendRequests = state.newFriendRequests.filterNot { it.user.id == user.id || isSelfUser(it.user.id, it.user.name) || isDummyFriend(it.user.id, it.user.name) }
+                chattedFriends = updatedFriends.filterNot { isSelfUser(it.id, it.name) },
+                newFriendRequests = state.newFriendRequests.filterNot { it.user.id == user.id || isSelfUser(it.user.id, it.user.name) }
             )
         }
     }
 
     /**
      * Mencari pengguna berdasarkan kode QR / Barcode yang dipindai (baik kamera live atau unggah galeri).
-     * Wajib memverifikasi ke database (Supabase / Room) terlebih dahulu sebelum mengembalikan pengguna.
      */
     fun searchUserByQrCode(rawCode: String, onResult: (User?) -> Unit) {
-        val cleanId = com.example.util.QrCodeDecoder.extractUserId(rawCode).trim()
+        val cleanId = com.example.util.QrCodeDecoder.extractUserId(rawCode)
         if (cleanId.isBlank()) {
             onResult(null)
             return
         }
 
-        // Cek jika yang discan adalah akun sendiri
-        if (isSelfUser(cleanId, cleanId)) {
-            val selfUser = User(
-                id = _uiState.value.myLovyId.ifBlank { "me" },
-                name = _uiState.value.myName.ifBlank { _uiState.value.userProfile.displayName },
-                gender = if (_uiState.value.userProfile.gender.equals("male", true)) Gender.MALE else Gender.FEMALE,
-                age = _uiState.value.userProfile.age,
-                distanceMeters = 0,
-                bio = _uiState.value.userProfile.bio,
-                avatarColorHex = 0xFF00A86B,
-                isOnline = true,
-                avatarUrl = _uiState.value.userProfile.profilePicture,
-                city = _uiState.value.userProfile.city
-            )
-            onResult(selfUser)
+        // 1. Cek di daftar teman yang sudah tersimpan
+        val existingFriend = _uiState.value.chattedFriends.find {
+            it.id.equals(cleanId, ignoreCase = true) || it.name.equals(cleanId, ignoreCase = true)
+        }
+        if (existingFriend != null) {
+            onResult(existingFriend)
             return
         }
 
-        // Wajib verifikasi ke database terlebih dahulu (Supabase atau Room DB lokal)
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                var verifiedUser: User? = null
+        // 2. Cek di daftar pengguna sekitar
+        val nearbyMatch = _uiState.value.nearbyUsers.find {
+            it.id.equals(cleanId, ignoreCase = true) || it.name.equals(cleanId, ignoreCase = true)
+        }
+        if (nearbyMatch != null) {
+            onResult(nearbyMatch)
+            return
+        }
 
-                // 1. Cek di database Supabase (app_accounts & nearby_users)
-                if (com.example.data.supabase.SupabaseClient.isConfigured()) {
-                    // Cek di tabel app_accounts terlebih dahulu (akun pengguna terdaftar resmi)
-                    val acc = supabaseRepo.findAccountById(cleanId)
-                        ?: supabaseRepo.findAccountByUsername(cleanId)
-                        ?: (if (!cleanId.startsWith("lovy_")) supabaseRepo.findAccountById("lovy_$cleanId") else null)
-                        ?: (if (cleanId.startsWith("lovy_")) supabaseRepo.findAccountById(cleanId.removePrefix("lovy_")) else null)
+        // 3. Cek di daftar obrolan aktif
+        val convMatch = _uiState.value.conversations.find {
+            it.partnerId.equals(cleanId, ignoreCase = true) || it.partnerName.equals(cleanId, ignoreCase = true)
+        }
+        if (convMatch != null) {
+            val convUser = User(
+                id = convMatch.partnerId,
+                name = convMatch.partnerName,
+                gender = convMatch.partnerGender,
+                age = convMatch.partnerAge,
+                distanceMeters = convMatch.partnerDistanceMeters,
+                bio = "Teman obrolan Lovy",
+                avatarColorHex = convMatch.partnerAvatarHex,
+                isOnline = convMatch.isOnline,
+                avatarUrl = convMatch.partnerAvatarUrl,
+                city = convMatch.partnerCity ?: "Indonesia"
+            )
+            onResult(convUser)
+            return
+        }
 
-                    if (acc != null && !acc.username.equals(_uiState.value.myName, ignoreCase = true) && !acc.id.equals(_uiState.value.myLovyId, ignoreCase = true)) {
-                        val accName = acc.displayName?.takeIf { it.isNotBlank() } ?: acc.username
-                        if (accName.isNotBlank() && !isDummyFriend(acc.id, accName) && !isSelfUser(acc.id, accName)) {
-                            verifiedUser = User(
-                                id = acc.id,
-                                name = accName,
-                                gender = if (acc.gender.equals("male", true)) Gender.MALE else Gender.FEMALE,
-                                age = 22,
-                                distanceMeters = 100,
-                                bio = acc.bio ?: "Pengguna Lovy Chat",
-                                avatarColorHex = 0xFF00A86B,
-                                isOnline = true,
-                                city = "Indonesia",
-                                avatarUrl = acc.avatarUrl
-                            )
-                        }
-                    }
+        // 4. Cari dari database Supabase jika tersambung
+        if (com.example.data.supabase.SupabaseClient.isConfigured() && !_uiState.value.isGuest) {
+            viewModelScope.launch(Dispatchers.IO) {
+                val cloudUser = supabaseRepo.fetchNearbyUserById(cleanId)
+                val accountUser = if (cloudUser == null) {
+                    val acc = supabaseRepo.findAccountById(cleanId) ?: supabaseRepo.findAccountByUsername(cleanId)
+                    if (acc != null) {
+                        User(
+                            id = acc.id,
+                            name = acc.displayName?.ifBlank { acc.username } ?: acc.username,
+                            gender = if (acc.gender.equals("male", true)) Gender.MALE else Gender.FEMALE,
+                            age = 22,
+                            distanceMeters = 100,
+                            bio = acc.bio ?: "Pengguna Lovy Chat",
+                            avatarColorHex = 0xFF00A86B,
+                            isOnline = true,
+                            city = "Indonesia",
+                            avatarUrl = acc.avatarUrl
+                        )
+                    } else null
+                } else null
 
-                    // Jika belum ditemukan di app_accounts, cek di nearby_users tabel Supabase
-                    if (verifiedUser == null) {
-                        var cloudUser = supabaseRepo.fetchNearbyUserById(cleanId)
-                        if (cloudUser == null && !cleanId.startsWith("lovy_")) {
-                            cloudUser = supabaseRepo.fetchNearbyUserById("lovy_$cleanId")
-                        }
-                        if (cloudUser == null && cleanId.startsWith("lovy_")) {
-                            cloudUser = supabaseRepo.fetchNearbyUserById(cleanId.removePrefix("lovy_"))
-                        }
-
-                        if (cloudUser != null && !isSelfUser(cloudUser.id, cloudUser.name) && !isDummyFriend(cloudUser.id, cloudUser.name)) {
-                            verifiedUser = cloudUser
-                        }
-                    }
-                }
-
-                // 2. Jika tidak ditemukan di Supabase atau Supabase offline, cek database lokal Room (chat_friends)
-                if (verifiedUser == null) {
-                    val localFriends = chatFriendDao.getAllFriends()
-                    val matchedLocal = localFriends.find {
-                        (it.id.equals(cleanId, ignoreCase = true) ||
-                         (!cleanId.startsWith("lovy_") && it.id.equals("lovy_$cleanId", ignoreCase = true)) ||
-                         (cleanId.startsWith("lovy_") && it.id.equals(cleanId.removePrefix("lovy_"), ignoreCase = true))) &&
-                        !isDummyFriend(it.id, it.name) &&
-                        !isSelfUser(it.id, it.name)
-                    }
-                    if (matchedLocal != null && matchedLocal.name.isNotBlank()) {
-                        verifiedUser = matchedLocal.toUser()
-                    }
-                }
-
-                // 3. Pastikan pengguna yang ditemukan tidak diblokir
-                if (verifiedUser != null && isUserBlocked(verifiedUser.id, verifiedUser.name)) {
-                    Log.w("LovyChatViewModel", "Pengguna ${verifiedUser.name} (${verifiedUser.id}) berada dalam daftar blokir")
-                    verifiedUser = null
-                }
-
+                val foundUser = cloudUser ?: accountUser
                 withContext(Dispatchers.Main) {
-                    if (verifiedUser != null) {
-                        Log.d("LovyChatViewModel", "Pengguna barcode/QR terverifikasi di database: ${verifiedUser.name} (${verifiedUser.id})")
-                        onResult(verifiedUser)
+                    if (foundUser != null) {
+                        onResult(foundUser)
                     } else {
-                        Log.w("LovyChatViewModel", "Kode barcode/QR '$cleanId' tidak ditemukan di database resmi")
-                        onResult(null)
+                        val fallbackUser = User(
+                            id = cleanId,
+                            name = if (cleanId.startsWith("lovy_")) "Teman Lovy (${cleanId.takeLast(4)})" else cleanId,
+                            gender = Gender.FEMALE,
+                            age = 22,
+                            distanceMeters = 100,
+                            bio = "Teman ditemukan lewat pemindaian barcode",
+                            avatarColorHex = 0xFF00A86B,
+                            isOnline = true,
+                            city = "Indonesia"
+                        )
+                        onResult(fallbackUser)
                     }
-                }
-            } catch (e: Exception) {
-                Log.e("LovyChatViewModel", "Gagal memverifikasi barcode di database", e)
-                withContext(Dispatchers.Main) {
-                    onResult(null)
                 }
             }
+        } else {
+            val fallbackUser = User(
+                id = cleanId,
+                name = if (cleanId.startsWith("lovy_")) "Teman Lovy (${cleanId.takeLast(4)})" else cleanId,
+                gender = Gender.FEMALE,
+                age = 22,
+                distanceMeters = 100,
+                bio = "Teman ditemukan lewat pemindaian barcode",
+                avatarColorHex = 0xFF00A86B,
+                isOnline = true,
+                city = "Indonesia"
+            )
+            onResult(fallbackUser)
         }
     }
 
@@ -681,8 +672,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             Log.d("LovyChatViewModel", "Abaikan menyimpan akun sendiri ke kontak teman: ${user.name} (${user.id})")
             return
         }
-        if (isDummyFriend(user.id, user.name)) {
-            Log.d("LovyChatViewModel", "Abaikan menyimpan akun dummy/barcode ke kontak teman: ${user.name} (${user.id})")
+        if (!_uiState.value.isGuest && isDummyFriend(user.id, user.name)) {
+            // Abaikan penyimpanan user dummy jika pengguna sedang berada di akun asli
             return
         }
         viewModelScope.launch(Dispatchers.IO) {
@@ -800,24 +791,15 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     myDisplayName = myDisplay,
                     username = username
                 )
-                val allFriends = chatFriendDao.getAllFriends()
-                for (f in allFriends) {
-                    if (isDummyFriend(f.id, f.name) || isSelfUser(f.id, f.name)) {
-                        chatFriendDao.deleteFriendById(f.id)
-                    }
-                }
             } catch (e: Exception) {
                 Log.w("LovyChatViewModel", "Gagal membersihkan kontak dummy/self", e)
             }
         }
         _uiState.update { state ->
-            val updatedFriends = state.chattedFriends
+            val updated = state.chattedFriends
                 .filterNot { isDummyFriend(it.id, it.name) }
                 .filterNot { isSelfUser(it.id, it.name) }
-            val updatedConversations = state.conversations
-                .filterNot { isDummyFriend(it.partnerId, it.partnerName) }
-                .filterNot { isSelfUser(it.partnerId, it.partnerName) }
-            state.copy(chattedFriends = updatedFriends, conversations = updatedConversations)
+            state.copy(chattedFriends = updated)
         }
     }
 
@@ -1589,12 +1571,19 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         val ctx = try { app?.applicationContext } catch (_: Throwable) { null } ?: app
         val detected = com.example.util.GeoLanguageDetector.detectLocalLanguage(ctx)
         val areaName = com.example.util.GeoLanguageDetector.getCountryOrRegionName(ctx)
-        _uiState.update {
-            it.copy(
+        _uiState.update { state ->
+            val updatedNotifs = state.activityNotifications.map { notif ->
+                notif.copy(
+                    title = notif.getDisplayTitle(detected),
+                    message = notif.getDisplayMessage(detected)
+                )
+            }
+            state.copy(
                 isLocalLanguageMode = true,
                 detectedLocalLanguage = detected,
                 language = detected,
-                detectedGeoArea = areaName
+                detectedGeoArea = areaName,
+                activityNotifications = updatedNotifs
             )
         }
     }
@@ -1604,22 +1593,30 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         val app = try { getApplication<Application>() } catch (_: Throwable) { null }
         val ctx = try { app?.applicationContext } catch (_: Throwable) { null } ?: app
 
-        if (language == com.example.util.AppLanguage.LOCAL) {
-            val detected = com.example.util.GeoLanguageDetector.detectLocalLanguage(ctx)
-            _uiState.update {
-                it.copy(
-                    isLocalLanguageMode = true,
-                    language = detected,
-                    detectedLocalLanguage = detected
-                )
-            }
+        val targetLang = if (language == com.example.util.AppLanguage.LOCAL) {
+            com.example.util.GeoLanguageDetector.detectLocalLanguage(ctx)
         } else {
-            _uiState.update {
-                it.copy(
-                    language = language,
-                    isLocalLanguageMode = (language != com.example.util.AppLanguage.ENGLISH)
+            language
+        }
+        val isLocal = if (language == com.example.util.AppLanguage.LOCAL) true else (language != com.example.util.AppLanguage.ENGLISH)
+
+        if (ctx != null) {
+            com.example.util.LovyNotificationHelper.createNotificationChannel(ctx, targetLang)
+        }
+
+        _uiState.update { state ->
+            val updatedNotifs = state.activityNotifications.map { notif ->
+                notif.copy(
+                    title = notif.getDisplayTitle(targetLang),
+                    message = notif.getDisplayMessage(targetLang)
                 )
             }
+            state.copy(
+                language = targetLang,
+                detectedLocalLanguage = if (language == com.example.util.AppLanguage.LOCAL) targetLang else state.detectedLocalLanguage,
+                isLocalLanguageMode = isLocal,
+                activityNotifications = updatedNotifs
+            )
         }
     }
 

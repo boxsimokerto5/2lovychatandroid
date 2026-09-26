@@ -326,9 +326,9 @@ fun ProfileTabScreen(
                             context = context,
                             conversationId = "test_notification_id",
                             senderName = "Lovy Chat 💬",
-                            messageText = "Notifikasi & efek getar berhasil berfungsi optimal! 📳✨"
+                            messageText = com.example.util.AppStrings.testNotificationSampleMessage(language)
                         )
-                        Toast.makeText(context, "Memicu notifikasi & efek getar pesan baru 🔔📳", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, com.example.util.AppStrings.testNotificationTriggerToast(language), Toast.LENGTH_SHORT).show()
                     }
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
