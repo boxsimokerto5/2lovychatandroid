@@ -398,7 +398,7 @@ fun FriendsTabScreen(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
-                                    text = user.name.ifBlank { "Pengguna Lovy" },
+                                    text = user.name.ifBlank { com.example.util.AppStrings.defaultUserName(language) },
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = NeutralDark,

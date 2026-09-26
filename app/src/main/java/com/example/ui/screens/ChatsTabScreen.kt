@@ -221,7 +221,7 @@ fun ChatsTabScreen(
                             ) {
                                 Icon(
                                     imageVector = if (unreadNotifs > 0) Icons.Default.Notifications else Icons.Default.NotificationsNone,
-                                    contentDescription = "Pemberitahuan Aktivitas",
+                                    contentDescription = com.example.util.AppStrings.notificationsTitle(language),
                                     tint = Color.White,
                                     modifier = Modifier.size(21.dp)
                                 )
@@ -516,7 +516,8 @@ fun ChatsTabScreen(
             onDismiss = { showNotificationsSheet = false },
             onMarkAllAsRead = { onMarkAllNotificationsAsRead?.invoke() },
             onClearAll = { onClearAllNotifications?.invoke() },
-            onNotificationClick = { notif -> onNotificationClick?.invoke(notif) }
+            onNotificationClick = { notif -> onNotificationClick?.invoke(notif) },
+            language = language
         )
     }
 }
@@ -591,7 +592,7 @@ fun ChatConversationItem(
                     modifier = Modifier.weight(1f, fill = false)
                 ) {
                     Text(
-                        text = conversation.partnerName.ifBlank { "Teman Lovy" },
+                        text = conversation.partnerName.ifBlank { com.example.util.AppStrings.defaultFriendName(language) },
                         fontSize = 14.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeutralDark,

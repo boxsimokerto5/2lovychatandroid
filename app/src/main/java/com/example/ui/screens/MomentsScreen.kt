@@ -1185,7 +1185,7 @@ fun MomentCard(
                         }
                 ) {
                     Text(
-                        text = item.authorName.ifBlank { "Pengguna Lovy" },
+                        text = item.authorName.ifBlank { com.example.util.AppStrings.defaultUserName(language) },
                         fontSize = 14.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeutralDark,
@@ -1325,7 +1325,7 @@ fun MomentCard(
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "Gagal memuat gambar",
+                                        text = com.example.util.AppStrings.imageLoadFailed(language),
                                         fontSize = 11.sp,
                                         color = NeutralMedium
                                     )

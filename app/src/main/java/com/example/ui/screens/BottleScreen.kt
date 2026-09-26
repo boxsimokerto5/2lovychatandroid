@@ -436,7 +436,8 @@ fun BottleScreen(
                             onReply = { onReplyBottle(bottle) },
                             onRelease = if (selectedTab == 0) {
                                 { onReleaseFishedBottle(bottle) }
-                            } else null
+                            } else null,
+                            language = language
                         )
                     }
                 }
@@ -518,7 +519,7 @@ fun BottleScreen(
                     Text(text = "🎣", fontSize = 24.sp)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Botol Berhasil Dipancing!",
+                        text = AppStrings.bottleFishedSuccessTitle(language),
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF00838F)
@@ -614,6 +615,7 @@ fun BottleCardItem(
     bottle: BottleMessage,
     onReply: () -> Unit,
     onRelease: (() -> Unit)? = null,
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -654,7 +656,7 @@ fun BottleCardItem(
                         color = NeutralDark
                     )
                     Text(
-                        text = if (bottle.isFromMe) "Hanyut di ${bottle.locationHint}" else "${bottle.locationHint} • Diambil dari Lautan",
+                        text = if (bottle.isFromMe) AppStrings.bottleDriftingAt(language, bottle.locationHint) else AppStrings.bottleTakenFromOcean(language, bottle.locationHint),
                         fontSize = 11.5.sp,
                         color = NeutralMedium
                     )
@@ -667,7 +669,7 @@ fun BottleCardItem(
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
-                        text = if (bottle.isFromMe) "🍾 Botol Saya" else "🎣 Diambil",
+                        text = if (bottle.isFromMe) AppStrings.bottleMyBottleTag(language) else AppStrings.bottleFishedTag(language),
                         fontSize = 11.sp,
                         color = if (bottle.isFromMe) EmeraldGreen else Color(0xFF00838F),
                         fontWeight = FontWeight.SemiBold
@@ -698,7 +700,7 @@ fun BottleCardItem(
                             modifier = Modifier.testTag("btn_release_bottle_${bottle.id}")
                         ) {
                             Text(
-                                text = "Hanyutkan Lagi",
+                                text = AppStrings.btnRelease(language),
                                 fontSize = 11.5.sp,
                                 color = NeutralMedium
                             )
@@ -720,7 +722,7 @@ fun BottleCardItem(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "Balas Pesan",
+                            text = AppStrings.btnReply(language),
                             fontSize = 12.5.sp,
                             color = EmeraldGreen,
                             fontWeight = FontWeight.Bold

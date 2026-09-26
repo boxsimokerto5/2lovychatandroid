@@ -75,6 +75,7 @@ fun ActivityNotificationsBottomSheet(
     onMarkAllAsRead: () -> Unit,
     onClearAll: () -> Unit,
     onNotificationClick: (ActivityNotification) -> Unit,
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     modifier: Modifier = Modifier
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -127,7 +128,7 @@ fun ActivityNotificationsBottomSheet(
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "Pemberitahuan",
+                                text = com.example.util.AppStrings.notificationsTitle(language),
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = NeutralDark
@@ -140,7 +141,7 @@ fun ActivityNotificationsBottomSheet(
                                     modifier = Modifier.padding(horizontal = 2.dp)
                                 ) {
                                     Text(
-                                        text = "$unreadCount Baru",
+                                        text = com.example.util.AppStrings.notificationsNewBadge(language, unreadCount),
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color = Color.White,
@@ -150,7 +151,7 @@ fun ActivityNotificationsBottomSheet(
                             }
                         }
                         Text(
-                            text = "Aktivitas singkat & info interaksi",
+                            text = com.example.util.AppStrings.notificationsSubtitle(language),
                             fontSize = 12.sp,
                             color = NeutralMedium
                         )
@@ -163,7 +164,7 @@ fun ActivityNotificationsBottomSheet(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Tutup",
+                        contentDescription = com.example.util.AppStrings.commonClose(language),
                         tint = NeutralMedium,
                         modifier = Modifier.size(20.dp)
                     )
@@ -191,7 +192,7 @@ fun ActivityNotificationsBottomSheet(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Tandai Dibaca",
+                        text = com.example.util.AppStrings.notificationsMarkAllRead(language),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (unreadCount > 0) EmeraldGreen else NeutralMedium.copy(alpha = 0.5f)
@@ -211,7 +212,7 @@ fun ActivityNotificationsBottomSheet(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Bersihkan",
+                        text = com.example.util.AppStrings.notificationsClearAll(language),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (notifications.isNotEmpty()) Color(0xFFE53935) else NeutralMedium.copy(alpha = 0.5f)
@@ -228,14 +229,14 @@ fun ActivityNotificationsBottomSheet(
             ) {
                 item {
                     CategoryChip(
-                        title = "Semua",
+                        title = com.example.util.AppStrings.notificationsCategoryAll(language),
                         isSelected = selectedCategory == null,
                         onClick = { selectedCategory = null }
                     )
                 }
                 item {
                     CategoryChip(
-                        title = "Teman",
+                        title = com.example.util.AppStrings.notificationsCategoryFriends(language),
                         isSelected = selectedCategory == NotificationCategory.FRIEND,
                         onClick = { selectedCategory = NotificationCategory.FRIEND }
                     )
@@ -249,14 +250,14 @@ fun ActivityNotificationsBottomSheet(
                 }
                 item {
                     CategoryChip(
-                        title = "Samudra Botol",
+                        title = com.example.util.AppStrings.bottleTitle(language),
                         isSelected = selectedCategory == NotificationCategory.BOTTLE,
                         onClick = { selectedCategory = NotificationCategory.BOTTLE }
                     )
                 }
                 item {
                     CategoryChip(
-                        title = "Sistem",
+                        title = com.example.util.AppStrings.notificationsCategorySystem(language),
                         isSelected = selectedCategory == NotificationCategory.SYSTEM,
                         onClick = { selectedCategory = NotificationCategory.SYSTEM }
                     )
@@ -294,14 +295,14 @@ fun ActivityNotificationsBottomSheet(
                         }
                         Spacer(modifier = Modifier.height(14.dp))
                         Text(
-                            text = "Belum Ada Pemberitahuan",
+                            text = com.example.util.AppStrings.notificationsEmptyTitle(language),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = NeutralDark
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Aktivitas interaksi baru seperti sapaan radar, teman baru, dan info sistem akan tampil di sini.",
+                            text = com.example.util.AppStrings.notificationsEmptyDesc(language),
                             fontSize = 12.sp,
                             color = NeutralMedium,
                             textAlign = TextAlign.Center,
@@ -319,6 +320,7 @@ fun ActivityNotificationsBottomSheet(
                     items(filteredList, key = { it.id }) { notification ->
                         NotificationCard(
                             notification = notification,
+                            language = language,
                             onClick = { onNotificationClick(notification) }
                         )
                     }
@@ -338,7 +340,7 @@ fun ActivityNotificationsBottomSheet(
                     .testTag("btn_close_notifications")
             ) {
                 Text(
-                    text = "Tutup",
+                    text = com.example.util.AppStrings.commonClose(language),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -380,13 +382,14 @@ private fun CategoryChip(
 @Composable
 private fun NotificationCard(
     notification: ActivityNotification,
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     onClick: () -> Unit
 ) {
     val (categoryColor, categoryIcon, categoryLabel) = when (notification.category) {
-        NotificationCategory.FRIEND -> Triple(Color(0xFF00A86B), Icons.Default.PersonAdd, "Teman Baru")
-        NotificationCategory.NEARBY -> Triple(Color(0xFF2E7D32), Icons.Default.NearMe, "Radar Sekitar")
-        NotificationCategory.BOTTLE -> Triple(Color(0xFF0288D1), Icons.Default.Waves, "Samudra Botol")
-        NotificationCategory.SYSTEM -> Triple(Color(0xFFF57C00), Icons.Default.Info, "Info Sistem")
+        NotificationCategory.FRIEND -> Triple(Color(0xFF00A86B), Icons.Default.PersonAdd, com.example.util.AppStrings.notificationsCategoryFriends(language))
+        NotificationCategory.NEARBY -> Triple(Color(0xFF2E7D32), Icons.Default.NearMe, "Radar")
+        NotificationCategory.BOTTLE -> Triple(Color(0xFF0288D1), Icons.Default.Waves, com.example.util.AppStrings.bottleTitle(language))
+        NotificationCategory.SYSTEM -> Triple(Color(0xFFF57C00), Icons.Default.Info, com.example.util.AppStrings.notificationsCategorySystem(language))
     }
 
     Card(
@@ -444,7 +447,7 @@ private fun NotificationCard(
                     Spacer(modifier = Modifier.width(6.dp))
 
                     Text(
-                        text = formatTimeAgo(notification.timestamp),
+                        text = formatTimeAgo(notification.timestamp, language),
                         fontSize = 10.sp,
                         color = NeutralMedium
                     )
@@ -475,7 +478,7 @@ private fun NotificationCard(
     }
 }
 
-private fun formatTimeAgo(timestamp: Long): String {
+private fun formatTimeAgo(timestamp: Long, language: com.example.util.AppLanguage): String {
     val diffMs = System.currentTimeMillis() - timestamp
     val seconds = diffMs / 1000
     val minutes = seconds / 60
@@ -483,10 +486,10 @@ private fun formatTimeAgo(timestamp: Long): String {
     val days = hours / 24
 
     return when {
-        minutes < 1 -> "Baru saja"
-        minutes < 60 -> "${minutes}m lalu"
-        hours < 24 -> "${hours}j lalu"
-        days < 7 -> "${days}h lalu"
+        minutes < 1 -> com.example.util.AppStrings.timeAgoJustNow(language)
+        minutes < 60 -> com.example.util.AppStrings.timeAgoMinutes(language, minutes)
+        hours < 24 -> com.example.util.AppStrings.timeAgoHours(language, hours)
+        days < 7 -> com.example.util.AppStrings.timeAgoDays(language, days)
         else -> {
             val sdf = java.text.SimpleDateFormat("dd MMM", java.util.Locale.getDefault())
             sdf.format(java.util.Date(timestamp))

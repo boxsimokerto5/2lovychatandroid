@@ -73,6 +73,7 @@ fun MyQrCodeDialog(
     lovyId: String,
     avatarUrl: String? = null,
     avatarColorHex: String? = null,
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -129,7 +130,7 @@ fun MyQrCodeDialog(
                     Spacer(modifier = Modifier.width(10.dp))
 
                     Text(
-                        text = "Kode QR Profil Saya",
+                        text = com.example.util.AppStrings.qrMyTitle(language),
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeutralDark,
@@ -144,7 +145,7 @@ fun MyQrCodeDialog(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = "Tutup",
+                            contentDescription = com.example.util.AppStrings.commonClose(language),
                             tint = NeutralMedium
                         )
                     }
@@ -269,7 +270,7 @@ fun MyQrCodeDialog(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
-                    text = "Pindai kode QR ini menggunakan pemindai kamera untuk mendapatkan ID Lovy dan berteman.",
+                    text = com.example.util.AppStrings.qrMySubtitle(language),
                     fontSize = 12.sp,
                     color = NeutralMedium,
                     textAlign = TextAlign.Center,
@@ -289,7 +290,7 @@ fun MyQrCodeDialog(
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                             val clip = ClipData.newPlainText("ID Lovy", lovyId)
                             clipboard.setPrimaryClip(clip)
-                            Toast.makeText(context, "ID Lovy disalin: $lovyId", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "${com.example.util.AppStrings.qrCopiedToast(language)}: $lovyId", Toast.LENGTH_SHORT).show()
                         },
                         shape = RoundedCornerShape(12.dp),
                         border = BorderStroke(1.dp, EmeraldGreen),
@@ -305,7 +306,7 @@ fun MyQrCodeDialog(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Salin ID",
+                            text = com.example.util.AppStrings.qrCopyIdBtn(language),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = EmeraldGreen
@@ -322,7 +323,7 @@ fun MyQrCodeDialog(
                                 )
                                 type = "text/plain"
                             }
-                            val shareIntent = Intent.createChooser(sendIntent, "Bagikan ID Lovy")
+                            val shareIntent = Intent.createChooser(sendIntent, com.example.util.AppStrings.qrShareBtn(language))
                             context.startActivity(shareIntent)
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
@@ -339,7 +340,7 @@ fun MyQrCodeDialog(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Bagikan",
+                            text = com.example.util.AppStrings.qrShareBtn(language),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White

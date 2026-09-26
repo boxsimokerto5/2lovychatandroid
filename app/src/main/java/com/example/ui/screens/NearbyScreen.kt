@@ -1116,12 +1116,12 @@ fun NearbyUserCard(
             ) {
                 Icon(
                     imageVector = Icons.Default.WavingHand,
-                    contentDescription = "Sapa",
+                    contentDescription = com.example.util.AppStrings.sayHi(language),
                     modifier = Modifier.size(13.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "Sapa",
+                    text = com.example.util.AppStrings.sayHi(language),
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.SemiBold
                 )

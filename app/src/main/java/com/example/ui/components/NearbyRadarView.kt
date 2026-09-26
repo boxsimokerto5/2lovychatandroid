@@ -930,7 +930,7 @@ fun NearbyRadarView(
                                     modifier = Modifier.size(15.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Sapa", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                                Text(com.example.util.AppStrings.sayHi(language), fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
                             }
 
                             IconButton(
@@ -939,7 +939,7 @@ fun NearbyRadarView(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
-                                    contentDescription = "Tutup",
+                                    contentDescription = com.example.util.AppStrings.commonClose(language),
                                     tint = NeutralMedium,
                                     modifier = Modifier.size(18.dp)
                                 )

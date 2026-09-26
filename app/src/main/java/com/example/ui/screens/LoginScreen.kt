@@ -99,11 +99,7 @@ fun LoginScreen(
                 snackbarHostState.showSnackbar(authResult.message)
             }.onFailure { exception ->
                 isGoogleLoading = false
-                val errorMsg = exception.message ?: if (language == AppLanguage.INDONESIAN) {
-                    "Gagal menghubungkan akun Google"
-                } else {
-                    "Failed to connect Google account"
-                }
+                val errorMsg = exception.message ?: AppStrings.loginGoogleFailedToast(language)
                 snackbarHostState.showSnackbar(errorMsg)
             }
         }
@@ -532,7 +528,7 @@ fun LoginScreen(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = if (language == AppLanguage.INDONESIAN) "Izin Akses & Privasi Aplikasi" else "App Permissions & Privacy",
+                                    text = AppStrings.loginPermissionsAndPrivacyBtn(language),
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = EmeraldGreen

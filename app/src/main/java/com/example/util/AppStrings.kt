@@ -6166,5 +6166,371 @@ object AppStrings {
         AppLanguage.INDONESIAN -> "🎣 Diambil"
         else -> "🎣 Fished"
     }
+
+    // --- ACTIVITY NOTIFICATIONS & TIME AGO ---
+    fun notificationsTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "活动通知"
+        AppLanguage.JAPANESE -> "お知らせ"
+        AppLanguage.KOREAN -> "활동 알림"
+        AppLanguage.ARABIC -> "إشعارات النشاط"
+        AppLanguage.SPANISH -> "Notificaciones de Actividad"
+        AppLanguage.FRENCH -> "Notifications d'activité"
+        AppLanguage.GERMAN -> "Aktivitätsbenachrichtigungen"
+        AppLanguage.RUSSIAN -> "Уведомления о событиях"
+        AppLanguage.PORTUGUESE -> "Notificações de Atividade"
+        AppLanguage.INDONESIAN -> "Pemberitahuan Aktivitas"
+        else -> "Activity Notifications"
+    }
+
+    fun notificationsNewBadge(lang: AppLanguage, count: Int): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "$count 条新"
+        AppLanguage.JAPANESE -> "$count 件の新着"
+        AppLanguage.KOREAN -> "$count개 신규"
+        AppLanguage.ARABIC -> "$count جديد"
+        AppLanguage.SPANISH -> "$count Nuevas"
+        AppLanguage.FRENCH -> "$count Nouveau(x)"
+        AppLanguage.GERMAN -> "$count Neu"
+        AppLanguage.RUSSIAN -> "$count новых"
+        AppLanguage.PORTUGUESE -> "$count Novas"
+        AppLanguage.INDONESIAN -> "$count Baru"
+        else -> "$count New"
+    }
+
+    fun notificationsSubtitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "最新互动与系统动态信息"
+        AppLanguage.JAPANESE -> "最近のアクティビティとインタラクション情報"
+        AppLanguage.KOREAN -> "최근 활동 및 상호작용 업데이트"
+        AppLanguage.ARABIC -> "أحدث الأنشطة وتحديثات التفاعل"
+        AppLanguage.SPANISH -> "Actividades recientes e información de interacción"
+        AppLanguage.FRENCH -> "Activités récentes et mises à jour"
+        AppLanguage.GERMAN -> "Kürzliche Aktivitäten & Interaktionen"
+        AppLanguage.RUSSIAN -> "Недавняя активность и обновления"
+        AppLanguage.PORTUGUESE -> "Atividades recentes e informações de interação"
+        AppLanguage.INDONESIAN -> "Aktivitas singkat & info interaksi"
+        else -> "Recent activities & interaction updates"
+    }
+
+    fun notificationsMarkAllRead(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "标为已读"
+        AppLanguage.JAPANESE -> "既読にする"
+        AppLanguage.KOREAN -> "모두 읽음"
+        AppLanguage.ARABIC -> "تحديد كمقروء"
+        AppLanguage.SPANISH -> "Marcar Leídas"
+        AppLanguage.FRENCH -> "Marquer comme lu"
+        AppLanguage.GERMAN -> "Als gelesen markieren"
+        AppLanguage.RUSSIAN -> "Прочитано"
+        AppLanguage.PORTUGUESE -> "Marcar Lidas"
+        AppLanguage.INDONESIAN -> "Tandai Dibaca"
+        else -> "Mark as Read"
+    }
+
+    fun notificationsClearAll(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "全部清空"
+        AppLanguage.JAPANESE -> "クリア"
+        AppLanguage.KOREAN -> "지우기"
+        AppLanguage.ARABIC -> "مسح الكل"
+        AppLanguage.SPANISH -> "Limpiar"
+        AppLanguage.FRENCH -> "Effacer"
+        AppLanguage.GERMAN -> "Leeren"
+        AppLanguage.RUSSIAN -> "Очистить"
+        AppLanguage.PORTUGUESE -> "Limpar"
+        AppLanguage.INDONESIAN -> "Bersihkan"
+        else -> "Clear All"
+    }
+
+    fun notificationsCategoryAll(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "全部"
+        AppLanguage.JAPANESE -> "すべて"
+        AppLanguage.KOREAN -> "전체"
+        AppLanguage.ARABIC -> "الكل"
+        AppLanguage.SPANISH -> "Todos"
+        AppLanguage.FRENCH -> "Tous"
+        AppLanguage.GERMAN -> "Alle"
+        AppLanguage.RUSSIAN -> "Все"
+        AppLanguage.PORTUGUESE -> "Todos"
+        AppLanguage.INDONESIAN -> "Semua"
+        else -> "All"
+    }
+
+    fun notificationsCategoryFriends(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "好友"
+        AppLanguage.JAPANESE -> "友達"
+        AppLanguage.KOREAN -> "친구"
+        AppLanguage.ARABIC -> "الأصدقاء"
+        AppLanguage.SPANISH -> "Amigos"
+        AppLanguage.FRENCH -> "Amis"
+        AppLanguage.GERMAN -> "Freunde"
+        AppLanguage.RUSSIAN -> "Друзья"
+        AppLanguage.PORTUGUESE -> "Amigos"
+        AppLanguage.INDONESIAN -> "Teman"
+        else -> "Friends"
+    }
+
+    fun notificationsCategoryChats(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "聊天"
+        AppLanguage.JAPANESE -> "チャット"
+        AppLanguage.KOREAN -> "채팅"
+        AppLanguage.ARABIC -> "دردشة"
+        AppLanguage.SPANISH -> "Chats"
+        AppLanguage.FRENCH -> "Discussions"
+        AppLanguage.GERMAN -> "Chats"
+        AppLanguage.RUSSIAN -> "Чаты"
+        AppLanguage.PORTUGUESE -> "Conversas"
+        AppLanguage.INDONESIAN -> "Obrolan"
+        else -> "Chats"
+    }
+
+    fun notificationsCategorySystem(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "系统"
+        AppLanguage.JAPANESE -> "システム"
+        AppLanguage.KOREAN -> "시스템"
+        AppLanguage.ARABIC -> "النظام"
+        AppLanguage.SPANISH -> "Sistema"
+        AppLanguage.FRENCH -> "Système"
+        AppLanguage.GERMAN -> "System"
+        AppLanguage.RUSSIAN -> "Система"
+        AppLanguage.PORTUGUESE -> "Sistema"
+        AppLanguage.INDONESIAN -> "Sistem"
+        else -> "System"
+    }
+
+    fun notificationsEmptyTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "暂无通知"
+        AppLanguage.JAPANESE -> "通知はまだありません"
+        AppLanguage.KOREAN -> "알림이 아직 없습니다"
+        AppLanguage.ARABIC -> "لا توجد إشعارات حتى الآن"
+        AppLanguage.SPANISH -> "Aún no hay notificaciones"
+        AppLanguage.FRENCH -> "Aucune notification pour le moment"
+        AppLanguage.GERMAN -> "Noch keine Benachrichtigungen"
+        AppLanguage.RUSSIAN -> "Уведомлений пока нет"
+        AppLanguage.PORTUGUESE -> "Ainda não há notificações"
+        AppLanguage.INDONESIAN -> "Belum Ada Pemberitahuan"
+        else -> "No Notifications Yet"
+    }
+
+    fun notificationsEmptyDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "附近的雷达问候、新好友以及系统提示等最新互动将显示在这里。"
+        AppLanguage.JAPANESE -> "レーダーからのあいさつ、新しい友達、システム情報などの新着アクティビティがここに表示されます。"
+        AppLanguage.KOREAN -> "주변 레이더 인사, 새 친구 요청 및 시스템 정보가 여기에 표시됩니다."
+        AppLanguage.ARABIC -> "ستظهر هنا التفاعلات الجديدة مثل تحيات الرادار والأصدقاء الجدد وتنبيهات النظام."
+        AppLanguage.SPANISH -> "Nuevas interacciones como saludos de radar, nuevos amigos y avisos del sistema aparecerán aquí."
+        AppLanguage.FRENCH -> "Les nouvelles interactions telles que les saluts radar, nouveaux amis et alertes système apparaîtront ici."
+        AppLanguage.GERMAN -> "Neue Interaktionen wie Radar-Grüße, neue Freunde und System-Infos erscheinen hier."
+        AppLanguage.RUSSIAN -> "Здесь появятся новые действия: приветствия с радара, новые друзья и системные уведомления."
+        AppLanguage.PORTUGUESE -> "Novas interações como saudações de radar, novos amigos e avisos do sistema aparecerão aqui."
+        AppLanguage.INDONESIAN -> "Aktivitas interaksi baru seperti sapaan radar, teman baru, dan info sistem akan tampil di sini."
+        else -> "New interactions like radar greetings, new friends, and system updates will appear here."
+    }
+
+    fun timeAgoJustNow(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "刚刚"
+        AppLanguage.JAPANESE -> "たった今"
+        AppLanguage.KOREAN -> "방금 전"
+        AppLanguage.ARABIC -> "الآن"
+        AppLanguage.SPANISH -> "Hace un momento"
+        AppLanguage.FRENCH -> "À l'instant"
+        AppLanguage.GERMAN -> "Gerade eben"
+        AppLanguage.RUSSIAN -> "Только что"
+        AppLanguage.PORTUGUESE -> "Agora mesmo"
+        AppLanguage.INDONESIAN -> "Baru saja"
+        else -> "Just now"
+    }
+
+    fun timeAgoMinutes(lang: AppLanguage, minutes: Long): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "${minutes}分钟前"
+        AppLanguage.JAPANESE -> "${minutes}分前"
+        AppLanguage.KOREAN -> "${minutes}분 전"
+        AppLanguage.ARABIC -> "منذ $minutes دقيقة"
+        AppLanguage.SPANISH -> "Hace ${minutes}m"
+        AppLanguage.FRENCH -> "Il y a ${minutes} min"
+        AppLanguage.GERMAN -> "Vor ${minutes}m"
+        AppLanguage.RUSSIAN -> "${minutes} мин. назад"
+        AppLanguage.PORTUGUESE -> "Há ${minutes}m"
+        AppLanguage.INDONESIAN -> "${minutes}m lalu"
+        else -> "${minutes}m ago"
+    }
+
+    fun timeAgoHours(lang: AppLanguage, hours: Long): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "${hours}小时前"
+        AppLanguage.JAPANESE -> "${hours}時間前"
+        AppLanguage.KOREAN -> "${hours}시간 전"
+        AppLanguage.ARABIC -> "منذ $hours ساعة"
+        AppLanguage.SPANISH -> "Hace ${hours}h"
+        AppLanguage.FRENCH -> "Il y a ${hours} h"
+        AppLanguage.GERMAN -> "Vor ${hours} Std."
+        AppLanguage.RUSSIAN -> "${hours} ч. назад"
+        AppLanguage.PORTUGUESE -> "Há ${hours}h"
+        AppLanguage.INDONESIAN -> "${hours}j lalu"
+        else -> "${hours}h ago"
+    }
+
+    fun timeAgoDays(lang: AppLanguage, days: Long): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "${days}天前"
+        AppLanguage.JAPANESE -> "${days}日前"
+        AppLanguage.KOREAN -> "${days}일 전"
+        AppLanguage.ARABIC -> "منذ $days يوم"
+        AppLanguage.SPANISH -> "Hace ${days}d"
+        AppLanguage.FRENCH -> "Il y a ${days} j"
+        AppLanguage.GERMAN -> "Vor ${days} Tagen"
+        AppLanguage.RUSSIAN -> "${days} дн. назад"
+        AppLanguage.PORTUGUESE -> "Há ${days}d"
+        AppLanguage.INDONESIAN -> "${days}h lalu"
+        else -> "${days}d ago"
+    }
+
+    // Default Names & Prompts
+    fun defaultUserName(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "Lovy 用户"
+        AppLanguage.JAPANESE -> "Lovyユーザー"
+        AppLanguage.KOREAN -> "Lovy 사용자"
+        AppLanguage.ARABIC -> "مستخدم Lovy"
+        AppLanguage.SPANISH -> "Usuario de Lovy"
+        AppLanguage.FRENCH -> "Utilisateur Lovy"
+        AppLanguage.GERMAN -> "Lovy-Nutzer"
+        AppLanguage.RUSSIAN -> "Пользователь Lovy"
+        AppLanguage.PORTUGUESE -> "Usuário Lovy"
+        AppLanguage.INDONESIAN -> "Pengguna Lovy"
+        else -> "Lovy User"
+    }
+
+    fun defaultFriendName(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "Lovy 好友"
+        AppLanguage.JAPANESE -> "Lovyフレンド"
+        AppLanguage.KOREAN -> "Lovy 친구"
+        AppLanguage.ARABIC -> "صديق Lovy"
+        AppLanguage.SPANISH -> "Amigo Lovy"
+        AppLanguage.FRENCH -> "Ami Lovy"
+        AppLanguage.GERMAN -> "Lovy-Freund"
+        AppLanguage.RUSSIAN -> "Друг Lovy"
+        AppLanguage.PORTUGUESE -> "Amigo Lovy"
+        AppLanguage.INDONESIAN -> "Teman Lovy"
+        else -> "Lovy Friend"
+    }
+
+    fun notifWelcomeTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "欢迎来到 Lovy Chat ✨"
+        AppLanguage.JAPANESE -> "Lovy Chatへようこそ ✨"
+        AppLanguage.KOREAN -> "Lovy Chat에 오신 것을 환영합니다 ✨"
+        AppLanguage.ARABIC -> "مرحباً بك في Lovy Chat ✨"
+        AppLanguage.SPANISH -> "¡Bienvenido a Lovy Chat! ✨"
+        AppLanguage.FRENCH -> "Bienvenue sur Lovy Chat ✨"
+        AppLanguage.GERMAN -> "Willkommen bei Lovy Chat ✨"
+        AppLanguage.RUSSIAN -> "Добро пожаловать в Lovy Chat ✨"
+        AppLanguage.PORTUGUESE -> "Bem-vindo ao Lovy Chat ✨"
+        AppLanguage.INDONESIAN -> "Selamat Datang di Lovy Chat ✨"
+        else -> "Welcome to Lovy Chat ✨"
+    }
+
+    fun notifWelcomeDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "开始发现附近的新朋友，分享精彩瞬间并畅聊吧！"
+        AppLanguage.JAPANESE -> "近くの新しい友達を見つけて、モーメントを共有してチャットを楽しみましょう！"
+        AppLanguage.KOREAN -> "주변의 새로운 친구를 찾고 모먼트를 공유하며 즐겁게 대화해보세요!"
+        AppLanguage.ARABIC -> "ابدأ باكتشاف أصدقاء جدد بالقرب منك وشارك اللحظات واستمتع بالدردشة!"
+        AppLanguage.SPANISH -> "¡Descubre nuevos amigos cercanos, comparte momentos y disfruta del chat!"
+        AppLanguage.FRENCH -> "Trouvez de nouveaux amis proches, partagez des moments et discutez !"
+        AppLanguage.GERMAN -> "Finde neue Freunde in deiner Nähe, teile Momente und genieße das Chatten!"
+        AppLanguage.RUSSIAN -> "Находите новых друзей поблизости, делитесь моментами и общайтесь с удовольствием!"
+        AppLanguage.PORTUGUESE -> "Descubra novos amigos próximos, compartilhe momentos e divirta-se conversando!"
+        AppLanguage.INDONESIAN -> "Mulai temukan teman baru di sekitar, bagikan momen, dan nikmati obrolan!"
+        else -> "Start finding new friends nearby, share moments, and enjoy chatting!"
+    }
+
+    fun notifRadarActiveTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "附近雷达已激活 📍"
+        AppLanguage.JAPANESE -> "周辺レーダー起動中 📍"
+        AppLanguage.KOREAN -> "주변 탐색 레이더 활성 📍"
+        AppLanguage.ARABIC -> "رادار الأصدقاء نشط 📍"
+        AppLanguage.SPANISH -> "Radar Cercano Activo 📍"
+        AppLanguage.FRENCH -> "Radar de proximité actif 📍"
+        AppLanguage.GERMAN -> "Umgebungsradar aktiv 📍"
+        AppLanguage.RUSSIAN -> "Радар поблизости активен 📍"
+        AppLanguage.PORTUGUESE -> "Radar Próximo Ativo 📍"
+        AppLanguage.INDONESIAN -> "Radar Sekitar Aktif 📍"
+        else -> "Nearby Radar Active 📍"
+    }
+
+    fun notifRadarActiveDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "好友雷达系统已就绪，正在安全发现附近的活跃用户。"
+        AppLanguage.JAPANESE -> "友達検索システムが安全に近くのユーザーを見つける準備ができました。"
+        AppLanguage.KOREAN -> "친구 찾기 시스템이 주변 사용자를 안전하게 검색할 준비가 되었습니다."
+        AppLanguage.ARABIC -> "نظام البحث عن الأصدقاء جاهز للعثور على المستخدمين القريبين بأمان."
+        AppLanguage.SPANISH -> "El radar de amigos está listo para encontrar usuarios cercanos de forma segura."
+        AppLanguage.FRENCH -> "Le radar est prêt à détecter les personnes proches en toute sécurité."
+        AppLanguage.GERMAN -> "Das Freundesradar ist bereit, Nutzer in der Nähe sicher zu finden."
+        AppLanguage.RUSSIAN -> "Система поиска готова безопасно находить пользователей поблизости."
+        AppLanguage.PORTUGUESE -> "O radar de amigos está pronto para encontrar pessoas próximas com segurança."
+        AppLanguage.INDONESIAN -> "Sistem pelacak teman siap menemukan pengguna terdekat dengan aman."
+        else -> "Friend radar is ready to safely discover nearby users."
+    }
+
+    fun notifFriendRequestTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "新的好友请求 🤝"
+        AppLanguage.JAPANESE -> "新しい友達リクエスト 🤝"
+        AppLanguage.KOREAN -> "새 친구 요청 🤝"
+        AppLanguage.ARABIC -> "طلب صداقة جديد 🤝"
+        AppLanguage.SPANISH -> "Nueva Solicitud de Amistad 🤝"
+        AppLanguage.FRENCH -> "Nouvelle demande d'ami 🤝"
+        AppLanguage.GERMAN -> "Neue Freundschaftsanfrage 🤝"
+        AppLanguage.RUSSIAN -> "Новый запрос в друзья 🤝"
+        AppLanguage.PORTUGUESE -> "Nova Solicitação de Amizade 🤝"
+        AppLanguage.INDONESIAN -> "Permintaan Pertemanan Baru 🤝"
+        else -> "New Friend Request 🤝"
+    }
+
+    fun notifFriendRequestDesc(lang: AppLanguage, name: String): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "$name 想加您为好友。"
+        AppLanguage.JAPANESE -> "$name さんがあなたと友達になりたがっています。"
+        AppLanguage.KOREAN -> "$name 님이 친구가 되고 싶어 합니다."
+        AppLanguage.ARABIC -> "$name يريد أن يكون صديقك."
+        AppLanguage.SPANISH -> "$name quiere ser tu amigo(a)."
+        AppLanguage.FRENCH -> "$name souhaite devenir votre ami(e)."
+        AppLanguage.GERMAN -> "$name möchte dein Freund werden."
+        AppLanguage.RUSSIAN -> "$name хочет добавить вас в друзья."
+        AppLanguage.PORTUGUESE -> "$name quer ser seu amigo(a)."
+        AppLanguage.INDONESIAN -> "$name ingin berteman dengan Anda."
+        else -> "$name wants to be friends with you."
+    }
+
+    fun loginPermissionsAndPrivacyBtn(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "应用权限与隐私说明"
+        AppLanguage.JAPANESE -> "アプリの権限とプライバシー"
+        AppLanguage.KOREAN -> "앱 권한 및 개인정보 보호"
+        AppLanguage.ARABIC -> "أذونات التطبيق والخصوصية"
+        AppLanguage.SPANISH -> "Permisos de la App y Privacidad"
+        AppLanguage.FRENCH -> "Autorisations de l'application & Confidentialité"
+        AppLanguage.GERMAN -> "App-Berechtigungen & Datenschutz"
+        AppLanguage.RUSSIAN -> "Разрешения и конфиденциальность"
+        AppLanguage.PORTUGUESE -> "Permissões do App e Privacidade"
+        AppLanguage.INDONESIAN -> "Izin Akses & Privasi Aplikasi"
+        else -> "App Permissions & Privacy"
+    }
+
+    fun loginGoogleFailedToast(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "连接 Google 账号失败"
+        AppLanguage.JAPANESE -> "Googleアカウントの接続に失敗しました"
+        AppLanguage.KOREAN -> "Google 계정 연결에 실패했습니다"
+        AppLanguage.ARABIC -> "فشل ربط حساب Google"
+        AppLanguage.SPANISH -> "Error al conectar la cuenta de Google"
+        AppLanguage.FRENCH -> "Échec de connexion au compte Google"
+        AppLanguage.GERMAN -> "Verbindung mit Google-Konto fehlgeschlagen"
+        AppLanguage.RUSSIAN -> "Не удалось подключить аккаунт Google"
+        AppLanguage.PORTUGUESE -> "Falha ao conectar conta do Google"
+        AppLanguage.INDONESIAN -> "Gagal menghubungkan akun Google"
+        else -> "Failed to connect Google account"
+    }
+
+    fun imageLoadFailed(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "无法加载图片"
+        AppLanguage.JAPANESE -> "画像を読み込めませんでした"
+        AppLanguage.KOREAN -> "이미지를 불러오지 못했습니다"
+        AppLanguage.ARABIC -> "فشل تحميل الصورة"
+        AppLanguage.SPANISH -> "No se pudo cargar la imagen"
+        AppLanguage.FRENCH -> "Impossible de charger l'image"
+        AppLanguage.GERMAN -> "Bild konnte nicht geladen werden"
+        AppLanguage.RUSSIAN -> "Не удалось загрузить изображение"
+        AppLanguage.PORTUGUESE -> "Falha ao carregar a imagem"
+        AppLanguage.INDONESIAN -> "Gagal memuat gambar"
+        else -> "Failed to load image"
+    }
 }
 
