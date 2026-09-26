@@ -1581,17 +1581,17 @@ object AppStrings {
     }
 
     fun newFriendsBannerDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
-        AppLanguage.CHINESE -> "以下用户给您发送了消息或问候，但尚未在您的好友列表中。接受请求即可正式成为好友。"
-        AppLanguage.JAPANESE -> "以下のユーザーからメッセージや挨拶が届いています。承認して友達リストに追加しましょう。"
-        AppLanguage.KOREAN -> "아래 사용자들이 메시지나 인사를 보냈습니다. 수락하여 공식 친구로 추가하세요."
-        AppLanguage.ARABIC -> "أرسل لك المستخدمون أدناه رسائل أو تحيات. اقبل الطلب لإضافتهم كأصدقاء رسميين."
-        AppLanguage.SPANISH -> "Los siguientes usuarios te enviaron mensajes o saludos. Acepta para agregarlos a tus contactos."
-        AppLanguage.FRENCH -> "Ces personnes vous ont envoyé un message. Acceptez pour les ajouter en ami."
-        AppLanguage.GERMAN -> "Die folgenden Personen haben dir geschrieben. Akzeptiere die Anfrage, um Freunde zu werden."
-        AppLanguage.RUSSIAN -> "Эти пользователи написали вам. Примите запрос, чтобы добавить их в друзья."
-        AppLanguage.PORTUGUESE -> "Os usuários abaixo enviaram mensagens. Aceite o pedido para adicioná-los aos seus amigos."
-        AppLanguage.INDONESIAN -> "Pengguna di bawah ini mengirimi Anda pesan obrolan atau salam, namun belum ada di Kontak Saya. Terima permintaan untuk menjadikannya teman resmi."
-        else -> "Users below sent you messages or greetings. Accept to add them as official friends."
+        AppLanguage.CHINESE -> "新用户的消息会在此等待您的批准。在您同意或接受请求之前，这些消息不会出现在聊天列表中。"
+        AppLanguage.JAPANESE -> "友達リストにない新しいユーザーからのメッセージは、承認または無視されるまでここに保留されます。承認されるとチャット一覧に移動します。"
+        AppLanguage.KOREAN -> "친구 목록에 없는 새 사용자의 메시지는 승인 또는 거절될 때까지 여기에 보관됩니다. 승인되면 대화 목록에 추가됩니다."
+        AppLanguage.ARABIC -> "تبقى رسائل المستخدمين الجدد غير الموجودين في قائمة الأصدقاء هنا في انتظار الموافقة أو التجاهل. تظهر في المحادثات فقط بعد الموافقة."
+        AppLanguage.SPANISH -> "Los mensajes de nuevos usuarios que no están en tus amigos esperarán tu aprobación aquí. Solo entrarán a tus chats cuando los aceptes."
+        AppLanguage.FRENCH -> "Les messages des nouvelles personnes non amies restent ici en attente d'approbation. Ils n'apparaîtront dans les discussions qu'une fois acceptés."
+        AppLanguage.GERMAN -> "Nachrichten von neuen Kontakten warten hier auf deine Bestätigung. Sie gelangen erst nach der Annahme in deine Chat-Liste."
+        AppLanguage.RUSSIAN -> "Сообщения от новых пользователей ждут вашего одобрения здесь. Они появятся в чатах только после того, как вы примете запрос."
+        AppLanguage.PORTUGUESE -> "Mensagens de novos usuários aguardam sua aprovação aqui. Elas só entram na lista de conversas após você aceitar."
+        AppLanguage.INDONESIAN -> "Pesan dari teman baru yang belum ada di daftar teman hanya berada di sini menunggu disetujui atau diabaikan. Setelah disetujui, obrolan akan langsung masuk ke menu Obrolan."
+        else -> "Messages from new users not in your friends list will stay here awaiting approval or ignore. Once approved, the chat will appear in your Chats."
     }
 
     fun newFriendsEmptyTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
@@ -7249,6 +7249,62 @@ object AppStrings {
         AppLanguage.PORTUGUESE -> "Execute este script no Editor SQL do Supabase. Ele instala a extensão pg_cron, chaves estrangeiras CASCADE e uma rotina diária (03:00 UTC) para limpar contas inativas > 15 dias e conversas antigas."
         AppLanguage.INDONESIAN -> "Jalankan skrip ini di SQL Editor dashboard Supabase. Skrip ini memasang ekstensi pg_cron, foreign key CASCADE, dan fungsi otomatisasi harian (pukul 03:00 UTC) untuk menghapus akun tidak aktif > 15 hari dan membersihkan riwayat obrolan usang."
         else -> "Run this script in Supabase dashboard SQL Editor. It installs pg_cron extension, CASCADE foreign keys, and a daily automated function (03:00 UTC) to purge inactive accounts > 15 days and obsolete chat history."
+    }
+
+    fun friendAcceptedToast(lang: AppLanguage, name: String): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "已同意好友请求！$name 已加入聊天列表。"
+        AppLanguage.JAPANESE -> "友達リクエストを承認しました！$name とのチャットが開始されました。"
+        AppLanguage.KOREAN -> "친구 요청을 수락했습니다! $name 님이 대화 목록에 추가되었습니다."
+        AppLanguage.ARABIC -> "تمت الموافقة على طلب الصداقة! تم إضافة $name إلى المحادثات."
+        AppLanguage.SPANISH -> "¡Solicitud aceptada! $name se agregó a tus chats."
+        AppLanguage.FRENCH -> "Demande acceptée ! $name a été ajouté aux discussions."
+        AppLanguage.GERMAN -> "Freundschaftsanfrage angenommen! $name wurde zu den Chats hinzugefügt."
+        AppLanguage.RUSSIAN -> "Запрос принят! $name добавлен(а) в список чатов."
+        AppLanguage.PORTUGUESE -> "Pedido aceito! $name foi adicionado(a) às conversas."
+        AppLanguage.INDONESIAN -> "Pertemanan disetujui! Obrolan dengan $name kini masuk ke menu Obrolan."
+        else -> "Friend request accepted! $name added to Chats."
+    }
+
+    fun friendIgnoredToast(lang: AppLanguage, name: String): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "已忽略来自 $name 的好友请求。"
+        AppLanguage.JAPANESE -> "$name からのリクエストを無視しました。"
+        AppLanguage.KOREAN -> "$name 님의 요청을 무시했습니다."
+        AppLanguage.ARABIC -> "تم تجاهل طلب $name."
+        AppLanguage.SPANISH -> "Solicitud de $name ignorada."
+        AppLanguage.FRENCH -> "Demande de $name ignorée."
+        AppLanguage.GERMAN -> "Anfrage von $name ignoriert."
+        AppLanguage.RUSSIAN -> "Запрос от $name проигнорирован."
+        AppLanguage.PORTUGUESE -> "Pedido de $name ignorado."
+        AppLanguage.INDONESIAN -> "Permintaan dari $name diabaikan."
+        else -> "Request from $name ignored."
+    }
+
+    fun qrBarcodeNotRegisteredDesc(lang: AppLanguage, code: String): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "条形码 / 二维码 '$code' 在 Lovy Chat 用户数据库中不存在。请确保扫描的是有效的 Lovy Chat 个人二维码。"
+        AppLanguage.JAPANESE -> "バーコード / QRコード「$code」はLovy Chatユーザーデータベースに登録されていません。正しいLovy ChatプロフィールQRコードをスキャンしてください。"
+        AppLanguage.KOREAN -> "바코드 / QR 코드 '$code'가 Lovy Chat 사용자 데이터베이스에 등록되어 있지 않습니다. 올바른 Lovy Chat 프로필 QR 코드를 스캔해 주세요."
+        AppLanguage.ARABIC -> "الرمز '$code' غير مسجل في قاعدة بيانات مستخدمي Lovy Chat. يرجى التأكد من مسح رمز QR صالح."
+        AppLanguage.SPANISH -> "El código '$code' no está registrado en Lovy Chat. Asegúrate de escanear un código QR de perfil válido."
+        AppLanguage.FRENCH -> "Le code '$code' n'est pas enregistré sur Lovy Chat. Veuillez scanner un code QR valide."
+        AppLanguage.GERMAN -> "Der Code '$code' ist in Lovy Chat nicht registriert. Bitte scanne einen gültigen Profil-QR-Code."
+        AppLanguage.RUSSIAN -> "Код '$code' не зарегистрирован в Lovy Chat. Убедитесь, что сканируете действительный QR-код профиля."
+        AppLanguage.PORTUGUESE -> "O código '$code' não está registrado no Lovy Chat. Certifique-se de escanear um QR code de perfil válido."
+        AppLanguage.INDONESIAN -> "Kode barcode / QR '$code' tidak terdaftar di database pengguna Lovy Chat. Pastikan yang dipindai adalah kode QR profil Lovy Chat yang valid."
+        else -> "The barcode / QR code '$code' is not registered in Lovy Chat. Please ensure you scan a valid Lovy Chat profile QR code."
+    }
+
+    fun qrScanAgainBtn(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "重新扫描"
+        AppLanguage.JAPANESE -> "もう一度スキャン"
+        AppLanguage.KOREAN -> "다시 스캔하기"
+        AppLanguage.ARABIC -> "إعادة المسح"
+        AppLanguage.SPANISH -> "Escanear de nuevo"
+        AppLanguage.FRENCH -> "Scanner à nouveau"
+        AppLanguage.GERMAN -> "Erneut scannen"
+        AppLanguage.RUSSIAN -> "Сканировать снова"
+        AppLanguage.PORTUGUESE -> "Escanear novamente"
+        AppLanguage.INDONESIAN -> "Pindai Lagi"
+        else -> "Scan Again"
     }
 }
 

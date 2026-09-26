@@ -529,6 +529,7 @@ fun MainAppScreen(
                 onAcceptFriend = { user -> viewModel.acceptNewFriend(user) },
                 onIgnoreFriend = { userId -> viewModel.ignoreNewFriend(userId) },
                 onOpenChat = { user ->
+                    viewModel.acceptNewFriend(user)
                     val convId = viewModel.getCanonicalConversationId(uiState.myLovyId, user.id)
                     viewModel.openChat(convId, user.name, user.avatarColorHex)
                 },
@@ -539,7 +540,8 @@ fun MainAppScreen(
                 myLovyId = uiState.myLovyId,
                 myName = uiState.myName,
                 myAvatarUrl = uiState.userProfile.profilePicture,
-                myAvatarColorHex = "#00A86B"
+                myAvatarColorHex = "#00A86B",
+                language = uiState.language
             )
         }
         is CurrentScreen.Main -> {

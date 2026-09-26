@@ -424,12 +424,49 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             .associateBy { it.user.id }
             .toMutableMap()
 
+        // Pindai pesan masuk di messagesMap untuk menemukan pesan teman baru yang belum ada di daftar teman
+        for ((convId, msgs) in state.messagesMap) {
+            val partnerId = extractPartnerIdFromConvId(convId, state.myLovyId)
+            if (partnerId.isBlank() || partnerId in friendIds || partnerId in ignoredIds || isDummyFriend(partnerId, "") || isSelfUser(partnerId, "")) continue
+
+            val validMsgs = msgs.filterNot { 
+                it.text.startsWith("__TYPING_") || 
+                it.text == "__DELETED_FOR_EVERYONE__" || 
+                deletedMessageIds.contains(it.id) ||
+                it.deletedForReceiver
+            }
+            val lastPartnerMsg = validMsgs.filter { !it.isFromMe }.maxByOrNull { it.timestamp }
+            if (lastPartnerMsg != null) {
+                if (!requestsMap.containsKey(partnerId)) {
+                    val candidateUser = state.nearbyUsers.find { it.id == partnerId }
+                        ?: User(
+                            id = partnerId,
+                            name = "Pengguna (${partnerId.takeLast(4)})",
+                            gender = Gender.FEMALE,
+                            age = 22,
+                            distanceMeters = 300,
+                            bio = "Mengirimi Anda pesan obrolan di Lovy Chat",
+                            avatarColorHex = 0xFF00A86B,
+                            city = "Indonesia",
+                            isOnline = true
+                        )
+                    requestsMap[partnerId] = com.example.model.NewFriendRequest(
+                        id = partnerId,
+                        user = candidateUser,
+                        greetingMessage = lastPartnerMsg.text,
+                        timestamp = lastPartnerMsg.timestamp
+                    )
+                }
+            }
+        }
+
+        // Pindai juga dari conversations jika ada pengguna yang belum ada di friendIds
         for (conv in state.conversations) {
             val partnerId = conv.partnerId
             val pName = conv.partnerName.trim()
             if (partnerId.isBlank() || pName.isBlank() || isDummyFriend(partnerId, pName) || isSelfUser(partnerId, pName) || partnerId in friendIds || partnerId in ignoredIds) continue
 
-            // Pengguna lain yang mengirimi pesan obrolan tapi belum ada di Kontak Saya
+            // Pengguna lain yang mengirimi pesan obrolan tapi belum disetujui / belum ada di Kontak Saya
             if (!conv.lastMessageIsFromMe || conv.unreadCount > 0) {
                 if (!requestsMap.containsKey(partnerId)) {
                     val candidateUser = state.nearbyUsers.find { it.id == partnerId }
@@ -442,7 +479,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                             bio = "Mengirimi Anda pesan obrolan di Lovy Chat",
                             avatarColorHex = conv.partnerAvatarHex,
                             avatarUrl = conv.partnerAvatarUrl,
-                            city = conv.partnerCity ?: "Jakarta",
+                            city = conv.partnerCity ?: "Indonesia",
                             isOnline = conv.isOnline
                         )
                     requestsMap[partnerId] = com.example.model.NewFriendRequest(
@@ -456,7 +493,21 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
 
         val sortedList = requestsMap.values.sortedByDescending { it.timestamp }
-        _uiState.update { it.copy(newFriendRequests = sortedList) }
+
+        // Pastikan obrolan HANYA berisi teman yang sudah disetujui / resmi ada di daftar teman,
+        // ATAU obrolan yang kita inisiasi sendiri. Teman baru yang belum disetujui tidak dimasukkan ke obrolan.
+        val filteredConversations = state.conversations.filter { conv ->
+            val pid = conv.partnerId
+            val isFriend = pid in friendIds
+            isFriend || (conv.lastMessageIsFromMe && !requestsMap.containsKey(pid))
+        }
+
+        _uiState.update { 
+            it.copy(
+                newFriendRequests = sortedList,
+                conversations = filteredConversations
+            ) 
+        }
 
         // Tambahkan notifikasi aktivitas ringan untuk permintaan teman baru
         val currentLang = _uiState.value.language
@@ -533,15 +584,55 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         if (isSelfUser(user.id, user.name)) return
         recordFeatureClick()
         saveChatFriend(user)
+
+        val myId = _uiState.value.myLovyId
+        val convId = getCanonicalConversationId(myId, user.id)
+        val msgs = _uiState.value.messagesMap[convId] ?: emptyList()
+        val validMsgs = msgs.filterNot { 
+            it.text.startsWith("__TYPING_") || 
+            it.text == "__DELETED_FOR_EVERYONE__" || 
+            deletedMessageIds.contains(it.id) ||
+            it.deletedForReceiver
+        }
+        val lastMsg = validMsgs.lastOrNull()
+        val lastText = lastMsg?.text ?: "Pertemanan disetujui 👋"
+        val lastTimestamp = lastMsg?.timestamp ?: System.currentTimeMillis()
+        val unreadCount = validMsgs.count { !it.isFromMe && !it.isRead }
+
+        val newConv = ChatConversation(
+            id = convId,
+            partnerId = user.id,
+            partnerName = user.name,
+            partnerAvatarHex = user.avatarColorHex,
+            partnerGender = user.gender,
+            lastMessage = lastText,
+            lastTimestamp = lastTimestamp,
+            unreadCount = unreadCount,
+            isOnline = user.isOnline,
+            partnerAvatarUrl = user.avatarUrl,
+            partnerAge = user.age,
+            partnerDistanceMeters = user.distanceMeters,
+            partnerCity = user.city,
+            lastMessageIsFromMe = lastMsg?.isFromMe ?: false,
+            lastMessageIsRead = lastMsg?.isRead ?: false
+        )
+
         _uiState.update { state ->
             val updatedFriends = if (state.chattedFriends.any { it.id == user.id }) {
                 state.chattedFriends
             } else {
                 state.chattedFriends + user
             }
+            val existingIndex = state.conversations.indexOfFirst { it.id == convId || it.partnerId == user.id }
+            val updatedConvs = if (existingIndex >= 0) {
+                state.conversations.mapIndexed { idx, c -> if (idx == existingIndex) newConv else c }
+            } else {
+                listOf(newConv) + state.conversations
+            }
             state.copy(
                 chattedFriends = updatedFriends.filterNot { isSelfUser(it.id, it.name) },
-                newFriendRequests = state.newFriendRequests.filterNot { it.user.id == user.id || isSelfUser(it.user.id, it.user.name) }
+                newFriendRequests = state.newFriendRequests.filterNot { it.user.id == user.id || isSelfUser(it.user.id, it.user.name) },
+                conversations = updatedConvs
             )
         }
     }
@@ -658,7 +749,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         _uiState.update { state ->
             state.copy(
                 ignoredNewFriendIds = state.ignoredNewFriendIds + userId,
-                newFriendRequests = state.newFriendRequests.filterNot { it.user.id == userId }
+                newFriendRequests = state.newFriendRequests.filterNot { it.user.id == userId },
+                conversations = state.conversations.filterNot { it.partnerId == userId }
             )
         }
     }
@@ -2727,6 +2819,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
                         val lastMsg = merged.lastOrNull()
                         val convExists = _uiState.value.conversations.any { it.id == conversationId }
+                        val isAlreadyFriend = _uiState.value.chattedFriends.any { it.id.equals(partnerId, ignoreCase = true) }
                         val updatedConvs = if (convExists) {
                             if (merged.isEmpty()) {
                                 _uiState.value.conversations.filterNot { it.id == conversationId }
@@ -2742,7 +2835,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                                     } else c
                                 }
                             }
-                        } else if (lastMsg != null && lastMsg.timestamp > convDeletedTimestamp) {
+                        } else if (isAlreadyFriend && lastMsg != null && lastMsg.timestamp > convDeletedTimestamp) {
                             val partnerUser = _uiState.value.nearbyUsers.find { it.id == partnerId }
                                 ?: _uiState.value.chattedFriends.find { it.id == partnerId }
                             listOf(
@@ -3812,69 +3905,121 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 continue
             }
 
-            val existingConvIndex = currentConversations.indexOfFirst { it.id == convId || it.partnerId == partnerId }
             var resolvedPartnerName: String? = null
-            if (existingConvIndex >= 0) {
-                val old = currentConversations[existingConvIndex]
-                resolvedPartnerName = old.partnerName
-                currentConversations[existingConvIndex] = old.copy(
-                    id = convId,
-                    lastMessage = lastMsg.text,
-                    lastTimestamp = lastMsg.timestamp,
-                    lastMessageIsFromMe = lastMsg.isFromMe,
-                    lastMessageIsRead = lastMsg.isRead
-                )
-            } else if (lastMsg.timestamp > convDeletedTimestamp) {
-                val partnerUser = _uiState.value.nearbyUsers.find { it.id == partnerId } 
-                    ?: _uiState.value.chattedFriends.find { it.id == partnerId }
-                resolvedPartnerName = partnerUser?.name
-                if (partnerUser != null) {
-                    if (!isSelfUser(partnerUser.id, partnerUser.name)) {
-                        saveChatFriend(partnerUser)
-                    }
-                } else {
-                    viewModelScope.launch(Dispatchers.IO) {
-                        val cloudUser = supabaseRepo.fetchNearbyUserById(partnerId)
-                        if (cloudUser != null && !isSelfUser(cloudUser.id, cloudUser.name)) {
-                            saveChatFriend(cloudUser)
-                            withContext(Dispatchers.Main) {
-                                _uiState.update { state ->
-                                    val updated = state.conversations.map { c ->
-                                        if (c.partnerId == partnerId) {
-                                            c.copy(
-                                                partnerName = cloudUser.name,
-                                                partnerAvatarUrl = cloudUser.avatarUrl,
-                                                partnerGender = cloudUser.gender,
-                                                partnerAvatarHex = cloudUser.avatarColorHex,
-                                                partnerCity = cloudUser.city
-                                            )
-                                        } else c
-                                    }
-                                    state.copy(conversations = updated)
+            val isAlreadyFriend = _uiState.value.chattedFriends.any { it.id.equals(partnerId, ignoreCase = true) }
+            val isIgnored = _uiState.value.ignoredNewFriendIds.contains(partnerId)
+            if (isIgnored) continue
+
+            val partnerUser = _uiState.value.nearbyUsers.find { it.id == partnerId } 
+                ?: _uiState.value.chattedFriends.find { it.id == partnerId }
+            val cleanPartnerName = partnerUser?.name?.trim()?.takeIf { it.isNotBlank() } ?: "Pengguna (${partnerId.takeLast(4)})"
+            resolvedPartnerName = cleanPartnerName
+
+            if (partnerUser == null) {
+                viewModelScope.launch(Dispatchers.IO) {
+                    val cloudUser = supabaseRepo.fetchNearbyUserById(partnerId)
+                    if (cloudUser != null && !isSelfUser(cloudUser.id, cloudUser.name)) {
+                        withContext(Dispatchers.Main) {
+                            _uiState.update { state ->
+                                val updatedReqs = state.newFriendRequests.map { req ->
+                                    if (req.user.id == partnerId) req.copy(user = cloudUser) else req
                                 }
+                                val updatedConvs = state.conversations.map { c ->
+                                    if (c.partnerId == partnerId) {
+                                        c.copy(
+                                            partnerName = cloudUser.name,
+                                            partnerAvatarUrl = cloudUser.avatarUrl,
+                                            partnerGender = cloudUser.gender,
+                                            partnerAvatarHex = cloudUser.avatarColorHex,
+                                            partnerCity = cloudUser.city
+                                        )
+                                    } else c
+                                }
+                                state.copy(newFriendRequests = updatedReqs, conversations = updatedConvs)
                             }
                         }
                     }
                 }
-                val cleanPartnerName = partnerUser?.name?.trim()?.takeIf { it.isNotBlank() } ?: "Teman Lovy"
-                val newConv = ChatConversation(
-                    id = convId,
-                    partnerId = partnerId,
-                    partnerName = cleanPartnerName,
-                    partnerAvatarHex = partnerUser?.avatarColorHex ?: 0xFF4CAF50,
-                    partnerGender = partnerUser?.gender ?: Gender.FEMALE,
-                    lastMessage = lastMsg.text,
-                    lastTimestamp = lastMsg.timestamp,
-                    unreadCount = if (!lastMsg.isFromMe && _uiState.value.activeChatId != convId) 1 else 0,
-                    isOnline = partnerUser?.isOnline ?: true,
-                    partnerAvatarUrl = partnerUser?.avatarUrl,
-                    lastMessageIsFromMe = lastMsg.isFromMe,
-                    lastMessageIsRead = lastMsg.isRead,
-                    partnerAge = partnerUser?.age ?: 22,
-                    partnerDistanceMeters = partnerUser?.distanceMeters ?: 350,
-                    partnerCity = partnerUser?.city
+            }
+
+            if (!isAlreadyFriend && !lastMsg.isFromMe) {
+                // Teman baru yang belum ada di daftar teman:
+                // JANGAN dimasukkan ke obrolan! Hanya berada di menu Teman Baru menunggu disetujui atau diabaikan
+                currentConversations.removeAll { it.id == convId || it.partnerId == partnerId }
+
+                val candidateUser = partnerUser ?: User(
+                    id = partnerId,
+                    name = cleanPartnerName,
+                    gender = partnerUser?.gender ?: Gender.FEMALE,
+                    age = partnerUser?.age ?: 22,
+                    distanceMeters = partnerUser?.distanceMeters ?: 350,
+                    bio = "Mengirimi Anda pesan di Lovy Chat",
+                    avatarColorHex = partnerUser?.avatarColorHex ?: 0xFF00A86B,
+                    avatarUrl = partnerUser?.avatarUrl,
+                    city = partnerUser?.city ?: "Indonesia",
+                    isOnline = partnerUser?.isOnline ?: true
                 )
-                currentConversations.add(0, newConv)
+
+                _uiState.update { state ->
+                    val existingReqs = state.newFriendRequests.filterNot { it.user.id == partnerId }
+                    val newReq = com.example.model.NewFriendRequest(
+                        id = partnerId,
+                        user = candidateUser,
+                        greetingMessage = lastMsg.text,
+                        timestamp = lastMsg.timestamp
+                    )
+                    state.copy(
+                        newFriendRequests = (listOf(newReq) + existingReqs).sortedByDescending { it.timestamp }
+                    )
+                }
+
+                // Tambahkan notifikasi aktivitas untuk pesan teman baru
+                val currentLang = _uiState.value.language
+                addActivityNotification(
+                    com.example.model.ActivityNotification(
+                        id = "friend_req_${partnerId}_${lastMsg.timestamp}",
+                        title = com.example.util.AppStrings.notifFriendRequestTitle(currentLang),
+                        message = com.example.util.AppStrings.notifFriendRequestDesc(currentLang, cleanPartnerName),
+                        timestamp = lastMsg.timestamp,
+                        isRead = false,
+                        category = com.example.model.NotificationCategory.FRIEND,
+                        senderName = cleanPartnerName,
+                        translationKey = "friend_request"
+                    )
+                )
+            } else {
+                // Teman yang sudah ada di daftar teman (atau obrolan yang kita inisiasi):
+                // Masuk ke obrolan seperti biasa
+                val existingConvIndex = currentConversations.indexOfFirst { it.id == convId || it.partnerId == partnerId }
+                if (existingConvIndex >= 0) {
+                    val old = currentConversations[existingConvIndex]
+                    currentConversations[existingConvIndex] = old.copy(
+                        id = convId,
+                        lastMessage = lastMsg.text,
+                        lastTimestamp = lastMsg.timestamp,
+                        lastMessageIsFromMe = lastMsg.isFromMe,
+                        lastMessageIsRead = lastMsg.isRead
+                    )
+                } else if (lastMsg.timestamp > convDeletedTimestamp) {
+                    val newConv = ChatConversation(
+                        id = convId,
+                        partnerId = partnerId,
+                        partnerName = cleanPartnerName,
+                        partnerAvatarHex = partnerUser?.avatarColorHex ?: 0xFF4CAF50,
+                        partnerGender = partnerUser?.gender ?: Gender.FEMALE,
+                        lastMessage = lastMsg.text,
+                        lastTimestamp = lastMsg.timestamp,
+                        unreadCount = if (!lastMsg.isFromMe && _uiState.value.activeChatId != convId) 1 else 0,
+                        isOnline = partnerUser?.isOnline ?: true,
+                        partnerAvatarUrl = partnerUser?.avatarUrl,
+                        lastMessageIsFromMe = lastMsg.isFromMe,
+                        lastMessageIsRead = lastMsg.isRead,
+                        partnerAge = partnerUser?.age ?: 22,
+                        partnerDistanceMeters = partnerUser?.distanceMeters ?: 350,
+                        partnerCity = partnerUser?.city
+                    )
+                    currentConversations.add(0, newConv)
+                }
             }
 
             if (newIncomingMsgs.isNotEmpty()) {

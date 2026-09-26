@@ -51,7 +51,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import android.widget.Toast
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -87,6 +89,8 @@ fun NewFriendsScreen(
 ) {
     var viewingAvatarPhoto by remember { mutableStateOf<Pair<String, String>?>(null) }
     var showQrScanner by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
 
     if (showQrScanner) {
         QrCodeScannerDialog(
@@ -292,8 +296,22 @@ fun NewFriendsScreen(
                                 viewingAvatarPhoto = Pair(request.user.name, request.user.avatarUrl)
                             }
                         },
-                        onAccept = { onAcceptFriend(request.user) },
-                        onIgnore = { onIgnoreFriend(request.user.id) },
+                        onAccept = { 
+                            onAcceptFriend(request.user) 
+                            Toast.makeText(
+                                context,
+                                com.example.util.AppStrings.friendAcceptedToast(language, request.user.name),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        },
+                        onIgnore = { 
+                            onIgnoreFriend(request.user.id) 
+                            Toast.makeText(
+                                context,
+                                com.example.util.AppStrings.friendIgnoredToast(language, request.user.name),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        },
                         onOpenChat = { onOpenChat(request.user) }
                     )
                 }
