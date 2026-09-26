@@ -446,6 +446,9 @@ fun MainAppScreen(
                 },
                 isUploadingPhoto = uiState.isUploadingPhoto,
                 uploadProgressText = uiState.uploadProgressText,
+                onReactToMessage = { messageId, emoji ->
+                    viewModel.reactToMessage(screen.conversationId, messageId, emoji)
+                },
                 onDeleteMessageForMe = { messageId ->
                     viewModel.deleteMessageForMe(screen.conversationId, messageId)
                 },

@@ -45,7 +45,8 @@ data class SupabaseMessageDto(
     @Json(name = "is_read") val isRead: Boolean? = null,
     @Json(name = "reply_to_id") val replyToId: String? = null,
     @Json(name = "reply_to_sender") val replyToSender: String? = null,
-    @Json(name = "reply_to_text") val replyToText: String? = null
+    @Json(name = "reply_to_text") val replyToText: String? = null,
+    @Json(name = "reaction") val reaction: String? = null
 )
 
 @JsonClass(generateAdapter = true)

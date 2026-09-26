@@ -3049,6 +3049,58 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
+     * Berikan atau perbarui reaksi emoji pada pesan obrolan (Message Reactions).
+     * Pilihan cepat: ❤️, 😂, 😮, 😢, 🙏, 👍 atau emoji lainnya.
+     * Reaksi tersinkronisasi instan via Realtime ke lawan bicara dan tersimpan di database lokal.
+     */
+    fun reactToMessage(conversationId: String, messageId: String, emoji: String?) {
+        val currentMsgs = _uiState.value.messagesMap[conversationId] ?: emptyList()
+        val targetMsg = currentMsgs.find { it.id == messageId } ?: return
+
+        // Jika reaksi yang diklik sama persis dengan reaksi sebelumnya, hapus reaksinya (toggle)
+        val newReaction = if (targetMsg.reaction == emoji) null else emoji
+
+        val updatedMsgs = currentMsgs.map { msg ->
+            if (msg.id == messageId) msg.copy(reaction = newReaction) else msg
+        }
+
+        _uiState.update {
+            it.copy(messagesMap = it.messagesMap + (conversationId to updatedMsgs))
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            localChatRepo.updateMessageReaction(messageId, newReaction)
+
+            if (!_uiState.value.isGuest) {
+                val partnerId = extractPartnerIdFromConvId(conversationId, _uiState.value.myLovyId)
+                val payload = "__REACTION__:${messageId}:${newReaction ?: "NONE"}"
+                val reactionDto = com.example.data.supabase.SupabaseMessageDto(
+                    id = java.util.UUID.randomUUID().toString(),
+                    conversationId = conversationId,
+                    senderId = _uiState.value.myLovyId,
+                    receiverId = partnerId,
+                    text = payload,
+                    createdAt = System.currentTimeMillis()
+                )
+                com.example.data.supabase.SupabaseRealtimeManager.broadcastChatMessage(reactionDto)
+                try {
+                    supabaseRepo.sendChatMessage(
+                        message = ChatMessage(
+                            id = reactionDto.id,
+                            conversationId = conversationId,
+                            text = payload,
+                            timestamp = reactionDto.createdAt,
+                            isFromMe = true
+                        ),
+                        senderId = _uiState.value.myLovyId,
+                        receiverId = partnerId
+                    )
+                } catch (_: Exception) {}
+            }
+        }
+    }
+
+    /**
      * Hapus obrolan terpilih dari daftar (multi-delete conversation).
      * Menghapus riwayat percakapan dari Room database lokal dan daftar obrolan di UI.
      */
@@ -3688,6 +3740,26 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
                     if (isRelevant) {
                         withContext(Dispatchers.Main) {
+                            // Cek jika pesan ini adalah perintah reaksi emoji
+                            if (messageDto.text.startsWith("__REACTION__:")) {
+                                val parts = messageDto.text.split(":")
+                                if (parts.size >= 3) {
+                                    val targetMsgId = parts[1]
+                                    val emojiVal = if (parts[2] == "NONE" || parts[2].isBlank()) null else parts[2]
+                                    val currentMsgs = _uiState.value.messagesMap[convId] ?: emptyList()
+                                    val updatedMsgs = currentMsgs.map {
+                                        if (it.id == targetMsgId) it.copy(reaction = emojiVal) else it
+                                    }
+                                    _uiState.update { state ->
+                                        state.copy(messagesMap = state.messagesMap + (convId to updatedMsgs))
+                                    }
+                                    viewModelScope.launch(Dispatchers.IO) {
+                                        localChatRepo.updateMessageReaction(targetMsgId, emojiVal)
+                                    }
+                                }
+                                return@withContext
+                            }
+
                             // Cek jika pesan ini adalah perintah hapus untuk semua orang
                             if (messageDto.text == "__DELETED_FOR_EVERYONE__" || 
                                 (messageDto.deletedForSender == true && messageDto.deletedForReceiver == true)) {
@@ -3793,10 +3865,32 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
             val convDeletedTimestamp = deletedConversationTimestamps[convId] ?: 0L
 
-            // Abaikan sinyal ephemeral mengetik, pesan terhapus untuk semua orang, pesan yang sudah dihapus pengguna, atau pesan sebelum obrolan dihapus
+            // Proses sinyal reaksi emoji jika ada
+            val reactionSignals = dtoList.filter { it.text.startsWith("__REACTION__:") }
+            if (reactionSignals.isNotEmpty()) {
+                val existing = currentMessages[convId] ?: emptyList()
+                var updatedExisting = existing
+                for (rDto in reactionSignals) {
+                    val parts = rDto.text.split(":")
+                    if (parts.size >= 3) {
+                        val targetMsgId = parts[1]
+                        val emojiVal = if (parts[2] == "NONE" || parts[2].isBlank()) null else parts[2]
+                        updatedExisting = updatedExisting.map {
+                            if (it.id == targetMsgId) it.copy(reaction = emojiVal) else it
+                        }
+                        viewModelScope.launch(Dispatchers.IO) {
+                            localChatRepo.updateMessageReaction(targetMsgId, emojiVal)
+                        }
+                    }
+                }
+                currentMessages[convId] = updatedExisting
+            }
+
+            // Abaikan sinyal ephemeral mengetik, pesan terhapus untuk semua orang, pesan reaksi, pesan yang sudah dihapus pengguna, atau pesan sebelum obrolan dihapus
             val chatDtos = dtoList.filterNot { dto ->
                 dto.text.startsWith("__TYPING_") || 
                 dto.text == "__DELETED_FOR_EVERYONE__" ||
+                dto.text.startsWith("__REACTION__:") ||
                 dto.text.contains("Salam kenal dari fitur Teman Sekitar") ||
                 deletedMessageIds.contains(dto.id) ||
                 dto.createdAt <= convDeletedTimestamp ||
@@ -3823,7 +3917,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 continue
             }
 
+            val existingMap = (currentMessages[convId] ?: emptyList()).associateBy { it.id }
             val sortedMsgs = chatDtos.sortedBy { it.createdAt }.map { dto ->
+                val prev = existingMap[dto.id]
                 ChatMessage(
                     id = dto.id,
                     conversationId = convId,
@@ -3833,7 +3929,11 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     isRead = dto.isRead ?: false,
                     deletedForSender = dto.deletedForSender ?: false,
                     deletedForReceiver = dto.deletedForReceiver ?: false,
-                    imageUrl = dto.imageUrl
+                    imageUrl = dto.imageUrl,
+                    replyToId = dto.replyToId ?: prev?.replyToId,
+                    replyToSender = dto.replyToSender ?: prev?.replyToSender,
+                    replyToText = dto.replyToText ?: prev?.replyToText,
+                    reaction = dto.reaction ?: prev?.reaction
                 )
             }
 

@@ -45,8 +45,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import android.content.ClipboardManager
+import android.content.ClipData
+import android.content.Context
+import android.widget.Toast
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -73,13 +79,22 @@ import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Person
 import com.example.ui.components.ReportDialog
 import com.example.ui.components.ReportType
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Backspace
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.SentimentSatisfiedAlt
 import androidx.compose.material.icons.filled.Wc
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -98,6 +113,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -189,6 +208,7 @@ fun ChatDetailScreen(
     onDeleteMessageForSender: ((String) -> Unit)? = null,
     onDeleteMessageForMe: ((String) -> Unit)? = null,
     onDeleteMessageForEveryone: ((String) -> Unit)? = null,
+    onReactToMessage: ((messageId: String, emoji: String?) -> Unit)? = null,
     onSendPhotoMessage: ((android.net.Uri, String) -> Unit)? = null,
     onSendPhotoMessageWithReply: ((android.net.Uri, String, ChatMessage?) -> Unit)? = null,
     isUploadingPhoto: Boolean = false,
@@ -206,10 +226,15 @@ fun ChatDetailScreen(
     var inputText by remember { mutableStateOf("") }
     var replyingToMessage by remember { mutableStateOf<ChatMessage?>(null) }
     val focusRequester = remember { FocusRequester() }
+    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var showPartnerProfileSheet by remember { mutableStateOf(false) }
     var activeMomentForComments by remember { mutableStateOf<MomentItem?>(null) }
     var messageToDelete by remember { mutableStateOf<ChatMessage?>(null) }
+    var messageForActionMenu by remember { mutableStateOf<ChatMessage?>(null) }
+    var showExtendedEmojiPicker by remember { mutableStateOf(false) }
+    var targetMessageForExtendedEmoji by remember { mutableStateOf<ChatMessage?>(null) }
+    var showInputEmojiPicker by remember { mutableStateOf(false) }
     var pendingPhotoUri by remember { mutableStateOf<android.net.Uri?>(null) }
     var viewingPhotoUrl by remember { mutableStateOf<String?>(null) }
 
@@ -508,8 +533,11 @@ fun ChatDetailScreen(
                             // Klik biasa pada bubble
                         },
                         onLongClick = {
-                            // Tahan lama (long press) untuk opsi hapus pesan WhatsApp style
-                            messageToDelete = msg
+                            // Tahan lama (long press) untuk opsi aksi WhatsApp style & reaksi emoji
+                            messageForActionMenu = msg
+                        },
+                        onReactionClick = {
+                            onReactToMessage?.invoke(msg.id, msg.reaction)
                         },
                         onPhotoClick = { url ->
                             viewingPhotoUrl = url
@@ -949,6 +977,23 @@ fun ChatDetailScreen(
                                 )
                             }
 
+                            // Emoji Picker Toggle Button
+                            IconButton(
+                                onClick = {
+                                    showInputEmojiPicker = !showInputEmojiPicker
+                                },
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .testTag("chat_btn_emoji_toggle")
+                            ) {
+                                Icon(
+                                    imageVector = if (showInputEmojiPicker) Icons.Default.Keyboard else Icons.Default.SentimentSatisfiedAlt,
+                                    contentDescription = "Emoji",
+                                    tint = if (showInputEmojiPicker) EmeraldGreen else NeutralMedium,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+
                             Spacer(modifier = Modifier.width(4.dp))
 
                             OutlinedTextField(
@@ -1040,10 +1085,93 @@ fun ChatDetailScreen(
                                 }
                             }
                         }
+
+                        // Emoji Keyboard Panel (collapsible below input bar)
+                        AnimatedVisibility(
+                            visible = showInputEmojiPicker,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
+                        ) {
+                            EmojiKeyboardPanel(
+                                language = language,
+                                onEmojiClick = { emoji ->
+                                    inputText += emoji
+                                },
+                                onBackspaceClick = {
+                                    if (inputText.isNotEmpty()) {
+                                        val codePoints = inputText.codePoints().toArray()
+                                        if (codePoints.isNotEmpty()) {
+                                            inputText = String(codePoints, 0, codePoints.size - 1)
+                                        }
+                                    }
+                                },
+                                onClose = {
+                                    showInputEmojiPicker = false
+                                }
+                            )
+                        }
                     }
                 }
             }
         }
+    }
+
+    // Contextual Message Action Bottom Sheet (Reaksi Emoji WhatsApp Style, Balas, Salin, Hapus)
+    if (messageForActionMenu != null) {
+        val targetMsg = messageForActionMenu!!
+        MessageActionMenuBottomSheet(
+            language = language,
+            message = targetMsg,
+            onDismiss = { messageForActionMenu = null },
+            onReact = { emoji ->
+                onReactToMessage?.invoke(targetMsg.id, emoji)
+                messageForActionMenu = null
+            },
+            onMoreEmojis = {
+                targetMessageForExtendedEmoji = targetMsg
+                messageForActionMenu = null
+                showExtendedEmojiPicker = true
+            },
+            onReply = {
+                replyingToMessage = targetMsg
+                messageForActionMenu = null
+            },
+            onCopy = {
+                if (targetMsg.text.isNotBlank()) {
+                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    val clip = ClipData.newPlainText("Chat message", targetMsg.text)
+                    clipboard.setPrimaryClip(clip)
+                    Toast.makeText(context, AppStrings.chatActionCopy(language) + " ✓", Toast.LENGTH_SHORT).show()
+                }
+                messageForActionMenu = null
+            },
+            onRemoveReaction = {
+                onReactToMessage?.invoke(targetMsg.id, null)
+                messageForActionMenu = null
+            },
+            onDelete = {
+                messageToDelete = targetMsg
+                messageForActionMenu = null
+            }
+        )
+    }
+
+    // Extended Emoji Picker Modal Bottom Sheet (Grid Lengkap Emoji untuk Reaksi Pesan)
+    if (showExtendedEmojiPicker && targetMessageForExtendedEmoji != null) {
+        val targetMsg = targetMessageForExtendedEmoji!!
+        ExtendedEmojiPickerBottomSheet(
+            language = language,
+            currentReaction = targetMsg.reaction,
+            onDismiss = {
+                showExtendedEmojiPicker = false
+                targetMessageForExtendedEmoji = null
+            },
+            onEmojiSelected = { emoji ->
+                onReactToMessage?.invoke(targetMsg.id, emoji)
+                showExtendedEmojiPicker = false
+                targetMessageForExtendedEmoji = null
+            }
+        )
     }
 
     // Fullscreen Chat Photo Dialog dengan dukungan Zoom 2 Jari (Pinch-to-zoom)
@@ -2109,6 +2237,7 @@ fun SwipeableChatBubble(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
+    onReactionClick: (() -> Unit)? = null,
     onPhotoClick: ((String) -> Unit)? = null,
     onQuotedMessageClick: ((String) -> Unit)? = null
 ) {
@@ -2197,12 +2326,14 @@ fun SwipeableChatBubble(
             modifier = Modifier
                 .fillMaxWidth()
                 .offset { IntOffset(animatedOffset.roundToInt(), 0) }
+                .padding(bottom = if (!message.reaction.isNullOrBlank()) 10.dp else 2.dp)
         ) {
             ChatBubble(
                 language = language,
                 message = message,
                 onClick = onClick,
                 onLongClick = onLongClick,
+                onReactionClick = onReactionClick,
                 onPhotoClick = onPhotoClick,
                 onQuotedMessageClick = onQuotedMessageClick
             )
@@ -2218,6 +2349,7 @@ fun ChatBubble(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
+    onReactionClick: (() -> Unit)? = null,
     onPhotoClick: ((String) -> Unit)? = null,
     onQuotedMessageClick: ((String) -> Unit)? = null
 ) {
@@ -2231,30 +2363,31 @@ fun ChatBubble(
         horizontalArrangement = if (message.isFromMe) Arrangement.End else Arrangement.Start,
         modifier = modifier.fillMaxWidth()
     ) {
-        Box(
-            modifier = Modifier
-                .clip(
-                    RoundedCornerShape(
-                        topStart = 16.dp,
-                        topEnd = 16.dp,
-                        bottomStart = if (message.isFromMe) 16.dp else 4.dp,
-                        bottomEnd = if (message.isFromMe) 4.dp else 16.dp
-                    )
-                )
-                .background(if (message.isFromMe) ChatBubbleSelf else ChatBubbleOther)
-                .then(
-                    if (onClick != null || onLongClick != null) {
-                        Modifier.combinedClickable(
-                            onClick = { onClick?.invoke() },
-                            onLongClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                onLongClick?.invoke()
-                            }
+        Box {
+            Box(
+                modifier = Modifier
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = 16.dp,
+                            topEnd = 16.dp,
+                            bottomStart = if (message.isFromMe) 16.dp else 4.dp,
+                            bottomEnd = if (message.isFromMe) 4.dp else 16.dp
                         )
-                    } else Modifier
-                )
-                .padding(horizontal = 10.dp, vertical = 8.dp)
-        ) {
+                    )
+                    .background(if (message.isFromMe) ChatBubbleSelf else ChatBubbleOther)
+                    .then(
+                        if (onClick != null || onLongClick != null) {
+                            Modifier.combinedClickable(
+                                onClick = { onClick?.invoke() },
+                                onLongClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onLongClick?.invoke()
+                                }
+                            )
+                        } else Modifier
+                    )
+                    .padding(horizontal = 10.dp, vertical = 8.dp)
+            ) {
             Column(horizontalAlignment = if (message.isFromMe) Alignment.End else Alignment.Start) {
                 // Quoted Reply Preview inside bubble (WhatsApp Style)
                 if (!message.replyToText.isNullOrBlank() || !message.replyToSender.isNullOrBlank()) {
@@ -2378,7 +2511,39 @@ fun ChatBubble(
                 }
             }
         }
+
+        // Floating Emoji Reaction Badge (WhatsApp Style)
+        if (!message.reaction.isNullOrBlank()) {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = Color.White,
+                shadowElevation = 2.dp,
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                modifier = Modifier
+                    .align(if (message.isFromMe) Alignment.BottomEnd else Alignment.BottomStart)
+                    .offset(
+                        x = if (message.isFromMe) (-8).dp else 8.dp,
+                        y = 10.dp
+                    )
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable {
+                        onReactionClick?.invoke()
+                    }
+                    .testTag("chat_msg_reaction_${message.id}")
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = message.reaction,
+                        fontSize = 13.5.sp
+                    )
+                }
+            }
+        }
     }
+}
 }
 
 private val URL_PATTERN = Regex("""(https?://[^\s]+|www\.[^\s]+)""", RegexOption.IGNORE_CASE)
@@ -2572,6 +2737,459 @@ fun TypingIndicatorBubble(
                         .clip(CircleShape)
                         .background(EmeraldGreen.copy(alpha = 0.6f))
                 )
+            }
+        }
+    }
+}
+
+/**
+ * WhatsApp-style Contextual Message Action Bottom Sheet.
+ * Displays quick emoji reactions bar (❤️ 👍 😂 😮 😢 🙏 🔥 🎉 +) and standard message actions.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MessageActionMenuBottomSheet(
+    language: AppLanguage,
+    message: ChatMessage,
+    onDismiss: () -> Unit,
+    onReact: (String) -> Unit,
+    onMoreEmojis: () -> Unit,
+    onReply: () -> Unit,
+    onCopy: () -> Unit,
+    onRemoveReaction: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val haptic = LocalHapticFeedback.current
+    val quickEmojis = remember { listOf("❤️", "👍", "😂", "😮", "😢", "🙏", "🔥", "🎉") }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        containerColor = Color.White,
+        dragHandle = { BottomSheetDefaults.DragHandle() }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp)
+        ) {
+            // WhatsApp style Floating Quick Reaction Bar
+            Surface(
+                shape = RoundedCornerShape(32.dp),
+                color = Color(0xFFF1F5F9),
+                shadowElevation = 0.dp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 6.dp)
+                ) {
+                    quickEmojis.forEach { emoji ->
+                        val isSelected = message.reaction == emoji
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (isSelected) EmeraldGreen.copy(alpha = 0.2f) else Color.Transparent
+                                )
+                                .clickable {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onReact(emoji)
+                                }
+                        ) {
+                            Text(
+                                text = emoji,
+                                fontSize = 22.sp
+                            )
+                        }
+                    }
+
+                    // More Emojis button (+)
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(Color.White)
+                            .clickable {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onMoreEmojis()
+                            }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = AppStrings.chatReactionMore(language),
+                            tint = EmeraldGreen,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Quoted message preview snippet
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = NeutralLight.copy(alpha = 0.45f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp)
+            ) {
+                Text(
+                    text = if (message.text.isNotBlank()) "\"${message.text}\"" else "📷 Foto",
+                    fontSize = 13.sp,
+                    color = NeutralDark,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                )
+            }
+
+            // Action Items List
+            // 1. Reply
+            ActionMenuItemRow(
+                icon = Icons.AutoMirrored.Filled.Reply,
+                title = AppStrings.chatActionReply(language),
+                tint = NeutralDark,
+                onClick = onReply
+            )
+
+            // 2. Copy (if has text)
+            if (message.text.isNotBlank()) {
+                ActionMenuItemRow(
+                    icon = Icons.Default.ContentCopy,
+                    title = AppStrings.chatActionCopy(language),
+                    tint = NeutralDark,
+                    onClick = onCopy
+                )
+            }
+
+            // 3. Remove Reaction (if has reaction)
+            if (!message.reaction.isNullOrBlank()) {
+                ActionMenuItemRow(
+                    icon = Icons.Default.Close,
+                    title = AppStrings.chatActionRemoveReaction(language),
+                    tint = Color(0xFFE53935),
+                    onClick = onRemoveReaction
+                )
+            }
+
+            HorizontalDivider(
+                color = NeutralBorder.copy(alpha = 0.5f),
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+
+            // 4. Delete Message
+            ActionMenuItemRow(
+                icon = Icons.Default.DeleteOutline,
+                title = AppStrings.chatActionDelete(language),
+                tint = Color(0xFFD32F2F),
+                onClick = onDelete
+            )
+        }
+    }
+}
+
+@Composable
+fun ActionMenuItemRow(
+    icon: ImageVector,
+    title: String,
+    tint: Color = NeutralDark,
+    onClick: () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .clickable { onClick() }
+            .padding(horizontal = 10.dp, vertical = 12.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier.size(22.dp)
+        )
+        Spacer(modifier = Modifier.width(14.dp))
+        Text(
+            text = title,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Medium,
+            color = tint
+        )
+    }
+}
+
+private val EMOJI_CATEGORY_SMILEYS: List<String> = listOf(
+    "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "🥲", "🥹", "☺️", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚", "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🤩", "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", "😣", "😖", "😫", "😩", "🥺", "😢", "😭", "😮‍💨", "😤", "😠", "😡", "🤬", "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰", "😥", "😓", "🤗", "🤔", "🫣", "🤭", "🫢", "🫡", "🤫", "🫠", "🤥", "😶", "😐", "😑", "😬", "🫨", "😯", "😦", "😧", "😮", "😲", "🥱", "😴", "🤤", "😪", "😵", "🤐", "🥴", "🤢", "🤮", "🤧", "😷", "🤒", "🤕", "🤑", "🤠"
+)
+
+private val EMOJI_CATEGORY_HEARTS: List<String> = listOf(
+    "❤️", "🩷", "🧡", "💛", "💚", "💙", "🩵", "💜", "🖤", "🩶", "🤍", "🤎", "💔", "❤️‍🔥", "❤️‍🩹", "❣️", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "💟", "💌", "💋", "🫰", "🫶", "😍", "🥰", "😘", "💐", "🌹", "🌷", "🌸"
+)
+
+private val EMOJI_CATEGORY_GESTURES: List<String> = listOf(
+    "👍", "👎", "👊", "✊", "🤛", "🤜", "🫷", "🫸", "🤞", "✌️", "🫰", "🤟", "🤘", "👌", "🤌", "🤏", "👈", "👉", "👆", "👇", "☝️", "✋", "🤚", "🖐️", "🖖", "👋", "🤙", "👏", "🙌", "🫶", "👐", "🤲", "🤝", "🙏", "✍️", "💅", "🤳", "💪"
+)
+
+private val EMOJI_CATEGORY_PARTY: List<String> = listOf(
+    "🎉", "🎊", "🥳", "🎈", "🎁", "🎂", "✨", "🌟", "⭐", "💫", "🔥", "💥", "💯", "🏆", "🥇", "🎯", "🚀", "🏖️", "🌸", "🍕", "🍔", "☕", "🍦", "🍻", "🍹", "🍿", "🎧", "🎵", "🎶", "🎸", "🎮", "🕹️", "🎲", "💎", "💡"
+)
+
+/**
+ * Extended Emoji Picker Modal Bottom Sheet for Message Reactions.
+ * Categorized emoji grid allowing users to react to messages with any emoji.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ExtendedEmojiPickerBottomSheet(
+    language: AppLanguage,
+    currentReaction: String?,
+    onDismiss: () -> Unit,
+    onEmojiSelected: (String) -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var selectedTab by remember { mutableStateOf(0) }
+    val categories: List<Pair<String, List<String>>> = remember {
+        listOf(
+            "😀" to EMOJI_CATEGORY_SMILEYS,
+            "❤️" to EMOJI_CATEGORY_HEARTS,
+            "👍" to EMOJI_CATEGORY_GESTURES,
+            "🎉" to EMOJI_CATEGORY_PARTY
+        )
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        containerColor = Color.White,
+        dragHandle = { BottomSheetDefaults.DragHandle() }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 28.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp)
+            ) {
+                Text(
+                    text = AppStrings.chatReactionTitle(language),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = NeutralDark,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = AppStrings.commonClose(language),
+                        tint = NeutralMedium,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            TabRow(
+                selectedTabIndex = selectedTab,
+                containerColor = Color(0xFFF8FAFC),
+                contentColor = EmeraldGreen,
+                indicator = { tabPositions ->
+                    TabRowDefaults.SecondaryIndicator(
+                        Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
+                        color = EmeraldGreen
+                    )
+                },
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .padding(bottom = 12.dp)
+            ) {
+                categories.forEachIndexed { index, cat ->
+                    Tab(
+                        selected = selectedTab == index,
+                        onClick = { selectedTab = index },
+                        text = {
+                            Text(
+                                text = cat.first,
+                                fontSize = 18.sp
+                            )
+                        }
+                    )
+                }
+            }
+
+            val currentEmojis: List<String> = categories[selectedTab].second
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(7),
+                contentPadding = PaddingValues(vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(280.dp)
+            ) {
+                items(items = currentEmojis) { emoji ->
+                    val isSelected = currentReaction == emoji
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (isSelected) EmeraldGreen.copy(alpha = 0.2f) else Color.Transparent
+                            )
+                            .clickable {
+                                onEmojiSelected(emoji)
+                            }
+                    ) {
+                        Text(
+                            text = emoji,
+                            fontSize = 24.sp
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Collapsible Emoji Keyboard Panel for Chat Input Bar.
+ * Allows quick selection and insertion of emojis directly into text input.
+ */
+@Composable
+fun EmojiKeyboardPanel(
+    language: AppLanguage,
+    onEmojiClick: (String) -> Unit,
+    onBackspaceClick: () -> Unit,
+    onClose: () -> Unit
+) {
+    var selectedTab by remember { mutableStateOf(0) }
+    val categories: List<Pair<String, List<String>>> = remember {
+        listOf(
+            "😀" to EMOJI_CATEGORY_SMILEYS,
+            "❤️" to EMOJI_CATEGORY_HEARTS,
+            "👍" to EMOJI_CATEGORY_GESTURES,
+            "🎉" to EMOJI_CATEGORY_PARTY
+        )
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(260.dp)
+            .background(Color(0xFFF9FAFB))
+            .padding(horizontal = 8.dp, vertical = 6.dp)
+    ) {
+        // Tab Row with categories and Close/Backspace
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 6.dp)
+        ) {
+            TabRow(
+                selectedTabIndex = selectedTab,
+                containerColor = Color.Transparent,
+                contentColor = EmeraldGreen,
+                indicator = { tabPositions ->
+                    TabRowDefaults.SecondaryIndicator(
+                        Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
+                        color = EmeraldGreen
+                    )
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                categories.forEachIndexed { index, cat ->
+                    Tab(
+                        selected = selectedTab == index,
+                        onClick = { selectedTab = index },
+                        text = {
+                            Text(
+                                text = cat.first,
+                                fontSize = 18.sp
+                            )
+                        }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(6.dp))
+
+            // Backspace icon button
+            IconButton(
+                onClick = onBackspaceClick,
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Backspace,
+                    contentDescription = "Hapus",
+                    tint = NeutralMedium,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            // Close emoji panel button
+            IconButton(
+                onClick = onClose,
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = AppStrings.commonClose(language),
+                    tint = NeutralMedium,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+
+        // Emoji Grid
+        val currentEmojis: List<String> = categories[selectedTab].second
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(7),
+            contentPadding = PaddingValues(vertical = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        ) {
+            items(items = currentEmojis) { emoji ->
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .clickable {
+                            onEmojiClick(emoji)
+                        }
+                ) {
+                    Text(
+                        text = emoji,
+                        fontSize = 22.sp
+                    )
+                }
             }
         }
     }
