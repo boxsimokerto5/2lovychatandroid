@@ -29,7 +29,8 @@ data class ChatMessageEntity(
     val imageUrl: String? = null,
     val replyToId: String? = null,
     val replyToSender: String? = null,
-    val replyToText: String? = null
+    val replyToText: String? = null,
+    val reaction: String? = null
 ) {
     fun toDomain(): ChatMessage = ChatMessage(
         id = id,
@@ -43,7 +44,8 @@ data class ChatMessageEntity(
         imageUrl = imageUrl,
         replyToId = replyToId,
         replyToSender = replyToSender,
-        replyToText = replyToText
+        replyToText = replyToText,
+        reaction = reaction
     )
 
     companion object {
@@ -59,7 +61,8 @@ data class ChatMessageEntity(
             imageUrl = model.imageUrl,
             replyToId = model.replyToId,
             replyToSender = model.replyToSender,
-            replyToText = model.replyToText
+            replyToText = model.replyToText,
+            reaction = model.reaction
         )
     }
 }

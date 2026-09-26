@@ -1805,6 +1805,104 @@ object AppStrings {
         else -> "Delete for Me"
     }
 
+    fun chatReactionTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "回应消息"
+        AppLanguage.JAPANESE -> "メッセージにリアクション"
+        AppLanguage.KOREAN -> "메시지 반응"
+        AppLanguage.ARABIC -> "التفاعل مع الرسالة"
+        AppLanguage.SPANISH -> "Reaccionar al mensaje"
+        AppLanguage.FRENCH -> "Réagir au message"
+        AppLanguage.GERMAN -> "Auf Nachricht reagieren"
+        AppLanguage.RUSSIAN -> "Реакция на сообщение"
+        AppLanguage.PORTUGUESE -> "Reagir à mensagem"
+        AppLanguage.INDONESIAN -> "Reaksi Pesan"
+        else -> "Message Reaction"
+    }
+
+    fun chatReactionMore(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "更多萌趣表情"
+        AppLanguage.JAPANESE -> "もっと可愛い絵文字"
+        AppLanguage.KOREAN -> "더 많은 귀여운 이모티콘"
+        AppLanguage.ARABIC -> "المزيد من الرموز التعبيرية اللطيفة"
+        AppLanguage.SPANISH -> "Más emojis divertidos"
+        AppLanguage.FRENCH -> "Plus d'émojis mignons"
+        AppLanguage.GERMAN -> "Mehr süße Emojis"
+        AppLanguage.RUSSIAN -> "Больше милых эмодзи"
+        AppLanguage.PORTUGUESE -> "Mais emojis fofos"
+        AppLanguage.INDONESIAN -> "Emoji Lucu Lainnya"
+        else -> "More Cute Emojis"
+    }
+
+    fun chatActionReply(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "回复"
+        AppLanguage.JAPANESE -> "返信"
+        AppLanguage.KOREAN -> "답장"
+        AppLanguage.ARABIC -> "رد"
+        AppLanguage.SPANISH -> "Responder"
+        AppLanguage.FRENCH -> "Répondre"
+        AppLanguage.GERMAN -> "Antworten"
+        AppLanguage.RUSSIAN -> "Ответить"
+        AppLanguage.PORTUGUESE -> "Responder"
+        AppLanguage.INDONESIAN -> "Balas Pesan"
+        else -> "Reply"
+    }
+
+    fun chatActionCopy(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "复制文本"
+        AppLanguage.JAPANESE -> "テキストをコピー"
+        AppLanguage.KOREAN -> "텍스트 복사"
+        AppLanguage.ARABIC -> "نسخ النص"
+        AppLanguage.SPANISH -> "Copiar texto"
+        AppLanguage.FRENCH -> "Copier le texte"
+        AppLanguage.GERMAN -> "Text kopieren"
+        AppLanguage.RUSSIAN -> "Скопировать текст"
+        AppLanguage.PORTUGUESE -> "Copiar texto"
+        AppLanguage.INDONESIAN -> "Salin Teks"
+        else -> "Copy Text"
+    }
+
+    fun chatActionDelete(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "删除"
+        AppLanguage.JAPANESE -> "削除"
+        AppLanguage.KOREAN -> "삭제"
+        AppLanguage.ARABIC -> "حذف"
+        AppLanguage.SPANISH -> "Eliminar"
+        AppLanguage.FRENCH -> "Supprimer"
+        AppLanguage.GERMAN -> "Löschen"
+        AppLanguage.RUSSIAN -> "Удалить"
+        AppLanguage.PORTUGUESE -> "Excluir"
+        AppLanguage.INDONESIAN -> "Hapus Pesan"
+        else -> "Delete Message"
+    }
+
+    fun chatActionRemoveReaction(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "移除表情回应"
+        AppLanguage.JAPANESE -> "リアクションを解除"
+        AppLanguage.KOREAN -> "반응 취소"
+        AppLanguage.ARABIC -> "إزالة التفاعل"
+        AppLanguage.SPANISH -> "Quitar reacción"
+        AppLanguage.FRENCH -> "Supprimer la réaction"
+        AppLanguage.GERMAN -> "Reaktion entfernen"
+        AppLanguage.RUSSIAN -> "Убрать реакцию"
+        AppLanguage.PORTUGUESE -> "Remover reação"
+        AppLanguage.INDONESIAN -> "Hapus Reaksi"
+        else -> "Remove Reaction"
+    }
+
+    fun chatTextCopiedToast(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "文本已复制到剪贴板"
+        AppLanguage.JAPANESE -> "テキストをクリップボードにコピーしました"
+        AppLanguage.KOREAN -> "텍스트가 클립보드에 복사되었습니다"
+        AppLanguage.ARABIC -> "تم نسخ النص إلى الحافظة"
+        AppLanguage.SPANISH -> "Texto copiado al portapapeles"
+        AppLanguage.FRENCH -> "Texte copié dans le presse-papiers"
+        AppLanguage.GERMAN -> "Text in die Zwischenablage kopiert"
+        AppLanguage.RUSSIAN -> "Текст скопирован в буфер обмена"
+        AppLanguage.PORTUGUESE -> "Texto copiado para a área de transferência"
+        AppLanguage.INDONESIAN -> "Teks disalin ke papan klip"
+        else -> "Text copied to clipboard"
+    }
+
     fun chatReplyingTo(lang: AppLanguage, name: String = ""): String = if (name.isBlank()) {
         when (resolveLang(lang)) {
             AppLanguage.CHINESE -> "回复消息"

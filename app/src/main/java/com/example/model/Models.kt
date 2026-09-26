@@ -37,7 +37,8 @@ data class ChatMessage(
     val imageUrl: String? = null,
     val replyToId: String? = null,
     val replyToSender: String? = null,
-    val replyToText: String? = null
+    val replyToText: String? = null,
+    val reaction: String? = null
 )
 
 data class ChatConversation(

@@ -39,6 +39,9 @@ interface ChatMessageDao {
     @Query("UPDATE local_chat_messages SET isRead = 1 WHERE id = :messageId")
     suspend fun markMessageAsRead(messageId: String)
 
+    @Query("UPDATE local_chat_messages SET reaction = :reaction WHERE id = :messageId")
+    suspend fun updateMessageReaction(messageId: String, reaction: String?)
+
     @Query("DELETE FROM local_chat_messages WHERE id = :messageId")
     suspend fun deleteMessageById(messageId: String)
 

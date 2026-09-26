@@ -98,6 +98,14 @@ class LocalChatRepository(context: Context) {
         }
     }
 
+    suspend fun updateMessageReaction(messageId: String, reaction: String?) = withContext(Dispatchers.IO) {
+        try {
+            chatMessageDao.updateMessageReaction(messageId, reaction)
+        } catch (e: Exception) {
+            Log.e(TAG, "Gagal mengupdate reaksi pesan $messageId", e)
+        }
+    }
+
     suspend fun deleteMessage(messageId: String) = withContext(Dispatchers.IO) {
         try {
             chatMessageDao.deleteMessageById(messageId)
