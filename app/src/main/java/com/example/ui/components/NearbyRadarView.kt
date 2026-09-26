@@ -371,9 +371,9 @@ fun NearbyRadarView(
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = if (isExpanded) {
-                            if (language == AppLanguage.INDONESIAN) "Radar Diperluas • Radius 15 km" else "Expanded Radar • 15 km Radius"
+                            com.example.util.AppStrings.radarRadiusExpanded(language)
                         } else {
-                            if (language == AppLanguage.INDONESIAN) "Radar Aktif • Radius 5 km" else "Active Radar • 5 km Radius"
+                            com.example.util.AppStrings.radarRadiusActive(language)
                         },
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -531,7 +531,7 @@ fun NearbyRadarView(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Anda",
+                            text = com.example.util.AppStrings.radarYou(language),
                             color = Color.White,
                             fontSize = 10.5.sp,
                             fontWeight = FontWeight.ExtraBold

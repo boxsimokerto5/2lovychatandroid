@@ -1346,13 +1346,13 @@ fun MomentCard(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Default.Fullscreen,
-                                contentDescription = "Perbesar",
+                                contentDescription = AppStrings.commonZoomPhoto(language),
                                 tint = Color.White,
                                 modifier = Modifier.size(15.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "Perbesar",
+                                text = AppStrings.commonZoomPhoto(language),
                                 color = Color.White,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Medium

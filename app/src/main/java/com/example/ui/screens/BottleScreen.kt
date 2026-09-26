@@ -558,7 +558,7 @@ fun BottleScreen(
                                 color = NeutralDark
                             )
                             Text(
-                                text = "Ditemukan di ${bottle.locationHint}",
+                                text = AppStrings.bottleFoundAt(language, bottle.locationHint),
                                 fontSize = 11.sp,
                                 color = NeutralMedium
                             )

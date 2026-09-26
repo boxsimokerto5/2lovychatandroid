@@ -233,7 +233,7 @@ fun NearbyScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Pengguna di Sekitar",
+                        text = com.example.util.AppStrings.nearbyTitle(language),
                         fontSize = 19.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -246,7 +246,7 @@ fun NearbyScreen(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali",
+                            contentDescription = com.example.util.AppStrings.btnBack(language),
                             tint = Color.White
                         )
                     }
@@ -258,7 +258,7 @@ fun NearbyScreen(
                     ) {
                         Icon(
                             imageVector = if (isRadarView) Icons.AutoMirrored.Filled.FormatListBulleted else Icons.Default.Radar,
-                            contentDescription = if (isRadarView) "Tampilan Daftar" else "Tampilan Radar",
+                            contentDescription = if (isRadarView) com.example.util.AppStrings.nearbyUserList(language) else com.example.util.AppStrings.nearbyInteractiveRadar(language),
                             tint = Color.White
                         )
                     }
@@ -268,7 +268,7 @@ fun NearbyScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
-                            contentDescription = "Pindai Ulang",
+                            contentDescription = com.example.util.AppStrings.nearbyScanAgain(language),
                             tint = Color.White
                         )
                     }
@@ -299,7 +299,7 @@ fun NearbyScreen(
             }
 
             // Status Lokasi GPS Terkini Pengguna (Otomatis & Hemat Baterai)
-            val detectedCity = currentGpsLocation?.cityName?.takeIf { it.isNotBlank() } ?: "Menyesuaikan Lokasi GPS..."
+            val detectedCity = currentGpsLocation?.cityName?.takeIf { it.isNotBlank() } ?: com.example.util.AppStrings.profileGpsDetecting(language)
             Surface(
                 color = Color(0xFFF1F8E9),
                 modifier = Modifier
@@ -334,7 +334,7 @@ fun NearbyScreen(
                         )
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(
-                            text = "Pusat Radar: ",
+                            text = com.example.util.AppStrings.radarCenterLabel(language),
                             fontSize = 11.5.sp,
                             color = NeutralMedium
                         )
@@ -352,7 +352,7 @@ fun NearbyScreen(
                         modifier = Modifier.padding(start = 6.dp)
                     ) {
                         Text(
-                            text = if (isScanning) "Mencari sinyal..." else "Perbarui GPS",
+                            text = if (isScanning) com.example.util.AppStrings.nearbySearchingSignal(language) else com.example.util.AppStrings.btnRefreshGps(language),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = EmeraldGreen
@@ -360,7 +360,7 @@ fun NearbyScreen(
                         Spacer(modifier = Modifier.width(3.dp))
                         Icon(
                             imageVector = Icons.Default.Refresh,
-                            contentDescription = "Perbarui GPS",
+                            contentDescription = com.example.util.AppStrings.btnRefreshGps(language),
                             tint = EmeraldGreen,
                             modifier = Modifier.size(13.dp)
                         )
@@ -400,7 +400,7 @@ fun NearbyScreen(
                             )
                             Spacer(modifier = Modifier.width(5.dp))
                             Text(
-                                text = "Radar Interaktif",
+                                text = com.example.util.AppStrings.nearbyInteractiveRadar(language),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (isRadarView) Color.White else EmeraldGreen
@@ -426,7 +426,7 @@ fun NearbyScreen(
                             )
                             Spacer(modifier = Modifier.width(5.dp))
                             Text(
-                                text = "Daftar Pengguna",
+                                text = com.example.util.AppStrings.nearbyUserList(language),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (!isRadarView) Color.White else EmeraldGreen
@@ -458,7 +458,7 @@ fun NearbyScreen(
                     onClick = { onFilterChange(null) },
                     label = { 
                         Text(
-                            text = "Semua",
+                            text = com.example.util.AppStrings.filterAll(language),
                             maxLines = 1,
                             softWrap = false,
                             fontSize = 11.5.sp
@@ -476,7 +476,7 @@ fun NearbyScreen(
                     onClick = { onFilterChange(Gender.FEMALE) },
                     label = { 
                         Text(
-                            text = "Hanya Wanita",
+                            text = com.example.util.AppStrings.filterFemale(language),
                             maxLines = 1,
                             softWrap = false,
                             fontSize = 11.5.sp
@@ -501,7 +501,7 @@ fun NearbyScreen(
                     onClick = { onFilterChange(Gender.MALE) },
                     label = { 
                         Text(
-                            text = "Hanya Pria",
+                            text = com.example.util.AppStrings.filterMale(language),
                             maxLines = 1,
                             softWrap = false,
                             fontSize = 11.5.sp
@@ -533,7 +533,7 @@ fun NearbyScreen(
                     onClick = { onOnlyOnlineFilterChange(!selectedOnlyOnlineFilter) },
                     label = { 
                         Text(
-                            text = if (language == com.example.util.AppLanguage.INDONESIAN) "🟢 Hanya Online" else "🟢 Online Only",
+                            text = "🟢 ${com.example.util.AppStrings.nearbyOnlineOnlyFilter(language)}",
                             maxLines = 1,
                             softWrap = false,
                             fontSize = 11.5.sp,
@@ -572,31 +572,9 @@ fun NearbyScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     val radarInfo = if (selectedOnlyOnlineFilter) {
-                        if (hasHiddenUsers) {
-                            if (language == com.example.util.AppLanguage.INDONESIAN) {
-                                "Menampilkan ${displayedUsers.size} dari ${filteredUsers.size} orang online dalam radar sekitarmu 🟢"
-                            } else {
-                                "Showing ${displayedUsers.size} of ${filteredUsers.size} online people in your nearby radar 🟢"
-                            }
-                        } else {
-                            if (language == com.example.util.AppLanguage.INDONESIAN) {
-                                "Ditemukan ${displayedUsers.size} orang yang sedang online di sekitarmu 🟢"
-                            } else {
-                                "Found ${displayedUsers.size} online people in your area 🟢"
-                            }
-                        }
-                    } else if (hasHiddenUsers) {
-                        if (language == com.example.util.AppLanguage.INDONESIAN) {
-                            "Menampilkan ${displayedUsers.size} dari ${filteredUsers.size} orang dalam radar sekitarmu"
-                        } else {
-                            "Showing ${displayedUsers.size} of ${filteredUsers.size} people in your nearby radar"
-                        }
+                        com.example.util.AppStrings.nearbyStatusOnlineText(language, displayedUsers.size, filteredUsers.size, hasHiddenUsers)
                     } else {
-                        if (language == com.example.util.AppLanguage.INDONESIAN) {
-                            "Ditemukan ${displayedUsers.size} orang dalam radius sekitarmu (Semua Terbuka ✨)"
-                        } else {
-                            "Found ${displayedUsers.size} people in your area (All Unlocked ✨)"
-                        }
+                        com.example.util.AppStrings.nearbyStatusAllText(language, displayedUsers.size, filteredUsers.size, !hasHiddenUsers)
                     }
                     Text(
                         text = radarInfo,
@@ -622,9 +600,9 @@ fun NearbyScreen(
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
                                 text = if (selectedOnlyOnlineFilter) {
-                                    if (language == com.example.util.AppLanguage.INDONESIAN) "Belum Ada Pengguna Online di Sekitar" else "No Online Users Nearby"
+                                    com.example.util.AppStrings.nearbyEmptyOnlineTitle(language)
                                 } else {
-                                    if (language == com.example.util.AppLanguage.INDONESIAN) "Belum Ada Pengguna di Sekitar" else "No Users Nearby Yet"
+                                    com.example.util.AppStrings.nearbyEmptyGeneralTitle(language)
                                 },
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
@@ -633,14 +611,9 @@ fun NearbyScreen(
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
                                 text = if (selectedOnlyOnlineFilter) {
-                                    if (language == com.example.util.AppLanguage.INDONESIAN)
-                                        "Saat ini belum ada teman di sekitar yang sedang online. Anda dapat mematikan filter 'Hanya Online' atau pindai ulang nanti."
-                                    else
-                                        "No friends nearby are currently online. You can turn off the 'Online Only' filter or scan again later."
-                                } else if (language == com.example.util.AppLanguage.INDONESIAN) {
-                                    "Tekan tombol 'Pindai Ulang' di atas untuk mencari teman baru atau perluas radius pencarian."
+                                    com.example.util.AppStrings.nearbyEmptyOnlineDesc(language)
                                 } else {
-                                    "Tap 'Refresh' above to scan for new friends or expand your search area."
+                                    com.example.util.AppStrings.nearbyEmptyGeneralDesc(language)
                                 },
                                 fontSize = 13.sp,
                                 color = NeutralMedium,
@@ -655,7 +628,7 @@ fun NearbyScreen(
                                 Icon(imageVector = Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = if (language == com.example.util.AppLanguage.INDONESIAN) "Pindai Sekarang" else "Scan Now",
+                                    text = com.example.util.AppStrings.nearbyScanNow(language),
                                     fontSize = 13.5.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -687,9 +660,9 @@ fun NearbyScreen(
                             Spacer(modifier = Modifier.height(14.dp))
                             Text(
                                 text = if (selectedOnlyOnlineFilter) {
-                                    if (language == com.example.util.AppLanguage.INDONESIAN) "Belum Ada Pengguna Online di Sekitar" else "No Online Users Nearby"
+                                    com.example.util.AppStrings.nearbyEmptyOnlineTitle(language)
                                 } else {
-                                    if (language == com.example.util.AppLanguage.INDONESIAN) "Belum Ada Pengguna di Sekitar" else "No Nearby Users Found"
+                                    com.example.util.AppStrings.nearbyEmptyGeneralTitle(language)
                                 },
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
@@ -698,14 +671,9 @@ fun NearbyScreen(
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
                                 text = if (selectedOnlyOnlineFilter) {
-                                    if (language == com.example.util.AppLanguage.INDONESIAN)
-                                        "Saat ini tidak ada pengguna yang sedang online. Coba nonaktifkan filter 'Hanya Online' untuk melihat semua pengguna di sekitar."
-                                    else
-                                        "No users are currently online nearby. Try disabling the 'Online Only' filter to see all nearby friends."
-                                } else if (language == com.example.util.AppLanguage.INDONESIAN) {
-                                    "Belum ada pengguna aktif lain di sekitar lokasi Anda saat ini. Pastikan GPS aktif dan coba pindai ulang!"
+                                    com.example.util.AppStrings.nearbyEmptyOnlineDesc(language)
                                 } else {
-                                    "No other active users found near your location right now. Ensure GPS is enabled and try scanning again!"
+                                    com.example.util.AppStrings.nearbyEmptyGeneralDesc(language)
                                 },
                                 fontSize = 13.sp,
                                 color = NeutralMedium,
@@ -720,7 +688,7 @@ fun NearbyScreen(
                             ) {
                                 Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text(if (language == com.example.util.AppLanguage.INDONESIAN) "Pindai Ulang" else "Scan Again", fontSize = 13.sp)
+                                Text(com.example.util.AppStrings.nearbyScanAgain(language), fontSize = 13.sp)
                             }
                         }
                     }
@@ -730,6 +698,7 @@ fun NearbyScreen(
                         NearbyUserCard(
                             user = user,
                             hideExactDistance = hideExactDistance,
+                            language = language,
                             onAvatarClick = {
                                 if (!user.avatarUrl.isNullOrBlank()) {
                                     viewingAvatarPhoto = Pair(user.name, user.avatarUrl)
@@ -756,48 +725,10 @@ fun NearbyScreen(
                 // Tombol "Cari Lebih Banyak" yang memicu Iklan Reward
                 if (hasHiddenUsers) {
                     item {
-                        val cardTitle = when {
-                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 0 -> "Buka $hiddenCount Teman Sekitar Lagi"
-                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 1 -> "Buka $hiddenCount Teman Sekitar Lagi"
-                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 2 -> "Buka $hiddenCount Teman Sekitar Lagi (Total $nextTargetLimit User)"
-                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 3 -> "Buka $hiddenCount Teman Sekitar Lagi (Total $nextTargetLimit User)"
-                            language == com.example.util.AppLanguage.INDONESIAN -> "Buka Maksimal Teman Sekitar ($nextTargetLimit User)"
-                            nearbyExpansionTier == 0 -> "Unlock $hiddenCount More Nearby Friends"
-                            nearbyExpansionTier == 1 -> "Unlock $hiddenCount More Nearby Friends"
-                            nearbyExpansionTier == 2 -> "Unlock $hiddenCount More Nearby Friends (Total $nextTargetLimit Users)"
-                            nearbyExpansionTier == 3 -> "Unlock $hiddenCount More Nearby Friends (Total $nextTargetLimit Users)"
-                            else -> "Unlock Maximum Nearby Friends ($nextTargetLimit Users)"
-                        }
-                        val cardDesc = when {
-                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 0 -> "Tonton video singkat untuk menampilkan hingga 30 pengguna aktif di sekitar Anda."
-                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 1 -> "Tonton video singkat untuk menampilkan hingga 45 pengguna aktif di sekitar Anda."
-                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 2 -> "Tonton video singkat untuk membuka hingga 70 pengguna aktif di sekitar Anda!"
-                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 3 -> "Tonton video singkat untuk membuka hingga 100 pengguna aktif di sekitar Anda!"
-                            language == com.example.util.AppLanguage.INDONESIAN -> "Tonton video singkat untuk membuka hingga 125 pengguna aktif secara maksimal!"
-                            nearbyExpansionTier == 0 -> "Watch a short video to display up to 30 active nearby users."
-                            nearbyExpansionTier == 1 -> "Watch a short video to display up to 45 active nearby users."
-                            nearbyExpansionTier == 2 -> "Watch a short video to unlock up to 70 active nearby users!"
-                            nearbyExpansionTier == 3 -> "Watch a short video to unlock up to 100 active nearby users!"
-                            else -> "Watch a short video to unlock up to 125 active nearby users!"
-                        }
-                        val toastMsg = when {
-                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier < 4 -> "Selamat! Pengguna sekitar ditambah menjadi $nextTargetLimit orang 🎉"
-                            language == com.example.util.AppLanguage.INDONESIAN -> "Selamat! Pengguna sekitar maksimal ($nextTargetLimit orang) telah terbuka 🎉"
-                            nearbyExpansionTier < 4 -> "Success! Nearby users expanded to $nextTargetLimit people 🎉"
-                            else -> "Success! Maximum nearby users ($nextTargetLimit people) unlocked 🎉"
-                        }
-                        val btnText = when {
-                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 0 -> "Tonton Iklan (+18 Pengguna)"
-                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 1 -> "Tonton Iklan (+15 Pengguna Lagi)"
-                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 2 -> "Tonton Iklan (+25 Pengguna)"
-                            language == com.example.util.AppLanguage.INDONESIAN && nearbyExpansionTier == 3 -> "Tonton Iklan (+30 Pengguna)"
-                            language == com.example.util.AppLanguage.INDONESIAN -> "Tonton Iklan (+25 Pengguna Maksimal)"
-                            nearbyExpansionTier == 0 -> "Watch Ad (+18 Users)"
-                            nearbyExpansionTier == 1 -> "Watch Ad (+15 More Users)"
-                            nearbyExpansionTier == 2 -> "Watch Ad (+25 More Users)"
-                            nearbyExpansionTier == 3 -> "Watch Ad (+30 More Users)"
-                            else -> "Watch Ad (+25 Maximum Users)"
-                        }
+                        val cardTitle = com.example.util.AppStrings.nearbyUnlockMoreTitle(language, hiddenCount, nearbyExpansionTier, nextTargetLimit)
+                        val cardDesc = com.example.util.AppStrings.nearbyUnlockMoreDesc(language, nearbyExpansionTier)
+                        val toastMsg = com.example.util.AppStrings.nearbyUnlockSuccessToast(language, nearbyExpansionTier, nextTargetLimit)
+                        val btnText = com.example.util.AppStrings.nearbyWatchAdButton(language, nearbyExpansionTier)
 
                         Card(
                             shape = RoundedCornerShape(16.dp),
@@ -860,11 +791,7 @@ fun NearbyScreen(
                                             // Jika iklan sedang dipersiapkan atau belum tersedia, berikan info dan tetap buka
                                             Toast.makeText(
                                                 context,
-                                                if (language == com.example.util.AppLanguage.INDONESIAN) {
-                                                    "Iklan reward sedang dipersiapkan. Membuka pengguna sekitar untuk Anda..."
-                                                } else {
-                                                    "Reward ad is preparing. Unlocking nearby users for you..."
-                                                },
+                                                com.example.util.AppStrings.nearbyUnlockingUsersToast(language),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                             onExpandNearby()
@@ -923,11 +850,7 @@ fun NearbyScreen(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = if (language == com.example.util.AppLanguage.INDONESIAN) {
-                                        "Semua pengguna sekitar telah berhasil ditampilkan (Maksimal ${displayedUsers.size} user aktif)"
-                                    } else {
-                                        "All nearby users are now displayed (Max ${displayedUsers.size} active users)"
-                                    },
+                                    text = com.example.util.AppStrings.nearbyAllUsersDisplayed(language, displayedUsers.size),
                                     fontSize = 12.5.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = EmeraldGreen
@@ -979,6 +902,7 @@ fun NearbyScreen(
 fun NearbyUserCard(
     user: User,
     hideExactDistance: Boolean = false,
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     onAvatarClick: (() -> Unit)? = null,
     onClick: () -> Unit = {},
     onSayHi: () -> Unit,

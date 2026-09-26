@@ -432,6 +432,7 @@ fun ProfileTabScreen(
         BlockedUsersDialog(
             blockedUserNames = blockedUserNames,
             onUnblockUser = onUnblockUser,
+            language = language,
             onDismiss = { showBlockedUsersDialog = false }
         )
     }
@@ -603,7 +604,7 @@ fun ProfileTabScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showLanguagePicker = false }) {
-                    Text("Tutup", color = EmeraldGreen, fontWeight = FontWeight.Bold)
+                    Text(com.example.util.AppStrings.commonClose(language), color = EmeraldGreen, fontWeight = FontWeight.Bold)
                 }
             }
         )
@@ -651,7 +652,7 @@ fun ProfileTabScreen(
     viewingPhotoUrl?.let { photoUrl ->
         com.example.ui.components.ZoomablePhotoViewerDialog(
             photoUrl = photoUrl,
-            title = "Foto Profil $myName",
+            title = "${com.example.util.AppStrings.profilePhotoSection(language)}: $myName",
             onDismiss = { viewingPhotoUrl = null }
         )
     }
@@ -778,7 +779,7 @@ fun PrivacyLocationDialog(
                     }
                 }
                 Text(
-                    text = "Privasi & Lokasi",
+                    text = com.example.util.AppStrings.privacyLocationTitle(language),
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
                     color = NeutralDark
@@ -810,7 +811,7 @@ fun PrivacyLocationDialog(
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
-                                text = "Tampilkan Saya di Sekitar",
+                                text = com.example.util.AppStrings.privacyShowMeNearby(language),
                                 fontSize = 13.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = NeutralDark,
@@ -827,10 +828,7 @@ fun PrivacyLocationDialog(
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = if (isNearbyVisible)
-                                "Profil Anda aktif dan dapat ditemukan oleh pengguna lain di radar 'Di Sekitar Saya'."
-                            else
-                                "Mode Penyamaran aktif. Profil Anda disembunyikan dari radar pencarian orang sekitar.",
+                            text = com.example.util.AppStrings.privacyShowMeNearbyDesc(language, isNearbyVisible),
                             fontSize = 11.5.sp,
                             color = NeutralMedium,
                             lineHeight = 16.sp
@@ -856,7 +854,7 @@ fun PrivacyLocationDialog(
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
-                                text = "Sembunyikan Jarak Persis",
+                                text = com.example.util.AppStrings.privacyHideExactDistance(language),
                                 fontSize = 13.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = NeutralDark,
@@ -873,10 +871,7 @@ fun PrivacyLocationDialog(
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = if (hideExactDistance)
-                                "Jarak meter/km disembunyikan. Orang lain hanya dapat melihat nama kota/wilayah Anda."
-                            else
-                                "Pengguna lain dapat melihat perkiraan jarak meter atau kilometer dari lokasi Anda.",
+                            text = com.example.util.AppStrings.privacyHideExactDistanceDesc(language, hideExactDistance),
                             fontSize = 11.5.sp,
                             color = NeutralMedium,
                             lineHeight = 16.sp
@@ -902,7 +897,7 @@ fun PrivacyLocationDialog(
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
-                                text = "Tampilkan Status Online",
+                                text = com.example.util.AppStrings.privacyShowOnlineStatus(language),
                                 fontSize = 13.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = NeutralDark,
@@ -919,7 +914,7 @@ fun PrivacyLocationDialog(
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Menampilkan tanda online ketika Anda sedang aktif membuka Lovy Chat.",
+                            text = com.example.util.AppStrings.privacyShowOnlineStatusDesc(language),
                             fontSize = 11.5.sp,
                             color = NeutralMedium,
                             lineHeight = 16.sp
@@ -946,13 +941,13 @@ fun PrivacyLocationDialog(
                             Spacer(modifier = Modifier.width(10.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Izin Lokasi & GPS Perangkat",
+                                    text = com.example.util.AppStrings.privacyGpsPermissionTitle(language),
                                     fontSize = 13.5.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = NeutralDark
                                 )
                                 Text(
-                                    text = if (hasLocationPermission) "Izin GPS diberikan • Aktif" else "Izin lokasi belum diberikan",
+                                    text = com.example.util.AppStrings.privacyGpsStatus(language, hasLocationPermission),
                                     fontSize = 11.5.sp,
                                     color = if (hasLocationPermission) EmeraldGreen else Color(0xFFE53935),
                                     fontWeight = FontWeight.Medium
@@ -970,7 +965,7 @@ fun PrivacyLocationDialog(
                                 colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text("Izinkan Akses GPS", fontSize = 12.sp, color = Color.White)
+                                Text(com.example.util.AppStrings.privacyGrantGpsButton(language), fontSize = 12.sp, color = Color.White)
                             }
                         }
 
@@ -986,7 +981,7 @@ fun PrivacyLocationDialog(
                                 shape = RoundedCornerShape(8.dp),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text("Buka Pengaturan Lokasi HP", fontSize = 12.sp, color = NeutralDark)
+                                Text(com.example.util.AppStrings.privacyOpenGpsSettings(language), fontSize = 12.sp, color = NeutralDark)
                             }
                         }
                     }
@@ -996,13 +991,13 @@ fun PrivacyLocationDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    Toast.makeText(context, "Pengaturan privasi & lokasi diperbarui", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, com.example.util.AppStrings.privacySettingsUpdatedToast(language), Toast.LENGTH_SHORT).show()
                     onDismiss()
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                Text("Selesai", color = Color.White, fontWeight = FontWeight.Bold)
+                Text(com.example.util.AppStrings.commonDone(language), color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
     )
@@ -1013,6 +1008,7 @@ fun PrivacyLocationDialog(
 fun BlockedUsersDialog(
     blockedUserNames: Set<String>,
     onUnblockUser: (String) -> Unit,
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -1073,14 +1069,14 @@ fun BlockedUsersDialog(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(
-                            text = "Daftar Pengguna Diblokir",
+                            text = com.example.util.AppStrings.blockedUsersTitle(language),
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
                             color = NeutralDark
                         )
                         if (blockedUserNames.isNotEmpty()) {
                             Text(
-                                text = "${blockedUserNames.size} pengguna diblokir",
+                                text = com.example.util.AppStrings.blockedUsersCount(language, blockedUserNames.size),
                                 fontSize = 12.sp,
                                 color = NeutralMedium
                             )
@@ -1099,7 +1095,7 @@ fun BlockedUsersDialog(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Tutup",
+                        contentDescription = com.example.util.AppStrings.commonClose(language),
                         tint = NeutralDark,
                         modifier = Modifier.size(18.dp)
                     )
@@ -1137,14 +1133,14 @@ fun BlockedUsersDialog(
                         }
                         Spacer(modifier = Modifier.height(14.dp))
                         Text(
-                            text = "Tidak ada pengguna yang diblokir",
+                            text = com.example.util.AppStrings.blockedUsersEmptyTitle(language),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = NeutralDark
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Pengguna yang Anda blokir di ruang chat akan muncul di sini.",
+                            text = com.example.util.AppStrings.blockedUsersEmptyDesc(language),
                             fontSize = 13.sp,
                             color = NeutralMedium,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -1160,7 +1156,7 @@ fun BlockedUsersDialog(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
-                        text = "Pengguna di bawah ini tidak dapat mengirimi Anda pesan atau melihat Anda di Sekitar Saya:",
+                        text = com.example.util.AppStrings.blockedUsersNotice(language),
                         fontSize = 12.sp,
                         color = NeutralMedium,
                         lineHeight = 16.sp
@@ -1211,7 +1207,7 @@ fun BlockedUsersDialog(
                                 OutlinedButton(
                                     onClick = {
                                         onUnblockUser(blockedName)
-                                        Toast.makeText(context, "Blokir untuk $blockedName dibuka", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, com.example.util.AppStrings.blockedUserUnblockedToast(language, blockedName), Toast.LENGTH_SHORT).show()
                                     },
                                     shape = RoundedCornerShape(10.dp),
                                     colors = ButtonDefaults.outlinedButtonColors(
@@ -1221,7 +1217,7 @@ fun BlockedUsersDialog(
                                     modifier = Modifier.testTag("btn_unblock_$blockedName")
                                 ) {
                                     Text(
-                                        text = "Buka Blokir",
+                                        text = com.example.util.AppStrings.btnUnblock(language),
                                         fontSize = 12.sp,
                                         color = EmeraldGreen,
                                         fontWeight = FontWeight.Bold
@@ -1316,7 +1312,7 @@ fun PrivacyPolicyDialog(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Tutup",
+                        contentDescription = com.example.util.AppStrings.commonClose(language),
                         tint = NeutralDark,
                         modifier = Modifier.size(18.dp)
                     )
@@ -1574,7 +1570,7 @@ fun AboutAppDialog(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Tutup",
+                        contentDescription = com.example.util.AppStrings.commonClose(language),
                         tint = NeutralDark,
                         modifier = Modifier.size(18.dp)
                     )

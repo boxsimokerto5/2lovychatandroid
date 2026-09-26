@@ -810,6 +810,7 @@ private fun ProfileDetailRow(
 @Composable
 fun EditProfileDialog(
     currentProfile: UserProfile,
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     onDismiss: () -> Unit,
     onPickPhotoFromGallery: () -> Unit,
     isUploadingPhoto: Boolean = false,
@@ -846,7 +847,7 @@ fun EditProfileDialog(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Edit Profil",
+                    text = com.example.util.AppStrings.profileEditDialogTitle(language),
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
                     color = NeutralDark
@@ -879,7 +880,7 @@ fun EditProfileDialog(
                         if (profilePictureUrl.isNotBlank()) {
                             AsyncImage(
                                 model = profilePictureUrl,
-                                contentDescription = "Foto Profil",
+                                contentDescription = com.example.util.AppStrings.profilePhotoSection(language),
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
                             )
@@ -919,7 +920,7 @@ fun EditProfileDialog(
                     ) {
                         Icon(
                             imageVector = Icons.Default.CameraAlt,
-                            contentDescription = "Ganti Foto",
+                            contentDescription = com.example.util.AppStrings.profileChangePhoto(language),
                             tint = Color.White,
                             modifier = Modifier.size(14.dp)
                         )
@@ -943,7 +944,7 @@ fun EditProfileDialog(
                             strokeWidth = 2.dp
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(uploadProgressText ?: "Mengunggah...", fontSize = 13.sp)
+                        Text(uploadProgressText ?: if (language == com.example.util.AppLanguage.INDONESIAN) "Mengunggah..." else "Uploading...", fontSize = 13.sp)
                     } else {
                         Icon(
                             imageVector = Icons.Default.AddPhotoAlternate,
@@ -951,7 +952,7 @@ fun EditProfileDialog(
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Pilih Foto Galeri (Cloudflare R2)", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text(com.example.util.AppStrings.profilePickGalleryPhoto(language), fontSize = 13.sp, fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -974,7 +975,7 @@ fun EditProfileDialog(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Kosongkan Foto Profil (Gunakan Logo Lovy Chat)",
+                            text = if (language == com.example.util.AppLanguage.INDONESIAN) "Kosongkan Foto Profil (Gunakan Logo Lovy Chat)" else "Clear Profile Photo (Use Lovy Chat Logo)",
                             fontSize = 12.5.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFFD32F2F)
@@ -999,7 +1000,7 @@ fun EditProfileDialog(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Logo Resmi Lovy Chat aktif sebagai foto profil Anda",
+                                text = com.example.util.AppStrings.profileLogoActive(language),
                                 fontSize = 12.sp,
                                 color = EmeraldGreen,
                                 fontWeight = FontWeight.Medium
@@ -1011,7 +1012,7 @@ fun EditProfileDialog(
                 OutlinedTextField(
                     value = displayName,
                     onValueChange = { displayName = it },
-                    label = { Text("Nama Tampilan (Display Name)") },
+                    label = { Text(com.example.util.AppStrings.profileDisplayNameLabel(language)) },
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1021,7 +1022,7 @@ fun EditProfileDialog(
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
-                    label = { Text("Email Akun (Terkoneksi)") },
+                    label = { Text(com.example.util.AppStrings.profileEmailLabel(language)) },
                     singleLine = true,
                     leadingIcon = {
                         Icon(
@@ -1038,7 +1039,7 @@ fun EditProfileDialog(
                 // Gender Selection (Jenis Kelamin)
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "Jenis Kelamin",
+                        text = com.example.util.AppStrings.profileGenderLabel(language),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = NeutralDark
@@ -1065,13 +1066,13 @@ fun EditProfileDialog(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Male,
-                                    contentDescription = "Laki-laki",
+                                    contentDescription = com.example.util.AppStrings.genderLabel(language, "MALE"),
                                     tint = if (isMale) EmeraldGreen else NeutralMedium,
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "Laki-laki",
+                                    text = com.example.util.AppStrings.genderLabel(language, "MALE"),
                                     fontSize = 13.sp,
                                     fontWeight = if (isMale) FontWeight.Bold else FontWeight.Normal,
                                     color = if (isMale) EmeraldGreen else NeutralDark
@@ -1096,13 +1097,13 @@ fun EditProfileDialog(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Female,
-                                    contentDescription = "Perempuan",
+                                    contentDescription = com.example.util.AppStrings.genderLabel(language, "FEMALE"),
                                     tint = if (isFemale) EmeraldGreen else NeutralMedium,
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "Perempuan",
+                                    text = com.example.util.AppStrings.genderLabel(language, "FEMALE"),
                                     fontSize = 13.sp,
                                     fontWeight = if (isFemale) FontWeight.Bold else FontWeight.Normal,
                                     color = if (isFemale) EmeraldGreen else NeutralDark
@@ -1120,7 +1121,7 @@ fun EditProfileDialog(
                             ageText = input
                         }
                     },
-                    label = { Text("Usia (Tahun)") },
+                    label = { Text(com.example.util.AppStrings.profileAgeLabel(language)) },
                     singleLine = true,
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                         keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
@@ -1140,7 +1141,7 @@ fun EditProfileDialog(
                 OutlinedTextField(
                     value = bio,
                     onValueChange = { bio = it },
-                    label = { Text("Bio / Status Singkat") },
+                    label = { Text(com.example.util.AppStrings.profileBioLabel(language)) },
                     maxLines = 3,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1150,7 +1151,7 @@ fun EditProfileDialog(
                 OutlinedTextField(
                     value = city,
                     onValueChange = { city = it },
-                    label = { Text("Kota / Lokasi Domisili") },
+                    label = { Text(com.example.util.AppStrings.profileCityLabel(language)) },
                     singleLine = true,
                     leadingIcon = {
                         Icon(
@@ -1190,7 +1191,7 @@ fun EditProfileDialog(
                             Spacer(modifier = Modifier.width(8.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Gunakan Lokasi GPS Terdeteksi",
+                                    text = com.example.util.AppStrings.profileUseGpsLocation(language),
                                     fontSize = 11.sp,
                                     color = NeutralMedium
                                 )
@@ -1202,7 +1203,7 @@ fun EditProfileDialog(
                                 )
                             }
                             Text(
-                                text = "Terapkan",
+                                text = com.example.util.AppStrings.profileApplyGps(language),
                                 fontSize = 11.5.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = EmeraldGreen
@@ -1212,7 +1213,7 @@ fun EditProfileDialog(
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Lokasi domisili Anda terdeteksi otomatis dari GPS peta hingga tingkat kecamatan & kota (misal Kec. Depok, Sleman atau Kec. Gondomanan, Yogyakarta).",
+                    text = com.example.util.AppStrings.profileGpsNotice(language),
                     fontSize = 11.sp,
                     lineHeight = 15.sp,
                     color = NeutralMedium
@@ -1244,7 +1245,7 @@ fun EditProfileDialog(
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("Simpan")
+                Text(com.example.util.AppStrings.btnSave(language))
             }
         },
         dismissButton = {
@@ -1252,7 +1253,7 @@ fun EditProfileDialog(
                 onClick = onDismiss,
                 modifier = Modifier.testTag("btn_cancel_edit_profile")
             ) {
-                Text("Batal", color = NeutralMedium)
+                Text(com.example.util.AppStrings.btnCancel(language), color = NeutralMedium)
             }
         }
     )

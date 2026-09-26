@@ -565,16 +565,6 @@ object AppStrings {
         else -> "No blocked users"
     }
 
-    fun blockedUsersCount(lang: AppLanguage, count: Int): String = when (resolveLang(lang)) {
-        AppLanguage.CHINESE -> "已屏蔽 $count 位用户"
-        AppLanguage.JAPANESE -> "$count 人のユーザーをブロック中"
-        AppLanguage.KOREAN -> "${count}명 차단됨"
-        AppLanguage.ARABIC -> "$count مستخدم محظور"
-        AppLanguage.SPANISH -> "$count usuarios bloqueados"
-        AppLanguage.INDONESIAN -> "$count pengguna diblokir"
-        else -> "$count blocked users"
-    }
-
     fun menuTestNotification(lang: AppLanguage): String = when (resolveLang(lang)) {
         AppLanguage.CHINESE -> "测试通知与震动"
         AppLanguage.JAPANESE -> "通知とバイブのテスト"
@@ -4739,6 +4729,20 @@ object AppStrings {
         else -> "Unblocked $name"
     }
 
+    fun btnUnblock(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "解除屏蔽"
+        AppLanguage.JAPANESE -> "ブロック解除"
+        AppLanguage.KOREAN -> "차단 해제"
+        AppLanguage.ARABIC -> "إلغاء الحظر"
+        AppLanguage.SPANISH -> "Desbloquear"
+        AppLanguage.FRENCH -> "Débloquer"
+        AppLanguage.GERMAN -> "Entsperren"
+        AppLanguage.RUSSIAN -> "Разблокировать"
+        AppLanguage.PORTUGUESE -> "Desbloquear"
+        AppLanguage.INDONESIAN -> "Buka Blokir"
+        else -> "Unblock"
+    }
+
     fun privacyShowOnlineStatusTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
         AppLanguage.CHINESE -> "显示在线状态"
         AppLanguage.JAPANESE -> "オンライン状態を表示"
@@ -5914,20 +5918,6 @@ object AppStrings {
         else -> "Show Online Status"
     }
 
-    fun privacyShowOnlineStatusDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
-        AppLanguage.CHINESE -> "当您打开 Lovy Chat 活跃时显示在线指示标志。"
-        AppLanguage.JAPANESE -> "Lovy Chatを開いて利用しているときにオンラインマークを表示します。"
-        AppLanguage.KOREAN -> "Lovy Chat을 이용 중일 때 온라인 표시를 나타냅니다."
-        AppLanguage.ARABIC -> "يعرض علامة الاتصال عندما تكون نشطاً في تطبيق Lovy Chat."
-        AppLanguage.SPANISH -> "Muestra un indicador en línea cuando estás activo en Lovy Chat."
-        AppLanguage.FRENCH -> "Affiche une pastille en ligne lorsque vous utilisez Lovy Chat."
-        AppLanguage.GERMAN -> "Zeigt einen Online-Punkt, wenn du in Lovy Chat aktiv bist."
-        AppLanguage.RUSSIAN -> "Отображает отметку в сети, когда вы активно пользуетесь Lovy Chat."
-        AppLanguage.PORTUGUESE -> "Exibe um indicador online quando você está usando o Lovy Chat."
-        AppLanguage.INDONESIAN -> "Menampilkan tanda online ketika Anda sedang aktif membuka Lovy Chat."
-        else -> "Shows an online indicator when you are active on Lovy Chat."
-    }
-
     fun privacyGpsPermissionTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
         AppLanguage.CHINESE -> "设备位置权限 (GPS)"
         AppLanguage.JAPANESE -> "デバイスの位置情報権限 (GPS)"
@@ -6010,34 +6000,6 @@ object AppStrings {
         AppLanguage.PORTUGUESE -> "Concluído"
         AppLanguage.INDONESIAN -> "Selesai"
         else -> "Done"
-    }
-
-    fun blockedUsersTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
-        AppLanguage.CHINESE -> "黑名单列表"
-        AppLanguage.JAPANESE -> "ブロック中ユーザー一覧"
-        AppLanguage.KOREAN -> "차단된 사용자 목록"
-        AppLanguage.ARABIC -> "قائمة المستخدمين المحظورين"
-        AppLanguage.SPANISH -> "Lista de Usuarios Bloqueados"
-        AppLanguage.FRENCH -> "Liste des utilisateurs bloqués"
-        AppLanguage.GERMAN -> "Liste blockierter Benutzer"
-        AppLanguage.RUSSIAN -> "Список заблокированных пользователей"
-        AppLanguage.PORTUGUESE -> "Lista de Usuários Bloqueados"
-        AppLanguage.INDONESIAN -> "Daftar Pengguna Diblokir"
-        else -> "Blocked Users List"
-    }
-
-    fun blockedUsersEmptyDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
-        AppLanguage.CHINESE -> "您在聊天室中拉黑的用户将显示在此处。"
-        AppLanguage.JAPANESE -> "チャットルームでブロックしたユーザーはここに表示されます。"
-        AppLanguage.KOREAN -> "채팅방에서 차단한 사용자가 여기에 표시됩니다."
-        AppLanguage.ARABIC -> "المستخدمون الذين قمت بحظرهم في الدردشة سيظهرون هنا."
-        AppLanguage.SPANISH -> "Los usuarios que bloquees en el chat aparecerán aquí."
-        AppLanguage.FRENCH -> "Les utilisateurs bloqués dans les discussions apparaîtront ici."
-        AppLanguage.GERMAN -> "Benutzer, die du im Chat blockiert hast, erscheinen hier."
-        AppLanguage.RUSSIAN -> "Пользователи, которых вы заблокировали в чате, появятся здесь."
-        AppLanguage.PORTUGUESE -> "Os usuários que você bloquear no chat aparecerão aqui."
-        AppLanguage.INDONESIAN -> "Pengguna yang Anda blokir di ruang chat akan muncul di sini."
-        else -> "Users you blocked in chats will appear here."
     }
 
     fun unblockDialogTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
@@ -6185,7 +6147,7 @@ object AppStrings {
     fun notificationsNewBadge(lang: AppLanguage, count: Int): String = when (resolveLang(lang)) {
         AppLanguage.CHINESE -> "$count 条新"
         AppLanguage.JAPANESE -> "$count 件の新着"
-        AppLanguage.KOREAN -> "$count개 신규"
+        AppLanguage.KOREAN -> "${count}개 신규"
         AppLanguage.ARABIC -> "$count جديد"
         AppLanguage.SPANISH -> "$count Nuevas"
         AppLanguage.FRENCH -> "$count Nouveau(x)"
@@ -6531,6 +6493,636 @@ object AppStrings {
         AppLanguage.PORTUGUESE -> "Falha ao carregar a imagem"
         AppLanguage.INDONESIAN -> "Gagal memuat gambar"
         else -> "Failed to load image"
+    }
+
+    fun filterClosest(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "最近"
+        AppLanguage.JAPANESE -> "近い順"
+        AppLanguage.KOREAN -> "가장 가까운"
+        AppLanguage.ARABIC -> "الأقرب"
+        AppLanguage.SPANISH -> "Más cercanos"
+        AppLanguage.FRENCH -> "Plus proches"
+        AppLanguage.GERMAN -> "Nächste"
+        AppLanguage.RUSSIAN -> "Ближайшие"
+        AppLanguage.PORTUGUESE -> "Mais próximos"
+        AppLanguage.INDONESIAN -> "Terdekat"
+        else -> "Closest"
+    }
+
+    fun nearbySearchingSignal(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "正在搜寻信号..."
+        AppLanguage.JAPANESE -> "信号を検索中..."
+        AppLanguage.KOREAN -> "신호 검색 중..."
+        AppLanguage.ARABIC -> "جاري البحث عن إشارة..."
+        AppLanguage.SPANISH -> "Buscando señal..."
+        AppLanguage.FRENCH -> "Recherche de signal..."
+        AppLanguage.GERMAN -> "Signal wird gesucht..."
+        AppLanguage.RUSSIAN -> "Поиск сигнала..."
+        AppLanguage.PORTUGUESE -> "Buscando sinal..."
+        AppLanguage.INDONESIAN -> "Mencari sinyal..."
+        else -> "Searching signal..."
+    }
+
+    fun nearbyAllUsersDisplayed(lang: AppLanguage, count: Int): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "已显示全部附近用户（最多 $count 位活跃用户）"
+        AppLanguage.JAPANESE -> "近くのすべてのユーザーを表示しました（最大 $count 人のアクティブ）"
+        AppLanguage.KOREAN -> "모든 주변 사용자가 표시되었습니다 (최대 $count 명 활동 중)"
+        AppLanguage.ARABIC -> "تم عرض جميع المستخدمين القريبين (الحد الأقصى $count مستخدم نشط)"
+        AppLanguage.SPANISH -> "Todos los usuarios cercanos están visibles (Máx $count activos)"
+        AppLanguage.FRENCH -> "Tous les utilisateurs proches sont affichés (Max $count actifs)"
+        AppLanguage.GERMAN -> "Alle Benutzer in der Nähe werden angezeigt (Max. $count aktiv)"
+        AppLanguage.RUSSIAN -> "Все пользователи поблизости отображены (Макс. $count активных)"
+        AppLanguage.PORTUGUESE -> "Todos os usuários próximos foram exibidos (Máx $count ativos)"
+        AppLanguage.INDONESIAN -> "Semua pengguna sekitar telah berhasil ditampilkan (Maksimal $count user aktif)"
+        else -> "All nearby users are now displayed (Max $count active users)"
+    }
+
+    fun nearbyUnlockingUsersToast(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "正在为您解锁附近用户 ✨"
+        AppLanguage.JAPANESE -> "近くのユーザーをアンロックしています ✨"
+        AppLanguage.KOREAN -> "주변 사용자를 잠금 해제 중입니다 ✨"
+        AppLanguage.ARABIC -> "جاري فتح المستخدمين القريبين لك ✨"
+        AppLanguage.SPANISH -> "Desbloqueando usuarios cercanos para ti ✨"
+        AppLanguage.FRENCH -> "Déblocage des utilisateurs proches pour vous ✨"
+        AppLanguage.GERMAN -> "Benutzer in der Nähe werden für dich freigeschaltet ✨"
+        AppLanguage.RUSSIAN -> "Открываем пользователей поблизости для вас ✨"
+        AppLanguage.PORTUGUESE -> "Desbloqueando pessoas próximas para você ✨"
+        AppLanguage.INDONESIAN -> "Membuka pengguna sekitar untuk Anda ✨"
+        else -> "Unlocking nearby users for you ✨"
+    }
+
+    fun radarRadiusExpanded(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "雷达已扩展 • 半径 15 公里"
+        AppLanguage.JAPANESE -> "レーダー拡張中 • 半径 15 km"
+        AppLanguage.KOREAN -> "확장 레이더 • 반경 15km"
+        AppLanguage.ARABIC -> "رادار موسع • نطاق 15 كم"
+        AppLanguage.SPANISH -> "Radar Ampliado • Radio de 15 km"
+        AppLanguage.FRENCH -> "Radar étendu • Rayon de 15 km"
+        AppLanguage.GERMAN -> "Erweitertes Radar • 15 km Radius"
+        AppLanguage.RUSSIAN -> "Расширенный радар • Радиус 15 км"
+        AppLanguage.PORTUGUESE -> "Radar Expandido • Raio de 15 km"
+        AppLanguage.INDONESIAN -> "Radar Diperluas • Radius 15 km"
+        else -> "Expanded Radar • 15 km Radius"
+    }
+
+    fun radarRadiusActive(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "雷达已激活 • 半径 5 公里"
+        AppLanguage.JAPANESE -> "レーダー作動中 • 半径 5 km"
+        AppLanguage.KOREAN -> "활성 레이더 • 반경 5km"
+        AppLanguage.ARABIC -> "رادار نشط • نطاق 5 كم"
+        AppLanguage.SPANISH -> "Radar Activo • Radio de 5 km"
+        AppLanguage.FRENCH -> "Radar actif • Rayon de 5 km"
+        AppLanguage.GERMAN -> "Aktives Radar • 5 km Radius"
+        AppLanguage.RUSSIAN -> "Активный радар • Радиус 5 км"
+        AppLanguage.PORTUGUESE -> "Radar Ativo • Raio de 5 km"
+        AppLanguage.INDONESIAN -> "Radar Aktif • Radius 5 km"
+        else -> "Active Radar • 5 km Radius"
+    }
+
+    fun radarYou(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "您"
+        AppLanguage.JAPANESE -> "あなた"
+        AppLanguage.KOREAN -> "나"
+        AppLanguage.ARABIC -> "أنت"
+        AppLanguage.SPANISH -> "Tú"
+        AppLanguage.FRENCH -> "Vous"
+        AppLanguage.GERMAN -> "Du"
+        AppLanguage.RUSSIAN -> "Вы"
+        AppLanguage.PORTUGUESE -> "Você"
+        AppLanguage.INDONESIAN -> "Anda"
+        else -> "You"
+    }
+
+    fun radarTouchHint(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "轻点雷达上的头像查看资料并打招呼"
+        AppLanguage.JAPANESE -> "レーダー上のアイコンをタップしてプロフィール確認 & 挨拶"
+        AppLanguage.KOREAN -> "레이더 아바타를 터치해 프로필 확인 및 인사하세요"
+        AppLanguage.ARABIC -> "المس الصورة الرمزية في الرادار لعرض الملف الشخصي والتحية"
+        AppLanguage.SPANISH -> "Toca el avatar en el radar para ver perfil y saludar"
+        AppLanguage.FRENCH -> "Touchez un avatar sur le radar pour voir le profil et saluer"
+        AppLanguage.GERMAN -> "Tippe auf ein Radar-Avatar, um das Profil zu sehen und zu grüßen"
+        AppLanguage.RUSSIAN -> "Коснитесь аватара на радаре, чтобы открыть профиль и поздороваться"
+        AppLanguage.PORTUGUESE -> "Toque no avatar no radar para ver o perfil e cumprimentar"
+        AppLanguage.INDONESIAN -> "Sentuh avatar di radar untuk melihat profil & menyapa"
+        else -> "Tap avatar on radar to view profile & say hi"
+    }
+
+    fun radarMaxActive(lang: AppLanguage, count: Int): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "雷达最大范围已激活 • 已展示 $count 位用户 ✨"
+        AppLanguage.JAPANESE -> "最大レーダー稼働中 • $count 人のユーザーを表示 ✨"
+        AppLanguage.KOREAN -> "최대 레이더 활성화 • ${count}명의 사용자 표시 중 ✨"
+        AppLanguage.ARABIC -> "الرادار في أقصى مدى • تم إظهار $count مستخدم ✨"
+        AppLanguage.SPANISH -> "Radar Máximo Activo • $count Usuarios Desbloqueados ✨"
+        AppLanguage.FRENCH -> "Radar maximal actif • $count utilisateurs débloqués ✨"
+        AppLanguage.GERMAN -> "Maximales Radar aktiv • $count Benutzer freigeschaltet ✨"
+        AppLanguage.RUSSIAN -> "Максимальный радар активен • Открыто $count пользователей ✨"
+        AppLanguage.PORTUGUESE -> "Radar Máximo Ativo • $count Usuários Desbloqueados ✨"
+        AppLanguage.INDONESIAN -> "Radar Maksimal Aktif • $count Pengguna Terbuka ✨"
+        else -> "Max Radar Active • $count Users Unlocked ✨"
+    }
+
+    fun radarExpandPreparingToast(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "正在准备雷达... 正在为您展示身边的好友 ✨"
+        AppLanguage.JAPANESE -> "レーダー準備中... 近くのユーザーを表示しています ✨"
+        AppLanguage.KOREAN -> "레이더 준비 중... 주변 사용자를 표시합니다 ✨"
+        AppLanguage.ARABIC -> "جاري تجهيز الرادار... جاري عرض المستخدمين القريبين منك ✨"
+        AppLanguage.SPANISH -> "Preparando radar... Mostrando personas cercanas para ti ✨"
+        AppLanguage.FRENCH -> "Préparation du radar... Affichage des personnes proches pour vous ✨"
+        AppLanguage.GERMAN -> "Radar wird vorbereitet... Benutzer in der Nähe werden angezeigt ✨"
+        AppLanguage.RUSSIAN -> "Подготовка радара... Открываем пользователей рядом с вами ✨"
+        AppLanguage.PORTUGUESE -> "Preparando radar... Exibindo pessoas próximas para você ✨"
+        AppLanguage.INDONESIAN -> "Mempersiapkan radar... Menampilkan pengguna sekitar untuk Anda ✨"
+        else -> "Preparing radar... Unlocking nearby users for you ✨"
+    }
+
+    fun qrAddLovyFriendSubtitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "添加 Lovy 好友"
+        AppLanguage.JAPANESE -> "Lovy 友達を追加"
+        AppLanguage.KOREAN -> "Lovy 친구 추가"
+        AppLanguage.ARABIC -> "إضافة أصدقاء Lovy"
+        AppLanguage.SPANISH -> "Agregar Amigo Lovy"
+        AppLanguage.FRENCH -> "Ajouter un ami Lovy"
+        AppLanguage.GERMAN -> "Lovy-Freund hinzufügen"
+        AppLanguage.RUSSIAN -> "Добавить друга в Lovy"
+        AppLanguage.PORTUGUESE -> "Adicionar Amigo Lovy"
+        AppLanguage.INDONESIAN -> "Tambah Teman Lovy"
+        else -> "Add Lovy Friends"
+    }
+
+    fun qrCopyIdTooltip(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "复制 ID"
+        AppLanguage.JAPANESE -> "IDをコピー"
+        AppLanguage.KOREAN -> "ID 복사"
+        AppLanguage.ARABIC -> "نسخ المعرّف"
+        AppLanguage.SPANISH -> "Copiar ID"
+        AppLanguage.FRENCH -> "Copier l'identifiant"
+        AppLanguage.GERMAN -> "ID kopieren"
+        AppLanguage.RUSSIAN -> "Скопировать ID"
+        AppLanguage.PORTUGUESE -> "Copiar ID"
+        AppLanguage.INDONESIAN -> "Salin ID"
+        else -> "Copy ID"
+    }
+
+    fun adSponsored(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "赞助"
+        AppLanguage.JAPANESE -> "スポンサー"
+        AppLanguage.KOREAN -> "스폰서"
+        AppLanguage.ARABIC -> "إعلان ممول"
+        AppLanguage.SPANISH -> "Patrocinado"
+        AppLanguage.FRENCH -> "Sponsorisé"
+        AppLanguage.GERMAN -> "Gesponsert"
+        AppLanguage.RUSSIAN -> "Спонсировано"
+        AppLanguage.PORTUGUESE -> "Patrocinado"
+        AppLanguage.INDONESIAN -> "Bersponsor"
+        else -> "Sponsored"
+    }
+
+    fun adVisit(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "访问"
+        AppLanguage.JAPANESE -> "詳細を見る"
+        AppLanguage.KOREAN -> "방문하기"
+        AppLanguage.ARABIC -> "زيارة"
+        AppLanguage.SPANISH -> "Visitar"
+        AppLanguage.FRENCH -> "Visiter"
+        AppLanguage.GERMAN -> "Besuchen"
+        AppLanguage.RUSSIAN -> "Перейти"
+        AppLanguage.PORTUGUESE -> "Visitar"
+        AppLanguage.INDONESIAN -> "Kunjungi"
+        else -> "Visit"
+    }
+
+    fun adBadge(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "广告"
+        AppLanguage.JAPANESE -> "広告"
+        AppLanguage.KOREAN -> "광고"
+        AppLanguage.ARABIC -> "إعلان"
+        AppLanguage.SPANISH -> "ANUNCIO"
+        AppLanguage.FRENCH -> "PUB"
+        AppLanguage.GERMAN -> "ANZEIGE"
+        AppLanguage.RUSSIAN -> "РЕКЛАМА"
+        AppLanguage.PORTUGUESE -> "ANÚNCIO"
+        AppLanguage.INDONESIAN -> "IKLAN"
+        else -> "AD"
+    }
+
+    fun languagePickerTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "选择语言 / Language (LO - EN)"
+        AppLanguage.JAPANESE -> "言語を選択 / Language (LO - EN)"
+        AppLanguage.KOREAN -> "언어 선택 / Language (LO - EN)"
+        AppLanguage.ARABIC -> "اختر اللغة / Language (LO - EN)"
+        AppLanguage.SPANISH -> "Seleccionar Idioma / Language (LO - EN)"
+        AppLanguage.FRENCH -> "Choisir la langue / Language (LO - EN)"
+        AppLanguage.GERMAN -> "Sprache wählen / Language (LO - EN)"
+        AppLanguage.RUSSIAN -> "Выбор языка / Language (LO - EN)"
+        AppLanguage.PORTUGUESE -> "Escolher Idioma / Language (LO - EN)"
+        AppLanguage.INDONESIAN -> "Pilih Bahasa / Language (LO - EN)"
+        else -> "Select Language (LO - EN)"
+    }
+
+    fun languagePickerDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "LO - EN 系统自动检测全球任何国家/地区的本地语言（中文、日语、阿拉伯语、印尼语等）。"
+        AppLanguage.JAPANESE -> "LO - ENシステムは世界中のあらゆる国の現地言語（中国語、日本語、アラビア語、インドネシア語など）を自動検出します。"
+        AppLanguage.KOREAN -> "LO - EN 시스템은 전 세계 어느 국가의 현지 언어(중국어, 일본어, 아랍어, 인도네시아어 등)든 자동 감지합니다."
+        AppLanguage.ARABIC -> "نظام LO - EN يكتشف تلقائياً اللغة المحلية لأي بلد في العالم (العربية، الصينية، اليابانية، الإندونيسية، وغيرها)."
+        AppLanguage.SPANISH -> "El sistema LO - EN detecta automáticamente el idioma local de cualquier país del mundo (chino, japonés, árabe, indonesio, etc.)."
+        AppLanguage.FRENCH -> "Le système LO - EN détecte automatiquement la langue locale de n'importe quel pays au monde (chinois, japonais, arabe, indonésien, etc.)."
+        AppLanguage.GERMAN -> "Das LO - EN-System erkennt automatisch die Landessprache jedes Landes weltweit (Chinesisch, Japanisch, Arabisch, Indonesisch usw.)."
+        AppLanguage.RUSSIAN -> "Система LO - EN автоматически определяет местный язык любой страны мира (китайский, японский, арабский, индонезийский и др.)."
+        AppLanguage.PORTUGUESE -> "O sistema LO - EN detecta automaticamente o idioma local de qualquer país do mundo (chinês, japonês, árabe, indonésio, etc.)."
+        AppLanguage.INDONESIAN -> "Sistem LO - EN otomatis mendeteksi bahasa lokal negara manapun di seluruh dunia (Cina, Jepang, Arab, Indonesia, dll)."
+        else -> "LO - EN system automatically detects the local language of any country worldwide (Chinese, Japanese, Arabic, Indonesian, etc.)."
+    }
+
+    fun languagePickerLocalAutoTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "🌐 LO (本地国家语言自动匹配)"
+        AppLanguage.JAPANESE -> "🌐 LO (国別ローカル自動)"
+        AppLanguage.KOREAN -> "🌐 LO (국가별 현지 자동)"
+        AppLanguage.ARABIC -> "🌐 LO (تلقائي محلي حسب البلد)"
+        AppLanguage.SPANISH -> "🌐 LO (Local Automático del País)"
+        AppLanguage.FRENCH -> "🌐 LO (Local automatique par pays)"
+        AppLanguage.GERMAN -> "🌐 LO (Lokal automatisch)"
+        AppLanguage.RUSSIAN -> "🌐 LO (Локально авто)"
+        AppLanguage.PORTUGUESE -> "🌐 LO (Local Automático do País)"
+        AppLanguage.INDONESIAN -> "🌐 LO (Lokal Otomatis Negara)"
+        else -> "🌐 LO (Local Country Auto)"
+    }
+
+    fun languagePickerDetectedLang(lang: AppLanguage, name: String, nativeName: String): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "检测到的语言：$name ($nativeName)"
+        AppLanguage.JAPANESE -> "検出された言語: $name ($nativeName)"
+        AppLanguage.KOREAN -> "감지된 언어: $name ($nativeName)"
+        AppLanguage.ARABIC -> "اللغة المكتشفة: $name ($nativeName)"
+        AppLanguage.SPANISH -> "Idioma detectado: $name ($nativeName)"
+        AppLanguage.FRENCH -> "Langue détectée : $name ($nativeName)"
+        AppLanguage.GERMAN -> "Erkannte Sprache: $name ($nativeName)"
+        AppLanguage.RUSSIAN -> "Обнаруженный язык: $name ($nativeName)"
+        AppLanguage.PORTUGUESE -> "Idioma detectado: $name ($nativeName)"
+        AppLanguage.INDONESIAN -> "Bahasa terdeteksi: $name ($nativeName)"
+        else -> "Detected language: $name ($nativeName)"
+    }
+
+    fun languagePickerDetectedLocation(lang: AppLanguage, area: String): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "位置：$area"
+        AppLanguage.JAPANESE -> "位置: $area"
+        AppLanguage.KOREAN -> "위치: $area"
+        AppLanguage.ARABIC -> "الموقع: $area"
+        AppLanguage.SPANISH -> "Ubicación: $area"
+        AppLanguage.FRENCH -> "Emplacement : $area"
+        AppLanguage.GERMAN -> "Standort: $area"
+        AppLanguage.RUSSIAN -> "Местоположение: $area"
+        AppLanguage.PORTUGUESE -> "Localização: $area"
+        AppLanguage.INDONESIAN -> "Lokasi: $area"
+        else -> "Location: $area"
+    }
+
+    fun languagePickerEnglishTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "🇬🇧 EN (全球通用英语)"
+        AppLanguage.JAPANESE -> "🇬🇧 EN (グローバル英語)"
+        AppLanguage.KOREAN -> "🇬🇧 EN (글로벌 영어)"
+        AppLanguage.ARABIC -> "🇬🇧 EN (إنجليزية عالمية)"
+        AppLanguage.SPANISH -> "🇬🇧 EN (Inglés Global)"
+        AppLanguage.FRENCH -> "🇬🇧 EN (Anglais global)"
+        AppLanguage.GERMAN -> "🇬🇧 EN (Globales Englisch)"
+        AppLanguage.RUSSIAN -> "🇬🇧 EN (Глобальный английский)"
+        AppLanguage.PORTUGUESE -> "🇬🇧 EN (Inglês Global)"
+        AppLanguage.INDONESIAN -> "🇬🇧 EN (English Global)"
+        else -> "🇬🇧 EN (English Global)"
+    }
+
+    fun languagePickerEnglishDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "国际语言模式"
+        AppLanguage.JAPANESE -> "国際言語モード"
+        AppLanguage.KOREAN -> "국제 언어 모드"
+        AppLanguage.ARABIC -> "وضع اللغة الدولية"
+        AppLanguage.SPANISH -> "Modo de idioma internacional"
+        AppLanguage.FRENCH -> "Mode langue internationale"
+        AppLanguage.GERMAN -> "Internationaler Sprachmodus"
+        AppLanguage.RUSSIAN -> "Международный языковой режим"
+        AppLanguage.PORTUGUESE -> "Modo de idioma internacional"
+        AppLanguage.INDONESIAN -> "Mode bahasa internasional"
+        else -> "International language mode"
+    }
+
+    fun languagePickerTestOtherLangs(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "直接体验其他国家语言："
+        AppLanguage.JAPANESE -> "他の国の言語を直接試す:"
+        AppLanguage.KOREAN -> "다른 국가 언어 직접 테스트:"
+        AppLanguage.ARABIC -> "تجربة لغات البلدان الأخرى مباشرة:"
+        AppLanguage.SPANISH -> "Probar directamente idiomas de otros países:"
+        AppLanguage.FRENCH -> "Tester directement les langues d'autres pays :"
+        AppLanguage.GERMAN -> "Sprachen anderer Länder direkt testen:"
+        AppLanguage.RUSSIAN -> "Опробовать языки других стран:"
+        AppLanguage.PORTUGUESE -> "Testar diretamente idiomas de outros países:"
+        AppLanguage.INDONESIAN -> "Uji Coba Langsung Bahasa Negara Lain:"
+        else -> "Directly Test Other Country Languages:"
+    }
+
+    fun deleteAccountSuccessToast(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "您的账号及所有数据已成功删除。"
+        AppLanguage.JAPANESE -> "アカウントとすべてのデータが正常に削除されました。"
+        AppLanguage.KOREAN -> "계정 및 모든 데이터가 성공적으로 삭제되었습니다."
+        AppLanguage.ARABIC -> "تم حذف حسابك وجميع بياناتك بنجاح."
+        AppLanguage.SPANISH -> "Tu cuenta y todos tus datos se han eliminado correctamente."
+        AppLanguage.FRENCH -> "Votre compte et toutes vos données ont été supprimés avec succès."
+        AppLanguage.GERMAN -> "Dein Konto und alle Daten wurden erfolgreich gelöscht."
+        AppLanguage.RUSSIAN -> "Ваш аккаунт и все данные были успешно удалены."
+        AppLanguage.PORTUGUESE -> "Sua conta e todos os dados foram excluídos com sucesso."
+        AppLanguage.INDONESIAN -> "Akun dan seluruh data Anda telah berhasil dihapus."
+        else -> "Your account and all data have been successfully deleted."
+    }
+
+    fun testNotificationSampleMessage(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "通知与震动反馈运行正常！📳✨"
+        AppLanguage.JAPANESE -> "通知とバイブレーションが正常に機能しています！📳✨"
+        AppLanguage.KOREAN -> "알림 및 진동 효과가 정상 작동 중입니다! 📳✨"
+        AppLanguage.ARABIC -> "الإشعارات والاهتزاز يعملان بشكل مثالي! 📳✨"
+        AppLanguage.SPANISH -> "¡Las notificaciones y la vibración funcionan de manera óptima! 📳✨"
+        AppLanguage.FRENCH -> "Les notifications et la vibration fonctionnent de manière optimale ! 📳✨"
+        AppLanguage.GERMAN -> "Benachrichtigungen und Vibration funktionieren optimal! 📳✨"
+        AppLanguage.RUSSIAN -> "Уведомления и вибрация работают отлично! 📳✨"
+        AppLanguage.PORTUGUESE -> "Notificações e vibração funcionando de forma ideal! 📳✨"
+        AppLanguage.INDONESIAN -> "Notifikasi & efek getar berhasil berfungsi optimal! 📳✨"
+        else -> "Notifications & vibration feedback are functioning optimally! 📳✨"
+    }
+
+    fun testNotificationTriggerToast(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "正在触发新消息通知与震动 🔔📳"
+        AppLanguage.JAPANESE -> "新着メッセージ通知とバイブレーションを実行 🔔📳"
+        AppLanguage.KOREAN -> "새 메시지 알림 및 진동 실행 중 🔔📳"
+        AppLanguage.ARABIC -> "تفعيل إشعار الرسالة الجديدة والاهتزاز 🔔📳"
+        AppLanguage.SPANISH -> "Activando notificación y vibración de nuevo mensaje 🔔📳"
+        AppLanguage.FRENCH -> "Déclenchement de la notification et vibration de nouveau message 🔔📳"
+        AppLanguage.GERMAN -> "Benachrichtigung & Vibration für neue Nachricht ausgelöst 🔔📳"
+        AppLanguage.RUSSIAN -> "Запуск уведомления и вибрации для нового сообщения 🔔📳"
+        AppLanguage.PORTUGUESE -> "Disparando notificação e vibração de nova mensagem 🔔📳"
+        AppLanguage.INDONESIAN -> "Memicu notifikasi & efek getar pesan baru 🔔📳"
+        else -> "Triggering new message notification & vibration 🔔📳"
+    }
+
+    fun locationPermissionGrantedToast(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "位置权限已成功开启"
+        AppLanguage.JAPANESE -> "位置情報の権限が有効になりました"
+        AppLanguage.KOREAN -> "위치 권한이 활성화되었습니다"
+        AppLanguage.ARABIC -> "تم تفعيل إذن الموقع بنجاح"
+        AppLanguage.SPANISH -> "Permiso de ubicación activado con éxito"
+        AppLanguage.FRENCH -> "Autorisation de localisation activée avec succès"
+        AppLanguage.GERMAN -> "Standortberechtigung erfolgreich aktiviert"
+        AppLanguage.RUSSIAN -> "Разрешение на местоположение успешно включено"
+        AppLanguage.PORTUGUESE -> "Permissão de localização ativada com sucesso"
+        AppLanguage.INDONESIAN -> "Izin lokasi berhasil diaktifkan"
+        else -> "Location permission successfully enabled"
+    }
+
+    fun locationPermissionDeniedToast(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "尚未授予位置权限"
+        AppLanguage.JAPANESE -> "位置情報の権限が許可されていません"
+        AppLanguage.KOREAN -> "위치 권한이 부여되지 않았습니다"
+        AppLanguage.ARABIC -> "لم يتم منح إذن الموقع"
+        AppLanguage.SPANISH -> "Permiso de ubicación no concedido"
+        AppLanguage.FRENCH -> "Autorisation de localisation non accordée"
+        AppLanguage.GERMAN -> "Standortberechtigung nicht erteilt"
+        AppLanguage.RUSSIAN -> "Разрешение на местоположение не предоставлено"
+        AppLanguage.PORTUGUESE -> "Permissão de localização não concedida"
+        AppLanguage.INDONESIAN -> "Izin lokasi belum diberikan"
+        else -> "Location permission not granted"
+    }
+
+    fun developerModeToast(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "开发者模式：服务器设置 ☁️"
+        AppLanguage.JAPANESE -> "開発者モード: サーバー設定 ☁️"
+        AppLanguage.KOREAN -> "개발자 모드: 서버 설정 ☁️"
+        AppLanguage.ARABIC -> "وضع المطور: إعدادات الخادم ☁️"
+        AppLanguage.SPANISH -> "Modo Desarrollador: Configuración del Servidor ☁️"
+        AppLanguage.FRENCH -> "Mode développeur : Paramètres du serveur ☁️"
+        AppLanguage.GERMAN -> "Entwicklermodus: Servereinstellungen ☁️"
+        AppLanguage.RUSSIAN -> "Режим разработчика: Настройки сервера ☁️"
+        AppLanguage.PORTUGUESE -> "Modo Desenvolvedor: Configurações do Servidor ☁️"
+        AppLanguage.INDONESIAN -> "Mode Pengembang: Pengaturan Server ☁️"
+        else -> "Developer Mode: Server Settings ☁️"
+    }
+
+    fun chatLinkOpenError(lang: AppLanguage, url: String): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "无法打开链接：$url"
+        AppLanguage.JAPANESE -> "リンクを開けません: $url"
+        AppLanguage.KOREAN -> "링크를 열 수 없습니다: $url"
+        AppLanguage.ARABIC -> "تعذر فتح الرابط: $url"
+        AppLanguage.SPANISH -> "No se puede abrir el enlace: $url"
+        AppLanguage.FRENCH -> "Impossible d'ouvrir le lien : $url"
+        AppLanguage.GERMAN -> "Link kann nicht geöffnet werden: $url"
+        AppLanguage.RUSSIAN -> "Не удалось открыть ссылку: $url"
+        AppLanguage.PORTUGUESE -> "Não foi possível abrir o link: $url"
+        AppLanguage.INDONESIAN -> "Tidak dapat membuka tautan: $url"
+        else -> "Unable to open link: $url"
+    }
+
+    fun googleConnecting(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "正在连接 Google 账号..."
+        AppLanguage.JAPANESE -> "Googleアカウントに接続中..."
+        AppLanguage.KOREAN -> "Google 계정 연결 중..."
+        AppLanguage.ARABIC -> "جاري الاتصال بحساب Google..."
+        AppLanguage.SPANISH -> "Conectando cuenta de Google..."
+        AppLanguage.FRENCH -> "Connexion au compte Google..."
+        AppLanguage.GERMAN -> "Google-Konto wird verbunden..."
+        AppLanguage.RUSSIAN -> "Подключение аккаунта Google..."
+        AppLanguage.PORTUGUESE -> "Conectando conta do Google..."
+        AppLanguage.INDONESIAN -> "Menghubungkan akun Google..."
+        else -> "Connecting Google account..."
+    }
+
+    fun uploading(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "上传中..."
+        AppLanguage.JAPANESE -> "アップロード中..."
+        AppLanguage.KOREAN -> "업로드 중..."
+        AppLanguage.ARABIC -> "جاري الرفع..."
+        AppLanguage.SPANISH -> "Subiendo..."
+        AppLanguage.FRENCH -> "Téléchargement..."
+        AppLanguage.GERMAN -> "Wird hochgeladen..."
+        AppLanguage.RUSSIAN -> "Загрузка..."
+        AppLanguage.PORTUGUESE -> "Enviando..."
+        AppLanguage.INDONESIAN -> "Mengunggah..."
+        else -> "Uploading..."
+    }
+
+    fun supabaseTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "云端连接与同步"
+        AppLanguage.JAPANESE -> "クラウド接続 & 同期"
+        AppLanguage.KOREAN -> "클라우드 연결 & 동기화"
+        AppLanguage.ARABIC -> "اتصال السحابة والمزامنة"
+        AppLanguage.SPANISH -> "Conexión y Sincronización en la Nube"
+        AppLanguage.FRENCH -> "Connexion cloud & Synchronisation"
+        AppLanguage.GERMAN -> "Cloud-Verbindung & Synchronisierung"
+        AppLanguage.RUSSIAN -> "Облачное подключение и синхронизация"
+        AppLanguage.PORTUGUESE -> "Conexão na Nuvem e Sincronização"
+        AppLanguage.INDONESIAN -> "Koneksi Cloud & Sinkronisasi"
+        else -> "Cloud Connection & Sync"
+    }
+
+    fun supabaseConfigTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "凭证配置"
+        AppLanguage.JAPANESE -> "認証情報の設定"
+        AppLanguage.KOREAN -> "자격 증명 설정"
+        AppLanguage.ARABIC -> "إعداد بيانات الاعتماد"
+        AppLanguage.SPANISH -> "Configuración de Credenciales"
+        AppLanguage.FRENCH -> "Configuration des identifiants"
+        AppLanguage.GERMAN -> "Anmeldedaten-Konfiguration"
+        AppLanguage.RUSSIAN -> "Настройка учетных данных"
+        AppLanguage.PORTUGUESE -> "Configuração de Credenciais"
+        AppLanguage.INDONESIAN -> "Konfigurasi Kredensial"
+        else -> "Credentials Configuration"
+    }
+
+    fun supabaseBtnSave(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "保存"
+        AppLanguage.JAPANESE -> "保存"
+        AppLanguage.KOREAN -> "저장"
+        AppLanguage.ARABIC -> "حفظ"
+        AppLanguage.SPANISH -> "Guardar"
+        AppLanguage.FRENCH -> "Enregistrer"
+        AppLanguage.GERMAN -> "Speichern"
+        AppLanguage.RUSSIAN -> "Сохранить"
+        AppLanguage.PORTUGUESE -> "Salvar"
+        AppLanguage.INDONESIAN -> "Simpan"
+        else -> "Save"
+    }
+
+    fun supabaseBtnClear(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "清除凭证"
+        AppLanguage.JAPANESE -> "認証情報を削除"
+        AppLanguage.KOREAN -> "자격 증명 삭제"
+        AppLanguage.ARABIC -> "مسح بيانات الاعتماد"
+        AppLanguage.SPANISH -> "Borrar Credenciales"
+        AppLanguage.FRENCH -> "Effacer les identifiants"
+        AppLanguage.GERMAN -> "Anmeldedaten löschen"
+        AppLanguage.RUSSIAN -> "Удалить учетные данные"
+        AppLanguage.PORTUGUESE -> "Limpar Credenciais"
+        AppLanguage.INDONESIAN -> "Hapus Kredensial"
+        else -> "Clear Credentials"
+    }
+
+    fun supabaseSavedSnackbar(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "云端设置已成功保存！"
+        AppLanguage.JAPANESE -> "クラウド設定を保存しました！"
+        AppLanguage.KOREAN -> "클라우드 설정이 성공적으로 저장되었습니다!"
+        AppLanguage.ARABIC -> "تم حفظ إعدادات السحابة بنجاح!"
+        AppLanguage.SPANISH -> "¡Configuración de la nube guardada con éxito!"
+        AppLanguage.FRENCH -> "Paramètres cloud enregistrés avec succès !"
+        AppLanguage.GERMAN -> "Cloud-Einstellungen erfolgreich gespeichert!"
+        AppLanguage.RUSSIAN -> "Облачные настройки успешно сохранены!"
+        AppLanguage.PORTUGUESE -> "Configurações da nuvem salvas com sucesso!"
+        AppLanguage.INDONESIAN -> "Pengaturan cloud berhasil disimpan!"
+        else -> "Cloud settings saved successfully!"
+    }
+
+    fun supabaseScriptCopiedSnackbar(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "数据结构脚本已复制！"
+        AppLanguage.JAPANESE -> "データ構造スクリプトをコピーしました！"
+        AppLanguage.KOREAN -> "데이터 구조 스크립트가 복사되었습니다!"
+        AppLanguage.ARABIC -> "تم نسخ سكريبت هيكل البيانات!"
+        AppLanguage.SPANISH -> "¡Guión de estructura de datos copiado!"
+        AppLanguage.FRENCH -> "Script de structure de données copié !"
+        AppLanguage.GERMAN -> "Datenstruktur-Skript kopiert!"
+        AppLanguage.RUSSIAN -> "Скрипт структуры данных скопирован!"
+        AppLanguage.PORTUGUESE -> "Script de estrutura de dados copiado!"
+        AppLanguage.INDONESIAN -> "Skrip struktur data berhasil disalin!"
+        else -> "Data structure script copied!"
+    }
+
+    fun supabaseCronCopiedSnackbar(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "定时清理脚本已复制！"
+        AppLanguage.JAPANESE -> "自動クリーンアップスクリプトをコピーしました！"
+        AppLanguage.KOREAN -> "자동 정리 스크립트가 복사되었습니다!"
+        AppLanguage.ARABIC -> "تم نسخ سكريبت التنظيف التلقائي!"
+        AppLanguage.SPANISH -> "¡Guión de limpieza automática copiado!"
+        AppLanguage.FRENCH -> "Script de nettoyage automatique copié !"
+        AppLanguage.GERMAN -> "Bereinigungs-Cronjob-Skript kopiert!"
+        AppLanguage.RUSSIAN -> "Скрипт автоочистки скопирован!"
+        AppLanguage.PORTUGUESE -> "Script de limpeza automática copiado!"
+        AppLanguage.INDONESIAN -> "Skrip cronjob pembersihan berhasil disalin!"
+        else -> "Cleanup cronjob script copied!"
+    }
+
+    fun supabaseBtnCopyScript(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "复制代码"
+        AppLanguage.JAPANESE -> "スクリプトをコピー"
+        AppLanguage.KOREAN -> "스크립트 복사"
+        AppLanguage.ARABIC -> "نسخ السكريبت"
+        AppLanguage.SPANISH -> "Copiar Guión"
+        AppLanguage.FRENCH -> "Copier le script"
+        AppLanguage.GERMAN -> "Skript kopieren"
+        AppLanguage.RUSSIAN -> "Скопировать скрипт"
+        AppLanguage.PORTUGUESE -> "Copiar Script"
+        AppLanguage.INDONESIAN -> "Salin Skrip"
+        else -> "Copy Script"
+    }
+
+    fun supabaseStructureTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "数据同步结构"
+        AppLanguage.JAPANESE -> "データ同期構造"
+        AppLanguage.KOREAN -> "데이터 동기화 구조"
+        AppLanguage.ARABIC -> "بنية مزامنة البيانات"
+        AppLanguage.SPANISH -> "Estructura de Sincronización de Datos"
+        AppLanguage.FRENCH -> "Structure de synchronisation des données"
+        AppLanguage.GERMAN -> "Datensynchronisationsstruktur"
+        AppLanguage.RUSSIAN -> "Структура синхронизации данных"
+        AppLanguage.PORTUGUESE -> "Estrutura de Sincronização de Dados"
+        AppLanguage.INDONESIAN -> "Struktur Sinkronisasi Data"
+        else -> "Data Synchronization Structure"
+    }
+
+    fun supabaseStructureDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "用于同步 Lovy Chat 消息和个人资料的云数据结构初始化脚本："
+        AppLanguage.JAPANESE -> "Lovy Chat のメッセージとプロフィールを同期するためのクラウドデータ構造初期化スクリプト:"
+        AppLanguage.KOREAN -> "Lovy Chat 메시지 및 프로필 동기화를 위한 클라우드 데이터 구조 초기화 스크립트:"
+        AppLanguage.ARABIC -> "سكريبت تهيئة بنية البيانات السحابية لمزامنة رسائل وملفات Lovy Chat الشخصية:"
+        AppLanguage.SPANISH -> "Script de inicialización de estructura de datos en la nube para sincronizar mensajes y perfiles de Lovy Chat:"
+        AppLanguage.FRENCH -> "Script d'initialisation de la structure de données cloud pour synchroniser les messages et profils Lovy Chat :"
+        AppLanguage.GERMAN -> "Skript zur Initialisierung der Cloud-Datenstruktur für die Synchronisierung von Lovy Chat-Nachrichten und -Profilen:"
+        AppLanguage.RUSSIAN -> "Скрипт инициализации облачной структуры данных для синхронизации сообщений и профилей Lovy Chat:"
+        AppLanguage.PORTUGUESE -> "Script de inicialização da estrutura de dados na nuvem para sincronizar mensagens e perfis do Lovy Chat:"
+        AppLanguage.INDONESIAN -> "Skrip inisialisasi struktur data cloud untuk sinkronisasi pesan & profil Lovy Chat:"
+        else -> "Cloud data structure initialization script for synchronizing Lovy Chat messages & profiles:"
+    }
+
+    fun supabaseCronTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "定时任务与自动清理"
+        AppLanguage.JAPANESE -> "定期クローン & 自動クリーンアップ"
+        AppLanguage.KOREAN -> "크론 작업 & 자동 정리"
+        AppLanguage.ARABIC -> "المهام المجدولة والتنظيف التلقائي"
+        AppLanguage.SPANISH -> "Tareas Programadas y Limpieza Automática"
+        AppLanguage.FRENCH -> "Tâches planifiées & Nettoyage automatique"
+        AppLanguage.GERMAN -> "Cronjobs & Automatische Bereinigung"
+        AppLanguage.RUSSIAN -> "Cronjob и автоматическая очистка"
+        AppLanguage.PORTUGUESE -> "Tarefas Agendadas e Limpeza Automática"
+        AppLanguage.INDONESIAN -> "Cronjob & Pembersihan Otomatis"
+        else -> "Cronjob & Automatic Cleanup"
+    }
+
+    fun supabaseCronSubtitle(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "自动清理不活跃超过 15 天的账号、过期消息与无主数据"
+        AppLanguage.JAPANESE -> "15日以上非アクティブなアカウント、古いメッセージ、孤立データを削除"
+        AppLanguage.KOREAN -> "15일 이상 미활동 계정, 오래된 메시지, 고아 데이터 삭제"
+        AppLanguage.ARABIC -> "حذف الحسابات غير النشطة > 15 يوماً، الرسائل القديمة، والبيانات المعلقة"
+        AppLanguage.SPANISH -> "Eliminar cuentas inactivas > 15 días, mensajes antiguos y datos huérfanos"
+        AppLanguage.FRENCH -> "Supprimer les comptes inactifs > 15 jours, les messages obsolètes et les données orphelines"
+        AppLanguage.GERMAN -> "Inaktive Konten > 15 Tage, veraltete Nachrichten und verwaiste Daten löschen"
+        AppLanguage.RUSSIAN -> "Удаление неактивных аккаунтов > 15 дней, устаревших сообщений и потерянных данных"
+        AppLanguage.PORTUGUESE -> "Excluir contas inativas > 15 dias, mensagens antigas e dados órfãos"
+        AppLanguage.INDONESIAN -> "Hapus akun inaktif > 15 hari, pesan usang, dan data yatim"
+        else -> "Purge inactive accounts > 15 days, obsolete messages, and orphan data"
+    }
+
+    fun supabaseCronDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "在 Supabase 控制台的 SQL Editor 中运行此脚本。它将安装 pg_cron 扩展、级联外键，并设置每日自动任务（UTC 03:00）清理 15 天未活跃的账户及过期历史消息。"
+        AppLanguage.JAPANESE -> "SupabaseダッシュボードのSQL Editorでこのスクリプトを実行してください。pg_cron拡張、CASCADE外部キー、および毎日UTC 03:00に非アクティブアカウントと古いチャットを整理する自動化をセットアップします。"
+        AppLanguage.KOREAN -> "Supabase 대시보드의 SQL Editor에서 이 스크립트를 실행하세요. pg_cron 확장, CASCADE 외래 키 및 매일 03:00 UTC에 15일 이상 미활동 계정과 오래된 대화를 정리하는 일일 자동화 기능을 설치합니다."
+        AppLanguage.ARABIC -> "قم بتشغيل هذا السكريبت في محرر SQL في لوحة تحكم Supabase. يقوم بتثبيت إضافة pg_cron ومفاتيح الربط التلقائي، ووظيفة يومية (الساعة 03:00 UTC) لحذف الحسابات غير النشطة والرسائل القديمة."
+        AppLanguage.SPANISH -> "Ejecuta este script en el Editor SQL de Supabase. Instala la extensión pg_cron, claves foráneas CASCADE y una función diaria (03:00 UTC) para purgar cuentas inactivas > 15 días y chats antiguos."
+        AppLanguage.FRENCH -> "Exécutez ce script dans l'éditeur SQL de Supabase. Il installe l'extension pg_cron, les clés étrangères CASCADE et une tâche quotidienne (03:00 UTC) pour purger les comptes inactifs > 15 jours et l'historique obsolète."
+        AppLanguage.GERMAN -> "Führe dieses Skript im SQL-Editor des Supabase-Dashboards aus. Es richtet pg_cron, CASCADE-Fremdschlüssel und eine tägliche Funktion (03:00 UTC) zur Bereinigung inaktiver Konten und alter Chats ein."
+        AppLanguage.RUSSIAN -> "Запустите этот скрипт в редакторе SQL в панели Supabase. Он устанавливает расширение pg_cron, каскадные внешние ключи и ежедневную задачу (03:00 UTC) для очистки неактивных аккаунтов и старых чатов."
+        AppLanguage.PORTUGUESE -> "Execute este script no Editor SQL do Supabase. Ele instala a extensão pg_cron, chaves estrangeiras CASCADE e uma rotina diária (03:00 UTC) para limpar contas inativas > 15 dias e conversas antigas."
+        AppLanguage.INDONESIAN -> "Jalankan skrip ini di SQL Editor dashboard Supabase. Skrip ini memasang ekstensi pg_cron, foreign key CASCADE, dan fungsi otomatisasi harian (pukul 03:00 UTC) untuk menghapus akun tidak aktif > 15 hari dan membersihkan riwayat obrolan usang."
+        else -> "Run this script in Supabase dashboard SQL Editor. It installs pg_cron extension, CASCADE foreign keys, and a daily automated function (03:00 UTC) to purge inactive accounts > 15 days and obsolete chat history."
     }
 }
 
