@@ -112,7 +112,7 @@ private fun Context.findActivity(): Activity? {
 fun NearbyScreen(
     users: List<User>,
     selectedGenderFilter: Gender?,
-    selectedOnlyOnlineFilter: Boolean = false,
+    selectedOnlyOnlineFilter: Boolean = true,
     isScanning: Boolean,
     isExpanded: Boolean = false,
     nearbyExpansionTier: Int = 0,
@@ -194,13 +194,10 @@ fun NearbyScreen(
 
     val filteredUsers = remember(users, selectedGenderFilter, selectedOnlyOnlineFilter, isUserBlocked) {
         val unblocked = users.filterNot { isUserBlocked(it.id, it.name) }
-        val genderFiltered = if (selectedGenderFilter == null) unblocked
-        else unblocked.filter { it.gender == selectedGenderFilter }
-        if (selectedOnlyOnlineFilter) {
-            genderFiltered.filter { it.isOnline }
-        } else {
-            genderFiltered
-        }
+        // Radar dan daftar pengguna secara ketat HANYA menampilkan pengguna yang benar-benar aktif online
+        val onlineOnlyUsers = unblocked.filter { it.isOnline }
+        if (selectedGenderFilter == null) onlineOnlyUsers
+        else onlineOnlyUsers.filter { it.gender == selectedGenderFilter }
     }
 
     val displayedLimit = when (nearbyExpansionTier) {
@@ -529,15 +526,25 @@ fun NearbyScreen(
                 )
 
                 FilterChip(
-                    selected = selectedOnlyOnlineFilter,
-                    onClick = { onOnlyOnlineFilterChange(!selectedOnlyOnlineFilter) },
+                    selected = true,
+                    onClick = {
+                        android.widget.Toast.makeText(
+                            context,
+                            if (language == com.example.util.AppLanguage.INDONESIAN) {
+                                "Radar dan daftar pengguna saat ini hanya menampilkan pengguna yang benar-benar aktif online ✨"
+                            } else {
+                                "Radar and user list only display users who are currently active online ✨"
+                            },
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    },
                     label = { 
                         Text(
-                            text = "🟢 ${com.example.util.AppStrings.nearbyOnlineOnlyFilter(language)}",
+                            text = "🟢 ${com.example.util.AppStrings.nearbyOnlineOnlyFilter(language)} (${filteredUsers.size})",
                             maxLines = 1,
                             softWrap = false,
                             fontSize = 11.5.sp,
-                            fontWeight = if (selectedOnlyOnlineFilter) FontWeight.Bold else FontWeight.Medium
+                            fontWeight = FontWeight.Bold
                         ) 
                     },
                     colors = FilterChipDefaults.filterChipColors(
@@ -571,10 +578,14 @@ fun NearbyScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    val radarInfo = if (selectedOnlyOnlineFilter) {
-                        com.example.util.AppStrings.nearbyStatusOnlineText(language, displayedUsers.size, filteredUsers.size, hasHiddenUsers)
+                    val radarInfo = if (displayedUsers.isEmpty()) {
+                        if (language == com.example.util.AppLanguage.INDONESIAN) {
+                            "Belum ada pengguna lain yang sedang online di sekitar Anda saat ini."
+                        } else {
+                            "No other users are currently online near you."
+                        }
                     } else {
-                        com.example.util.AppStrings.nearbyStatusAllText(language, displayedUsers.size, filteredUsers.size, !hasHiddenUsers)
+                        com.example.util.AppStrings.nearbyStatusOnlineText(language, displayedUsers.size, filteredUsers.size, hasHiddenUsers)
                     }
                     Text(
                         text = radarInfo,

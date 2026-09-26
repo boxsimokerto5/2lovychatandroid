@@ -19,6 +19,12 @@ data class SupabaseUserDto(
 )
 
 @JsonClass(generateAdapter = true)
+data class SupabaseUserPresenceDto(
+    @Json(name = "is_online") val isOnline: Boolean,
+    @Json(name = "last_active_at") val lastActiveAt: Long
+)
+
+@JsonClass(generateAdapter = true)
 data class SupabaseBottleDto(
     @Json(name = "id") val id: String,
     @Json(name = "sender_id") val senderId: String,

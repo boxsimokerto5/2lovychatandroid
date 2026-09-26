@@ -538,6 +538,24 @@ fun NearbyRadarView(
                         )
                     }
 
+                    if (users.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .offset(y = 48.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color.Black.copy(alpha = 0.65f))
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = if (language == AppLanguage.INDONESIAN) "Menunggu pengguna aktif..." else "Waiting for active users...",
+                                color = Color(0xFFB9F6CA),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+
                     // 3. Letakkan Avatar Teman Sekitar di Koordinat Polar Radar Secara Merata & Tanpa Menumpuk
                     val radarPositions = remember(users.size) { calculateRadarPositions(users.size) }
                     val avatarSize = when {
@@ -636,7 +654,19 @@ fun NearbyRadarView(
             ) {
                 // Teks petunjuk sentuh
                 Text(
-                    text = "Sentuh avatar di radar untuk melihat profil & menyapa",
+                    text = if (users.isEmpty()) {
+                        if (language == AppLanguage.INDONESIAN) {
+                            "📡 Memindai sekitar... Belum ada pengguna lain yang aktif di radar saat ini"
+                        } else {
+                            "📡 Scanning nearby... No other active users on the radar right now"
+                        }
+                    } else {
+                        if (language == AppLanguage.INDONESIAN) {
+                            "🟢 Menampilkan ${users.size} pengguna yang sedang aktif online di radar"
+                        } else {
+                            "🟢 Showing ${users.size} currently active online users on radar"
+                        }
+                    },
                     fontSize = 11.5.sp,
                     color = Color(0xFF81C784),
                     textAlign = TextAlign.Center,
@@ -788,9 +818,9 @@ fun NearbyRadarView(
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = if (language == AppLanguage.INDONESIAN) {
-                                "Radar Maksimal Aktif • ${users.size} Pengguna Terbuka ✨"
+                                "Radar Aktif • ${users.size} Pengguna Online ✨"
                             } else {
-                                "Max Radar Active • ${users.size} Users Unlocked ✨"
+                                "Active Radar • ${users.size} Users Online ✨"
                             },
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.SemiBold,

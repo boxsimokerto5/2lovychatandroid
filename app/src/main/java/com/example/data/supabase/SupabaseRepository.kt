@@ -10,7 +10,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class SupabaseRepository {
-    private val TAG = "SupabaseRepository"
+    companion object {
+        private const val TAG = "SupabaseRepository"
+        // Toleransi batas waktu online: 15 menit (900.000 ms) sejak detak jantung/aktivitas terakhir
+        const val ONLINE_TIMEOUT_MS = 15 * 60 * 1000L
+    }
 
     suspend fun testConnection(): Result<String> = withContext(Dispatchers.IO) {
         val api = SupabaseClient.getApi()
@@ -67,6 +71,8 @@ class SupabaseRepository {
                     "dimas danendra", "clarissa aurelia", "salma salsabil",
                     "tanpa nama", "user tak bernama", "pengguna", "unknown user", "anonymous"
                 )
+                val now = System.currentTimeMillis()
+
                 list
                     .filterNot { dto ->
                         val cleanName = dto.name.trim()
@@ -75,6 +81,8 @@ class SupabaseRepository {
                         dto.id.matches(Regex("^u[0-9]+$"))
                     }
                     .map { dto ->
+                        val lastActive = dto.lastActiveAt ?: 0L
+                        val isTrulyOnline = (dto.isOnline == true) && (now - lastActive <= ONLINE_TIMEOUT_MS)
                         User(
                             id = dto.id,
                             name = dto.name.trim(),
@@ -83,7 +91,7 @@ class SupabaseRepository {
                             distanceMeters = dto.distanceMeters ?: 100,
                             bio = dto.bio ?: "",
                             avatarColorHex = dto.avatarHex ?: 0xFF2E7D32,
-                            isOnline = dto.isOnline ?: true,
+                            isOnline = isTrulyOnline,
                             city = dto.city?.takeIf { it.isNotBlank() } ?: "Indonesia",
                             avatarUrl = dto.avatarUrl
                         )
@@ -107,6 +115,9 @@ class SupabaseRepository {
             if (response.isSuccessful) {
                 val dto = response.body()?.firstOrNull() ?: return@withContext null
                 val cleanName = dto.name.trim().takeIf { it.isNotBlank() } ?: "Teman Lovy"
+                val now = System.currentTimeMillis()
+                val lastActive = dto.lastActiveAt ?: 0L
+                val isTrulyOnline = (dto.isOnline == true) && (now - lastActive <= ONLINE_TIMEOUT_MS)
                 User(
                     id = dto.id,
                     name = cleanName,
@@ -115,7 +126,7 @@ class SupabaseRepository {
                     distanceMeters = dto.distanceMeters ?: 100,
                     bio = dto.bio ?: "",
                     avatarColorHex = dto.avatarHex ?: 0xFF2E7D32,
-                    isOnline = dto.isOnline ?: true,
+                    isOnline = isTrulyOnline,
                     city = dto.city?.takeIf { it.isNotBlank() } ?: "Indonesia",
                     avatarUrl = dto.avatarUrl
                 )
@@ -761,18 +772,32 @@ class SupabaseRepository {
         }
     }
 
-    suspend fun updateUserLastActive(userId: String): Boolean = withContext(Dispatchers.IO) {
+    suspend fun updateUserPresence(userId: String, isOnline: Boolean = true): Boolean = withContext(Dispatchers.IO) {
+        if (userId.isBlank()) return@withContext false
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
 
         try {
-            val response = api.updateUserActive(apiKey, auth, "eq.$userId", mapOf("last_active_at" to System.currentTimeMillis()))
-            response.isSuccessful
+            val presenceDto = SupabaseUserPresenceDto(
+                isOnline = isOnline,
+                lastActiveAt = System.currentTimeMillis()
+            )
+            val response = api.updateUserPresence(apiKey, auth, "eq.$userId", presenceDto)
+            if (response.isSuccessful) {
+                true
+            } else {
+                // Fallback untuk schema database jika diperlukan
+                api.updateUserActive(apiKey, auth, "eq.$userId", mapOf("last_active_at" to System.currentTimeMillis())).isSuccessful
+            }
         } catch (e: Exception) {
-            Log.w(TAG, "Gagal memperbarui last_active_at pengguna", e)
+            Log.w(TAG, "Gagal memperbarui presence status pengguna di Supabase", e)
             false
         }
+    }
+
+    suspend fun updateUserLastActive(userId: String): Boolean = withContext(Dispatchers.IO) {
+        updateUserPresence(userId, isOnline = true)
     }
 
     suspend fun updateUserFcmToken(userId: String, token: String): Boolean = withContext(Dispatchers.IO) {

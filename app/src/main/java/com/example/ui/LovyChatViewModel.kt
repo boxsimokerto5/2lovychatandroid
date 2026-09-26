@@ -19,6 +19,7 @@ import com.example.model.User
 import com.example.model.UserProfile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -56,7 +57,7 @@ data class LovyChatUiState(
     val ignoredNewFriendIds: Set<String> = emptySet(),
 
     val nearbyGenderFilter: Gender? = null,
-    val nearbyOnlyOnlineFilter: Boolean = false,
+    val nearbyOnlyOnlineFilter: Boolean = true,
     val isScanningNearby: Boolean = false,
     val conversations: List<ChatConversation> = emptyList(),
     val messagesMap: Map<String, List<ChatMessage>> = emptyMap(),
@@ -143,6 +144,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     private var lastSyncedLat: Double? = null
     private var lastSyncedLon: Double? = null
     private var lastUserActivityTimestamp = 0L
+    private var heartbeatJob: kotlinx.coroutines.Job? = null
     private var lastTypingSentTime = 0L
     private val typingTimeoutJobs = mutableMapOf<String, kotlinx.coroutines.Job>()
 
@@ -193,8 +195,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         // Pembaruan GPS di-throttle: hanya jika berpindah > 500m atau jeda > 10 menit
         private const val GPS_THROTTLE_MIN_DISTANCE_METERS = 500.0
         private const val GPS_THROTTLE_MIN_INTERVAL_MS = 10 * 60 * 1000L
-        // User activity heartbeat di-throttle ke database cloud minimal jeda 5 menit
-        private const val USER_ACTIVITY_THROTTLE_MS = 5 * 60 * 1000L
+        // User activity heartbeat di-throttle ke database cloud jeda 1 menit
+        private const val USER_ACTIVITY_THROTTLE_MS = 60 * 1000L
     }
 
     private val _uiState = MutableStateFlow(LovyChatUiState())
@@ -219,7 +221,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         checkInitialGpsLocation()
         observeUserProfile()
         observeChatFriends()
-        updateUserActivity()
+        updateUserActivity(force = true)
+        startHeartbeatLoop()
         initFirebaseMessaging()
         initDefaultNotifications()
         viewModelScope.launch(Dispatchers.IO) {
@@ -914,19 +917,39 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun updateUserActivity() {
+    fun updateUserActivity(force: Boolean = false) {
         if (_uiState.value.isGuest) return // Mode Tamu tidak mengirim heartbeat ke Supabase
         val now = System.currentTimeMillis()
-        if (now - lastUserActivityTimestamp < USER_ACTIVITY_THROTTLE_MS) {
-            // Abaikan heartbeat berulang jika belum lewat 5 menit (sangat menghemat kuota tulis)
+        if (!force && now - lastUserActivityTimestamp < USER_ACTIVITY_THROTTLE_MS) {
             return
         }
         lastUserActivityTimestamp = now
+        val myId = _uiState.value.myLovyId
+        if (myId.isBlank()) return
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                supabaseRepo.updateUserLastActive(_uiState.value.myLovyId)
+                supabaseRepo.updateUserPresence(myId, isOnline = true)
             } catch (e: Exception) {
-                Log.w("LovyChatViewModel", "Gagal update last_active_at", e)
+                Log.w("LovyChatViewModel", "Gagal update presence online", e)
+            }
+        }
+    }
+
+    private fun startHeartbeatLoop() {
+        heartbeatJob?.cancel()
+        heartbeatJob = viewModelScope.launch(Dispatchers.IO) {
+            while (isActive) {
+                val state = _uiState.value
+                val myId = state.myLovyId.trim()
+                if (!state.isGuest && myId.isNotBlank() && state.isLoggedIn) {
+                    try {
+                        supabaseRepo.updateUserPresence(myId, isOnline = true)
+                    } catch (e: Exception) {
+                        Log.w("LovyChatViewModel", "Detak online presence gagal: ${e.message}")
+                    }
+                }
+                // Kirim heartbeat setiap 60 detik (1 menit) saat aplikasi sedang digunakan
+                kotlinx.coroutines.delay(60_000L)
             }
         }
     }
@@ -1760,8 +1783,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 if (remoteUsers != null) {
                     val myId = _uiState.value.myLovyId
                     val filtered = remoteUsers
-                        .filterNot { it.id == myId || it.id == "current_user" }
+                        .filterNot { it.id == myId || it.id == "current_user" || isSelfUser(it.id, it.name) }
                         .filterNot { isUserBlocked(it.id, it.name) }
+                        .filterNot { isDummyFriend(it.id, it.name) }
+                        .filter { it.isOnline } // HANYA pengguna yang benar-benar aktif & online
                         .shuffled() // Diacak agar penemuan teman terasa dinamis & adil (misal 400m, 1km, 200m)
                     _uiState.update { it.copy(nearbyUsers = filtered) }
                     lastNearbyScanTime = System.currentTimeMillis()
@@ -2174,10 +2199,15 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun loginAsGuest() {
-        // Mode Tamu dihapus
+        _uiState.update { it.copy(isLoggedIn = true, isGuest = true) }
+    }
+
+    fun continueAsGuest() {
+        loginAsGuest()
     }
 
     fun logout() {
+        heartbeatJob?.cancel()
         periodicIncomingChatJob?.cancel()
         realtimeSubscriptionJob?.cancel()
         SupabaseRealtimeManager.disconnect()
@@ -2188,8 +2218,11 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         val wasRealUser = !_uiState.value.isGuest && _uiState.value.isLoggedIn
         if (wasRealUser) {
             val myId = _uiState.value.myLovyId
-            // Tandai dan hapus semua pesan di Supabase untuk pengirim saat logout
-            viewModelScope.launch {
+            // Tandai status offline di Supabase & bersihkan pesan pengirim saat logout
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    supabaseRepo.updateUserPresence(myId, isOnline = false)
+                } catch (_: Exception) {}
                 try {
                     supabaseRepo.markAllSenderMessagesDeleted(myId)
                 } catch (e: Exception) {
@@ -2479,15 +2512,17 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
             delay(600)
 
-            // HANYA gunakan pengguna nyata dari Supabase
+            // HANYA gunakan pengguna nyata dari Supabase yang benar-benar online
             val remoteUsers = if (!isCacheValid || forceRefresh) supabaseRepo.fetchNearbyUsers() else _uiState.value.nearbyUsers
             lastNearbyScanTime = System.currentTimeMillis()
+            updateUserActivity(force = true)
             val myId = _uiState.value.myLovyId
             val filtered = (remoteUsers ?: emptyList())
                 .filterNot { it.id == myId || it.id == "current_user" || isSelfUser(it.id, it.name) }
                 .filterNot { it.name.trim().isBlank() }
                 .filterNot { isUserBlocked(it.id, it.name) }
                 .filterNot { isDummyFriend(it.id, it.name) }
+                .filter { it.isOnline } // Pastikan HANYA pengguna yang benar-benar aktif/online
             _uiState.update { it.copy(isScanningNearby = false, nearbyUsers = filtered) }
         }
     }
@@ -2839,7 +2874,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                                     lastMessage = lastMsg.text,
                                     lastTimestamp = lastMsg.timestamp,
                                     unreadCount = 0,
-                                    isOnline = partnerUser?.isOnline ?: true,
+                                    isOnline = partnerUser?.isOnline ?: false,
                                     partnerAvatarUrl = partnerUser?.avatarUrl,
                                     lastMessageIsFromMe = lastMsg.isFromMe,
                                     lastMessageIsRead = lastMsg.isRead,
@@ -4023,7 +4058,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     avatarColorHex = partnerUser?.avatarColorHex ?: 0xFF00A86B,
                     avatarUrl = partnerUser?.avatarUrl,
                     city = partnerUser?.city ?: "Indonesia",
-                    isOnline = partnerUser?.isOnline ?: true
+                    isOnline = partnerUser?.isOnline ?: false
                 )
 
                 _uiState.update { state ->
@@ -4076,7 +4111,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                         lastMessage = lastMsg.text,
                         lastTimestamp = lastMsg.timestamp,
                         unreadCount = if (!lastMsg.isFromMe && _uiState.value.activeChatId != convId) 1 else 0,
-                        isOnline = partnerUser?.isOnline ?: true,
+                        isOnline = partnerUser?.isOnline ?: false,
                         partnerAvatarUrl = partnerUser?.avatarUrl,
                         lastMessageIsFromMe = lastMsg.isFromMe,
                         lastMessageIsRead = lastMsg.isRead,
@@ -4115,5 +4150,18 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             )
         }
         refreshNewFriendRequests()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        heartbeatJob?.cancel()
+        val myId = _uiState.value.myLovyId
+        if (!_uiState.value.isGuest && myId.isNotBlank()) {
+            kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    supabaseRepo.updateUserPresence(myId, isOnline = false)
+                } catch (_: Throwable) {}
+            }
+        }
     }
 }

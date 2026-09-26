@@ -601,8 +601,7 @@ fun MainAppScreen(
                                         uiState.conversations.filter { it.isOnline }.map { it.partnerName.lowercase() }).toSet()
 
                                 baseList.map { friend ->
-                                    val isNowOnline = friend.isOnline ||
-                                            friend.id in onlineIds ||
+                                    val isNowOnline = friend.id in onlineIds ||
                                             friend.id in onlinePartnerIds ||
                                             friend.name.lowercase() in onlineNames
                                     if (isNowOnline != friend.isOnline) friend.copy(isOnline = isNowOnline) else friend

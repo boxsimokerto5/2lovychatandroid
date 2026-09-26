@@ -43,6 +43,14 @@ interface SupabaseRestApi {
     ): Response<Unit>
 
     @PATCH("rest/v1/nearby_users")
+    suspend fun updateUserPresence(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") authHeader: String,
+        @Query("id") idFilter: String,
+        @Body presence: SupabaseUserPresenceDto
+    ): Response<Unit>
+
+    @PATCH("rest/v1/nearby_users")
     suspend fun updateUserFcmToken(
         @Header("apikey") apiKey: String,
         @Header("Authorization") authHeader: String,
