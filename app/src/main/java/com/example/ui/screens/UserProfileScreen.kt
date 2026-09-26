@@ -769,6 +769,7 @@ fun UserProfileScreen(
             name = userProfile.displayName,
             lovyId = userProfile.lovyId,
             avatarUrl = userProfile.profilePicture,
+            language = language,
             onDismiss = { showMyQrCodeDialog = false }
         )
     }

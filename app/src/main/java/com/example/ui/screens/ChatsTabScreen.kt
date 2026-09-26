@@ -677,7 +677,8 @@ fun ChatConversationItem(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.weight(1f)
                 ) {
-                    if (conversation.lastMessageIsFromMe) {
+                    val displayMsg = if (conversation.lastMessage.contains("Salam kenal dari fitur Teman Sekitar")) "" else conversation.lastMessage
+                    if (conversation.lastMessageIsFromMe && displayMsg.isNotBlank()) {
                         val tickColor = if (conversation.lastMessageIsRead) Color(0xFF34B7F1) else NeutralMedium
                         Icon(
                             imageVector = Icons.Default.DoneAll,
@@ -689,7 +690,7 @@ fun ChatConversationItem(
                         )
                     }
                     Text(
-                        text = conversation.lastMessage,
+                        text = displayMsg,
                         fontSize = 13.sp,
                         color = if (conversation.unreadCount > 0) NeutralDark else NeutralMedium,
                         fontWeight = if (conversation.unreadCount > 0) FontWeight.Medium else FontWeight.Normal,

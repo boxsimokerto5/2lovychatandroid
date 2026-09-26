@@ -114,6 +114,14 @@ class LocalChatRepository(context: Context) {
         }
     }
 
+    suspend fun deleteAutomatedGreetings() = withContext(Dispatchers.IO) {
+        try {
+            chatMessageDao.deleteAutomatedGreetings()
+        } catch (e: Exception) {
+            Log.e(TAG, "Gagal menghapus pesan otomatis lokal", e)
+        }
+    }
+
     suspend fun clearAllMessages() = withContext(Dispatchers.IO) {
         try {
             chatMessageDao.clearAll()

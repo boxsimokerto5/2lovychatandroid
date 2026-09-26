@@ -222,6 +222,11 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         updateUserActivity()
         initFirebaseMessaging()
         initDefaultNotifications()
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                localChatRepo.deleteAutomatedGreetings()
+            } catch (_: Exception) {}
+        }
         // Pulihkan sesi login jika sebelumnya pengguna sudah masuk
         try {
             val savedSession = authRepo.getSavedSession()
@@ -2552,67 +2557,31 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         updateUserActivity()
         val convId = getCanonicalConversationId(_uiState.value.myLovyId, user.id)
         val existing = _uiState.value.conversations.find { it.id == convId || it.partnerId == user.id }
-        val currentMsgs = _uiState.value.messagesMap[convId] ?: emptyList()
-        if (existing != null && currentMsgs.isNotEmpty()) {
-            openChat(convId, user.name, user.avatarColorHex)
-            return
-        }
         
-        val greetingText = "Halo ${user.name}! Salam kenal dari fitur Teman Sekitar ya 👋"
-        val newMsg = ChatMessage(
-            id = UUID.randomUUID().toString(),
-            conversationId = convId,
-            text = greetingText,
-            timestamp = System.currentTimeMillis(),
-            isFromMe = true
-        )
-
-        viewModelScope.launch(Dispatchers.IO) {
-            localChatRepo.saveMessage(newMsg)
-        }
-
-        val updatedMessages = (_uiState.value.messagesMap[convId] ?: emptyList()) + newMsg
-        val updatedConversations = if (existing != null) {
-            _uiState.value.conversations.map {
-                if (it.id == convId || it.id == existing.id) it.copy(id = convId, lastMessage = greetingText, lastTimestamp = System.currentTimeMillis()) else it
-            }
-        } else {
-            listOf(
-                ChatConversation(
-                    id = convId,
-                    partnerId = user.id,
-                    partnerName = user.name,
-                    partnerAvatarHex = user.avatarColorHex,
-                    partnerGender = user.gender,
-                    lastMessage = greetingText,
-                    lastTimestamp = System.currentTimeMillis(),
-                    unreadCount = 0,
-                    isOnline = user.isOnline,
-                    partnerAvatarUrl = user.avatarUrl,
-                    partnerAge = user.age,
-                    partnerDistanceMeters = user.distanceMeters,
-                    partnerCity = user.city
+        if (existing == null) {
+            val newConv = ChatConversation(
+                id = convId,
+                partnerId = user.id,
+                partnerName = user.name,
+                partnerAvatarHex = user.avatarColorHex,
+                partnerGender = user.gender,
+                lastMessage = "",
+                lastTimestamp = System.currentTimeMillis(),
+                unreadCount = 0,
+                isOnline = user.isOnline,
+                partnerAvatarUrl = user.avatarUrl,
+                partnerAge = user.age,
+                partnerDistanceMeters = user.distanceMeters,
+                partnerCity = user.city
+            )
+            _uiState.update {
+                it.copy(
+                    conversations = listOf(newConv) + it.conversations
                 )
-            ) + _uiState.value.conversations
+            }
         }
 
-        _uiState.update {
-            it.copy(
-                conversations = updatedConversations,
-                messagesMap = it.messagesMap + (convId to updatedMessages)
-            )
-        }
-
-        // Kirim ke Supabase dengan sender_id dan receiver_id asli
-        viewModelScope.launch {
-            supabaseRepo.sendChatMessage(
-                message = newMsg,
-                senderId = _uiState.value.myLovyId,
-                receiverId = user.id
-            )
-        }
-
-        // Open chat directly
+        // Buka ruang obrolan langsung tanpa mengirim pesan default otomatis
         openChat(convId, user.name, user.avatarColorHex)
     }
 
@@ -2651,10 +2620,31 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         markConversationAsRead(conversationId, partnerId)
         com.example.util.LovyNotificationHelper.cancelNotification(getApplication(), conversationId)
 
+        // Bersihkan pesan default otomatis lama dari memori jika masih ada
+        val currentMemoryMsgs = _uiState.value.messagesMap[conversationId]
+        if (currentMemoryMsgs != null && currentMemoryMsgs.any { it.text.contains("Salam kenal dari fitur Teman Sekitar") }) {
+            val cleanedMsgs = currentMemoryMsgs.filterNot { it.text.contains("Salam kenal dari fitur Teman Sekitar") }
+            _uiState.update { state ->
+                val updatedConvs = state.conversations.map { c ->
+                    if (c.id == conversationId && c.lastMessage.contains("Salam kenal dari fitur Teman Sekitar")) {
+                        c.copy(lastMessage = cleanedMsgs.lastOrNull()?.text ?: "")
+                    } else c
+                }
+                state.copy(
+                    messagesMap = state.messagesMap + (conversationId to cleanedMsgs),
+                    conversations = updatedConvs
+                )
+            }
+            viewModelScope.launch(Dispatchers.IO) {
+                localChatRepo.deleteAutomatedGreetings()
+            }
+        }
+
         // Muat pesan dari cache lokal Room jika state di memori masih kosong agar instan
         if ((_uiState.value.messagesMap[conversationId] ?: emptyList()).isEmpty()) {
             viewModelScope.launch(Dispatchers.IO) {
                 val cached = localChatRepo.getMessagesForConversation(conversationId)
+                    .filterNot { it.text.contains("Salam kenal dari fitur Teman Sekitar") }
                 if (cached.isNotEmpty()) {
                     withContext(Dispatchers.Main) {
                         _uiState.update { state ->
@@ -2759,6 +2749,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     val actualChatMsgs = remoteMsgs.filterNot { msg ->
                         msg.text.startsWith("__TYPING_") ||
                         msg.text == "__DELETED_FOR_EVERYONE__" ||
+                        msg.text.contains("Salam kenal dari fitur Teman Sekitar") ||
                         deletedMessageIds.contains(msg.id) ||
                         msg.timestamp <= convDeletedTimestamp ||
                         (msg.isFromMe && msg.deletedForSender) ||
@@ -2921,54 +2912,28 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
         val convId = getCanonicalConversationId(_uiState.value.myLovyId, bottle.senderId)
         val existing = _uiState.value.conversations.find { it.id == convId || it.partnerId == bottle.senderId }
-        val greetingText = "Halo ${bottle.senderName}! Aku menemukan pesan botolmu: \"${bottle.content.take(30)}...\" 🍾🌊"
-        val newMsg = ChatMessage(
-            id = UUID.randomUUID().toString(),
-            conversationId = convId,
-            text = greetingText,
-            timestamp = System.currentTimeMillis(),
-            isFromMe = true
-        )
-        viewModelScope.launch(Dispatchers.IO) {
-            localChatRepo.saveMessage(newMsg)
-        }
-        val updatedMessages = (_uiState.value.messagesMap[convId] ?: emptyList()) + newMsg
-        val updatedConversations = if (existing != null) {
-            _uiState.value.conversations.map {
-                if (it.id == convId || it.id == existing.id) it.copy(id = convId, lastMessage = greetingText, lastTimestamp = System.currentTimeMillis()) else it
+        
+        if (existing == null) {
+            val newConv = ChatConversation(
+                id = convId,
+                partnerId = bottle.senderId,
+                partnerName = bottle.senderName,
+                partnerAvatarHex = bottle.avatarHex,
+                partnerGender = bottle.senderGender,
+                lastMessage = "",
+                lastTimestamp = System.currentTimeMillis(),
+                unreadCount = 0,
+                isOnline = true,
+                partnerAvatarUrl = bottle.avatarUrl
+            )
+            _uiState.update {
+                it.copy(
+                    fishedBottle = null,
+                    conversations = listOf(newConv) + it.conversations
+                )
             }
         } else {
-            listOf(
-                ChatConversation(
-                    id = convId,
-                    partnerId = bottle.senderId,
-                    partnerName = bottle.senderName,
-                    partnerAvatarHex = bottle.avatarHex,
-                    partnerGender = bottle.senderGender,
-                    lastMessage = greetingText,
-                    lastTimestamp = System.currentTimeMillis(),
-                    unreadCount = 0,
-                    isOnline = true,
-                    partnerAvatarUrl = bottle.avatarUrl
-                )
-            ) + _uiState.value.conversations
-        }
-
-        _uiState.update {
-            it.copy(
-                fishedBottle = null,
-                conversations = updatedConversations,
-                messagesMap = it.messagesMap + (convId to updatedMessages)
-            )
-        }
-
-        // Kirim langsung ke Supabase untuk pesan balasan botol
-        viewModelScope.launch {
-            supabaseRepo.sendChatMessage(
-                message = newMsg,
-                senderId = _uiState.value.myLovyId,
-                receiverId = bottle.senderId
-            )
+            _uiState.update { it.copy(fishedBottle = null) }
         }
 
         openChat(convId, bottle.senderName, bottle.avatarHex)
@@ -3832,6 +3797,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             val chatDtos = dtoList.filterNot { dto ->
                 dto.text.startsWith("__TYPING_") || 
                 dto.text == "__DELETED_FOR_EVERYONE__" ||
+                dto.text.contains("Salam kenal dari fitur Teman Sekitar") ||
                 deletedMessageIds.contains(dto.id) ||
                 dto.createdAt <= convDeletedTimestamp ||
                 (dto.deletedForSender == true && dto.deletedForReceiver == true) ||

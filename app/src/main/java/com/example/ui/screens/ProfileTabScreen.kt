@@ -663,6 +663,7 @@ fun ProfileTabScreen(
             name = myName,
             lovyId = myLovyId,
             avatarUrl = profilePicture,
+            language = language,
             onDismiss = { showMyQrCodeDialog = false }
         )
     }

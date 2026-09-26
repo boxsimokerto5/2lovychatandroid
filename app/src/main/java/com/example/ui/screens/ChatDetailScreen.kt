@@ -493,7 +493,8 @@ fun ChatDetailScreen(
                 items(
                     messages.filterNot { 
                         (it.deletedForSender && it.isFromMe) || 
-                        (it.deletedForReceiver && !it.isFromMe) 
+                        (it.deletedForReceiver && !it.isFromMe) ||
+                        it.text.contains("Salam kenal dari fitur Teman Sekitar")
                     }, 
                     key = { it.id }
                 ) { msg ->

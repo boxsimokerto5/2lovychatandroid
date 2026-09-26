@@ -147,7 +147,7 @@ fun QrCodeScannerDialog(
     ) { granted ->
         hasCameraPermission = granted
         if (!granted) {
-            Toast.makeText(context, "Izin kamera ditolak. Anda tetap dapat mengunggah gambar QR dari galeri.", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, com.example.util.AppStrings.qrCameraPermissionDenied(language), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -313,6 +313,7 @@ fun QrCodeScannerDialog(
 
                 // Overlay Scanner Box + Laser Animasi
                 ScannerOverlay(
+                    language = language,
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
@@ -351,7 +352,7 @@ fun QrCodeScannerDialog(
                             Spacer(modifier = Modifier.height(16.dp))
 
                             Text(
-                                text = "Akses Kamera Diperlukan",
+                                text = com.example.util.AppStrings.qrAccessCameraRequired(language),
                                 color = Color.White,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold
@@ -360,7 +361,7 @@ fun QrCodeScannerDialog(
                             Spacer(modifier = Modifier.height(8.dp))
 
                             Text(
-                                text = "Untuk memindai kode QR atau barcode secara langsung, izinkan aplikasi mengakses kamera. Anda juga tetap dapat mengunggah gambar kode QR dari galeri foto.",
+                                text = com.example.util.AppStrings.qrAccessCameraDesc(language),
                                 color = Color.White.copy(alpha = 0.75f),
                                 fontSize = 13.sp,
                                 textAlign = TextAlign.Center,
@@ -377,7 +378,7 @@ fun QrCodeScannerDialog(
                                     .fillMaxWidth()
                                     .height(46.dp)
                             ) {
-                                Text("Izinkan Kamera", fontWeight = FontWeight.SemiBold, color = Color.White)
+                                Text(com.example.util.AppStrings.qrGrantCameraBtn(language), fontWeight = FontWeight.SemiBold, color = Color.White)
                             }
 
                             Spacer(modifier = Modifier.height(10.dp))
@@ -397,7 +398,7 @@ fun QrCodeScannerDialog(
                             ) {
                                 Icon(Icons.Default.PhotoLibrary, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Unggah dari Galeri")
+                                Text(com.example.util.AppStrings.qrUploadFromGalleryBtn(language))
                             }
                         }
                     }
@@ -429,7 +430,7 @@ fun QrCodeScannerDialog(
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali",
+                            contentDescription = com.example.util.AppStrings.btnBack(language),
                             tint = Color.White,
                             modifier = Modifier.size(20.dp)
                         )
@@ -438,13 +439,13 @@ fun QrCodeScannerDialog(
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "Pindai Barcode / QR",
+                        text = com.example.util.AppStrings.qrScannerTitle(language),
                         color = Color.White,
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Tambah Teman Lovy",
+                        text = com.example.util.AppStrings.qrAddLovyFriendSubtitle(language),
                         color = Color.White.copy(alpha = 0.7f),
                         fontSize = 11.sp
                     )
@@ -465,7 +466,7 @@ fun QrCodeScannerDialog(
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = if (isTorchOn) Icons.Default.FlashOn else Icons.Default.FlashOff,
-                            contentDescription = "Senter",
+                            contentDescription = com.example.util.AppStrings.qrFlashlightDesc(language),
                             tint = Color.White,
                             modifier = Modifier.size(20.dp)
                         )
@@ -505,7 +506,7 @@ fun QrCodeScannerDialog(
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
-                                text = if (isDecodingGalleryImage) "Memproses gambar galeri..." else "Mencari data teman...",
+                                text = if (isDecodingGalleryImage) com.example.util.AppStrings.qrProcessingGalleryImage(language) else com.example.util.AppStrings.qrSearchingUserData(language),
                                 color = Color.White,
                                 fontSize = 13.sp
                             )
@@ -539,7 +540,7 @@ fun QrCodeScannerDialog(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Unggah Foto",
+                            text = com.example.util.AppStrings.qrUploadPhotoBtn(language),
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp,
                             color = Color.White
@@ -568,7 +569,7 @@ fun QrCodeScannerDialog(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "QR Saya",
+                                text = com.example.util.AppStrings.qrMyQrBtn(language),
                                 color = Color.White,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium
@@ -588,6 +589,7 @@ fun QrCodeScannerDialog(
                     user = foundUser,
                     isAlreadyFriend = isAlreadyFriend(foundUser.id),
                     isSelf = isSelf,
+                    language = language,
                     onDismiss = {
                         scannedUserResult = null
                         isAnalyzingActive = true
@@ -629,7 +631,10 @@ fun QrCodeScannerDialog(
  * dan laser scan animasi serta sudut siku khas pemindai barcode profesional.
  */
 @Composable
-private fun ScannerOverlay(modifier: Modifier = Modifier) {
+private fun ScannerOverlay(
+    modifier: Modifier = Modifier,
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN
+) {
     val density = LocalDensity.current
     val infiniteTransition = rememberInfiniteTransition(label = "scanner_laser")
     val laserPositionRatio by infiniteTransition.animateFloat(
@@ -770,7 +775,7 @@ private fun ScannerOverlay(modifier: Modifier = Modifier) {
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "Arahkan kamera ke Kode QR teman",
+                    text = com.example.util.AppStrings.qrScanSubtitlePrompt(language),
                     color = Color.White,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
@@ -788,6 +793,7 @@ private fun ScannedUserBottomSheet(
     user: User,
     isAlreadyFriend: Boolean,
     isSelf: Boolean = false,
+    language: com.example.util.AppLanguage = com.example.util.AppLanguage.INDONESIAN,
     onDismiss: () -> Unit,
     onAddFriend: () -> Unit,
     onStartChat: () -> Unit
@@ -836,7 +842,7 @@ private fun ScannedUserBottomSheet(
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Kode Berhasil Dipindai",
+                            text = com.example.util.AppStrings.qrScannedSuccessTitle(language),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = NeutralDark
@@ -849,7 +855,7 @@ private fun ScannedUserBottomSheet(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = "Tutup",
+                            contentDescription = com.example.util.AppStrings.commonClose(language),
                             tint = NeutralMedium,
                             modifier = Modifier.size(18.dp)
                         )
@@ -927,9 +933,9 @@ private fun ScannedUserBottomSheet(
                     color = Color(0xFFF5F5F5),
                     modifier = Modifier.clickable {
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                        val clip = android.content.ClipData.newPlainText("Lovy ID", user.id)
+                        val clip = android.content.ClipData.newPlainText(com.example.util.AppStrings.lovyIdLabel(language), user.id)
                         clipboard.setPrimaryClip(clip)
-                        Toast.makeText(context, "ID Lovy disalin", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "${com.example.util.AppStrings.qrCopiedToast(language)}: ${user.id}", Toast.LENGTH_SHORT).show()
                     }
                 ) {
                     Row(
@@ -937,7 +943,7 @@ private fun ScannedUserBottomSheet(
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
                         Text(
-                            text = "ID: ${user.id}",
+                            text = "${com.example.util.AppStrings.lovyIdLabel(language)}: ${user.id}",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium,
                             color = NeutralMedium
@@ -945,7 +951,7 @@ private fun ScannedUserBottomSheet(
                         Spacer(modifier = Modifier.width(4.dp))
                         Icon(
                             imageVector = Icons.Default.ContentCopy,
-                            contentDescription = "Salin ID",
+                            contentDescription = com.example.util.AppStrings.qrCopyIdBtn(language),
                             tint = NeutralMedium,
                             modifier = Modifier.size(12.dp)
                         )
@@ -1008,7 +1014,7 @@ private fun ScannedUserBottomSheet(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Ini adalah kode QR profil akun Anda sendiri",
+                                text = com.example.util.AppStrings.qrIsSelfNotice(language),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = NeutralDark
@@ -1026,7 +1032,7 @@ private fun ScannedUserBottomSheet(
                             .fillMaxWidth()
                             .height(48.dp)
                     ) {
-                        Text("Tutup", fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(com.example.util.AppStrings.commonClose(language), fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 } else if (isAlreadyFriend) {
                     Surface(
@@ -1048,7 +1054,7 @@ private fun ScannedUserBottomSheet(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Sudah ada di daftar Teman Anda",
+                                text = com.example.util.AppStrings.qrAlreadyFriendNotice(language),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = EmeraldGreen
@@ -1069,7 +1075,7 @@ private fun ScannedUserBottomSheet(
                     ) {
                         Icon(Icons.Default.WavingHand, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Buka Obrolan", fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(com.example.util.AppStrings.qrOpenChatBtn(language), fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 } else {
                     // Tombol Tambah Teman (Primary)
@@ -1084,7 +1090,7 @@ private fun ScannedUserBottomSheet(
                     ) {
                         Icon(Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Tambahkan Sebagai Teman", fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(com.example.util.AppStrings.qrAddAsFriendBtn(language), fontWeight = FontWeight.Bold, color = Color.White)
                     }
 
                     Spacer(modifier = Modifier.height(10.dp))
@@ -1102,7 +1108,7 @@ private fun ScannedUserBottomSheet(
                     ) {
                         Icon(Icons.Default.WavingHand, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Sapa & Kirim Pesan Langsung", fontWeight = FontWeight.SemiBold)
+                        Text(com.example.util.AppStrings.qrSayHiDirectBtn(language), fontWeight = FontWeight.SemiBold)
                     }
                 }
             }

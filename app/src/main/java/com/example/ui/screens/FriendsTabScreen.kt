@@ -371,7 +371,7 @@ fun FriendsTabScreen(
                             .fillMaxWidth()
                             .clickable { onSelectFriend(user) }
                             .background(itemBg)
-                            .padding(start = 16.dp, end = 6.dp, top = 10.dp, bottom = 10.dp)
+                            .padding(start = 16.dp, end = 6.dp, top = 8.dp, bottom = 8.dp)
                             .testTag("friend_item_${user.id}")
                     ) {
                         val hasAvatarPhoto = !user.avatarUrl.isNullOrBlank()
@@ -389,31 +389,54 @@ fun FriendsTabScreen(
                             } else Modifier
                         )
 
-                        Spacer(modifier = Modifier.width(14.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
 
-                        Column(modifier = Modifier.weight(1f)) {
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 4.dp)
+                        ) {
+                            // Baris 1: Nama Teman (Ruang luas, tidak terpotong)
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
                                     text = user.name.ifBlank { com.example.util.AppStrings.defaultUserName(language) },
                                     fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold,
+                                    fontWeight = FontWeight.SemiBold,
                                     color = NeutralDark,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.weight(1f, fill = false)
                                 )
 
+                                if (user.isFavorite) {
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Icon(
+                                        imageVector = Icons.Filled.Star,
+                                        contentDescription = null,
+                                        tint = Color(0xFFFFB300),
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(3.dp))
+
+                            // Baris 2: Badge Usia & Gender, Badge Jarak, Status Online & Bio (Standar Slim)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.5.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
                                 // Badge Gender & Usia
                                 val badgeColor = if (user.gender == Gender.FEMALE) Color(0xFFFF4081) else Color(0xFF1976D2)
                                 Box(
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(4.dp))
+                                        .clip(RoundedCornerShape(3.5.dp))
                                         .background(badgeColor)
-                                        .padding(horizontal = 4.5.dp, vertical = 1.dp)
+                                        .padding(horizontal = 4.dp, vertical = 1.dp)
                                 ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
@@ -423,7 +446,7 @@ fun FriendsTabScreen(
                                             imageVector = if (user.gender == Gender.FEMALE) Icons.Default.Female else Icons.Default.Male,
                                             contentDescription = null,
                                             tint = Color.White,
-                                            modifier = Modifier.size(10.dp)
+                                            modifier = Modifier.size(9.5.dp)
                                         )
                                         Text(
                                             text = "${user.age}",
@@ -438,19 +461,19 @@ fun FriendsTabScreen(
 
                                 // Badge Jarak
                                 Surface(
-                                    shape = RoundedCornerShape(4.dp),
+                                    shape = RoundedCornerShape(3.5.dp),
                                     color = EmeraldGreen.copy(alpha = 0.10f),
-                                    border = BorderStroke(0.6.dp, EmeraldGreen.copy(alpha = 0.25f))
+                                    border = BorderStroke(0.5.dp, EmeraldGreen.copy(alpha = 0.25f))
                                 ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(horizontal = 4.5.dp, vertical = 1.dp)
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.LocationOn,
                                             contentDescription = null,
                                             tint = EmeraldGreen,
-                                            modifier = Modifier.size(10.dp)
+                                            modifier = Modifier.size(9.5.dp)
                                         )
                                         Spacer(modifier = Modifier.width(1.5.dp))
                                         Text(
@@ -462,86 +485,83 @@ fun FriendsTabScreen(
                                     }
                                 }
 
-                                if (user.isFavorite) {
+                                // Badge Status Online
+                                if (user.isOnline) {
                                     Surface(
-                                        color = Color(0xFFFFF8E1),
-                                        shape = RoundedCornerShape(6.dp)
+                                        color = Color(0xFFE8F5E9),
+                                        shape = RoundedCornerShape(3.5.dp)
                                     ) {
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                                         ) {
-                                            Icon(
-                                                imageVector = Icons.Filled.Star,
-                                                contentDescription = null,
-                                                tint = Color(0xFFFFB300),
-                                                modifier = Modifier.size(11.dp)
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(5.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color(0xFF2E7D32))
                                             )
-                                            Spacer(modifier = Modifier.width(2.dp))
+                                            Spacer(modifier = Modifier.width(2.5.dp))
                                             Text(
-                                                text = com.example.util.AppStrings.friendsFavorite(language),
-                                                fontSize = 10.sp,
+                                                text = com.example.util.AppStrings.friendsOnline(language),
+                                                fontSize = 9.5.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = Color(0xFFE65100)
+                                                color = Color(0xFF2E7D32)
                                             )
                                         }
                                     }
                                 }
-                                if (user.isOnline) {
-                                    Surface(
-                                        color = Color(0xFFE8F5E9),
-                                        shape = RoundedCornerShape(6.dp)
-                                    ) {
-                                        Text(
-                                            text = com.example.util.AppStrings.friendsOnline(language),
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF2E7D32),
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                        )
-                                    }
+
+                                // Bio status singkat
+                                if (user.bio.isNotBlank()) {
+                                    Text(
+                                        text = "•",
+                                        fontSize = 10.sp,
+                                        color = NeutralMedium.copy(alpha = 0.4f)
+                                    )
+                                    Text(
+                                        text = user.bio,
+                                        fontSize = 11.sp,
+                                        color = NeutralMedium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f, fill = false)
+                                    )
                                 }
                             }
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = user.bio,
-                                fontSize = 12.sp,
-                                color = NeutralMedium,
-                                maxLines = 1
-                            )
                         }
 
-                        // Tombol Bintang Favorit (Pin ke paling atas)
+                        // Tombol Bintang Favorit (Pin ke paling atas) - Slim
                         IconButton(
                             onClick = { onToggleFavorite(user) },
                             modifier = Modifier
-                                .size(40.dp)
+                                .size(34.dp)
                                 .testTag("favorite_button_${user.id}")
                         ) {
                             Icon(
                                 imageVector = if (user.isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
                                 contentDescription = if (user.isFavorite) com.example.util.AppStrings.friendsRemoveFavorite(language) else com.example.util.AppStrings.friendsAddFavorite(language),
-                                tint = if (user.isFavorite) Color(0xFFFFB300) else NeutralMedium.copy(alpha = 0.45f),
-                                modifier = Modifier.size(22.dp)
+                                tint = if (user.isFavorite) Color(0xFFFFB300) else NeutralMedium.copy(alpha = 0.40f),
+                                modifier = Modifier.size(19.dp)
                             )
                         }
 
-                        // Tombol Hapus Kontak
+                        // Tombol Hapus Kontak - Slim
                         IconButton(
                             onClick = { friendToDelete = user },
                             modifier = Modifier
-                                .size(40.dp)
+                                .size(34.dp)
                                 .testTag("delete_friend_${user.id}")
                         ) {
                             Icon(
                                 imageVector = Icons.Default.DeleteOutline,
                                 contentDescription = com.example.util.AppStrings.friendsDeleteFriendDialogTitle(language),
-                                tint = NeutralMedium.copy(alpha = 0.55f),
-                                modifier = Modifier.size(20.dp)
+                                tint = NeutralMedium.copy(alpha = 0.45f),
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
-                    HorizontalDivider(modifier = Modifier.padding(start = 76.dp), color = NeutralBorder, thickness = 0.6.dp)
+                    HorizontalDivider(modifier = Modifier.padding(start = 74.dp), color = NeutralBorder, thickness = 0.6.dp)
                 }
             }
         }

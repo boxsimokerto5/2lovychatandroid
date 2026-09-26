@@ -2686,7 +2686,7 @@ object AppStrings {
     // --- QR CODE DIALOGS ---
     fun qrMyTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
         AppLanguage.CHINESE -> "我的二维码名片"
-        AppLanguage.JAPANESE -> "マイクルコード"
+        AppLanguage.JAPANESE -> "マイQRコード"
         AppLanguage.KOREAN -> "내 QR 코드"
         AppLanguage.ARABIC -> "رمز QR لملفي الشخصي"
         AppLanguage.SPANISH -> "Mi Código QR de Perfil"
@@ -2752,6 +2752,34 @@ object AppStrings {
         AppLanguage.PORTUGUESE -> "ID do Lovy Chat copiado para a área de transferência!"
         AppLanguage.INDONESIAN -> "ID Lovy Chat berhasil disalin ke papan klip!"
         else -> "Lovy Chat ID copied to clipboard!"
+    }
+
+    fun qrShareBody(lang: AppLanguage, lovyId: String): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "嗨！在 Lovy Chat 上与我联系并添加我为好友，我的 Lovy ID 是：$lovyId"
+        AppLanguage.JAPANESE -> "こんにちは！Lovy Chatで私を追加してつながりましょう。Lovy ID: $lovyId"
+        AppLanguage.KOREAN -> "안녕하세요! Lovy Chat에서 저를 친구로 추가해주세요. Lovy ID: $lovyId"
+        AppLanguage.ARABIC -> "مرحباً! تواصل معي وأضفني على Lovy Chat باستخدام معرف Lovy: $lovyId"
+        AppLanguage.SPANISH -> "¡Hola! Conéctate conmigo y agrégame en Lovy Chat con mi Lovy ID: $lovyId"
+        AppLanguage.FRENCH -> "Bonjour ! Contactez-moi et ajoutez-moi sur Lovy Chat avec mon ID Lovy : $lovyId"
+        AppLanguage.GERMAN -> "Hallo! Kontaktiere mich und füge mich auf Lovy Chat mit meiner Lovy-ID hinzu: $lovyId"
+        AppLanguage.RUSSIAN -> "Привет! Свяжитесь со мной и добавьте в друзья в Lovy Chat по моему Lovy ID: $lovyId"
+        AppLanguage.PORTUGUESE -> "Olá! Conecte-se comigo e me adicione no Lovy Chat com meu ID Lovy: $lovyId"
+        AppLanguage.INDONESIAN -> "Hai! Hubungi dan tambahkan saya di Lovy Chat dengan ID Lovy: $lovyId"
+        else -> "Hi! Connect with me and add me on Lovy Chat with Lovy ID: $lovyId"
+    }
+
+    fun qrFlashlightDesc(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "手电筒"
+        AppLanguage.JAPANESE -> "懐中電灯"
+        AppLanguage.KOREAN -> "손전등"
+        AppLanguage.ARABIC -> "المصباح اليدوي"
+        AppLanguage.SPANISH -> "Linterna"
+        AppLanguage.FRENCH -> "Lampe torche"
+        AppLanguage.GERMAN -> "Taschenlampe"
+        AppLanguage.RUSSIAN -> "Фонарик"
+        AppLanguage.PORTUGUESE -> "Lanterna"
+        AppLanguage.INDONESIAN -> "Senter"
+        else -> "Flashlight"
     }
 
     fun qrScannerTitle(lang: AppLanguage): String = when (resolveLang(lang)) {
@@ -4451,7 +4479,7 @@ object AppStrings {
 
     fun qrMyQrBtn(lang: AppLanguage): String = when (resolveLang(lang)) {
         AppLanguage.CHINESE -> "我的二维码"
-        AppLanguage.JAPANESE -> "マイクルコード"
+        AppLanguage.JAPANESE -> "マイQR"
         AppLanguage.KOREAN -> "내 QR"
         AppLanguage.ARABIC -> "رمزي"
         AppLanguage.SPANISH -> "Mi QR"

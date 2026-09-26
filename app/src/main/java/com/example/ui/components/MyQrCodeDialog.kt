@@ -179,7 +179,7 @@ fun MyQrCodeDialog(
                         } else {
                             Image(
                                 painter = painterResource(id = R.drawable.ic_lovy_logo),
-                                contentDescription = "Logo Lovy",
+                                contentDescription = "Lovy Chat",
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -205,7 +205,7 @@ fun MyQrCodeDialog(
                             color = EmeraldGreen.copy(alpha = 0.12f)
                         ) {
                             Text(
-                                text = "ID: $lovyId",
+                                text = "${com.example.util.AppStrings.lovyIdLabel(language)}: $lovyId",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = EmeraldGreen,
@@ -288,7 +288,7 @@ fun MyQrCodeDialog(
                     OutlinedButton(
                         onClick = {
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            val clip = ClipData.newPlainText("ID Lovy", lovyId)
+                            val clip = ClipData.newPlainText(com.example.util.AppStrings.lovyIdLabel(language), lovyId)
                             clipboard.setPrimaryClip(clip)
                             Toast.makeText(context, "${com.example.util.AppStrings.qrCopiedToast(language)}: $lovyId", Toast.LENGTH_SHORT).show()
                         },
@@ -319,7 +319,7 @@ fun MyQrCodeDialog(
                                 action = Intent.ACTION_SEND
                                 putExtra(
                                     Intent.EXTRA_TEXT,
-                                    "Hai! Hubungi dan tambahkan saya di Lovy Chat dengan ID Lovy: $lovyId"
+                                    com.example.util.AppStrings.qrShareBody(language, lovyId)
                                 )
                                 type = "text/plain"
                             }

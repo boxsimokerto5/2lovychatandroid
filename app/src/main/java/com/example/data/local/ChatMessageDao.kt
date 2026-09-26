@@ -45,6 +45,9 @@ interface ChatMessageDao {
     @Query("DELETE FROM local_chat_messages WHERE conversationId = :conversationId")
     suspend fun deleteMessagesForConversation(conversationId: String)
 
+    @Query("DELETE FROM local_chat_messages WHERE text LIKE '%Salam kenal dari fitur Teman Sekitar%'")
+    suspend fun deleteAutomatedGreetings()
+
     @Query("DELETE FROM local_chat_messages")
     suspend fun clearAll()
 }
