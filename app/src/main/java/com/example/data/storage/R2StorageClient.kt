@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.util.Log
 import com.example.BuildConfig
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
@@ -36,6 +37,7 @@ object R2StorageClient {
             .connectTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(60, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
+            .retryOnConnectionFailure(true)
             .build()
     }
 
@@ -65,6 +67,11 @@ object R2StorageClient {
                         .remove(PREF_SECRET_KEY)
                         .remove(PREF_BUCKET_NAME)
                         .apply()
+                }
+                // Hapus public domain lama jika tersimpan lovychat.my.id yang menyebabkan 403 Forbidden
+                val savedDomain = prefs.getString(PREF_PUBLIC_DOMAIN, null)
+                if (savedDomain != null && (savedDomain.contains("lovychat.my.id") || savedDomain.contains("r2.dev"))) {
+                    prefs.edit().remove(PREF_PUBLIC_DOMAIN).apply()
                 }
             }
         }
@@ -110,9 +117,9 @@ object R2StorageClient {
 
         val domain = configured.trim().removeSuffix("/")
         val accountId = getAccountId()
-        // If domain is empty or mistakenly uses pub-<accountId>.r2.dev, default to the active custom domain
-        if (domain.isBlank() || (accountId.isNotBlank() && domain.contains("pub-$accountId.r2.dev"))) {
-            return "https://lovychat.my.id"
+        // Jangan gunakan domain lovychat.my.id atau pub-*.r2.dev yang tidak memiliki izin publik (memberi 403 Forbidden)
+        if (domain.isBlank() || domain.contains("lovychat.my.id", ignoreCase = true) || (accountId.isNotBlank() && domain.contains("pub-$accountId.r2.dev", ignoreCase = true))) {
+            return ""
         }
         return domain
     }
@@ -134,24 +141,26 @@ object R2StorageClient {
     ) {
         init(context)
         val validBucket = if (bucketName.isBlank() || bucketName == "Backend_lovychat_api_token") "lovychat" else bucketName.trim()
+        val cleanDomain = if (publicDomain.contains("lovychat.my.id") || publicDomain.contains("r2.dev")) "" else publicDomain.trim()
         sharedPrefs?.edit()?.apply {
             putString(PREF_ACCOUNT_ID, accountId.trim())
             putString(PREF_ACCESS_KEY, accessKeyId.trim())
             putString(PREF_SECRET_KEY, secretAccessKey.trim())
             putString(PREF_BUCKET_NAME, validBucket)
-            putString(PREF_PUBLIC_DOMAIN, publicDomain.trim())
+            putString(PREF_PUBLIC_DOMAIN, cleanDomain)
             apply()
         }
     }
 
     /**
-     * Upload an image to Cloudflare R2 using AWS S3 PutObject protocol with SigV4.
+     * Upload sebuah gambar ke Cloudflare R2 menggunakan protokol AWS S3 PutObject SigV4.
+     * Dilengkapi mekanisme retry otomatis untuk menjamin kehandalan upload pada jaringan seluler.
      *
-     * @param bytes Image content in bytes
-     * @param folder Destination directory (e.g. "avatars", "moments", "chats")
-     * @param fileName File name with extension (e.g. "avatar_123.jpg")
+     * @param bytes Konten gambar dalam bytes
+     * @param folder Folder tujuan (misal "avatars", "moments", "chats")
+     * @param fileName Nama file beserta ekstensi (misal "avatar_123.jpg")
      * @param contentType MIME type (default "image/jpeg")
-     * @return Result containing the accessible URL of the uploaded image
+     * @return Result berisi URL aktif gambar
      */
     suspend fun uploadImage(
         bytes: ByteArray,
@@ -166,7 +175,7 @@ object R2StorageClient {
 
         if (accountId.isBlank() || accessKeyId.isBlank() || secretAccessKey.isBlank() || bucketName.isBlank()) {
             return@withContext Result.failure(
-                IllegalStateException("Konfigurasi Cloudflare R2 belum lengkap. Mohon periksa Akun ID, Access Key, dan Secret Key.")
+                IllegalStateException("Konfigurasi penyimpanan Cloudflare R2 belum lengkap.")
             )
         }
 
@@ -179,82 +188,182 @@ object R2StorageClient {
         val service = "s3"
         val method = "PUT"
 
-        val amzFormat = SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'", Locale.US).apply {
-            timeZone = TimeZone.getTimeZone("UTC")
-        }
-        val amzDate = amzFormat.format(Date())
-        val dateStamp = amzDate.substring(0, 8)
-
         val payloadHash = sha256Hex(bytes)
         val canonicalUri = "/$bucketName/$objectKey"
         val canonicalQuery = ""
 
-        // AWS SigV4 Canonical Headers
-        val canonicalHeaders = "content-type:$contentType\nhost:$host\nx-amz-content-sha256:$payloadHash\nx-amz-date:$amzDate\n"
         val signedHeaders = "content-type;host;x-amz-content-sha256;x-amz-date"
-
-        val canonicalRequest = "$method\n$canonicalUri\n$canonicalQuery\n$canonicalHeaders\n$signedHeaders\n$payloadHash"
-
         val algorithm = "AWS4-HMAC-SHA256"
-        val credentialScope = "$dateStamp/$region/$service/aws4_request"
-        val canonicalRequestHash = sha256Hex(canonicalRequest.toByteArray(Charsets.UTF_8))
-        val stringToSign = "$algorithm\n$amzDate\n$credentialScope\n$canonicalRequestHash"
 
-        val signingKey = getSignatureKey(secretAccessKey, dateStamp, region, service)
-        val signature = hmacSha256(signingKey, stringToSign).toHex()
+        var lastException: Exception? = null
+        val maxAttempts = 3
 
-        val authorizationHeader = "$algorithm Credential=$accessKeyId/$credentialScope, SignedHeaders=$signedHeaders, Signature=$signature"
-
-        val requestUrl = "https://$host$canonicalUri"
-
-        val request = Request.Builder()
-            .url(requestUrl)
-            .put(bytes.toRequestBody(contentType.toMediaTypeOrNull()))
-            .header("Host", host)
-            .header("x-amz-date", amzDate)
-            .header("x-amz-content-sha256", payloadHash)
-            .header("Content-Type", contentType)
-            .header("Authorization", authorizationHeader)
-            .header("User-Agent", "LovyChat-Android/1.0")
-            .build()
-
-        try {
-            Log.d(TAG, "Mengunggah objek ke R2: $requestUrl (Ukuran: ${bytes.size} byte)")
-            val response = httpClient.newCall(request).execute()
-            if (response.isSuccessful) {
-                Log.d(TAG, "Berhasil upload ke Cloudflare R2: HTTP ${response.code}")
-                // Compute the public URL
-                val publicUrl = resolvePublicUrl(objectKey)
-                Result.success(publicUrl)
-            } else {
-                val errorBody = response.body?.string() ?: ""
-                Log.e(TAG, "Gagal upload ke R2: HTTP ${response.code} - $errorBody")
-                Result.failure(Exception("Cloudflare R2 menolak upload (HTTP ${response.code}): $errorBody"))
+        for (attempt in 1..maxAttempts) {
+            val amzFormat = SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'", Locale.US).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Koneksi ke Cloudflare R2 gagal saat upload", e)
-            Result.failure(e)
+            val amzDate = amzFormat.format(Date())
+            val dateStamp = amzDate.substring(0, 8)
+            val credentialScope = "$dateStamp/$region/$service/aws4_request"
+
+            val canonicalHeaders = "content-type:$contentType\nhost:$host\nx-amz-content-sha256:$payloadHash\nx-amz-date:$amzDate\n"
+            val canonicalRequest = "$method\n$canonicalUri\n$canonicalQuery\n$canonicalHeaders\n$signedHeaders\n$payloadHash"
+            val canonicalRequestHash = sha256Hex(canonicalRequest.toByteArray(Charsets.UTF_8))
+            val stringToSign = "$algorithm\n$amzDate\n$credentialScope\n$canonicalRequestHash"
+
+            val signingKey = getSignatureKey(secretAccessKey, dateStamp, region, service)
+            val signature = hmacSha256(signingKey, stringToSign).toHex()
+
+            val authorizationHeader = "$algorithm Credential=$accessKeyId/$credentialScope, SignedHeaders=$signedHeaders, Signature=$signature"
+            val requestUrl = "https://$host$canonicalUri"
+
+            val request = Request.Builder()
+                .url(requestUrl)
+                .put(bytes.toRequestBody(contentType.toMediaTypeOrNull()))
+                .header("Host", host)
+                .header("x-amz-date", amzDate)
+                .header("x-amz-content-sha256", payloadHash)
+                .header("Content-Type", contentType)
+                .header("Authorization", authorizationHeader)
+                .header("User-Agent", "LovyChat-Android/1.0")
+                .build()
+
+            try {
+                Log.d(TAG, "Mencoba upload ke Cloudflare R2 (Percobaan #$attempt): $requestUrl (Ukuran: ${bytes.size} byte)")
+                val response = httpClient.newCall(request).execute()
+                val responseCode = response.code
+                if (response.isSuccessful) {
+                    response.close()
+                    Log.d(TAG, "Berhasil upload ke Cloudflare R2: HTTP $responseCode")
+                    val publicUrl = resolvePublicUrl(objectKey)
+                    return@withContext Result.success(publicUrl)
+                } else {
+                    val errorBody = response.body?.string() ?: ""
+                    response.close()
+                    Log.w(TAG, "Gagal upload ke R2: HTTP $responseCode - $errorBody (Percobaan #$attempt)")
+                    if (responseCode == 401 || responseCode == 403) {
+                        return@withContext Result.failure(Exception("Akses Cloudflare R2 ditolak (HTTP $responseCode). Periksa Access Key & Secret."))
+                    }
+                    lastException = Exception("Cloudflare R2 merespon HTTP $responseCode: $errorBody")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Koneksi ke R2 gagal pada percobaan #$attempt: ${e.message}")
+                lastException = e
+            }
+
+            if (attempt < maxAttempts) {
+                delay(attempt * 800L)
+            }
         }
+
+        val friendlyMessage = when (val ex = lastException) {
+            is java.net.UnknownHostException -> "Tidak dapat terhubung ke server penyimpanan. Pastikan koneksi internet aktif."
+            is java.net.SocketTimeoutException -> "Waktu koneksi habis saat mengunggah foto. Silakan coba kembali."
+            else -> ex?.localizedMessage ?: "Gagal mengunggah foto ke Cloudflare R2."
+        }
+        Result.failure(Exception(friendlyMessage))
     }
 
     /**
-     * Resolves the access URL for an object key.
-     * Uses public domain if set, otherwise generates a 7-day presigned GET URL.
+     * Menyelesaikan URL akses untuk object key yang diunggah.
+     * Menggunakan public custom domain jika terkonfigurasi, atau menghasilkan Presigned GET URL resmi S3 (valid 7 hari).
      */
     fun resolvePublicUrl(objectKey: String): String {
         val publicDomain = getPublicDomain()
-        val accountId = getAccountId()
-        val isInvalidAccountPattern = accountId.isNotBlank() && publicDomain.contains("pub-$accountId.r2.dev")
-
-        if (publicDomain.isNotBlank() && !isInvalidAccountPattern) {
-            return "$publicDomain/$objectKey"
+        if (publicDomain.isNotBlank()) {
+            return "$publicDomain/${objectKey.trimStart('/')}"
         }
-        // Fallback to generating a 7-day Presigned GET URL
         return generatePresignedGetUrl(objectKey, expiresInSeconds = 604800)
     }
 
     /**
-     * Generates an AWS S3 Presigned GET URL using SigV4.
+     * Memperbaiki dan memperbarui URL gambar jika:
+     * - Merupakan object key relatif ("avatars/xyz.jpg")
+     * - Menggunakan domain rusak seperti lovychat.my.id
+     * - Menggunakan presigned URL yang sudah kedaluwarsa atau mendekati kedaluwarsa
+     */
+    fun getOrRefreshPresignedUrl(urlOrKey: String?): String {
+        if (urlOrKey.isNullOrBlank()) return ""
+        val trimmed = urlOrKey.trim()
+
+        // 1. Jika bukan URL (berarti object key langsung, contoh "avatars/xyz.jpg" atau "moments/abc.jpg")
+        if (!trimmed.startsWith("http://", ignoreCase = true) &&
+            !trimmed.startsWith("https://", ignoreCase = true) &&
+            !trimmed.startsWith("content://", ignoreCase = true) &&
+            !trimmed.startsWith("file://", ignoreCase = true) &&
+            !trimmed.startsWith("android.resource://", ignoreCase = true)
+        ) {
+            val key = trimmed.trimStart('/')
+            return generatePresignedGetUrl(key)
+        }
+
+        // 2. Jika domain lovychat.my.id yang tidak membuka izin akses publik (403 Forbidden)
+        if (trimmed.contains("lovychat.my.id", ignoreCase = true)) {
+            val key = trimmed.substringAfter("lovychat.my.id/").substringBefore('?').trimStart('/')
+            if (key.isNotBlank()) {
+                return generatePresignedGetUrl(key)
+            }
+        }
+
+        // 3. Jika domain pub-*.r2.dev yang tidak publik
+        val accountId = getAccountId()
+        if (accountId.isNotBlank() && trimmed.contains("pub-$accountId.r2.dev", ignoreCase = true)) {
+            val key = trimmed.substringAfter(".r2.dev/").substringBefore('?').trimStart('/')
+            if (key.isNotBlank()) {
+                return generatePresignedGetUrl(key)
+            }
+        }
+
+        // 4. Jika URL S3 R2 Presigned: Cek apakah sudah kadaluarsa atau mendekati kadaluarsa
+        val bucket = getBucketName()
+        if (accountId.isNotBlank() && bucket.isNotBlank()) {
+            val r2Host = "$accountId.r2.cloudflarestorage.com"
+            if (trimmed.contains(r2Host) && trimmed.contains("/$bucket/")) {
+                val amzDate = extractQueryParam(trimmed, "X-Amz-Date")
+                val amzExpires = extractQueryParam(trimmed, "X-Amz-Expires")?.toLongOrNull() ?: 604800L
+                if (isPresignedUrlExpiredOrExpiring(amzDate, amzExpires)) {
+                    val key = trimmed.substringAfter("/$bucket/").substringBefore('?').trimStart('/')
+                    if (key.isNotBlank()) {
+                        return generatePresignedGetUrl(key)
+                    }
+                }
+            }
+        }
+
+        return trimmed
+    }
+
+    private fun extractQueryParam(url: String, paramName: String): String? {
+        val query = url.substringAfter('?', "")
+        if (query.isBlank()) return null
+        val parts = query.split('&')
+        for (part in parts) {
+            val kv = part.split('=', limit = 2)
+            if (kv.isNotEmpty() && kv[0].equals(paramName, ignoreCase = true)) {
+                return if (kv.size > 1) kv[1] else ""
+            }
+        }
+        return null
+    }
+
+    private fun isPresignedUrlExpiredOrExpiring(amzDateStr: String?, expiresInSeconds: Long): Boolean {
+        if (amzDateStr.isNullOrBlank()) return true
+        return try {
+            val format = SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'", Locale.US).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }
+            val date = format.parse(amzDateStr) ?: return true
+            val expiryTimeMillis = date.time + (expiresInSeconds * 1000)
+            // Refresh jika tersisa kurang dari 24 jam sebelum kedaluwarsa atau sudah lewat
+            val bufferMillis = 24 * 3600 * 1000L
+            System.currentTimeMillis() >= (expiryTimeMillis - bufferMillis)
+        } catch (_: Exception) {
+            true
+        }
+    }
+
+    /**
+     * Menghasilkan AWS S3 Presigned GET URL menggunakan SigV4 yang dapat langsung diunduh siapa saja tanpa autentikasi.
      */
     fun generatePresignedGetUrl(objectKey: String, expiresInSeconds: Long = 604800): String {
         val accountId = getAccountId()
@@ -262,8 +371,9 @@ object R2StorageClient {
         val secretAccessKey = getSecretAccessKey()
         val bucketName = getBucketName()
 
-        if (accountId.isBlank() || accessKeyId.isBlank() || secretAccessKey.isBlank()) {
-            return "https://$accountId.r2.cloudflarestorage.com/$bucketName/$objectKey"
+        val cleanKey = objectKey.trimStart('/')
+        if (accountId.isBlank() || accessKeyId.isBlank() || secretAccessKey.isBlank() || bucketName.isBlank() || cleanKey.isBlank()) {
+            return ""
         }
 
         val host = "$accountId.r2.cloudflarestorage.com"
@@ -277,7 +387,7 @@ object R2StorageClient {
         val dateStamp = amzDate.substring(0, 8)
         val credentialScope = "$dateStamp/$region/$service/aws4_request"
 
-        val canonicalUri = "/$bucketName/$objectKey"
+        val canonicalUri = "/$bucketName/$cleanKey"
 
         val queryParams = listOf(
             "X-Amz-Algorithm" to "AWS4-HMAC-SHA256",
@@ -317,7 +427,6 @@ object R2StorageClient {
             return@withContext Result.failure(Exception("Kredensial Cloudflare R2 belum lengkap."))
         }
 
-        // Test by putting a tiny test health ping object
         val testBytes = "Lovy Chat R2 Health Ping".toByteArray(Charsets.UTF_8)
         val testResult = uploadImage(testBytes, ".health", "ping.txt", "text/plain")
         if (testResult.isSuccess) {

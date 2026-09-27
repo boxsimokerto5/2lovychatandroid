@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -512,7 +513,13 @@ fun MainAppScreen(
                 isUploadingPhoto = uiState.isUploadingPhoto,
                 uploadProgressText = uiState.uploadProgressText,
                 onUploadPhoto = { uri ->
-                    viewModel.uploadProfilePhoto(uri)
+                    viewModel.uploadProfilePhoto(uri, context = context) { success, msg ->
+                        if (success) {
+                            Toast.makeText(context, "Foto profil berhasil diperbarui! 🎉", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Gagal upload: ${msg ?: "Koneksi bermasalah"}", Toast.LENGTH_LONG).show()
+                        }
+                    }
                 },
                 onClearPhoto = {
                     viewModel.clearProfilePhoto()

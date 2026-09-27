@@ -79,6 +79,16 @@ object ImageCompressor {
             }
 
             var bitmap = BitmapFactory.decodeByteArray(rawBytes, 0, rawBytes.size, decodeOptions)
+            if (bitmap == null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                try {
+                    val source = android.graphics.ImageDecoder.createSource(context.contentResolver, uri)
+                    bitmap = android.graphics.ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                        decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+                    }
+                } catch (eDec: Exception) {
+                    Log.w(TAG, "ImageDecoder fallback failed", eDec)
+                }
+            }
             if (bitmap == null) {
                 Log.e(TAG, "Gagal decode bitmap dari raw bytes")
                 return@withContext null

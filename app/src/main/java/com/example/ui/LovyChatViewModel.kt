@@ -3589,16 +3589,32 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     val updatedProfile = _uiState.value.userProfile.copy(profilePicture = publicUrl)
                     saveUserProfile(updatedProfile)
                     _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
+                    try {
+                        withContext(Dispatchers.Main) {
+                            android.widget.Toast.makeText(ctx, "Foto profil berhasil diperbarui! 🎉", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (_: Throwable) {}
                     onComplete?.invoke(true, publicUrl)
                 } else {
                     val err = result.exceptionOrNull()?.localizedMessage ?: "Gagal mengunggah foto profil ke Cloudflare R2"
                     _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
+                    try {
+                        withContext(Dispatchers.Main) {
+                            android.widget.Toast.makeText(ctx, "Gagal upload: $err", android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    } catch (_: Throwable) {}
                     onComplete?.invoke(false, err)
                 }
             } catch (e: Exception) {
                 Log.e("LovyChatViewModel", "Error upload profile photo", e)
+                val err = e.localizedMessage ?: "Terjadi kesalahan upload foto"
                 _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
-                onComplete?.invoke(false, e.localizedMessage)
+                try {
+                    withContext(Dispatchers.Main) {
+                        android.widget.Toast.makeText(ctx, "Gagal upload: $err", android.widget.Toast.LENGTH_LONG).show()
+                    }
+                } catch (_: Throwable) {}
+                onComplete?.invoke(false, err)
             }
         }
     }
@@ -3801,11 +3817,23 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                         receiverId = partnerId
                     )
                 } else {
+                    val errMsg = result.exceptionOrNull()?.localizedMessage ?: "Gagal mengunggah foto chat"
                     _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
+                    try {
+                        withContext(Dispatchers.Main) {
+                            android.widget.Toast.makeText(ctx, "Gagal mengirim foto: $errMsg", android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    } catch (_: Throwable) {}
                 }
             } catch (e: Exception) {
                 Log.e("LovyChatViewModel", "Error sending photo message", e)
+                val errMsg = e.localizedMessage ?: "Terjadi kendala koneksi saat upload foto"
                 _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
+                try {
+                    withContext(Dispatchers.Main) {
+                        android.widget.Toast.makeText(ctx, "Gagal mengirim foto: $errMsg", android.widget.Toast.LENGTH_LONG).show()
+                    }
+                } catch (_: Throwable) {}
             }
         }
     }
