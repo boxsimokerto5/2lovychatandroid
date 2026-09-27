@@ -3552,15 +3552,15 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             _uiState.update {
                 it.copy(
                     isUploadingPhoto = true,
-                    uploadProgressText = "Mengunggah foto profil ke Cloudflare R2..."
+                    uploadProgressText = "Mengompres foto profil..."
                 )
             }
             try {
                 val bytes = com.example.util.ImageCompressor.compressImage(
                     context = ctx,
                     uri = uri,
-                    maxDimension = 800,
-                    quality = 85
+                    maxDimension = 720,
+                    quality = 80
                 )
                 if (bytes == null || bytes.isEmpty()) {
                     _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
@@ -3568,7 +3568,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     return@launch
                 }
 
+                _uiState.update { it.copy(uploadProgressText = "Mengunggah foto profil (${bytes.size / 1024} KB)...") }
                 val fileName = "avatar_${_uiState.value.myLovyId}_${System.currentTimeMillis()}.jpg"
+                var publicUrl: String? = null
                 val result = com.example.data.storage.R2StorageClient.uploadImage(
                     bytes = bytes,
                     folder = "avatars",
@@ -3576,13 +3578,22 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 )
 
                 if (result.isSuccess) {
-                    val publicUrl = result.getOrThrow()
+                    publicUrl = result.getOrNull()
+                } else {
+                    Log.w("LovyChatViewModel", "Upload avatar R2 gagal, mencoba fallback ImgBB...")
+                    val fallback = com.example.util.ImgBbUploader.uploadImage(ctx, uri)
+                    if (fallback.isSuccess) {
+                        publicUrl = fallback.getOrNull()
+                    }
+                }
+
+                if (!publicUrl.isNullOrBlank()) {
                     val updatedProfile = _uiState.value.userProfile.copy(profilePicture = publicUrl)
                     saveUserProfile(updatedProfile)
                     _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
                     onComplete?.invoke(true, publicUrl)
                 } else {
-                    val err = result.exceptionOrNull()?.localizedMessage ?: "Gagal mengunggah ke Cloudflare R2"
+                    val err = result.exceptionOrNull()?.localizedMessage ?: "Gagal mengunggah foto profil ke Cloudflare R2"
                     _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
                     onComplete?.invoke(false, err)
                 }
@@ -3635,40 +3646,68 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             _uiState.update {
                 it.copy(
                     isUploadingPhoto = true,
-                    uploadProgressText = "Mengunggah foto momen..."
+                    uploadProgressText = "Mengompres foto..."
                 )
             }
             try {
+                // 1. Kompresi gambar resolusi Full-HD yang ramah bandwidth dan server
                 val bytes = com.example.util.ImageCompressor.compressImage(
                     context = ctx,
                     uri = uri,
-                    maxDimension = 1280,
-                    quality = 85
+                    maxDimension = 1080,
+                    quality = 80
                 )
+                if (bytes == null || bytes.isEmpty()) {
+                    Log.e("LovyChatViewModel", "Gagal mengompres gambar momen dari URI: $uri")
+                    _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
+                    try {
+                        android.widget.Toast.makeText(ctx, "Gagal memproses foto yang dipilih", android.widget.Toast.LENGTH_SHORT).show()
+                    } catch (_: Throwable) {}
+                    onComplete?.invoke(false)
+                    return@launch
+                }
+
+                _uiState.update { it.copy(uploadProgressText = "Mengunggah foto momen (${bytes.size / 1024} KB)...") }
+                val fileName = "moment_${UUID.randomUUID()}.jpg"
+
+                // 2. Upload ke Cloudflare R2
                 var uploadedUrl: String? = null
-                if (bytes != null && bytes.isNotEmpty()) {
-                    val fileName = "moment_${UUID.randomUUID()}.jpg"
-                    val result = com.example.data.storage.R2StorageClient.uploadImage(
-                        bytes = bytes,
-                        folder = "moments",
-                        fileName = fileName
-                    )
-                    if (result.isSuccess) {
-                        uploadedUrl = result.getOrNull()
-                    } else {
-                        Log.e("LovyChatViewModel", "Gagal upload gambar momen ke R2: ${result.exceptionOrNull()?.message}")
+                val r2Result = com.example.data.storage.R2StorageClient.uploadImage(
+                    bytes = bytes,
+                    folder = "moments",
+                    fileName = fileName
+                )
+                if (r2Result.isSuccess) {
+                    uploadedUrl = r2Result.getOrNull()
+                } else {
+                    Log.w("LovyChatViewModel", "Upload momen ke R2 gagal: ${r2Result.exceptionOrNull()?.message}, mencoba fallback ImgBB...")
+                    val fallbackRes = com.example.util.ImgBbUploader.uploadImage(ctx, uri)
+                    if (fallbackRes.isSuccess) {
+                        uploadedUrl = fallbackRes.getOrNull()
                     }
                 }
 
+                if (uploadedUrl.isNullOrBlank()) {
+                    // Upload foto gagal: JANGAN terbitkan momen kosong tanpa foto agar database tidak rusak
+                    _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
+                    try {
+                        android.widget.Toast.makeText(ctx, "Gagal mengunggah foto ke server. Momen belum diterbitkan, silakan coba lagi.", android.widget.Toast.LENGTH_LONG).show()
+                    } catch (_: Throwable) {}
+                    onComplete?.invoke(false)
+                    return@launch
+                }
+
+                // 3. Simpan momen dengan URL foto yang berhasil diunggah
+                _uiState.update { it.copy(uploadProgressText = "Menerbitkan momen...") }
                 postMoment(content, uploadedUrl, locationTag)
                 _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
-                val isSuccess = !uploadedUrl.isNullOrBlank()
-                onComplete?.invoke(isSuccess)
+                onComplete?.invoke(true)
             } catch (e: Exception) {
                 Log.e("LovyChatViewModel", "Error posting moment with photo", e)
-                // Fallback to text moment if image upload fails
-                postMoment(content, null, locationTag)
                 _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
+                try {
+                    android.widget.Toast.makeText(ctx, "Terjadi kesalahan saat mengunggah foto", android.widget.Toast.LENGTH_SHORT).show()
+                } catch (_: Throwable) {}
                 onComplete?.invoke(false)
             }
         }
@@ -3695,22 +3734,24 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             _uiState.update {
                 it.copy(
                     isUploadingPhoto = true,
-                    uploadProgressText = "Mengunggah foto chat ke Cloudflare R2..."
+                    uploadProgressText = "Mengompres foto chat..."
                 )
             }
             try {
                 val bytes = com.example.util.ImageCompressor.compressImage(
                     context = ctx,
                     uri = uri,
-                    maxDimension = 1280,
-                    quality = 85
+                    maxDimension = 1080,
+                    quality = 80
                 )
                 if (bytes == null || bytes.isEmpty()) {
                     _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
                     return@launch
                 }
 
+                _uiState.update { it.copy(uploadProgressText = "Mengunggah foto chat (${bytes.size / 1024} KB)...") }
                 val fileName = "chat_${UUID.randomUUID()}.jpg"
+                var photoUrl: String? = null
                 val result = com.example.data.storage.R2StorageClient.uploadImage(
                     bytes = bytes,
                     folder = "chats/$conversationId",
@@ -3718,7 +3759,16 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 )
 
                 if (result.isSuccess) {
-                    val photoUrl = result.getOrThrow()
+                    photoUrl = result.getOrNull()
+                } else {
+                    Log.w("LovyChatViewModel", "Upload foto chat R2 gagal, mencoba fallback ImgBB...")
+                    val fallback = com.example.util.ImgBbUploader.uploadImage(ctx, uri)
+                    if (fallback.isSuccess) {
+                        photoUrl = fallback.getOrNull()
+                    }
+                }
+
+                if (!photoUrl.isNullOrBlank()) {
                     val displayText = caption.trim().ifBlank { "📷 Foto" }
                     val newMsg = ChatMessage(
                         id = UUID.randomUUID().toString(),

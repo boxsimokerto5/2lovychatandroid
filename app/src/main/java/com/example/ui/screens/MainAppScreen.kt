@@ -354,7 +354,7 @@ fun MainAppScreen(
                     viewModel.postMoment(content, img, loc)
                 },
                 onPostMomentWithPhotoUri = { content, uri, loc ->
-                    viewModel.postMomentWithPhoto(content, uri, loc)
+                    viewModel.postMomentWithPhoto(content, uri, loc, context)
                 },
                 onDeleteMoment = { momentId ->
                     viewModel.deleteMoment(momentId)

@@ -265,6 +265,8 @@ fun UserProfileScreen(
                                     model = userProfile.profilePicture,
                                     contentDescription = "Foto Profil ${userProfile.displayName}",
                                     contentScale = ContentScale.Crop,
+                                    error = painterResource(id = R.drawable.ic_lovy_logo),
+                                    fallback = painterResource(id = R.drawable.ic_lovy_logo),
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .clip(CircleShape)
@@ -883,6 +885,8 @@ fun EditProfileDialog(
                                 model = profilePictureUrl,
                                 contentDescription = com.example.util.AppStrings.profilePhotoSection(language),
                                 contentScale = ContentScale.Crop,
+                                error = painterResource(id = R.drawable.ic_lovy_logo),
+                                fallback = painterResource(id = R.drawable.ic_lovy_logo),
                                 modifier = Modifier.fillMaxSize()
                             )
                         } else {

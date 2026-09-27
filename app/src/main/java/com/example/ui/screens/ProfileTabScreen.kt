@@ -175,6 +175,8 @@ fun ProfileTabScreen(
                             model = profilePicture,
                             contentDescription = myName,
                             contentScale = ContentScale.Crop,
+                            error = painterResource(id = R.drawable.ic_lovy_logo),
+                            fallback = painterResource(id = R.drawable.ic_lovy_logo),
                             modifier = Modifier
                                 .fillMaxSize()
                                 .clip(CircleShape)
