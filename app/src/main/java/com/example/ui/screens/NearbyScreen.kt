@@ -530,11 +530,7 @@ fun NearbyScreen(
                     onClick = {
                         android.widget.Toast.makeText(
                             context,
-                            if (language == com.example.util.AppLanguage.INDONESIAN) {
-                                "Radar dan daftar pengguna saat ini hanya menampilkan pengguna yang benar-benar aktif online ✨"
-                            } else {
-                                "Radar and user list only display users who are currently active online ✨"
-                            },
+                            com.example.util.AppStrings.nearbyOnlineFilterToast(language),
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
                     },
@@ -579,11 +575,7 @@ fun NearbyScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     val radarInfo = if (displayedUsers.isEmpty()) {
-                        if (language == com.example.util.AppLanguage.INDONESIAN) {
-                            "Belum ada pengguna lain yang sedang online di sekitar Anda saat ini."
-                        } else {
-                            "No other users are currently online near you."
-                        }
+                        com.example.util.AppStrings.nearbyNoOnlineUsers(language)
                     } else {
                         com.example.util.AppStrings.nearbyStatusOnlineText(language, displayedUsers.size, filteredUsers.size, hasHiddenUsers)
                     }

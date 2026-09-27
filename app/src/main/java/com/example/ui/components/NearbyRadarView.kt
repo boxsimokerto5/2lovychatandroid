@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.widget.Toast
+import com.example.util.AppStrings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -548,7 +549,7 @@ fun NearbyRadarView(
                                 .padding(horizontal = 10.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                text = if (language == AppLanguage.INDONESIAN) "Menunggu pengguna aktif..." else "Waiting for active users...",
+                                text = AppStrings.radarWaitingForActiveUsers(language),
                                 color = Color(0xFFB9F6CA),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Medium
@@ -655,17 +656,9 @@ fun NearbyRadarView(
                 // Teks petunjuk sentuh
                 Text(
                     text = if (users.isEmpty()) {
-                        if (language == AppLanguage.INDONESIAN) {
-                            "📡 Memindai sekitar... Belum ada pengguna lain yang aktif di radar saat ini"
-                        } else {
-                            "📡 Scanning nearby... No other active users on the radar right now"
-                        }
+                        AppStrings.radarScanningNearbyNoUsers(language)
                     } else {
-                        if (language == AppLanguage.INDONESIAN) {
-                            "🟢 Menampilkan ${users.size} pengguna yang sedang aktif online di radar"
-                        } else {
-                            "🟢 Showing ${users.size} currently active online users on radar"
-                        }
+                        AppStrings.radarShowingActiveOnlineUsers(language, users.size)
                     },
                     fontSize = 11.5.sp,
                     color = Color(0xFF81C784),
@@ -675,28 +668,9 @@ fun NearbyRadarView(
 
                 // Tombol "Cari Lebih Banyak di Radar" dengan Iklan Reward jika belum maksimal
                 if (hasHiddenUsers && selectedUser == null) {
-                    val expandBtnTitle = when {
-                        language == AppLanguage.INDONESIAN && nearbyExpansionTier == 0 -> "Cari Lebih Banyak di Radar"
-                        language == AppLanguage.INDONESIAN && nearbyExpansionTier < 4 -> "Perluas Radar Teman Sekitar"
-                        language == AppLanguage.INDONESIAN -> "Buka Maksimal Teman Sekitar"
-                        nearbyExpansionTier == 0 -> "Discover More on Radar"
-                        nearbyExpansionTier < 4 -> "Expand Radar Friends"
-                        else -> "Unlock Maximum Nearby Friends"
-                    }
-                    val expandBtnSubtitle = when {
-                        language == AppLanguage.INDONESIAN && nearbyExpansionTier == 0 -> "+$hiddenCount teman baru (Total $nextTargetCount) • Tonton video singkat 🎬"
-                        language == AppLanguage.INDONESIAN && nearbyExpansionTier < 4 -> "+$hiddenCount teman baru (Total $nextTargetCount) • Tonton video singkat 🎬"
-                        language == AppLanguage.INDONESIAN -> "+$hiddenCount teman lagi (Maksimal $nextTargetCount) • Tonton video singkat 🎬"
-                        nearbyExpansionTier == 0 -> "+$hiddenCount new people (Total $nextTargetCount) • Watch short video 🎬"
-                        nearbyExpansionTier < 4 -> "+$hiddenCount new people (Total $nextTargetCount) • Watch short video 🎬"
-                        else -> "+$hiddenCount more people (Max $nextTargetCount) • Watch short video 🎬"
-                    }
-                    val toastSuccessMsg = when {
-                        language == AppLanguage.INDONESIAN && nearbyExpansionTier < 4 -> "Selamat! Radar diperluas & $hiddenCount teman baru ditemukan (Total $nextTargetCount) 🎉"
-                        language == AppLanguage.INDONESIAN -> "Selamat! Radar maksimal aktif & $hiddenCount teman lagi ditemukan (Total $nextTargetCount) 🎉"
-                        nearbyExpansionTier < 4 -> "Success! Radar expanded & $hiddenCount new friends found 🎉"
-                        else -> "Success! Maximum radar unlocked & all friends found 🎉"
-                    }
+                    val expandBtnTitle = AppStrings.nearbyExpandBtnTitle(language, nearbyExpansionTier)
+                    val expandBtnSubtitle = AppStrings.nearbyExpandBtnSubtitle(language, hiddenCount, nextTargetCount, nearbyExpansionTier)
+                    val toastSuccessMsg = AppStrings.nearbyExpandToastSuccess(language, hiddenCount, nextTargetCount, nearbyExpansionTier)
 
                     Card(
                         shape = RoundedCornerShape(16.dp),
@@ -721,11 +695,7 @@ fun NearbyRadarView(
                                 if (!adLaunched) {
                                     Toast.makeText(
                                         context,
-                                        if (language == AppLanguage.INDONESIAN) {
-                                            "Mempersiapkan radar... Menampilkan pengguna sekitar untuk Anda ✨"
-                                        } else {
-                                            "Preparing radar... Unlocking nearby users for you ✨"
-                                        },
+                                        AppStrings.radarExpandPreparingToast(language),
                                         Toast.LENGTH_SHORT
                                     ).show()
                                     onExpandNearby?.invoke()
@@ -817,11 +787,7 @@ fun NearbyRadarView(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = if (language == AppLanguage.INDONESIAN) {
-                                "Radar Aktif • ${users.size} Pengguna Online ✨"
-                            } else {
-                                "Active Radar • ${users.size} Users Online ✨"
-                            },
+                            text = AppStrings.radarActiveUsersOnline(language, users.size),
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFFE8F5E9)

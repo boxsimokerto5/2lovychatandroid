@@ -7432,5 +7432,203 @@ object AppStrings {
         AppLanguage.INDONESIAN -> "Pindai Lagi"
         else -> "Scan Again"
     }
+
+    fun profileClearPhoto(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "清除头像（使用 Lovy Chat 标志）"
+        AppLanguage.JAPANESE -> "プロフィール写真を削除（Lovy Chat ロゴを使用）"
+        AppLanguage.KOREAN -> "프로필 사진 삭제 (Lovy Chat 로고 사용)"
+        AppLanguage.ARABIC -> "إزالة الصورة الشخصية (استخدام شعار Lovy Chat)"
+        AppLanguage.SPANISH -> "Quitar foto de perfil (Usar logo de Lovy Chat)"
+        AppLanguage.FRENCH -> "Effacer la photo de profil (Utiliser le logo Lovy Chat)"
+        AppLanguage.GERMAN -> "Profilbild löschen (Lovy Chat-Logo verwenden)"
+        AppLanguage.RUSSIAN -> "Удалить фото профиля (Использовать логотип Lovy Chat)"
+        AppLanguage.PORTUGUESE -> "Limpar foto de perfil (Usar logo do Lovy Chat)"
+        AppLanguage.INDONESIAN -> "Kosongkan Foto Profil (Gunakan Logo Lovy Chat)"
+        else -> "Clear Profile Photo (Use Lovy Chat Logo)"
+    }
+
+    fun radarWaitingForActiveUsers(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "等待活跃用户..."
+        AppLanguage.JAPANESE -> "アクティブなユーザーを待機中..."
+        AppLanguage.KOREAN -> "활성 사용자 대기 중..."
+        AppLanguage.ARABIC -> "في انتظار المستخدمين النشطين..."
+        AppLanguage.SPANISH -> "Esperando usuarios activos..."
+        AppLanguage.FRENCH -> "En attente d'utilisateurs actifs..."
+        AppLanguage.GERMAN -> "Warten auf aktive Benutzer..."
+        AppLanguage.RUSSIAN -> "Ожидание активных пользователей..."
+        AppLanguage.PORTUGUESE -> "Aguardando usuários ativos..."
+        AppLanguage.INDONESIAN -> "Menunggu pengguna aktif..."
+        else -> "Waiting for active users..."
+    }
+
+    fun radarScanningNearbyNoUsers(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "📡 正在扫描周围... 目前雷达上没有其他活跃用户"
+        AppLanguage.JAPANESE -> "📡 周辺をスキャン中... 現在レーダー上にアクティブなユーザーはいません"
+        AppLanguage.KOREAN -> "📡 주변 검색 중... 현재 레이더에 활성 사용자가 없습니다"
+        AppLanguage.ARABIC -> "📡 مسح المنطقة المجاورة... لا يوجد مستخدمون نشطون آخرون على الرادار الآن"
+        AppLanguage.SPANISH -> "📡 Escaneando cerca... No hay otros usuarios activos en el radar por ahora"
+        AppLanguage.FRENCH -> "📡 Scan des alentours... Aucun autre utilisateur actif sur le radar pour le moment"
+        AppLanguage.GERMAN -> "📡 Suche in der Nähe... Derzeit keine anderen aktiven Benutzer auf dem Radar"
+        AppLanguage.RUSSIAN -> "📡 Сканирование поблизости... Сейчас на радаре нет других активных пользователей"
+        AppLanguage.PORTUGUESE -> "📡 Escaneando arredores... Nenhum outro usuário ativo no radar no momento"
+        AppLanguage.INDONESIAN -> "📡 Memindai sekitar... Belum ada pengguna lain yang aktif di radar saat ini"
+        else -> "📡 Scanning nearby... No other active users on the radar right now"
+    }
+
+    fun radarShowingActiveOnlineUsers(lang: AppLanguage, count: Int): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "🟢 雷达上显示 $count 位当前活跃在线的用户"
+        AppLanguage.JAPANESE -> "🟢 レーダー上に現在アクティブなユーザー $count 名を表示中"
+        AppLanguage.KOREAN -> "🟢 현재 레이더에 온라인 상태인 사용자 ${count}명 표시 중"
+        AppLanguage.ARABIC -> "🟢 عرض $count من المستخدمين النشطين عبر الإنترنت على الرادار"
+        AppLanguage.SPANISH -> "🟢 Mostrando $count usuarios activos en línea en el radar"
+        AppLanguage.FRENCH -> "🟢 Affichage de $count utilisateurs actifs en ligne sur le radar"
+        AppLanguage.GERMAN -> "🟢 $count aktive Online-Benutzer auf dem Radar angezeigt"
+        AppLanguage.RUSSIAN -> "🟢 Отображение $count активных пользователей онлайн на радаре"
+        AppLanguage.PORTUGUESE -> "🟢 Exibindo $count usuários ativos online no radar"
+        AppLanguage.INDONESIAN -> "🟢 Menampilkan $count pengguna yang sedang aktif online di radar"
+        else -> "🟢 Showing $count currently active online users on radar"
+    }
+
+    fun radarActiveUsersOnline(lang: AppLanguage, count: Int): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "活跃雷达 • $count 在线用户 ✨"
+        AppLanguage.JAPANESE -> "アクティブレーダー • $count 人オンライン ✨"
+        AppLanguage.KOREAN -> "활성 레이더 • ${count}명 온라인 ✨"
+        AppLanguage.ARABIC -> "رادار نشط • $count مستخدم متصل ✨"
+        AppLanguage.SPANISH -> "Radar Activo • $count Usuarios en Línea ✨"
+        AppLanguage.FRENCH -> "Radar actif • $count utilisateurs en ligne ✨"
+        AppLanguage.GERMAN -> "Aktives Radar • $count Benutzer online ✨"
+        AppLanguage.RUSSIAN -> "Активный радар • $count пользователей онлайн ✨"
+        AppLanguage.PORTUGUESE -> "Radar Ativo • $count Usuários Online ✨"
+        AppLanguage.INDONESIAN -> "Radar Aktif • $count Pengguna Online ✨"
+        else -> "Active Radar • $count Users Online ✨"
+    }
+
+    fun nearbyOnlineFilterToast(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "雷达和用户列表目前仅显示处于在线活跃状态的用户 ✨"
+        AppLanguage.JAPANESE -> "レーダーとユーザーリストには、現在オンラインのアクティブユーザーのみが表示されます ✨"
+        AppLanguage.KOREAN -> "레이더 및 사용자 목록에는 현재 온라인인 활성 사용자만 표시됩니다 ✨"
+        AppLanguage.ARABIC -> "يعرض الرادار وقائمة المستخدمين حالياً فقط المستخدمين النشطين عبر الإنترنت ✨"
+        AppLanguage.SPANISH -> "El radar y la lista de usuarios solo muestran personas que están activas en línea ✨"
+        AppLanguage.FRENCH -> "Le radar et la liste affichent uniquement les utilisateurs actuellement en ligne ✨"
+        AppLanguage.GERMAN -> "Radar und Benutzerliste zeigen nur derzeit aktive Online-Benutzer an ✨"
+        AppLanguage.RUSSIAN -> "Радар и список отображают только активных пользователей онлайн ✨"
+        AppLanguage.PORTUGUESE -> "O radar e a lista de usuários exibem apenas quem está ativo online ✨"
+        AppLanguage.INDONESIAN -> "Radar dan daftar pengguna saat ini hanya menampilkan pengguna yang benar-benar aktif online ✨"
+        else -> "Radar and user list only display users who are currently active online ✨"
+    }
+
+    fun nearbyExpandBtnTitle(lang: AppLanguage, tier: Int): String = when {
+        tier == 0 -> when (resolveLang(lang)) {
+            AppLanguage.CHINESE -> "在雷达上发现更多"
+            AppLanguage.JAPANESE -> "レーダーでさらに探す"
+            AppLanguage.KOREAN -> "레이더에서 더 많이 찾기"
+            AppLanguage.ARABIC -> "اكتشف المزيد على الرادار"
+            AppLanguage.SPANISH -> "Descubrir más en el radar"
+            AppLanguage.FRENCH -> "Découvrir plus sur le radar"
+            AppLanguage.GERMAN -> "Mehr auf dem Radar entdecken"
+            AppLanguage.RUSSIAN -> "Найти больше на радаре"
+            AppLanguage.PORTUGUESE -> "Descobrir mais no radar"
+            AppLanguage.INDONESIAN -> "Cari Lebih Banyak di Radar"
+            else -> "Discover More on Radar"
+        }
+        tier < 4 -> when (resolveLang(lang)) {
+            AppLanguage.CHINESE -> "扩展雷达附近好友"
+            AppLanguage.JAPANESE -> "周辺のレーダー友達を拡大"
+            AppLanguage.KOREAN -> "주변 친구 레이더 확장"
+            AppLanguage.ARABIC -> "توسيع رادار الأصدقاء القريبين"
+            AppLanguage.SPANISH -> "Ampliar radar de amigos cercanos"
+            AppLanguage.FRENCH -> "Étendre le radar d'amis proches"
+            AppLanguage.GERMAN -> "Freunde-Radar erweitern"
+            AppLanguage.RUSSIAN -> "Расширить радар друзей поблизости"
+            AppLanguage.PORTUGUESE -> "Expandir radar de amigos próximos"
+            AppLanguage.INDONESIAN -> "Perluas Radar Teman Sekitar"
+            else -> "Expand Radar Friends"
+        }
+        else -> when (resolveLang(lang)) {
+            AppLanguage.CHINESE -> "解锁全部附近好友"
+            AppLanguage.JAPANESE -> "周辺の友達を最大まで解放"
+            AppLanguage.KOREAN -> "주변 친구 최대로 잠금 해제"
+            AppLanguage.ARABIC -> "فتح أقصى عدد من الأصدقاء القريبين"
+            AppLanguage.SPANISH -> "Desbloquear máximo de amigos cercanos"
+            AppLanguage.FRENCH -> "Débloquer le maximum d'amis proches"
+            AppLanguage.GERMAN -> "Maximal viele Freunde in der Nähe freischalten"
+            AppLanguage.RUSSIAN -> "Открыть максимум друзей поблизости"
+            AppLanguage.PORTUGUESE -> "Desbloquear o máximo de amigos próximos"
+            AppLanguage.INDONESIAN -> "Buka Maksimal Teman Sekitar"
+            else -> "Unlock Maximum Nearby Friends"
+        }
+    }
+
+    fun nearbyExpandBtnSubtitle(lang: AppLanguage, hiddenCount: Int, nextTargetCount: Int, tier: Int): String = when {
+        tier < 4 -> when (resolveLang(lang)) {
+            AppLanguage.CHINESE -> "+$hiddenCount 位新朋友 (共 $nextTargetCount 人) • 观看短视频 🎬"
+            AppLanguage.JAPANESE -> "+$hiddenCount 人の新しい友達 (計 $nextTargetCount 人) • 短い動画を見る 🎬"
+            AppLanguage.KOREAN -> "+${hiddenCount}명의 새 친구 (총 ${nextTargetCount}명) • 짧은 영상 시청 🎬"
+            AppLanguage.ARABIC -> "+$hiddenCount أصدقاء جدد (المجموع $nextTargetCount) • شاهد فيديو قصير 🎬"
+            AppLanguage.SPANISH -> "+$hiddenCount amigos nuevos (Total $nextTargetCount) • Ver video corto 🎬"
+            AppLanguage.FRENCH -> "+$hiddenCount nouveaux amis (Total $nextTargetCount) • Regarder une courte vidéo 🎬"
+            AppLanguage.GERMAN -> "+$hiddenCount neue Freunde (Gesamt $nextTargetCount) • Kurzes Video ansehen 🎬"
+            AppLanguage.RUSSIAN -> "+$hiddenCount новых людей (Всего $nextTargetCount) • Смотреть короткое видео 🎬"
+            AppLanguage.PORTUGUESE -> "+$hiddenCount novos amigos (Total $nextTargetCount) • Assistir vídeo curto 🎬"
+            AppLanguage.INDONESIAN -> "+$hiddenCount teman baru (Total $nextTargetCount) • Tonton video singkat 🎬"
+            else -> "+$hiddenCount new people (Total $nextTargetCount) • Watch short video 🎬"
+        }
+        else -> when (resolveLang(lang)) {
+            AppLanguage.CHINESE -> "+$hiddenCount 位好友 (最多 $nextTargetCount 人) • 观看短视频 🎬"
+            AppLanguage.JAPANESE -> "+$hiddenCount 人さらに表示 (最大 $nextTargetCount 人) • 短い動画を見る 🎬"
+            AppLanguage.KOREAN -> "+${hiddenCount}명 더 (최대 ${nextTargetCount}명) • 짧은 영상 시청 🎬"
+            AppLanguage.ARABIC -> "+$hiddenCount أصدقاء إضافيين (الحد الأقصى $nextTargetCount) • شاهد فيديو قصير 🎬"
+            AppLanguage.SPANISH -> "+$hiddenCount personas más (Máximo $nextTargetCount) • Ver video corto 🎬"
+            AppLanguage.FRENCH -> "+$hiddenCount personnes de plus (Max $nextTargetCount) • Regarder une courte vidéo 🎬"
+            AppLanguage.GERMAN -> "+$hiddenCount weitere Freunde (Max. $nextTargetCount) • Kurzes Video ansehen 🎬"
+            AppLanguage.RUSSIAN -> "+$hiddenCount людей ещё (Максимум $nextTargetCount) • Смотреть короткое видео 🎬"
+            AppLanguage.PORTUGUESE -> "+$hiddenCount amigos adicionais (Máx $nextTargetCount) • Assistir vídeo curto 🎬"
+            AppLanguage.INDONESIAN -> "+$hiddenCount teman lagi (Maksimal $nextTargetCount) • Tonton video singkat 🎬"
+            else -> "+$hiddenCount more people (Max $nextTargetCount) • Watch short video 🎬"
+        }
+    }
+
+    fun nearbyExpandToastSuccess(lang: AppLanguage, hiddenCount: Int, nextTargetCount: Int, tier: Int): String = when {
+        tier < 4 -> when (resolveLang(lang)) {
+            AppLanguage.CHINESE -> "成功！雷达已扩展，发现了 $hiddenCount 位新朋友（共 $nextTargetCount 人）🎉"
+            AppLanguage.JAPANESE -> "完了！レーダーが拡張され、$hiddenCount 人の新しい友達が見つかりました (計 $nextTargetCount 人) 🎉"
+            AppLanguage.KOREAN -> "축하합니다! 레이더가 확장되었으며 ${hiddenCount}명의 새 친구를 찾았습니다 (총 ${nextTargetCount}명) 🎉"
+            AppLanguage.ARABIC -> "تهانينا! تم توسيع الرادار والعثور على $hiddenCount أصدقاء جدد (المجموع $nextTargetCount) 🎉"
+            AppLanguage.SPANISH -> "¡Genial! Radar ampliado y $hiddenCount amigos encontrados (Total $nextTargetCount) 🎉"
+            AppLanguage.FRENCH -> "Félicitations ! Radar étendu et $hiddenCount nouveaux amis trouvés (Total $nextTargetCount) 🎉"
+            AppLanguage.GERMAN -> "Glückwunsch! Radar erweitert & $hiddenCount neue Freunde gefunden (Gesamt $nextTargetCount) 🎉"
+            AppLanguage.RUSSIAN -> "Поздравляем! Радар расширен, найдено $hiddenCount новых друзей (Всего $nextTargetCount) 🎉"
+            AppLanguage.PORTUGUESE -> "Parabéns! Radar expandido e $hiddenCount novos amigos encontrados (Total $nextTargetCount) 🎉"
+            AppLanguage.INDONESIAN -> "Selamat! Radar diperluas & $hiddenCount teman baru ditemukan (Total $nextTargetCount) 🎉"
+            else -> "Success! Radar expanded & $hiddenCount new friends found (Total $nextTargetCount) 🎉"
+        }
+        else -> when (resolveLang(lang)) {
+            AppLanguage.CHINESE -> "恭喜！最大范围雷达已激活，发现了 $hiddenCount 位更多朋友（共 $nextTargetCount 人）🎉"
+            AppLanguage.JAPANESE -> "完了！最大レーダーが有効になり、さらに $hiddenCount 人の友達が見つかりました 🎉"
+            AppLanguage.KOREAN -> "축하합니다! 최대 레이더가 활성화되었으며 ${hiddenCount}명의 친구를 더 찾았습니다 🎉"
+            AppLanguage.ARABIC -> "تهانينا! تم تفعيل أقصى نطاق للرادار والعثور على $hiddenCount صديق إضافي 🎉"
+            AppLanguage.SPANISH -> "¡Felicitaciones! Radar máximo desbloqueado y $hiddenCount amigos más encontrados 🎉"
+            AppLanguage.FRENCH -> "Félicitations ! Radar maximal activé et $hiddenCount amis de plus trouvés 🎉"
+            AppLanguage.GERMAN -> "Glückwunsch! Maximales Radar aktiviert & $hiddenCount weitere Freunde gefunden 🎉"
+            AppLanguage.RUSSIAN -> "Поздравляем! Радар на максимуме и найдено ещё $hiddenCount друзей 🎉"
+            AppLanguage.PORTUGUESE -> "Parabéns! Radar no máximo e mais $hiddenCount amigos encontrados 🎉"
+            AppLanguage.INDONESIAN -> "Selamat! Radar maksimal aktif & $hiddenCount teman lagi ditemukan (Total $nextTargetCount) 🎉"
+            else -> "Success! Maximum radar unlocked & $hiddenCount more friends found (Total $nextTargetCount) 🎉"
+        }
+    }
+
+    fun nearbyNoOnlineUsers(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "目前您附近没有其他在线用户。"
+        AppLanguage.JAPANESE -> "現在、あなたの周辺に他のオンラインユーザーはいません。"
+        AppLanguage.KOREAN -> "현재 주변에 온라인 상태인 다른 사용자가 없습니다."
+        AppLanguage.ARABIC -> "لا يوجد مستخدمون آخرون متصلون بالإنترنت بالقرب منك حالياً."
+        AppLanguage.SPANISH -> "No hay otros usuarios en línea cerca de ti en este momento."
+        AppLanguage.FRENCH -> "Aucun autre utilisateur n'est actuellement en ligne près de vous."
+        AppLanguage.GERMAN -> "Derzeit sind keine anderen Benutzer in Ihrer Nähe online."
+        AppLanguage.RUSSIAN -> "Сейчас поблизости нет других пользователей онлайн."
+        AppLanguage.PORTUGUESE -> "Nenhum outro usuário está online por perto no momento."
+        AppLanguage.INDONESIAN -> "Belum ada pengguna lain yang sedang online di sekitar Anda saat ini."
+        else -> "No other users are currently online near you."
+    }
 }
 

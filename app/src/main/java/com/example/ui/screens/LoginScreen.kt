@@ -450,7 +450,7 @@ fun LoginScreen(
                                     )
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Text(
-                                        text = if (language == AppLanguage.INDONESIAN) "Menghubungkan akun Google..." else "Connecting Google account...",
+                                        text = AppStrings.googleConnecting(language),
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Medium,
                                         color = NeutralMedium

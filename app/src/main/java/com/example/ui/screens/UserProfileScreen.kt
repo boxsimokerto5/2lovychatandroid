@@ -949,7 +949,7 @@ fun EditProfileDialog(
                             strokeWidth = 2.dp
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(uploadProgressText ?: if (language == com.example.util.AppLanguage.INDONESIAN) "Mengunggah..." else "Uploading...", fontSize = 13.sp)
+                        Text(uploadProgressText ?: com.example.util.AppStrings.uploading(language), fontSize = 13.sp)
                     } else {
                         Icon(
                             imageVector = Icons.Default.AddPhotoAlternate,
@@ -980,7 +980,7 @@ fun EditProfileDialog(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = if (language == com.example.util.AppLanguage.INDONESIAN) "Kosongkan Foto Profil (Gunakan Logo Lovy Chat)" else "Clear Profile Photo (Use Lovy Chat Logo)",
+                            text = com.example.util.AppStrings.profileClearPhoto(language),
                             fontSize = 12.5.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFFD32F2F)
