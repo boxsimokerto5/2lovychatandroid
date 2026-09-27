@@ -3628,14 +3628,15 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         context: android.content.Context? = null,
         onComplete: ((Boolean) -> Unit)? = null
     ) {
-        if (content.isBlank()) {
+        val finalContent = content.trim().ifBlank { if (uri != null) "📷 Foto momen" else "" }
+        if (finalContent.isBlank()) {
             onComplete?.invoke(false)
             return
         }
 
         val ctx = context ?: getApplication<Application>()
         if (uri == null) {
-            postMoment(content, null, locationTag)
+            postMoment(finalContent, null, locationTag)
             onComplete?.invoke(true)
             return
         }
@@ -3682,7 +3683,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     Log.e("LovyChatViewModel", "Upload momen ke R2 gagal: $errMsg")
                     _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
                     try {
-                        android.widget.Toast.makeText(ctx, "Gagal mengunggah foto ke Cloudflare R2. Silakan periksa jaringan dan coba lagi.", android.widget.Toast.LENGTH_LONG).show()
+                        android.widget.Toast.makeText(ctx, "Gagal upload foto: $errMsg", android.widget.Toast.LENGTH_LONG).show()
                     } catch (_: Throwable) {}
                     onComplete?.invoke(false)
                     return@launch
@@ -3690,14 +3691,15 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
                 // 3. Simpan momen dengan URL foto yang berhasil diunggah
                 _uiState.update { it.copy(uploadProgressText = "Menerbitkan momen...") }
-                postMoment(content, uploadedUrl, locationTag)
+                postMoment(finalContent, uploadedUrl, locationTag)
                 _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
                 onComplete?.invoke(true)
             } catch (e: Exception) {
                 Log.e("LovyChatViewModel", "Error posting moment with photo", e)
                 _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
                 try {
-                    android.widget.Toast.makeText(ctx, "Terjadi kesalahan saat mengunggah foto", android.widget.Toast.LENGTH_SHORT).show()
+                    val err = e.localizedMessage ?: "Terjadi kesalahan saat mengunggah foto"
+                    android.widget.Toast.makeText(ctx, "Gagal upload: $err", android.widget.Toast.LENGTH_LONG).show()
                 } catch (_: Throwable) {}
                 onComplete?.invoke(false)
             }

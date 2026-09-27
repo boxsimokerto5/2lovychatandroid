@@ -650,20 +650,21 @@ fun MomentsScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        if (postText.isNotBlank()) {
+                        if (postText.isNotBlank() || selectedPhotoUri != null) {
+                            val contentToPost = postText.ifBlank { "📷 Foto momen" }
                             if (selectedPhotoUri != null && onPostMomentWithPhotoUri != null) {
-                                onPostMomentWithPhotoUri(postText, selectedPhotoUri, postLocation)
+                                onPostMomentWithPhotoUri(contentToPost, selectedPhotoUri, postLocation)
                             } else if (onPostMomentWithDetails != null) {
-                                onPostMomentWithDetails(postText, null, postLocation)
+                                onPostMomentWithDetails(contentToPost, null, postLocation)
                             } else {
-                                onPostMoment(postText)
+                                onPostMoment(contentToPost)
                             }
                             postText = ""
                             selectedPhotoUri = null
                             showPostDialog = false
                         }
                     },
-                    enabled = !isUploadingPhoto,
+                    enabled = !isUploadingPhoto && (postText.isNotBlank() || selectedPhotoUri != null),
                     colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
                     shape = RoundedCornerShape(10.dp)
                 ) {

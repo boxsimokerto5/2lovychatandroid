@@ -39,48 +39,74 @@ object R2StorageClient {
             .build()
     }
 
+    private fun isValidValue(value: String?): Boolean {
+        if (value.isNullOrBlank()) return false
+        val trimmed = value.trim()
+        if (trimmed.startsWith("your_", ignoreCase = true) ||
+            trimmed.startsWith("default_", ignoreCase = true) ||
+            trimmed.startsWith("<") ||
+            trimmed.equals("placeholder", ignoreCase = true)
+        ) {
+            return false
+        }
+        return true
+    }
+
     fun init(context: Context) {
         if (sharedPrefs == null) {
             sharedPrefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            // Bersihkan kredensial dummy atau placeholder yang mungkin tersimpan
+            sharedPrefs?.let { prefs ->
+                val acc = prefs.getString(PREF_ACCOUNT_ID, null)
+                if (acc != null && !isValidValue(acc)) {
+                    prefs.edit()
+                        .remove(PREF_ACCOUNT_ID)
+                        .remove(PREF_ACCESS_KEY)
+                        .remove(PREF_SECRET_KEY)
+                        .remove(PREF_BUCKET_NAME)
+                        .apply()
+                }
+            }
         }
     }
 
     fun getAccountId(): String {
-        val stored = sharedPrefs?.getString(PREF_ACCOUNT_ID, null)?.takeIf { it.isNotBlank() }
-        if (stored != null) return stored
+        val stored = sharedPrefs?.getString(PREF_ACCOUNT_ID, null)?.takeIf { isValidValue(it) }
+        if (stored != null) return stored.trim()
         val build = BuildConfig.R2_ACCOUNT_ID
-        if (build.isNotBlank() && !build.startsWith("default_")) return build
+        if (isValidValue(build)) return build.trim()
         return "e918621d95bd4f025275ab5514e67753"
     }
 
     fun getAccessKeyId(): String {
-        val stored = sharedPrefs?.getString(PREF_ACCESS_KEY, null)?.takeIf { it.isNotBlank() }
-        if (stored != null) return stored
+        val stored = sharedPrefs?.getString(PREF_ACCESS_KEY, null)?.takeIf { isValidValue(it) }
+        if (stored != null) return stored.trim()
         val build = BuildConfig.R2_ACCESS_KEY_ID
-        if (build.isNotBlank() && !build.startsWith("default_")) return build
+        if (isValidValue(build)) return build.trim()
         return "6090158ccbc5f5f27741f212bd6594bd"
     }
 
     fun getSecretAccessKey(): String {
-        val stored = sharedPrefs?.getString(PREF_SECRET_KEY, null)?.takeIf { it.isNotBlank() }
-        if (stored != null) return stored
+        val stored = sharedPrefs?.getString(PREF_SECRET_KEY, null)?.takeIf { isValidValue(it) }
+        if (stored != null) return stored.trim()
         val build = BuildConfig.R2_SECRET_ACCESS_KEY
-        if (build.isNotBlank() && !build.startsWith("default_")) return build
+        if (isValidValue(build)) return build.trim()
         return "9dfb893c990bec0a60a6ef23ee21efbbed4f267eccba2f137784f3a60df530ac"
     }
 
     fun getBucketName(): String {
-        val stored = sharedPrefs?.getString(PREF_BUCKET_NAME, null)?.takeIf { it.isNotBlank() }
-        if (stored != null && stored != "Backend_lovychat_api_token") return stored
+        val stored = sharedPrefs?.getString(PREF_BUCKET_NAME, null)?.takeIf { isValidValue(it) && it != "Backend_lovychat_api_token" }
+        if (stored != null) return stored.trim()
         val build = BuildConfig.R2_BUCKET_NAME
-        if (build.isNotBlank() && !build.startsWith("default_") && build != "Backend_lovychat_api_token") return build
+        if (isValidValue(build) && build != "Backend_lovychat_api_token") return build.trim()
         return "lovychat"
     }
 
     fun getPublicDomain(): String {
-        val configured = sharedPrefs?.getString(PREF_PUBLIC_DOMAIN, null)
-            ?.takeIf { it.isNotBlank() }
-            ?: BuildConfig.R2_PUBLIC_DOMAIN
+        val stored = sharedPrefs?.getString(PREF_PUBLIC_DOMAIN, null)?.takeIf { isValidValue(it) }
+        val configured = stored
+            ?: BuildConfig.R2_PUBLIC_DOMAIN.takeIf { isValidValue(it) }
+            ?: ""
 
         val domain = configured.trim().removeSuffix("/")
         val accountId = getAccountId()
@@ -189,6 +215,7 @@ object R2StorageClient {
             .header("x-amz-content-sha256", payloadHash)
             .header("Content-Type", contentType)
             .header("Authorization", authorizationHeader)
+            .header("User-Agent", "LovyChat-Android/1.0")
             .build()
 
         try {
