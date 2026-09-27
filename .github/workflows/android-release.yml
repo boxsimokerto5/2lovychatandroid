@@ -91,12 +91,16 @@ jobs:
 
       - name: Upload AAB (Google Play Store)
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: app-release-aab
           path: app/build/outputs/bundle/release/*.aab
+          retention-days: 1
 
       - name: Upload APK (Direct Install)
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: app-release-apk
           path: app/build/outputs/apk/release/*.apk
+          retention-days: 1

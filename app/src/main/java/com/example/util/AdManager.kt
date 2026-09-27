@@ -109,6 +109,15 @@ object AdManager {
             // Tandai initialized secara internal agar tidak dipanggil berulang
             isInitialized = true
 
+            // Track network state to automatically resume ads on reconnection
+            try {
+                IronSource.shouldTrackNetworkState(activity, true)
+                // Jalankan validasi integrasi resmi ironSource untuk memeriksa status Ad Key & Network di Logcat
+                com.ironsource.mediationsdk.integration.IntegrationHelper.validateIntegration(activity)
+            } catch (t: Throwable) {
+                Log.w(TAG, "Integration validation note: ${t.message}")
+            }
+
             // Automatically load interstitial in the background
             loadInterstitial()
         } catch (e: Exception) {
