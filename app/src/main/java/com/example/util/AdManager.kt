@@ -28,7 +28,16 @@ object AdManager {
     private const val TAG = "AdManager"
 
     // App Key from the user's ironSource / LevelPlay dashboard for Lovy Chat
-    const val IRONSOURCE_APP_KEY = "283361415"
+    val IRONSOURCE_APP_KEY: String
+        get() {
+            val build = try {
+                val field = com.example.BuildConfig::class.java.getField("IRONSOURCE_APP_KEY")
+                field.get(null) as? String ?: ""
+            } catch (_: Throwable) { "" }
+            return if (build.isNotBlank() && !build.startsWith("your_")) build
+            else "283361415"
+        }
+
 
     // ironSource Ad Unit IDs
     const val AD_UNIT_NATIVE_ID = "2f06kx1nra7a3jny"

@@ -830,9 +830,15 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     fun onUserTyping(conversationId: String, partnerId: String, isTyping: Boolean) {
         if (_uiState.value.isGuest) return
         val now = System.currentTimeMillis()
-        // Kirim status mengetik: throttle 3 detik jika sedang mengetik, atau segera kirim jika berhenti
-        if (!isTyping || now - lastTypingSentTime > 3000L) {
+        // Kirim status mengetik via Centrifugo WebSocket instan
+        if (!isTyping || now - lastTypingSentTime > 2500L) {
             lastTypingSentTime = now
+            com.example.data.centrifugo.CentrifugoRealtimeManager.publishTyping(
+                conversationId = conversationId,
+                senderId = _uiState.value.myLovyId,
+                receiverId = partnerId,
+                isTyping = isTyping
+            )
             viewModelScope.launch(Dispatchers.IO) {
                 try {
                     val msgText = if (isTyping) "__TYPING_START__" else "__TYPING_STOP__"
@@ -3779,6 +3785,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         SupabaseRealtimeManager.connect(myId)
 
         realtimeSubscriptionJob?.cancel()
+        viewModelScope.launch(Dispatchers.IO) {
+            com.example.data.centrifugo.CentrifugoRealtimeManager.typingEvents.collect { typingEvent ->
+                withContext(Dispatchers.Main) {
+                    setPartnerTyping(typingEvent.conversationId, typingEvent.isTyping)
+                }
+            }
+        }
         realtimeSubscriptionJob = viewModelScope.launch(Dispatchers.IO) {
             SupabaseRealtimeManager.incomingMessages.collect { messageDto ->
                 try {

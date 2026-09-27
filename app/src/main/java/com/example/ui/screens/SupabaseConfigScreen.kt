@@ -441,7 +441,7 @@ SELECT cron.schedule(
                         val isPocketBaseActive = com.example.data.supabase.SupabaseClient.isPocketBase()
                         Text(
                             text = if (isConnected) {
-                                if (isPocketBaseActive) "Server PocketBase Aktif" else "Layanan Supabase Aktif"
+                                if (isPocketBaseActive) "PocketBase + Centrifugo Aktif" else "Layanan Supabase Aktif"
                             } else {
                                 "Layanan Cloud Belum Terhubung"
                             },
@@ -452,7 +452,7 @@ SELECT cron.schedule(
                         Spacer(modifier = Modifier.height(3.dp))
                         Text(
                             text = connectionStatusMessage ?: if (isConnected) {
-                                if (isPocketBaseActive) "Terhubung ke server PocketBase (VPS: 173.249.59.183:8090)" else "Penyimpanan cloud aktif untuk pesan & cerita."
+                                if (isPocketBaseActive) "Database: PocketBase (173.249.59.183:8090) • Realtime: Centrifugo (Port 8000)" else "Penyimpanan cloud aktif untuk pesan & cerita."
                             } else {
                                 "Aplikasi saat ini berjalan dalam mode penyimpanan perangkat."
                             },
@@ -492,7 +492,7 @@ SELECT cron.schedule(
 
                     // URL
                     Text(
-                        text = "Cloud Server URL",
+                        text = "PocketBase Server URL",
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = NeutralDark
@@ -501,7 +501,7 @@ SELECT cron.schedule(
                     OutlinedTextField(
                         value = urlInput,
                         onValueChange = { urlInput = it },
-                        placeholder = { Text("https://xxxxxxxxxxxxxxxxxxxx.co", fontSize = 13.sp) },
+                        placeholder = { Text("http://173.249.59.183:8090", fontSize = 13.sp) },
                         singleLine = true,
                         leadingIcon = {
                             Icon(imageVector = Icons.Default.Link, contentDescription = null, tint = EmeraldGreen)
@@ -515,7 +515,7 @@ SELECT cron.schedule(
 
                     // Anon Key
                     Text(
-                        text = "Access Token / API Key",
+                        text = "Access Token / API Key (Opsional untuk PocketBase)",
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = NeutralDark
@@ -524,7 +524,7 @@ SELECT cron.schedule(
                     OutlinedTextField(
                         value = keyInput,
                         onValueChange = { keyInput = it },
-                        placeholder = { Text("eyJh...... (Token Akses Publik)", fontSize = 13.sp) },
+                        placeholder = { Text("Kosongkan untuk server PocketBase default", fontSize = 13.sp) },
                         minLines = 2,
                         maxLines = 3,
                         leadingIcon = {

@@ -15,7 +15,16 @@ import java.util.UUID
 
 object GoogleAuthHelper {
     // Web Application Client ID dari Google Cloud Console proyek pengguna (wajib tipe Web untuk serverClientId)
-    const val SERVER_CLIENT_ID = "347302027962-9g1rvg326b9hvtgamckkqcn7mr00i2gp.apps.googleusercontent.com"
+    val SERVER_CLIENT_ID: String
+        get() {
+            val build = try {
+                val field = com.example.BuildConfig::class.java.getField("GOOGLE_SERVER_CLIENT_ID")
+                field.get(null) as? String ?: ""
+            } catch (_: Throwable) { "" }
+            return if (build.isNotBlank() && !build.startsWith("your_")) build
+            else "347302027962-9g1rvg326b9hvtgamckkqcn7mr00i2gp.apps.googleusercontent.com"
+        }
+
 
     data class GoogleUserResult(
         val idToken: String,

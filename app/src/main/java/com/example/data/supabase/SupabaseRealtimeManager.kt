@@ -73,6 +73,7 @@ object SupabaseRealtimeManager {
 
         if (SupabaseClient.isPocketBase()) {
             com.example.data.pocketbase.PocketBaseRealtimeManager.connect(userId)
+            com.example.data.centrifugo.CentrifugoRealtimeManager.connect(userId)
             return
         }
 
@@ -325,6 +326,7 @@ object SupabaseRealtimeManager {
      */
     fun disconnect() {
         com.example.data.pocketbase.PocketBaseRealtimeManager.disconnect()
+        com.example.data.centrifugo.CentrifugoRealtimeManager.disconnect()
         stopHeartbeat()
         reconnectJob?.cancel()
         try {

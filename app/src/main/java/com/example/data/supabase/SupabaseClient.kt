@@ -117,11 +117,20 @@ object SupabaseClient {
 
     fun isPocketBase(): Boolean {
         val url = getSupabaseUrl().lowercase().trim()
-        return url.contains(":8090") || url.contains("173.249.59.183") || url.contains("pocketbase") || (!url.contains("supabase.co") && !url.contains("supabase"))
+        if (url.contains("supabase.co")) return false
+        return true
     }
 
     fun getSupabaseUrl(): String {
         customUrl?.let { if (it.isNotBlank()) return normalizeBaseUrl(it) }
+        val pbValue = try {
+            val field = BuildConfig::class.java.getField("POCKETBASE_URL")
+            field.get(null) as? String ?: ""
+        } catch (_: Throwable) { "" }
+        if (pbValue.isNotBlank() && !pbValue.startsWith("your_")) {
+            return normalizeBaseUrl(pbValue)
+        }
+
         val rawValue = try {
             val field = BuildConfig::class.java.getField("SUPABASE_URL")
             field.get(null) as? String ?: ""
@@ -130,7 +139,9 @@ object SupabaseClient {
         }
         val candidate = rawValue.trim()
         if (candidate.startsWith("http://") || candidate.startsWith("https://")) {
-            return normalizeBaseUrl(candidate)
+            if (!candidate.contains("your-project.supabase.co") && !candidate.startsWith("your_")) {
+                return normalizeBaseUrl(candidate)
+            }
         }
         // Default ke server PocketBase VPS pengguna yang telah aktif
         return "http://173.249.59.183:8090/"

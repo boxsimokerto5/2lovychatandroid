@@ -386,7 +386,25 @@ class PocketBaseRepository {
                 "reaction" to (message.reaction ?: "")
             )
             val response = api.createMessage(payload)
-            if (response.isSuccessful) return@withContext true
+            if (response.isSuccessful) {
+                // Publikasikan secara instan via Centrifugo WebSocket ke channel penerima
+                if (!receiverId.isNullOrBlank()) {
+                    com.example.data.centrifugo.CentrifugoRealtimeManager.publishChatMessage(
+                        messageId = pbId,
+                        conversationId = message.conversationId,
+                        senderId = senderId,
+                        receiverId = receiverId,
+                        text = message.text,
+                        imageUrl = message.imageUrl,
+                        createdAtMs = message.timestamp,
+                        replyToId = message.replyToId,
+                        replyToSender = message.replyToSender,
+                        replyToText = message.replyToText,
+                        reaction = message.reaction
+                    )
+                }
+                return@withContext true
+            }
 
             payload.remove("id")
             val retry = api.createMessage(payload)
