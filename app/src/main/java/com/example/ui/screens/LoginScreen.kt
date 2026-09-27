@@ -77,7 +77,6 @@ fun LoginScreen(
     onPerformLogin: suspend (username: String, password: String) -> com.example.data.AuthResult = { _, _ -> com.example.data.AuthResult(false, "") },
     onPerformRegister: suspend (username: String, password: String, gender: com.example.model.Gender) -> com.example.data.AuthResult = { _, _, _ -> com.example.data.AuthResult(false, "") },
     onPerformGoogleLogin: suspend (googleUser: GoogleAuthHelper.GoogleUserResult) -> com.example.data.AuthResult,
-    onGuestLogin: () -> Unit = {},
     onNavigateToSupabaseConfig: () -> Unit = {},
     onRequestPermissionSetup: () -> Unit = {},
     modifier: Modifier = Modifier

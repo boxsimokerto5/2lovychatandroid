@@ -301,7 +301,7 @@ class ExampleRobolectricTest {
   fun `test partner moments filtered and not deleted`() {
     val app = ApplicationProvider.getApplicationContext<android.app.Application>()
     val viewModel = LovyChatViewModel(app)
-    viewModel.continueAsGuest()
+    viewModel.loginUser("Test User")
 
     val partnerName = "Siti Rahma"
     viewModel.postMoment("Pemandangan pantai yang sangat indah 🌊", "https://example.com/beach.jpg")

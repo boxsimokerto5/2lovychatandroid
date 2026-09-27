@@ -481,7 +481,7 @@ fun QrCodeScannerDialog(
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()
-                    .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp)
+                    .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 58.dp)
             ) {
                 // Status loading jika sedang membaca gambar galeri atau mencari user
                 AnimatedVisibility(

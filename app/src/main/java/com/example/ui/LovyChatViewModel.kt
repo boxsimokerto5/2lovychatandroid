@@ -2205,7 +2205,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun loginAsGuest() {
-        _uiState.update { it.copy(isLoggedIn = true, isGuest = true) }
+        // Mode tamu telah dinonaktifkan sepenuhnya. Arahkan pengguna ke layar login.
+        _uiState.update { it.copy(isLoggedIn = false, isGuest = false, currentScreen = CurrentScreen.Login) }
     }
 
     fun continueAsGuest() {
