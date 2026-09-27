@@ -9,10 +9,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -141,7 +143,7 @@ fun ActivityNotificationsBottomSheet(
                         )
                         if (unreadCount > 0) {
                             Surface(
-                                shape = RoundedCornerShape(12.dp),
+                                shape = RoundedCornerShape(10.dp),
                                 color = EmeraldGreen
                             ) {
                                 Text(
@@ -151,7 +153,7 @@ fun ActivityNotificationsBottomSheet(
                                     color = Color.White,
                                     maxLines = 1,
                                     softWrap = false,
-                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
                                 )
                             }
                         }
@@ -237,6 +239,7 @@ fun ActivityNotificationsBottomSheet(
             // Kategori Filter Chips
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(horizontal = 2.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 item {
@@ -284,7 +287,7 @@ fun ActivityNotificationsBottomSheet(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(260.dp)
+                        .heightIn(min = 180.dp, max = 240.dp)
                         .padding(16.dp)
                 ) {
                     Column(
@@ -325,9 +328,10 @@ fun ActivityNotificationsBottomSheet(
             } else {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(vertical = 4.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(340.dp)
+                        .heightIn(min = 100.dp, max = 400.dp)
                 ) {
                     items(filteredList, key = { it.id }) { notification ->
                         NotificationCard(
@@ -407,7 +411,7 @@ private fun NotificationCard(
     Card(
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (notification.isRead) Color(0xFFFBFBFB) else Color.White
+            containerColor = if (notification.isRead) Color(0xFFFAFAFA) else Color.White
         ),
         border = BorderStroke(
             1.dp,
@@ -419,71 +423,91 @@ private fun NotificationCard(
             .clickable(onClick = onClick)
     ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(12.dp)
+            verticalAlignment = Alignment.Top,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)
         ) {
-            // Icon Kategori dalam lingkaran warna lembut
+            // Icon Kategori dengan badge unread elegan di pojok kanan atas
             Box(
-                contentAlignment = Alignment.Center,
                 modifier = Modifier
+                    .padding(top = 2.dp)
                     .size(42.dp)
-                    .clip(CircleShape)
-                    .background(categoryColor.copy(alpha = 0.12f))
             ) {
-                Icon(
-                    imageVector = categoryIcon,
-                    contentDescription = null,
-                    tint = categoryColor,
-                    modifier = Modifier.size(20.dp)
-                )
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(categoryColor.copy(alpha = 0.12f))
+                ) {
+                    Icon(
+                        imageVector = categoryIcon,
+                        contentDescription = null,
+                        tint = categoryColor,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                if (!notification.isRead) {
+                    Box(
+                        modifier = Modifier
+                            .size(11.dp)
+                            .align(Alignment.TopEnd)
+                            .clip(CircleShape)
+                            .background(Color.White)
+                            .padding(1.5.dp)
+                            .clip(CircleShape)
+                            .background(EmeraldGreen)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
+                // Header baris atas: Kategori & Waktu (terpisah dari judul sehingga judul lega penuh)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = notification.getDisplayTitle(language),
-                        fontSize = 13.sp,
-                        fontWeight = if (notification.isRead) FontWeight.SemiBold else FontWeight.Bold,
-                        color = NeutralDark,
+                        text = categoryLabel,
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = categoryColor,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
+                        overflow = TextOverflow.Ellipsis
                     )
-
-                    Spacer(modifier = Modifier.width(6.dp))
 
                     Text(
                         text = formatTimeAgo(notification.timestamp, language),
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
                         color = NeutralMedium
                     )
                 }
 
                 Spacer(modifier = Modifier.height(3.dp))
 
+                // Judul Notifikasi: Lebar penuh, hingga 2 baris, tidak terjepit!
+                Text(
+                    text = notification.getDisplayTitle(language),
+                    fontSize = 14.sp,
+                    fontWeight = if (notification.isRead) FontWeight.SemiBold else FontWeight.Bold,
+                    color = NeutralDark,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 18.sp
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Isi Pesan: Mengalir nyaman tanpa terpotong paksa
                 Text(
                     text = notification.getDisplayMessage(language),
-                    fontSize = 12.sp,
+                    fontSize = 12.5.sp,
                     color = if (notification.isRead) NeutralMedium else Color(0xFF424242),
-                    maxLines = 2,
+                    lineHeight = 17.5.sp,
+                    maxLines = 3,
                     overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            // Dot belum dibaca
-            if (!notification.isRead) {
-                Spacer(modifier = Modifier.width(8.dp))
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .clip(CircleShape)
-                        .background(EmeraldGreen)
                 )
             }
         }
