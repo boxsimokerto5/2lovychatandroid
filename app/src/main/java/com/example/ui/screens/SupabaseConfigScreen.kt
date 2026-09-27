@@ -438,15 +438,24 @@ SELECT cron.schedule(
                     Spacer(modifier = Modifier.width(14.dp))
 
                     Column(modifier = Modifier.weight(1f)) {
+                        val isPocketBaseActive = com.example.data.supabase.SupabaseClient.isPocketBase()
                         Text(
-                            text = if (isConnected) "Layanan Cloud Aktif" else "Layanan Cloud Belum Terhubung",
+                            text = if (isConnected) {
+                                if (isPocketBaseActive) "Server PocketBase Aktif" else "Layanan Supabase Aktif"
+                            } else {
+                                "Layanan Cloud Belum Terhubung"
+                            },
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = NeutralDark
                         )
                         Spacer(modifier = Modifier.height(3.dp))
                         Text(
-                            text = connectionStatusMessage ?: if (isConnected) "Penyimpanan cloud aktif untuk pesan & cerita." else "Aplikasi saat ini berjalan dalam mode penyimpanan perangkat.",
+                            text = connectionStatusMessage ?: if (isConnected) {
+                                if (isPocketBaseActive) "Terhubung ke server PocketBase (VPS: 173.249.59.183:8090)" else "Penyimpanan cloud aktif untuk pesan & cerita."
+                            } else {
+                                "Aplikasi saat ini berjalan dalam mode penyimpanan perangkat."
+                            },
                             fontSize = 12.sp,
                             color = NeutralMedium,
                             lineHeight = 16.sp
@@ -525,6 +534,40 @@ SELECT cron.schedule(
                             .fillMaxWidth()
                             .testTag("input_supabase_key")
                     )
+
+                    // Presets
+                    Text(
+                        text = "Pilihan Cepat Server:",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = NeutralMedium
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                urlInput = "http://173.249.59.183:8090"
+                                keyInput = ""
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("PocketBase VPS", fontSize = 11.5.sp)
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                urlInput = "https://azcxvjjcjytfqwhfcbui.supabase.co"
+                                keyInput = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6Y3h2ampjanl0ZnF3aGZjYnVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2NzgzMTgsImV4cCI6MjEwNTI1NDMxOH0.h8M71nfUKA6fd69yKZIHIwBH1ssI1vHq_1bNYCPQmhY"
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Supabase Cloud", fontSize = 11.5.sp)
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(18.dp))
 

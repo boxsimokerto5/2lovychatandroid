@@ -10,6 +10,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class SupabaseRepository {
+    private val pbRepo = com.example.data.pocketbase.PocketBaseRepository()
+
     companion object {
         private const val TAG = "SupabaseRepository"
         // Toleransi batas waktu online: 15 menit (900.000 ms) sejak detak jantung/aktivitas terakhir
@@ -17,6 +19,9 @@ class SupabaseRepository {
     }
 
     suspend fun testConnection(): Result<String> = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.testConnection()
+        }
         val api = SupabaseClient.getApi()
             ?: return@withContext Result.failure(Exception("Layanan sinkronisasi belum dikonfigurasi."))
 
@@ -57,6 +62,9 @@ class SupabaseRepository {
     }
 
     suspend fun fetchNearbyUsers(): List<User>? = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.fetchNearbyUsers()
+        }
         val api = SupabaseClient.getApi() ?: return@withContext null
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -106,6 +114,9 @@ class SupabaseRepository {
     }
 
     suspend fun fetchNearbyUserById(userId: String): User? = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.fetchNearbyUserById(userId)
+        }
         val api = SupabaseClient.getApi() ?: return@withContext null
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -140,6 +151,9 @@ class SupabaseRepository {
     }
 
     suspend fun fetchOceanBottles(): List<BottleMessage>? = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.fetchOceanBottles()
+        }
         val api = SupabaseClient.getApi() ?: return@withContext null
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -172,6 +186,9 @@ class SupabaseRepository {
     }
 
     suspend fun sendBottle(bottle: BottleMessage): Boolean = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.sendBottle(bottle)
+        }
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -206,6 +223,9 @@ class SupabaseRepository {
     }
 
     suspend fun fetchMoments(): List<MomentItem>? = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.fetchMoments()
+        }
         val api = SupabaseClient.getApi() ?: return@withContext null
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -264,6 +284,7 @@ class SupabaseRepository {
     }
 
     suspend fun ensureAuthorAccountExists(authorId: String, authorName: String, avatarUrl: String? = null) {
+        if (SupabaseClient.isPocketBase()) return
         if (authorId.isBlank() || authorId == "me") return
         val api = SupabaseClient.getApi() ?: return
         val apiKey = SupabaseClient.getSupabaseAnonKey()
@@ -303,6 +324,9 @@ class SupabaseRepository {
     }
 
     suspend fun sendMoment(moment: MomentItem, authorId: String): Boolean = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.sendMoment(moment, authorId)
+        }
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -367,6 +391,9 @@ class SupabaseRepository {
     }
 
     suspend fun updateMomentCommentsCount(momentId: String, count: Int): Boolean = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.updateMomentCommentsCount(momentId, count)
+        }
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -381,6 +408,9 @@ class SupabaseRepository {
     }
 
     suspend fun deleteMoment(momentId: String): Boolean = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.deleteMoment(momentId)
+        }
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -400,6 +430,9 @@ class SupabaseRepository {
         partnerId: String = "",
         sinceTimestamp: Long = 0L
     ): List<ChatMessage>? = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.fetchChatMessages(conversationId, currentUserId, partnerId, sinceTimestamp)
+        }
         val api = SupabaseClient.getApi() ?: return@withContext null
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -498,6 +531,9 @@ class SupabaseRepository {
         senderId: String = "me",
         receiverId: String? = null
     ): Boolean = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.sendChatMessage(message, senderId, receiverId)
+        }
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -567,6 +603,9 @@ class SupabaseRepository {
     }
 
     suspend fun fetchRecentMessagesForUser(userId: String): List<SupabaseMessageDto>? = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.fetchRecentMessagesForUser(userId)
+        }
         val api = SupabaseClient.getApi() ?: return@withContext null
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -607,6 +646,9 @@ class SupabaseRepository {
         city: String? = null,
         fcmToken: String? = null
     ): Boolean = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.registerOrUpdateUser(id, name, gender, bio, avatarHex, avatarUrl, city, fcmToken)
+        }
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -670,6 +712,9 @@ class SupabaseRepository {
     }
 
     suspend fun markMessageDeletedForSender(messageId: String): Boolean = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.markMessageDeletedForSender(messageId)
+        }
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -684,6 +729,9 @@ class SupabaseRepository {
     }
 
     suspend fun markMessageDeletedForReceiver(messageId: String): Boolean = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.markMessageDeletedForReceiver(messageId)
+        }
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -698,6 +746,9 @@ class SupabaseRepository {
     }
 
     suspend fun markConversationDeletedForUser(conversationId: String, userId: String): Boolean = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.markConversationDeletedForUser(conversationId, userId)
+        }
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -715,6 +766,9 @@ class SupabaseRepository {
     }
 
     suspend fun deleteMessageForEveryone(messageId: String): Boolean = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.deleteMessageForEveryone(messageId)
+        }
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -731,6 +785,9 @@ class SupabaseRepository {
     }
 
     suspend fun markAllSenderMessagesDeleted(senderId: String = "me"): Boolean = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.markAllSenderMessagesDeleted(senderId)
+        }
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -745,6 +802,9 @@ class SupabaseRepository {
     }
 
     suspend fun markMessagesAsRead(conversationId: String, senderId: String): Boolean = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.markMessagesAsRead(conversationId, senderId)
+        }
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -759,6 +819,9 @@ class SupabaseRepository {
     }
 
     suspend fun markMessageReadById(messageId: String): Boolean = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.markMessageReadById(messageId)
+        }
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -773,6 +836,9 @@ class SupabaseRepository {
     }
 
     suspend fun updateUserPresence(userId: String, isOnline: Boolean = true): Boolean = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.updateUserPresence(userId, isOnline)
+        }
         if (userId.isBlank()) return@withContext false
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
@@ -797,10 +863,16 @@ class SupabaseRepository {
     }
 
     suspend fun updateUserLastActive(userId: String): Boolean = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.updateUserLastActive(userId)
+        }
         updateUserPresence(userId, isOnline = true)
     }
 
     suspend fun updateUserFcmToken(userId: String, token: String): Boolean = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.updateUserFcmToken(userId, token)
+        }
         if (userId.isBlank() || token.isBlank()) return@withContext false
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
@@ -817,6 +889,9 @@ class SupabaseRepository {
     }
 
     suspend fun findAccountByUsername(username: String): SupabaseAccountDto? = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.findAccountByUsername(username)
+        }
         val api = SupabaseClient.getApi() ?: return@withContext null
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -837,6 +912,9 @@ class SupabaseRepository {
     }
 
     suspend fun findAccountByGoogle(googleEmail: String): SupabaseAccountDto? = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.findAccountByGoogle(googleEmail)
+        }
         val api = SupabaseClient.getApi() ?: return@withContext null
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -857,6 +935,9 @@ class SupabaseRepository {
     }
 
     suspend fun findAccountById(accountId: String): SupabaseAccountDto? = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.findAccountById(accountId)
+        }
         val api = SupabaseClient.getApi() ?: return@withContext null
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -875,6 +956,9 @@ class SupabaseRepository {
     }
 
     suspend fun registerOrUpdateAccount(account: SupabaseAccountDto): Boolean = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.registerOrUpdateAccount(account)
+        }
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -897,6 +981,9 @@ class SupabaseRepository {
     }
 
     suspend fun updateAccountLoginTime(accountId: String): Boolean = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.updateAccountLoginTime(accountId)
+        }
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -919,6 +1006,9 @@ class SupabaseRepository {
      * - Hapus akun di tabel app_accounts
      */
     suspend fun deleteAccountAndUserData(accountId: String, lovyId: String): Boolean = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.deleteAccountAndUserData(accountId, lovyId)
+        }
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
@@ -983,6 +1073,9 @@ class SupabaseRepository {
      * - Hapus pesan chat yang sudah dihapus oleh kedua belah pihak
      */
     suspend fun purgeInactiveAccountsAndDeletedMessages(): Boolean = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.purgeInactiveAccountsAndDeletedMessages()
+        }
         val api = SupabaseClient.getApi() ?: return@withContext false
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()

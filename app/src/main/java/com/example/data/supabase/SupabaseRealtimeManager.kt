@@ -49,6 +49,10 @@ object SupabaseRealtimeManager {
     )
     val incomingMessages: SharedFlow<SupabaseMessageDto> = _incomingMessages.asSharedFlow()
 
+    fun emitIncomingMessage(message: SupabaseMessageDto) {
+        _incomingMessages.tryEmit(message)
+    }
+
     private val client: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .connectTimeout(12, TimeUnit.SECONDS)
@@ -65,6 +69,11 @@ object SupabaseRealtimeManager {
     fun connect(userId: String?) {
         if (!userId.isNullOrBlank()) {
             currentUserId = userId
+        }
+
+        if (SupabaseClient.isPocketBase()) {
+            com.example.data.pocketbase.PocketBaseRealtimeManager.connect(userId)
+            return
         }
 
         if (!SupabaseClient.isConfigured()) {
@@ -315,6 +324,7 @@ object SupabaseRealtimeManager {
      * Memutuskan koneksi WebSocket saat aplikasi ditutup
      */
     fun disconnect() {
+        com.example.data.pocketbase.PocketBaseRealtimeManager.disconnect()
         stopHeartbeat()
         reconnectJob?.cancel()
         try {

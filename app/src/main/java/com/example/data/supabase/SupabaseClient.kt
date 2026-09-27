@@ -105,6 +105,11 @@ object SupabaseClient {
         }
     }
 
+    fun isPocketBase(): Boolean {
+        val url = getSupabaseUrl().lowercase().trim()
+        return url.contains(":8090") || url.contains("173.249.59.183") || url.contains("pocketbase") || (!url.contains("supabase.co") && !url.contains("supabase"))
+    }
+
     fun getSupabaseUrl(): String {
         customUrl?.let { if (it.isNotBlank()) return normalizeBaseUrl(it) }
         val rawValue = try {
@@ -124,7 +129,8 @@ object SupabaseClient {
         if (refFromJwt.isNotBlank()) {
             return "https://$refFromJwt.supabase.co/"
         }
-        return "https://azcxvjjcjytfqwhfcbui.supabase.co/"
+        // Default ke server PocketBase pengguna yang telah aktif
+        return "http://173.249.59.183:8090/"
     }
 
     fun getSupabaseAnonKey(): String {
@@ -143,6 +149,9 @@ object SupabaseClient {
 
     fun isConfigured(): Boolean {
         val url = getSupabaseUrl()
+        if (isPocketBase()) {
+            return url.isNotBlank() && (url.startsWith("http://") || url.startsWith("https://"))
+        }
         val key = getSupabaseAnonKey()
         return url.isNotBlank() && key.isNotBlank() && (url.startsWith("http://") || url.startsWith("https://"))
     }
