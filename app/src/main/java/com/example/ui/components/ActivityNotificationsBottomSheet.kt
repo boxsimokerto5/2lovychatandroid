@@ -106,61 +106,73 @@ fun ActivityNotificationsBottomSheet(
             // Header: Judul, Badge Jumlah Belum Dibaca, dan Tombol Tutup
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(38.dp)
-                            .clip(CircleShape)
-                            .background(EmeraldGreen.copy(alpha = 0.12f))
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(EmeraldGreen.copy(alpha = 0.12f))
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = null,
+                        tint = EmeraldGreen,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = null,
-                            tint = EmeraldGreen,
-                            modifier = Modifier.size(20.dp)
+                        Text(
+                            text = com.example.util.AppStrings.notificationsTitle(language),
+                            fontSize = 16.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = NeutralDark,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
                         )
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = com.example.util.AppStrings.notificationsTitle(language),
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = NeutralDark
-                            )
-                            if (unreadCount > 0) {
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Surface(
-                                    shape = RoundedCornerShape(10.dp),
-                                    color = EmeraldGreen,
-                                    modifier = Modifier.padding(horizontal = 2.dp)
-                                ) {
-                                    Text(
-                                        text = com.example.util.AppStrings.notificationsNewBadge(language, unreadCount),
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = Color.White,
-                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
-                                    )
-                                }
+                        if (unreadCount > 0) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = EmeraldGreen
+                            ) {
+                                Text(
+                                    text = com.example.util.AppStrings.notificationsNewBadge(language, unreadCount),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)
+                                )
                             }
                         }
-                        Text(
-                            text = com.example.util.AppStrings.notificationsSubtitle(language),
-                            fontSize = 12.sp,
-                            color = NeutralMedium
-                        )
                     }
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Text(
+                        text = com.example.util.AppStrings.notificationsSubtitle(language),
+                        fontSize = 12.sp,
+                        color = NeutralMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 IconButton(
                     onClick = onDismiss,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
