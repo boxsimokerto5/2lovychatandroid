@@ -162,9 +162,10 @@ class PocketBaseRepository {
     suspend fun sendBottle(bottle: BottleMessage): Boolean = withContext(Dispatchers.IO) {
         val api = PocketBaseClient.getApi() ?: return@withContext false
         try {
-            val payload = mapOf(
-                "id" to PocketBaseClient.toPbId(bottle.id),
-                "sender_id" to PocketBaseClient.toPbId(bottle.senderName),
+            val pbId = PocketBaseClient.toPbId(bottle.id)
+            val payload = mutableMapOf<String, Any?>(
+                "id" to pbId,
+                "sender_id" to bottle.senderId.ifBlank { bottle.senderName },
                 "sender_name" to bottle.senderName,
                 "sender_gender" to if (bottle.senderGender == Gender.MALE) "male" else "female",
                 "content" to bottle.content,
@@ -174,7 +175,15 @@ class PocketBaseRepository {
                 "avatar_url" to (bottle.avatarUrl ?: "")
             )
             val response = api.createBottle(payload)
-            response.isSuccessful
+            if (response.isSuccessful) return@withContext true
+
+            // Fallback jika ID sudah digunakan atau validasi panjang ID bermasalah: biarkan PocketBase meng-generate ID otomatis
+            payload.remove("id")
+            val retry = api.createBottle(payload)
+            if (!retry.isSuccessful) {
+                Log.w(TAG, "Gagal createBottle PocketBase: code=${retry.code()} error=${retry.errorBody()?.string()}")
+            }
+            retry.isSuccessful
         } catch (e: Exception) {
             Log.w(TAG, "Gagal mengirim botol ke PocketBase", e)
             false
@@ -233,7 +242,7 @@ class PocketBaseRepository {
         val api = PocketBaseClient.getApi() ?: return@withContext false
         try {
             val pbId = PocketBaseClient.toPbId(moment.id)
-            val payload = mapOf(
+            val payload = mutableMapOf<String, Any?>(
                 "id" to pbId,
                 "author_id" to PocketBaseClient.toPbId(authorId),
                 "author_name" to moment.authorName,
@@ -247,7 +256,14 @@ class PocketBaseRepository {
                 "location_tag" to (moment.locationTag ?: "Indonesia")
             )
             val response = api.createMoment(payload)
-            response.isSuccessful
+            if (response.isSuccessful) return@withContext true
+
+            payload.remove("id")
+            val retry = api.createMoment(payload)
+            if (!retry.isSuccessful) {
+                Log.w(TAG, "Gagal createMoment PocketBase: code=${retry.code()} error=${retry.errorBody()?.string()}")
+            }
+            retry.isSuccessful
         } catch (e: Exception) {
             Log.w(TAG, "Gagal mengirim momen ke PocketBase", e)
             false
@@ -355,7 +371,7 @@ class PocketBaseRepository {
         val api = PocketBaseClient.getApi() ?: return@withContext false
         try {
             val pbId = PocketBaseClient.toPbId(message.id)
-            val payload = mapOf(
+            val payload = mutableMapOf<String, Any?>(
                 "id" to pbId,
                 "conversation_id" to message.conversationId,
                 "sender_id" to senderId,
@@ -367,10 +383,17 @@ class PocketBaseRepository {
                 "reply_to_id" to (message.replyToId ?: ""),
                 "reply_to_sender" to (message.replyToSender ?: ""),
                 "reply_to_text" to (message.replyToText ?: ""),
-                "reaction" to ""
+                "reaction" to (message.reaction ?: "")
             )
             val response = api.createMessage(payload)
-            response.isSuccessful
+            if (response.isSuccessful) return@withContext true
+
+            payload.remove("id")
+            val retry = api.createMessage(payload)
+            if (!retry.isSuccessful) {
+                Log.w(TAG, "Gagal createMessage PocketBase: code=${retry.code()} error=${retry.errorBody()?.string()}")
+            }
+            retry.isSuccessful
         } catch (e: Exception) {
             Log.w(TAG, "Gagal mengirim chat message ke PocketBase", e)
             false

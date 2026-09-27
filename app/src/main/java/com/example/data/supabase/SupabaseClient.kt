@@ -43,8 +43,16 @@ object SupabaseClient {
         if (context == null) return
         try {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            customUrl = prefs.getString(KEY_CUSTOM_URL, null)
-            customAnonKey = prefs.getString(KEY_CUSTOM_ANON_KEY, null)
+            val savedUrl = prefs.getString(KEY_CUSTOM_URL, null)
+            // Jika preferensi yang tersimpan adalah URL proyek Supabase lama yang tidak aktif, bersihkan agar menggunakan PocketBase default
+            if (savedUrl != null && savedUrl.contains("azcxvjjcjytfqwhfcbui")) {
+                prefs.edit().remove(KEY_CUSTOM_URL).remove(KEY_CUSTOM_ANON_KEY).apply()
+                customUrl = null
+                customAnonKey = null
+            } else {
+                customUrl = savedUrl
+                customAnonKey = prefs.getString(KEY_CUSTOM_ANON_KEY, null)
+            }
         } catch (e: Throwable) {
             Log.w(TAG, "Failed to load preferences: ${e.message}")
         }
@@ -68,6 +76,7 @@ object SupabaseClient {
         customUrl = cleanUrl
         customAnonKey = cleanKey
         cachedApi = null // Invalidate cached Retrofit instance
+        com.example.data.pocketbase.PocketBaseClient.clearCache()
     }
 
     fun clearCustomCredentials(context: Context?) {
@@ -84,6 +93,7 @@ object SupabaseClient {
         customUrl = null
         customAnonKey = null
         cachedApi = null
+        com.example.data.pocketbase.PocketBaseClient.clearCache()
     }
 
     private fun extractRefFromJwt(token: String): String {
@@ -122,14 +132,7 @@ object SupabaseClient {
         if (candidate.startsWith("http://") || candidate.startsWith("https://")) {
             return normalizeBaseUrl(candidate)
         }
-        // Jika SUPABASE_URL keliru diisi token JWT atau anon key, ekstrak 'ref' dari payload JWT:
-        val refFromJwt = extractRefFromJwt(candidate).ifBlank {
-            extractRefFromJwt(getSupabaseAnonKey())
-        }
-        if (refFromJwt.isNotBlank()) {
-            return "https://$refFromJwt.supabase.co/"
-        }
-        // Default ke server PocketBase pengguna yang telah aktif
+        // Default ke server PocketBase VPS pengguna yang telah aktif
         return "http://173.249.59.183:8090/"
     }
 

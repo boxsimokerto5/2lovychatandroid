@@ -53,6 +53,11 @@ object PocketBaseClient {
         }
     }
 
+    fun clearCache() {
+        cachedApi = null
+        cachedUrl = null
+    }
+
     fun getApi(): PocketBaseRestApi? {
         val currentUrl = getBaseUrl()
         if (cachedApi != null && cachedUrl == currentUrl) {

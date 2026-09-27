@@ -1624,10 +1624,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun syncUserProfileToSupabase() {
-        if (_uiState.value.isGuest) return
         if (!SupabaseClient.isConfigured()) return
         val profile = _uiState.value.userProfile
         val lovyId = _uiState.value.myLovyId
+        if (lovyId.isBlank()) return
         val userGender = if (profile.gender.equals("MALE", ignoreCase = true)) Gender.MALE else Gender.FEMALE
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -1758,18 +1758,20 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         val configured = SupabaseClient.isConfigured()
         val url = SupabaseClient.getSupabaseUrl()
         val key = SupabaseClient.getSupabaseAnonKey()
+        val isPocketBase = SupabaseClient.isPocketBase()
         _uiState.update {
             it.copy(
                 isSupabaseConnected = configured,
                 supabaseUrl = url,
                 supabaseAnonKey = key,
-                connectionStatusMessage = if (configured) "Supabase terkonfigurasi: $url" else "Belum terkonfigurasi (menggunakan penyimpanan lokal)"
+                connectionStatusMessage = if (configured) {
+                    if (isPocketBase) "PocketBase aktif: $url" else "Supabase terkonfigurasi: $url"
+                } else "Belum terkonfigurasi (menggunakan penyimpanan lokal)"
             )
         }
     }
 
     fun syncFromSupabase(forceRefresh: Boolean = false) {
-        if (_uiState.value.isGuest) return // Mode Tamu tidak disinkronkan ke Supabase
         if (!SupabaseClient.isConfigured()) return
         val now = System.currentTimeMillis()
         if (!forceRefresh && now - lastNearbyScanTime < CACHE_DURATION_MS && now - lastMomentsSyncTime < CACHE_DURATION_MS) {
@@ -1841,20 +1843,18 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     }
                     lastMomentsSyncTime = System.currentTimeMillis()
 
-                    // Auto-sync: Unggah otomatis momen lokal ke server Supabase jika belum tersimpan di cloud
-                    if (!_uiState.value.isGuest) {
-                        val remoteIds = remoteMoments.map { it.id }.toSet()
-                        val unsyncedMoments = myLocal.filterNot { it.id in remoteIds }
-                        if (unsyncedMoments.isNotEmpty()) {
-                            viewModelScope.launch(Dispatchers.IO) {
-                                val currentLovyId = _uiState.value.myLovyId
-                                unsyncedMoments.forEach { unposted ->
-                                    val author = unposted.authorId.takeIf { it.isNotBlank() && it != "me" }
-                                        ?: currentLovyId.ifBlank { "lovy_${(100000..999999).random()}" }
-                                    val ok = supabaseRepo.sendMoment(unposted, author)
-                                    if (ok) {
-                                        Log.d("LovyChatViewModel", "Berhasil auto-sync momen lokal ke Supabase: ${unposted.id}")
-                                    }
+                    // Auto-sync: Unggah otomatis momen lokal ke server backend jika belum tersimpan di cloud
+                    val remoteIds = remoteMoments.map { it.id }.toSet()
+                    val unsyncedMoments = myLocal.filterNot { it.id in remoteIds }
+                    if (unsyncedMoments.isNotEmpty()) {
+                        viewModelScope.launch(Dispatchers.IO) {
+                            val currentLovyId = _uiState.value.myLovyId
+                            unsyncedMoments.forEach { unposted ->
+                                val author = unposted.authorId.takeIf { it.isNotBlank() && it != "me" }
+                                    ?: currentLovyId.ifBlank { "lovy_${(100000..999999).random()}" }
+                                val ok = supabaseRepo.sendMoment(unposted, author)
+                                if (ok) {
+                                    Log.d("LovyChatViewModel", "Berhasil auto-sync momen lokal ke cloud: ${unposted.id}")
                                 }
                             }
                         }
@@ -1876,7 +1876,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 kotlinx.coroutines.delay(650)
 
                 var fetched = false
-                if (!_uiState.value.isGuest && SupabaseClient.isConfigured()) {
+                if (SupabaseClient.isConfigured()) {
                     val remoteMoments = supabaseRepo.fetchMoments()
                     if (remoteMoments != null) {
                         val locallySaved = getLocalSavedMoments()
@@ -2761,7 +2761,6 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun pollChatMessages(conversationId: String, partnerId: String, forceFullSync: Boolean = false) {
-        if (_uiState.value.isGuest) return
         if (!SupabaseClient.isConfigured()) return
 
         val myId = _uiState.value.myLovyId
@@ -3225,25 +3224,36 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             localChatRepo.saveMessage(newMsg)
         }
 
-        // Sinkronisasi ke Supabase untuk obrolan 2 arah nyata
+        // Sinkronisasi ke backend (PocketBase / Supabase)
         val conv = _uiState.value.conversations.find { it.id == conversationId }
         val partnerId = conv?.partnerId ?: extractPartnerIdFromConvId(conversationId, _uiState.value.myLovyId)
+        val currentMyId = _uiState.value.myLovyId.ifBlank { "me" }
         onUserTyping(conversationId, partnerId, false)
         viewModelScope.launch {
-            supabaseRepo.sendChatMessage(
-                message = newMsg,
-                senderId = _uiState.value.myLovyId,
-                receiverId = partnerId
-            )
+            try {
+                val ok = supabaseRepo.sendChatMessage(
+                    message = newMsg,
+                    senderId = currentMyId,
+                    receiverId = partnerId
+                )
+                if (ok) {
+                    Log.d("LovyChatViewModel", "Pesan chat berhasil dikirim ke server: ${newMsg.id}")
+                } else {
+                    Log.w("LovyChatViewModel", "Gagal mengirim pesan chat ke server: ${newMsg.id}")
+                }
+            } catch (e: Exception) {
+                Log.e("LovyChatViewModel", "Error mengirim chat ke server: ${e.message}", e)
+            }
         }
     }
 
     fun throwBottle(content: String): Boolean {
         if (content.isBlank()) return false
         recordFeatureClick()
+        val currentMyId = _uiState.value.myLovyId.ifBlank { "me" }
         val newBottle = BottleMessage(
             id = UUID.randomUUID().toString(),
-            senderId = "me",
+            senderId = currentMyId,
             senderName = _uiState.value.myName,
             senderGender = Gender.MALE,
             avatarHex = 0xFF00A86B,
@@ -3262,10 +3272,17 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             )
         }
 
-        // Sinkronisasi ke Supabase (hanya untuk pengguna asli)
-        if (!_uiState.value.isGuest) {
-            viewModelScope.launch {
-                supabaseRepo.sendBottle(newBottle)
+        // Sinkronisasi ke backend (PocketBase / Supabase)
+        viewModelScope.launch {
+            try {
+                val ok = supabaseRepo.sendBottle(newBottle)
+                if (ok) {
+                    Log.d("LovyChatViewModel", "Botol berhasil dikirim ke server: ${newBottle.id}")
+                } else {
+                    Log.w("LovyChatViewModel", "Gagal mengirim botol ke server: ${newBottle.id}")
+                }
+            } catch (e: Exception) {
+                Log.e("LovyChatViewModel", "Error mengirim botol: ${e.message}", e)
             }
         }
 
@@ -3277,8 +3294,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             _uiState.update { it.copy(isFishing = true, fishedBottle = null) }
             
-            // Coba ambil botol terbaru dari Supabase jika ada (hanya pengguna asli)
-            if (!_uiState.value.isGuest) {
+            // Coba ambil botol terbaru dari cloud/PocketBase jika terkonfigurasi
+            if (SupabaseClient.isConfigured()) {
                 try {
                     val remoteBottles = supabaseRepo.fetchOceanBottles()
                     if (!remoteBottles.isNullOrEmpty()) {
@@ -3449,17 +3466,20 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             ) 
         }
 
-        // Simpan ke Supabase (hanya jika bukan mode tamu)
-        if (!_uiState.value.isGuest) {
-            viewModelScope.launch(Dispatchers.IO) {
-                // Pastikan akun user tersinkronisasi di tabel app_accounts Supabase
-                syncUserProfileToSupabase()
+        // Simpan ke PocketBase / backend cloud
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                if (!_uiState.value.isGuest) {
+                    syncUserProfileToSupabase()
+                }
                 val ok = supabaseRepo.sendMoment(newMoment, authorId)
                 if (ok) {
-                    Log.d("LovyChatViewModel", "Momen berhasil disimpan ke server cloud Supabase: ${newMoment.id}")
+                    Log.d("LovyChatViewModel", "Momen berhasil disimpan ke server cloud: ${newMoment.id}")
                 } else {
-                    Log.w("LovyChatViewModel", "Gagal menyimpan momen ke server cloud Supabase: ${newMoment.id}, akan dicoba ulang otomatis saat sinkronisasi")
+                    Log.w("LovyChatViewModel", "Gagal menyimpan momen ke server cloud: ${newMoment.id}, akan dicoba ulang otomatis saat sinkronisasi")
                 }
+            } catch (e: Exception) {
+                Log.e("LovyChatViewModel", "Error menyimpan momen: ${e.message}", e)
             }
         }
     }
@@ -3500,14 +3520,12 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         try {
             android.widget.Toast.makeText(getApplication(), "Momen berhasil dihapus", android.widget.Toast.LENGTH_SHORT).show()
         } catch (_: Throwable) {}
-        // Hapus dari Supabase jika tersambung (hanya jika bukan mode tamu)
-        if (!_uiState.value.isGuest) {
-            viewModelScope.launch {
-                try {
-                    supabaseRepo.deleteMoment(momentId)
-                } catch (e: Exception) {
-                    Log.w("LovyChatViewModel", "Gagal menghapus momen di cloud: $momentId", e)
-                }
+        // Hapus dari backend jika tersambung
+        viewModelScope.launch {
+            try {
+                supabaseRepo.deleteMoment(momentId)
+            } catch (e: Exception) {
+                Log.w("LovyChatViewModel", "Gagal menghapus momen di cloud: $momentId", e)
             }
         }
     }
@@ -3844,7 +3862,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 kotlinx.coroutines.delay(4500L)
                 try {
                     val state = _uiState.value
-                    if (!state.isGuest && SupabaseClient.isConfigured() && state.myLovyId.isNotBlank()) {
+                    if (SupabaseClient.isConfigured() && state.myLovyId.isNotBlank()) {
                         val recent = supabaseRepo.fetchRecentMessagesForUser(state.myLovyId)
                         if (!recent.isNullOrEmpty()) {
                             withContext(Dispatchers.Main) {
@@ -3870,9 +3888,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun syncIncomingChats() {
-        if (_uiState.value.isGuest) return
         if (!SupabaseClient.isConfigured()) return
         val myId = _uiState.value.myLovyId
+        if (myId.isBlank()) return
         viewModelScope.launch(Dispatchers.IO) {
             val recent = supabaseRepo.fetchRecentMessagesForUser(myId)
             if (!recent.isNullOrEmpty()) {
