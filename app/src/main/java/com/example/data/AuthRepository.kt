@@ -484,8 +484,9 @@ class AuthRepository(
                         isGoogleUser = true
                     )
                 } else {
-                    // Pengguna baru pertama kali login Google! Buat dan lekatkan akun secara permanen di Supabase
-                    val newLovyId = "lovy_${(100000..999999).random()}"
+                    // Pengguna baru pertama kali login Google! Buat dan lekatkan akun secara permanen
+                    val deterministicPbId = com.example.data.pocketbase.PocketBaseClient.toPbId("google_$googleEmail")
+                    val newLovyId = deterministicPbId
                     val baseUsername = googleEmail.substringBefore("@").replace(".", "_")
 
                     val newAccount = SupabaseAccountDto(
@@ -543,8 +544,8 @@ class AuthRepository(
             }
         }
 
-        // 2. Fallback Lokal jika Supabase belum terhubung
-        val localLovyId = "lovy_${(100000..999999).random()}"
+        // 2. Fallback Lokal jika server belum terhubung
+        val localLovyId = com.example.data.pocketbase.PocketBaseClient.toPbId("google_$googleEmail")
         val baseUsername = googleEmail.substringBefore("@").replace(".", "_")
         val session = SavedSession(
             isLoggedIn = true,

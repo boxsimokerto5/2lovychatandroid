@@ -594,17 +594,39 @@ class PocketBaseRepository {
     suspend fun findAccountByGoogle(googleEmail: String): SupabaseAccountDto? = withContext(Dispatchers.IO) {
         val api = PocketBaseClient.getApi() ?: return@withContext null
         try {
-            val filter = "email='$googleEmail'"
+            val cleanEmail = googleEmail.trim().lowercase()
+            // 1. Cek langsung via ID deterministik berbasis email Google (sangat cepat & akurat)
+            val deterministicPbId = PocketBaseClient.toPbId("google_$cleanEmail")
+            try {
+                val byIdRes = api.getUserById(deterministicPbId)
+                if (byIdRes.isSuccessful && byIdRes.body() != null) {
+                    val item = byIdRes.body()!!
+                    return@withContext SupabaseAccountDto(
+                        id = item.id,
+                        username = item.username ?: item.name ?: cleanEmail,
+                        displayName = item.name ?: "",
+                        gender = item.gender ?: "FEMALE",
+                        bio = item.bio ?: "",
+                        avatarUrl = item.avatarUrl,
+                        googleEmail = cleanEmail,
+                        lastLoginAt = item.lastActiveAt ?: System.currentTimeMillis(),
+                        fcmToken = item.fcmToken
+                    )
+                }
+            } catch (_: Exception) {}
+
+            // 2. Cari melalui filter email
+            val filter = "email='$cleanEmail'"
             val res = api.getUsers(perPage = 1, filter = filter)
             val item = res.body()?.items?.firstOrNull() ?: return@withContext null
             SupabaseAccountDto(
                 id = item.id,
-                username = item.username ?: item.name ?: googleEmail,
+                username = item.username ?: item.name ?: cleanEmail,
                 displayName = item.name ?: "",
                 gender = item.gender ?: "FEMALE",
                 bio = item.bio ?: "",
                 avatarUrl = item.avatarUrl,
-                googleEmail = googleEmail,
+                googleEmail = cleanEmail,
                 lastLoginAt = item.lastActiveAt ?: System.currentTimeMillis(),
                 fcmToken = item.fcmToken
             )
@@ -645,11 +667,23 @@ class PocketBaseRepository {
             val updates = mutableMapOf<String, Any?>(
                 "name" to account.displayName,
                 "gender" to (account.gender ?: "FEMALE").lowercase(),
-                "bio" to account.bio,
+                "bio" to (account.bio ?: ""),
                 "avatar_url" to (account.avatarUrl ?: ""),
                 "last_active_at" to account.lastLoginAt,
                 "is_online" to true
             )
+            account.googleEmail?.let { email ->
+                if (email.isNotBlank()) {
+                    updates["email"] = email.trim().lowercase()
+                    updates["emailVisibility"] = true
+                }
+            }
+            if (!account.username.isNullOrBlank()) {
+                val cleanUsername = account.username.lowercase().filter { it in 'a'..'z' || it in '0'..'9' || it == '_' }
+                if (cleanUsername.isNotBlank()) {
+                    updates["username"] = cleanUsername
+                }
+            }
             account.fcmToken?.let { updates["fcm_token"] = it }
 
             val updateRes = api.updateUser(pbId, updates)
@@ -660,7 +694,14 @@ class PocketBaseRepository {
             updates["password"] = pwd
             updates["passwordConfirm"] = pwd
             val createRes = api.createUser(updates)
-            createRes.isSuccessful
+            if (createRes.isSuccessful) return@withContext true
+
+            // Fallback retry update tanpa password
+            updates.remove("id")
+            updates.remove("password")
+            updates.remove("passwordConfirm")
+            val fallbackUpdate = api.updateUser(pbId, updates)
+            fallbackUpdate.isSuccessful
         } catch (e: Exception) {
             Log.w(TAG, "Gagal registerOrUpdateAccount di PocketBase", e)
             false
