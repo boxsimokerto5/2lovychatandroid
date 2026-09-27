@@ -53,6 +53,25 @@ object PocketBaseClient {
         }
     }
 
+    /**
+     * Menghasilkan ID Lovy permanen 6 digit (lovy_XXXXXX) secara deterministik
+     * berdasarkan email atau username pengguna.
+     * ID ini melekat permanen dan tidak akan pernah berubah untuk akun yang sama,
+     * kecuali akun dihapus.
+     */
+    fun toLovyId(rawIdentifier: String): String {
+        val trimmed = rawIdentifier.trim().lowercase()
+        if (trimmed.isEmpty()) return "lovy_100001"
+        if (trimmed.startsWith("lovy_") && trimmed.length == 11) {
+            val numPart = trimmed.removePrefix("lovy_")
+            if (numPart.all { it.isDigit() }) return trimmed
+        }
+        val crc = java.util.zip.CRC32()
+        crc.update(trimmed.toByteArray(Charsets.UTF_8))
+        val num = 100000L + (crc.value % 900000L)
+        return "lovy_$num"
+    }
+
     fun clearCache() {
         cachedApi = null
         cachedUrl = null

@@ -331,7 +331,7 @@ class SupabaseRepository {
         val apiKey = SupabaseClient.getSupabaseAnonKey()
         val auth = SupabaseClient.getAuthHeader()
 
-        val safeAuthorId = if (authorId.isBlank() || authorId == "me") "lovy_${(100000..999999).random()}" else authorId
+        val safeAuthorId = if (authorId.isBlank() || authorId == "me") com.example.data.pocketbase.PocketBaseClient.toLovyId(moment.authorName) else authorId
 
         try {
             // Pastikan akun penulis ada di app_accounts jika ada constraint

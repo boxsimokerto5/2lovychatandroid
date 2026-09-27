@@ -576,9 +576,14 @@ class PocketBaseRepository {
             val filter = "username='$username' || name='$username'"
             val res = api.getUsers(perPage = 1, filter = filter)
             val item = res.body()?.items?.firstOrNull() ?: return@withContext null
+            val permanentLovyId = when {
+                item.username?.startsWith("lovy_") == true -> item.username
+                username.startsWith("lovy_") -> username
+                else -> PocketBaseClient.toLovyId(username)
+            }
             SupabaseAccountDto(
-                id = item.id,
-                username = item.username ?: item.name ?: "",
+                id = permanentLovyId,
+                username = item.username ?: permanentLovyId,
                 displayName = item.name ?: "",
                 gender = item.gender ?: "FEMALE",
                 bio = item.bio ?: "",
@@ -595,15 +600,20 @@ class PocketBaseRepository {
         val api = PocketBaseClient.getApi() ?: return@withContext null
         try {
             val cleanEmail = googleEmail.trim().lowercase()
-            // 1. Cek langsung via ID deterministik berbasis email Google (sangat cepat & akurat)
+            val expectedLovyId = PocketBaseClient.toLovyId(cleanEmail)
+            // 1. Cek langsung via ID deterministik berbasis email Google
             val deterministicPbId = PocketBaseClient.toPbId("google_$cleanEmail")
             try {
                 val byIdRes = api.getUserById(deterministicPbId)
                 if (byIdRes.isSuccessful && byIdRes.body() != null) {
                     val item = byIdRes.body()!!
+                    val permanentLovyId = when {
+                        item.username?.startsWith("lovy_") == true -> item.username
+                        else -> expectedLovyId
+                    }
                     return@withContext SupabaseAccountDto(
-                        id = item.id,
-                        username = item.username ?: item.name ?: cleanEmail,
+                        id = permanentLovyId,
+                        username = permanentLovyId,
                         displayName = item.name ?: "",
                         gender = item.gender ?: "FEMALE",
                         bio = item.bio ?: "",
@@ -615,13 +625,36 @@ class PocketBaseRepository {
                 }
             } catch (_: Exception) {}
 
-            // 2. Cari melalui filter email
+            // 2. Cek via toPbId dari expectedLovyId
+            try {
+                val byLovyIdRes = api.getUserById(PocketBaseClient.toPbId(expectedLovyId))
+                if (byLovyIdRes.isSuccessful && byLovyIdRes.body() != null) {
+                    val item = byLovyIdRes.body()!!
+                    return@withContext SupabaseAccountDto(
+                        id = expectedLovyId,
+                        username = expectedLovyId,
+                        displayName = item.name ?: "",
+                        gender = item.gender ?: "FEMALE",
+                        bio = item.bio ?: "",
+                        avatarUrl = item.avatarUrl,
+                        googleEmail = cleanEmail,
+                        lastLoginAt = item.lastActiveAt ?: System.currentTimeMillis(),
+                        fcmToken = item.fcmToken
+                    )
+                }
+            } catch (_: Exception) {}
+
+            // 3. Cari melalui filter email
             val filter = "email='$cleanEmail'"
             val res = api.getUsers(perPage = 1, filter = filter)
             val item = res.body()?.items?.firstOrNull() ?: return@withContext null
+            val permanentLovyId = when {
+                item.username?.startsWith("lovy_") == true -> item.username
+                else -> expectedLovyId
+            }
             SupabaseAccountDto(
-                id = item.id,
-                username = item.username ?: item.name ?: cleanEmail,
+                id = permanentLovyId,
+                username = permanentLovyId,
                 displayName = item.name ?: "",
                 gender = item.gender ?: "FEMALE",
                 bio = item.bio ?: "",
@@ -641,13 +674,19 @@ class PocketBaseRepository {
             val pbId = PocketBaseClient.toPbId(accountId)
             val res = api.getUserById(pbId)
             val item = if (res.isSuccessful) res.body() else {
-                val q = api.getUsers(perPage = 1, filter = "id='$pbId' || id='$accountId'")
+                val q = api.getUsers(perPage = 1, filter = "id='$pbId' || id='$accountId' || username='$accountId'")
                 q.body()?.items?.firstOrNull()
             } ?: return@withContext null
 
+            val permanentLovyId = when {
+                item.username?.startsWith("lovy_") == true -> item.username
+                accountId.startsWith("lovy_") -> accountId
+                else -> PocketBaseClient.toLovyId(accountId)
+            }
+
             SupabaseAccountDto(
-                id = item.id,
-                username = item.username ?: item.name ?: "",
+                id = permanentLovyId,
+                username = permanentLovyId,
                 displayName = item.name ?: "",
                 gender = item.gender ?: "FEMALE",
                 bio = item.bio ?: "",
@@ -663,25 +702,27 @@ class PocketBaseRepository {
     suspend fun registerOrUpdateAccount(account: SupabaseAccountDto): Boolean = withContext(Dispatchers.IO) {
         val api = PocketBaseClient.getApi() ?: return@withContext false
         try {
-            val pbId = PocketBaseClient.toPbId(account.id)
+            val permanentLovyId = if (account.id.startsWith("lovy_")) {
+                account.id
+            } else if (!account.username.isNullOrBlank() && account.username.startsWith("lovy_")) {
+                account.username
+            } else {
+                PocketBaseClient.toLovyId(account.googleEmail ?: account.username ?: account.id)
+            }
+            val pbId = PocketBaseClient.toPbId(permanentLovyId)
             val updates = mutableMapOf<String, Any?>(
                 "name" to account.displayName,
                 "gender" to (account.gender ?: "FEMALE").lowercase(),
                 "bio" to (account.bio ?: ""),
                 "avatar_url" to (account.avatarUrl ?: ""),
                 "last_active_at" to account.lastLoginAt,
-                "is_online" to true
+                "is_online" to true,
+                "username" to permanentLovyId
             )
             account.googleEmail?.let { email ->
                 if (email.isNotBlank()) {
                     updates["email"] = email.trim().lowercase()
                     updates["emailVisibility"] = true
-                }
-            }
-            if (!account.username.isNullOrBlank()) {
-                val cleanUsername = account.username.lowercase().filter { it in 'a'..'z' || it in '0'..'9' || it == '_' }
-                if (cleanUsername.isNotBlank()) {
-                    updates["username"] = cleanUsername
                 }
             }
             account.fcmToken?.let { updates["fcm_token"] = it }

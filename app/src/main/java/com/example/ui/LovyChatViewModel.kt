@@ -242,7 +242,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                         savedSession.username.ifBlank { "Pengguna" }
                     }
                 val sessionEmail = savedSession.email ?: if (savedSession.username.contains("@")) savedSession.username else null
-                val sessionLovyId = savedSession.lovyId.takeIf { it.isNotBlank() && it != "lovy_889214" } ?: "lovy_${(100000..999999).random()}"
+                val sessionLovyId = authRepo.getOrGenerateLovyId(sessionEmail ?: savedSession.username, savedSession.lovyId)
                 val sessionBio = savedSession.bio.takeIf { it != "Menjelajahi dunia dan mencari teman baru di Lovy Chat ✨" } ?: ""
 
                 val restoredProfile = UserProfile(
@@ -1503,7 +1503,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                             } else profile.displayName
 
                             val healedLovyId = if (isDummyLovyId) {
-                                savedSession.lovyId.takeIf { it.isNotBlank() && it != "lovy_889214" } ?: "lovy_${(100000..999999).random()}"
+                                authRepo.getOrGenerateLovyId(savedSession.email ?: savedSession.username, savedSession.lovyId)
                             } else profile.lovyId
 
                             val healedBio = if (isDummyBio) {
@@ -1563,9 +1563,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                             savedSession.email ?: if (savedSession.username.contains("@")) savedSession.username else null
                         } else null
                         val initialLovyId = if (hasActiveSession) {
-                            savedSession.lovyId.takeIf { it.isNotBlank() && it != "lovy_889214" } ?: "lovy_${(100000..999999).random()}"
+                            authRepo.getOrGenerateLovyId(savedSession.email ?: savedSession.username, savedSession.lovyId)
                         } else {
-                            _uiState.value.myLovyId.takeIf { it.isNotBlank() && it != "lovy_889214" } ?: "lovy_${(100000..999999).random()}"
+                            authRepo.getOrGenerateLovyId(initialEmail ?: initialName, _uiState.value.myLovyId)
                         }
                         val initialCity = _uiState.value.currentGpsLocation?.cityName?.takeIf { it.isNotBlank() }
                             ?: savedSession?.city?.takeIf { it.isNotBlank() } ?: ""
@@ -1857,7 +1857,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                             val currentLovyId = _uiState.value.myLovyId
                             unsyncedMoments.forEach { unposted ->
                                 val author = unposted.authorId.takeIf { it.isNotBlank() && it != "me" }
-                                    ?: currentLovyId.ifBlank { "lovy_${(100000..999999).random()}" }
+                                    ?: currentLovyId.ifBlank { authRepo.getSavedSession()?.lovyId ?: authRepo.getOrGenerateLovyId(_uiState.value.myName) }
                                 val ok = supabaseRepo.sendMoment(unposted, author)
                                 if (ok) {
                                     Log.d("LovyChatViewModel", "Berhasil auto-sync momen lokal ke cloud: ${unposted.id}")
@@ -1933,7 +1933,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                                 val currentLovyId = _uiState.value.myLovyId
                                 unsyncedMoments.forEach { unposted ->
                                     val author = unposted.authorId.takeIf { it.isNotBlank() && it != "me" }
-                                        ?: currentLovyId.ifBlank { "lovy_${(100000..999999).random()}" }
+                                        ?: currentLovyId.ifBlank { authRepo.getSavedSession()?.lovyId ?: authRepo.getOrGenerateLovyId(_uiState.value.myName) }
                                     val ok = supabaseRepo.sendMoment(unposted, author)
                                     if (ok) {
                                         Log.d("LovyChatViewModel", "Berhasil auto-sync momen lokal ke Supabase: ${unposted.id}")
@@ -2079,7 +2079,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     suspend fun performRegister(username: String, password: String, gender: Gender): AuthResult {
         val result = authRepo.register(username = username, password = password, displayName = username, gender = gender)
         if (result.success) {
-            val lovyId = result.lovyId ?: "lovy_${(100000..999999).random()}"
+            val lovyId = result.lovyId ?: authRepo.getOrGenerateLovyId(username)
             val finalName = result.displayName ?: result.username ?: username
             clearDummyFriends()
             val initialMoments = getLocalSavedMoments()
@@ -2274,6 +2274,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         val wasRealUser = !state.isGuest && state.isLoggedIn
 
         authRepo.deleteAccount(myName)
+        val userEmail = state.userProfile.email.orEmpty()
+        if (userEmail.isNotBlank()) {
+            authRepo.deleteAccount(userEmail)
+        }
+        if (myId.isNotBlank()) {
+            authRepo.deleteAccount(myId)
+        }
 
         deletedMessageIds.clear()
         deletedConversationTimestamps.clear()
@@ -3436,7 +3443,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         if (content.isBlank()) return
         recordFeatureClick()
         val authorId = _uiState.value.myLovyId.ifBlank {
-            val gen = "lovy_${(100000..999999).random()}"
+            val gen = authRepo.getSavedSession()?.lovyId
+                ?: authRepo.getOrGenerateLovyId(_uiState.value.userProfile.email ?: _uiState.value.myName)
             _uiState.update { it.copy(myLovyId = gen) }
             gen
         }
@@ -3570,24 +3578,14 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
                 _uiState.update { it.copy(uploadProgressText = "Mengunggah foto profil (${bytes.size / 1024} KB)...") }
                 val fileName = "avatar_${_uiState.value.myLovyId}_${System.currentTimeMillis()}.jpg"
-                var publicUrl: String? = null
                 val result = com.example.data.storage.R2StorageClient.uploadImage(
                     bytes = bytes,
                     folder = "avatars",
                     fileName = fileName
                 )
 
-                if (result.isSuccess) {
-                    publicUrl = result.getOrNull()
-                } else {
-                    Log.w("LovyChatViewModel", "Upload avatar R2 gagal, mencoba fallback ImgBB...")
-                    val fallback = com.example.util.ImgBbUploader.uploadImage(ctx, uri)
-                    if (fallback.isSuccess) {
-                        publicUrl = fallback.getOrNull()
-                    }
-                }
-
-                if (!publicUrl.isNullOrBlank()) {
+                val publicUrl = result.getOrNull()
+                if (result.isSuccess && !publicUrl.isNullOrBlank()) {
                     val updatedProfile = _uiState.value.userProfile.copy(profilePicture = publicUrl)
                     saveUserProfile(updatedProfile)
                     _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
@@ -3670,28 +3668,21 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 _uiState.update { it.copy(uploadProgressText = "Mengunggah foto momen (${bytes.size / 1024} KB)...") }
                 val fileName = "moment_${UUID.randomUUID()}.jpg"
 
-                // 2. Upload ke Cloudflare R2
-                var uploadedUrl: String? = null
+                // 2. Upload langsung ke Cloudflare R2
                 val r2Result = com.example.data.storage.R2StorageClient.uploadImage(
                     bytes = bytes,
                     folder = "moments",
                     fileName = fileName
                 )
-                if (r2Result.isSuccess) {
-                    uploadedUrl = r2Result.getOrNull()
-                } else {
-                    Log.w("LovyChatViewModel", "Upload momen ke R2 gagal: ${r2Result.exceptionOrNull()?.message}, mencoba fallback ImgBB...")
-                    val fallbackRes = com.example.util.ImgBbUploader.uploadImage(ctx, uri)
-                    if (fallbackRes.isSuccess) {
-                        uploadedUrl = fallbackRes.getOrNull()
-                    }
-                }
+                val uploadedUrl = r2Result.getOrNull()
 
                 if (uploadedUrl.isNullOrBlank()) {
                     // Upload foto gagal: JANGAN terbitkan momen kosong tanpa foto agar database tidak rusak
+                    val errMsg = r2Result.exceptionOrNull()?.localizedMessage ?: "Gagal mengunggah foto ke Cloudflare R2"
+                    Log.e("LovyChatViewModel", "Upload momen ke R2 gagal: $errMsg")
                     _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
                     try {
-                        android.widget.Toast.makeText(ctx, "Gagal mengunggah foto ke server. Momen belum diterbitkan, silakan coba lagi.", android.widget.Toast.LENGTH_LONG).show()
+                        android.widget.Toast.makeText(ctx, "Gagal mengunggah foto ke Cloudflare R2. Silakan periksa jaringan dan coba lagi.", android.widget.Toast.LENGTH_LONG).show()
                     } catch (_: Throwable) {}
                     onComplete?.invoke(false)
                     return@launch
@@ -3751,22 +3742,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
                 _uiState.update { it.copy(uploadProgressText = "Mengunggah foto chat (${bytes.size / 1024} KB)...") }
                 val fileName = "chat_${UUID.randomUUID()}.jpg"
-                var photoUrl: String? = null
                 val result = com.example.data.storage.R2StorageClient.uploadImage(
                     bytes = bytes,
                     folder = "chats/$conversationId",
                     fileName = fileName
                 )
 
-                if (result.isSuccess) {
-                    photoUrl = result.getOrNull()
-                } else {
-                    Log.w("LovyChatViewModel", "Upload foto chat R2 gagal, mencoba fallback ImgBB...")
-                    val fallback = com.example.util.ImgBbUploader.uploadImage(ctx, uri)
-                    if (fallback.isSuccess) {
-                        photoUrl = fallback.getOrNull()
-                    }
-                }
+                val photoUrl = result.getOrNull()
 
                 if (!photoUrl.isNullOrBlank()) {
                     val displayText = caption.trim().ifBlank { "📷 Foto" }

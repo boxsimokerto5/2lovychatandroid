@@ -99,6 +99,34 @@ class AuthRepository(
 
     // ==================== Session Management ====================
 
+    /**
+     * Mengambil ID Lovy permanen untuk pengguna atau email.
+     * Jika akun sudah pernah dibuat atau memiliki ID sebelumnya, ID tersebut dipakai kembali.
+     * Jika akun baru, dibuatkan ID deterministik permanen dari email/username (Bukan random acak).
+     * Dengan demikian, ID tidak akan pernah berganti-ganti saat keluar masuk aplikasi.
+     */
+    fun getOrGenerateLovyId(identifier: String, preferredId: String? = null): String {
+        val cleanKey = identifier.trim().lowercase()
+        if (cleanKey.isEmpty()) return "lovy_100001"
+
+        val lovyIdKey = "user_lovy_id_$cleanKey"
+
+        // 1. Periksa apakah sudah ada ID tersimpan permanen di SharedPreferences
+        val stored = prefs.getString(lovyIdKey, null)?.takeIf { it.isNotBlank() && it != "lovy_889214" }
+        if (stored != null) return stored
+
+        // 2. Jika ada preferredId yang valid dari sesi atau server
+        if (!preferredId.isNullOrBlank() && preferredId != "lovy_889214" && preferredId.startsWith("lovy_")) {
+            prefs.edit().putString(lovyIdKey, preferredId).apply()
+            return preferredId
+        }
+
+        // 3. Buat ID permanen deterministik berdasarkan email/identifier (konsisten & stabil seumur hidup)
+        val permanentId = com.example.data.pocketbase.PocketBaseClient.toLovyId(cleanKey)
+        prefs.edit().putString(lovyIdKey, permanentId).apply()
+        return permanentId
+    }
+
     fun getSavedSession(): SavedSession? {
         val jsonStr = prefs.getString(KEY_SAVED_SESSION, null) ?: return null
         return try {
@@ -119,15 +147,11 @@ class AuthRepository(
                 else -> "Pengguna"
             }
 
-            val storedLovyId = json.optString("lovy_id", "")
-            val finalLovyId = if (storedLovyId.isNotBlank() && storedLovyId != "lovy_889214") {
-                storedLovyId
-            } else {
-                "lovy_${(100000..999999).random()}"
-            }
-
             val storedEmail = json.optString("email").takeIf { it.isNotBlank() }
                 ?: if (rawUsername.contains("@")) rawUsername else null
+
+            val storedLovyId = json.optString("lovy_id", "")
+            val finalLovyId = getOrGenerateLovyId(storedEmail ?: rawUsername, storedLovyId)
 
             val storedBio = json.optString("bio", "")
             val cleanBio = if (storedBio == "Menjelajahi dunia dan mencari teman baru di Lovy Chat ✨") "" else storedBio
@@ -182,10 +206,12 @@ class AuthRepository(
     fun deleteAccount(username: String) {
         clearSession()
         try {
+            val normalizedUser = username.lowercase().trim()
+            prefs.edit().remove("user_lovy_id_$normalizedUser").apply()
             val rawUsers = prefs.getString(KEY_REGISTERED_USERS, null)
             if (!rawUsers.isNullOrBlank()) {
                 val json = JSONObject(rawUsers)
-                json.remove(username.lowercase())
+                json.remove(normalizedUser)
                 prefs.edit().putString(KEY_REGISTERED_USERS, json.toString()).apply()
             }
             val rawGoogle = prefs.getString(KEY_GOOGLE_USERS, null)
@@ -198,9 +224,11 @@ class AuthRepository(
                     val userObj = json.optJSONObject(key)
                     if (userObj?.optString("username")?.equals(username, ignoreCase = true) == true ||
                         userObj?.optString("lovy_id")?.equals(username, ignoreCase = true) == true ||
+                        userObj?.optString("email")?.equals(username, ignoreCase = true) == true ||
                         key.equals(username, ignoreCase = true)
                     ) {
                         keysToRemove.add(key)
+                        prefs.edit().remove("user_lovy_id_${key.lowercase()}").apply()
                     }
                 }
                 keysToRemove.forEach { json.remove(it) }
@@ -234,7 +262,7 @@ class AuthRepository(
 
         val normalizedKey = trimmed.lowercase()
         val finalDisplayName = if (displayName.isNotBlank()) displayName.trim() else trimmed
-        val lovyId = "lovy_${(100000..999999).random()}"
+        val lovyId = getOrGenerateLovyId(normalizedKey)
         val hashedPassword = hashPassword(password)
         val defaultBio = "Halo, saya pengguna baru Lovy Chat! ✨"
 
@@ -403,13 +431,7 @@ class AuthRepository(
 
         val lovyIdKey = "user_lovy_id_${normalizedKey}"
         val existingLovyId = prefs.getString(lovyIdKey, null)
-        val lovyId = if (!existingLovyId.isNullOrBlank()) {
-            existingLovyId
-        } else {
-            val genId = "lovy_${(100000..999999).random()}"
-            prefs.edit().putString(lovyIdKey, genId).apply()
-            genId
-        }
+        val lovyId = getOrGenerateLovyId(normalizedKey, existingLovyId)
         val userEmail = if (normalizedKey.contains("@")) normalizedKey else null
         val session = SavedSession(
             isLoggedIn = true,
@@ -449,18 +471,19 @@ class AuthRepository(
             try {
                 val existingCloudAccount = supabaseRepo.findAccountByGoogle(googleEmail)
                 if (existingCloudAccount != null) {
-                    // Akun Google sudah melekat di Supabase! Muat data permanennya
+                    // Akun Google sudah melekat di server! Muat data permanennya
                     supabaseRepo.updateAccountLoginTime(existingCloudAccount.id)
                     supabaseRepo.updateUserLastActive(existingCloudAccount.id)
 
                     val userGender = if (existingCloudAccount.gender?.equals("MALE", ignoreCase = true) == true) Gender.MALE else Gender.FEMALE
                     val dispName = existingCloudAccount.displayName ?: existingCloudAccount.username
                     val bioText = existingCloudAccount.bio ?: ""
+                    val permanentLovyId = getOrGenerateLovyId(googleEmail, existingCloudAccount.id)
 
                     val session = SavedSession(
                         isLoggedIn = true,
                         isGuest = false,
-                        lovyId = existingCloudAccount.id,
+                        lovyId = permanentLovyId,
                         username = existingCloudAccount.username,
                         displayName = dispName,
                         email = googleEmail,
@@ -477,7 +500,7 @@ class AuthRepository(
                         username = existingCloudAccount.username,
                         displayName = dispName,
                         email = googleEmail,
-                        lovyId = existingCloudAccount.id,
+                        lovyId = permanentLovyId,
                         gender = userGender,
                         bio = bioText,
                         avatarUrl = session.avatarUrl,
@@ -485,13 +508,12 @@ class AuthRepository(
                     )
                 } else {
                     // Pengguna baru pertama kali login Google! Buat dan lekatkan akun secara permanen
-                    val deterministicPbId = com.example.data.pocketbase.PocketBaseClient.toPbId("google_$googleEmail")
-                    val newLovyId = deterministicPbId
+                    val newLovyId = getOrGenerateLovyId(googleEmail)
                     val baseUsername = googleEmail.substringBefore("@").replace(".", "_")
 
                     val newAccount = SupabaseAccountDto(
                         id = newLovyId,
-                        username = baseUsername,
+                        username = newLovyId,
                         passwordHash = null,
                         displayName = displayName,
                         gender = "FEMALE",
@@ -545,7 +567,7 @@ class AuthRepository(
         }
 
         // 2. Fallback Lokal jika server belum terhubung
-        val localLovyId = com.example.data.pocketbase.PocketBaseClient.toPbId("google_$googleEmail")
+        val localLovyId = getOrGenerateLovyId(googleEmail)
         val baseUsername = googleEmail.substringBefore("@").replace(".", "_")
         val session = SavedSession(
             isLoggedIn = true,
