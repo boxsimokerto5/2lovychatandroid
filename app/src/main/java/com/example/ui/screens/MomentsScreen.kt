@@ -46,6 +46,8 @@ import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardVoice
+import android.speech.RecognizerIntent
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Flag
@@ -206,6 +208,99 @@ fun MomentsScreen(
     var activeMomentIdForComments by remember { mutableStateOf<String?>(null) }
     var commentInputText by remember { mutableStateOf("") }
     val commentSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    var activeSpeechTarget by remember { mutableStateOf<String?>(null) }
+
+    val speechToTextLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val spokenMatches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            val spokenText = spokenMatches?.firstOrNull()?.trim()
+            if (!spokenText.isNullOrEmpty()) {
+                if (activeSpeechTarget == "post") {
+                    val current = postText.trimEnd()
+                    postText = if (current.isEmpty()) spokenText else "$current $spokenText"
+                } else if (activeSpeechTarget == "comment") {
+                    val current = commentInputText.trimEnd()
+                    commentInputText = if (current.isEmpty()) spokenText else "$current $spokenText"
+                }
+            }
+        }
+    }
+
+    val speechPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                val langTag = when (language) {
+                    AppLanguage.INDONESIAN -> "id-ID"
+                    AppLanguage.ENGLISH -> "en-US"
+                    AppLanguage.CHINESE -> "zh-CN"
+                    AppLanguage.JAPANESE -> "ja-JP"
+                    AppLanguage.KOREAN -> "ko-KR"
+                    AppLanguage.ARABIC -> "ar-SA"
+                    AppLanguage.SPANISH -> "es-ES"
+                    AppLanguage.FRENCH -> "fr-FR"
+                    AppLanguage.GERMAN -> "de-DE"
+                    AppLanguage.RUSSIAN -> "ru-RU"
+                    AppLanguage.PORTUGUESE -> "pt-BR"
+                    else -> "id-ID"
+                }
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, langTag)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, langTag)
+                putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, false)
+                putExtra(RecognizerIntent.EXTRA_PROMPT, AppStrings.speechToTextPrompt(language))
+            }
+            try {
+                speechToTextLauncher.launch(intent)
+            } catch (e: Exception) {
+                Toast.makeText(context, AppStrings.speechNotAvailable(language), Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(context, AppStrings.micPermissionRequiredForSpeech(language), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val startMomentsSpeechToText: (String) -> Unit = { target ->
+        activeSpeechTarget = target
+        val hasPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+            context,
+            android.Manifest.permission.RECORD_AUDIO
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (hasPermission) {
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                val langTag = when (language) {
+                    AppLanguage.INDONESIAN -> "id-ID"
+                    AppLanguage.ENGLISH -> "en-US"
+                    AppLanguage.CHINESE -> "zh-CN"
+                    AppLanguage.JAPANESE -> "ja-JP"
+                    AppLanguage.KOREAN -> "ko-KR"
+                    AppLanguage.ARABIC -> "ar-SA"
+                    AppLanguage.SPANISH -> "es-ES"
+                    AppLanguage.FRENCH -> "fr-FR"
+                    AppLanguage.GERMAN -> "de-DE"
+                    AppLanguage.RUSSIAN -> "ru-RU"
+                    AppLanguage.PORTUGUESE -> "pt-BR"
+                    else -> "id-ID"
+                }
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, langTag)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, langTag)
+                putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, false)
+                putExtra(RecognizerIntent.EXTRA_PROMPT, AppStrings.speechToTextPrompt(language))
+            }
+            try {
+                speechToTextLauncher.launch(intent)
+            } catch (e: Exception) {
+                Toast.makeText(context, AppStrings.speechNotAvailable(language), Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            speechPermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+        }
+    }
 
     // Otomatis segarkan dan sinkronisasikan momen dari server saat membuka layar Momen
     LaunchedEffect(Unit) {
@@ -512,6 +607,19 @@ fun MomentsScreen(
                         value = postText,
                         onValueChange = { postText = it },
                         placeholder = { Text(AppStrings.momentsInputPlaceholder(language), color = NeutralMedium) },
+                        trailingIcon = {
+                            IconButton(
+                                onClick = { startMomentsSpeechToText("post") },
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.KeyboardVoice,
+                                    contentDescription = AppStrings.speechToTextTooltip(language),
+                                    tint = EmeraldGreen,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        },
                         minLines = 3,
                         maxLines = 5,
                         shape = RoundedCornerShape(12.dp),
@@ -938,6 +1046,19 @@ fun MomentsScreen(
                                     fontSize = 13.sp,
                                     color = NeutralMedium
                                 )
+                            },
+                            trailingIcon = {
+                                IconButton(
+                                    onClick = { startMomentsSpeechToText("comment") },
+                                    modifier = Modifier.size(34.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.KeyboardVoice,
+                                        contentDescription = AppStrings.speechToTextTooltip(language),
+                                        tint = EmeraldGreen,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                             },
                             singleLine = false,
                             maxLines = 3,

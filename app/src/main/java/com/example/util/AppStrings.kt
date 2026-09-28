@@ -7630,5 +7630,61 @@ object AppStrings {
         AppLanguage.INDONESIAN -> "Belum ada pengguna lain yang sedang online di sekitar Anda saat ini."
         else -> "No other users are currently online near you."
     }
+
+    fun speechToTextTooltip(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "语音转文字"
+        AppLanguage.JAPANESE -> "音声入力（テキスト変換）"
+        AppLanguage.KOREAN -> "음성을 텍스트로 변환"
+        AppLanguage.ARABIC -> "تحويل الصوت إلى نص"
+        AppLanguage.SPANISH -> "Voz a texto"
+        AppLanguage.FRENCH -> "Dictée vocale"
+        AppLanguage.GERMAN -> "Sprache zu Text"
+        AppLanguage.RUSSIAN -> "Голосовой ввод в текст"
+        AppLanguage.PORTUGUESE -> "Voz para texto"
+        AppLanguage.INDONESIAN -> "Bicara ke Teks (Dikte Cepat)"
+        else -> "Speech to Text"
+    }
+
+    fun speechToTextPrompt(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "请说话，正在转为文字..."
+        AppLanguage.JAPANESE -> "お話しください（文字に変換します）..."
+        AppLanguage.KOREAN -> "말씀하세요. 텍스트로 변환됩니다..."
+        AppLanguage.ARABIC -> "تحدث الآن للتحويل إلى نص..."
+        AppLanguage.SPANISH -> "Habla ahora para convertir a texto..."
+        AppLanguage.FRENCH -> "Parlez maintenant pour convertir en texte..."
+        AppLanguage.GERMAN -> "Sprechen Sie jetzt zur Textumwandlung..."
+        AppLanguage.RUSSIAN -> "Говорите для преобразования в текст..."
+        AppLanguage.PORTUGUESE -> "Fale agora para converter em texto..."
+        AppLanguage.INDONESIAN -> "Bicara sekarang untuk diubah jadi teks..."
+        else -> "Speak now to convert to text..."
+    }
+
+    fun speechNotAvailable(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "您的设备不支持语音识别服务"
+        AppLanguage.JAPANESE -> "この端末では音声認識がサポートされていません"
+        AppLanguage.KOREAN -> "이 기기에서 음성 인식 서비스를 사용할 수 없습니다"
+        AppLanguage.ARABIC -> "خدمة التعرف على الصوت غير متوفرة على هذا الجهاز"
+        AppLanguage.SPANISH -> "El reconocimiento de voz no está disponible en este dispositivo"
+        AppLanguage.FRENCH -> "La reconnaissance vocale n'est pas disponible sur cet appareil"
+        AppLanguage.GERMAN -> "Spracherkennung auf diesem Gerät nicht verfügbar"
+        AppLanguage.RUSSIAN -> "Распознавание речи недоступно на этом устройстве"
+        AppLanguage.PORTUGUESE -> "O reconhecimento de voz não está disponível neste dispositivo"
+        AppLanguage.INDONESIAN -> "Fitur pengenalan suara tidak tersedia di perangkat ini"
+        else -> "Speech recognition is not available on this device"
+    }
+
+    fun micPermissionRequiredForSpeech(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "需要麦克风权限才能使用语音转文字"
+        AppLanguage.JAPANESE -> "音声入力にはマイクの権限が必要です"
+        AppLanguage.KOREAN -> "음성 입력을 위해 마이크 권한이 필요합니다"
+        AppLanguage.ARABIC -> "إذن الميكروفون مطلوب لتحويل الصوت إلى نص"
+        AppLanguage.SPANISH -> "Se requiere permiso de micrófono para voz a texto"
+        AppLanguage.FRENCH -> "L'autorisation du microphone est requise pour la dictée vocale"
+        AppLanguage.GERMAN -> "Mikrofonberechtigung für Sprache zu Text erforderlich"
+        AppLanguage.RUSSIAN -> "Требуется разрешение на микрофон для голосового ввода"
+        AppLanguage.PORTUGUESE -> "Permissão de microfone necessária para voz para texto"
+        AppLanguage.INDONESIAN -> "Izin mikrofon diperlukan untuk fitur bicara ke teks"
+        else -> "Microphone permission is required for speech to text"
+    }
 }
 

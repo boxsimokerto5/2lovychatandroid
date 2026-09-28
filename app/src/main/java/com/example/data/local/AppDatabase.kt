@@ -11,7 +11,7 @@ import com.example.model.UserProfile
 /**
  * Room Database for Lovy Chat local persistence.
  */
-@Database(entities = [UserProfile::class, ChatFriendEntity::class, ChatMessageEntity::class], version = 6, exportSchema = false)
+@Database(entities = [UserProfile::class, ChatFriendEntity::class, ChatMessageEntity::class], version = 7, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun userProfileDao(): UserProfileDao
@@ -30,6 +30,15 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                try {
+                    db.execSQL("ALTER TABLE local_chat_messages ADD COLUMN audioUrl TEXT DEFAULT NULL")
+                    db.execSQL("ALTER TABLE local_chat_messages ADD COLUMN audioDurationSeconds INTEGER NOT NULL DEFAULT 0")
+                } catch (_: Exception) {}
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -37,7 +46,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "lovy_chat_local.db"
                 )
-                    .addMigrations(MIGRATION_5_6)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

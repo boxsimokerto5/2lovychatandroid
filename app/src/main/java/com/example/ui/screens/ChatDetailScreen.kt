@@ -78,6 +78,15 @@ import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Person
 import com.example.ui.components.ReportDialog
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import com.example.util.VoiceRecorder
+import com.example.util.VoicePlayer
 import com.example.ui.components.ReportType
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -92,6 +101,12 @@ import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.SentimentSatisfiedAlt
+import androidx.compose.material.icons.filled.KeyboardVoice
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.speech.RecognizerIntent
+import androidx.core.content.ContextCompat
 import androidx.compose.material.icons.filled.Wc
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
@@ -211,6 +226,7 @@ fun ChatDetailScreen(
     onReactToMessage: ((messageId: String, emoji: String?) -> Unit)? = null,
     onSendPhotoMessage: ((android.net.Uri, String) -> Unit)? = null,
     onSendPhotoMessageWithReply: ((android.net.Uri, String, ChatMessage?) -> Unit)? = null,
+    onSendVoiceNote: ((java.io.File, Int, ChatMessage?) -> Unit)? = null,
     isUploadingPhoto: Boolean = false,
     uploadProgressText: String? = null,
     onPollMessages: (() -> Unit)? = null,
@@ -223,11 +239,120 @@ fun ChatDetailScreen(
     language: AppLanguage = AppLanguage.INDONESIAN,
     modifier: Modifier = Modifier
 ) {
-    var inputText by remember { mutableStateOf("") }
-    var replyingToMessage by remember { mutableStateOf<ChatMessage?>(null) }
-    val focusRequester = remember { FocusRequester() }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val focusRequester = remember { FocusRequester() }
+    var inputText by remember { mutableStateOf("") }
+    var replyingToMessage by remember { mutableStateOf<ChatMessage?>(null) }
+    val voiceRecorder = remember { VoiceRecorder(context) }
+    val isRecordingVoice by voiceRecorder.isRecording.collectAsState()
+    val recordingDurationSec by voiceRecorder.recordingDurationSeconds.collectAsState()
+    val recordingAmp by voiceRecorder.amplitudeFlow.collectAsState()
+
+    val audioPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            voiceRecorder.startRecording()
+        } else {
+            Toast.makeText(context, "Izin mikrofon diperlukan untuk merekam pesan suara", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val speechToTextLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val spokenMatches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            val spokenText = spokenMatches?.firstOrNull()?.trim()
+            if (!spokenText.isNullOrEmpty()) {
+                val current = inputText.trimEnd()
+                inputText = if (current.isEmpty()) spokenText else "$current $spokenText"
+                onUserTyping?.invoke(true)
+            }
+        }
+    }
+
+    val speechAudioPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                val langTag = when (language) {
+                    AppLanguage.INDONESIAN -> "id-ID"
+                    AppLanguage.ENGLISH -> "en-US"
+                    AppLanguage.CHINESE -> "zh-CN"
+                    AppLanguage.JAPANESE -> "ja-JP"
+                    AppLanguage.KOREAN -> "ko-KR"
+                    AppLanguage.ARABIC -> "ar-SA"
+                    AppLanguage.SPANISH -> "es-ES"
+                    AppLanguage.FRENCH -> "fr-FR"
+                    AppLanguage.GERMAN -> "de-DE"
+                    AppLanguage.RUSSIAN -> "ru-RU"
+                    AppLanguage.PORTUGUESE -> "pt-BR"
+                    else -> "id-ID"
+                }
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, langTag)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, langTag)
+                putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, false)
+                putExtra(RecognizerIntent.EXTRA_PROMPT, AppStrings.speechToTextPrompt(language))
+            }
+            try {
+                speechToTextLauncher.launch(intent)
+            } catch (e: Exception) {
+                Toast.makeText(context, AppStrings.speechNotAvailable(language), Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(context, AppStrings.micPermissionRequiredForSpeech(language), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val onTriggerSpeechToText: () -> Unit = {
+        val hasPermission = ContextCompat.checkSelfPermission(
+            context,
+            android.Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+        if (hasPermission) {
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                val langTag = when (language) {
+                    AppLanguage.INDONESIAN -> "id-ID"
+                    AppLanguage.ENGLISH -> "en-US"
+                    AppLanguage.CHINESE -> "zh-CN"
+                    AppLanguage.JAPANESE -> "ja-JP"
+                    AppLanguage.KOREAN -> "ko-KR"
+                    AppLanguage.ARABIC -> "ar-SA"
+                    AppLanguage.SPANISH -> "es-ES"
+                    AppLanguage.FRENCH -> "fr-FR"
+                    AppLanguage.GERMAN -> "de-DE"
+                    AppLanguage.RUSSIAN -> "ru-RU"
+                    AppLanguage.PORTUGUESE -> "pt-BR"
+                    else -> "id-ID"
+                }
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, langTag)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, langTag)
+                putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, false)
+                putExtra(RecognizerIntent.EXTRA_PROMPT, AppStrings.speechToTextPrompt(language))
+            }
+            try {
+                speechToTextLauncher.launch(intent)
+            } catch (e: Exception) {
+                Toast.makeText(context, AppStrings.speechNotAvailable(language), Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            speechAudioPermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            VoicePlayer.stop()
+            if (voiceRecorder.isRecording.value) {
+                voiceRecorder.cancelRecording()
+            }
+        }
+    }
     var showPartnerProfileSheet by remember { mutableStateOf(false) }
     var activeMomentForComments by remember { mutableStateOf<MomentItem?>(null) }
     var messageToDelete by remember { mutableStateOf<ChatMessage?>(null) }
@@ -951,12 +1076,95 @@ fun ChatDetailScreen(
                         }
 
                         // Bottom Input Bar
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 2.dp, bottom = 2.dp)
-                        ) {
+                        if (isRecordingVoice) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp, horizontal = 4.dp)
+                            ) {
+                                val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+                                val pulseAlpha by infiniteTransition.animateFloat(
+                                    initialValue = 0.3f,
+                                    targetValue = 1.0f,
+                                    animationSpec = infiniteRepeatable(
+                                        animation = tween(600, easing = FastOutSlowInEasing),
+                                        repeatMode = RepeatMode.Reverse
+                                    ),
+                                    label = "pulseAlpha"
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .size(12.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFE53935).copy(alpha = pulseAlpha))
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                val min = recordingDurationSec / 60
+                                val sec = recordingDurationSec % 60
+                                Text(
+                                    text = String.format(Locale.getDefault(), "%02d:%02d", min, sec),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp,
+                                    color = Color(0xFFE53935)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = "Merekam suara...",
+                                    fontSize = 13.5.sp,
+                                    color = NeutralMedium,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                IconButton(
+                                    onClick = {
+                                        voiceRecorder.cancelRecording()
+                                        Toast.makeText(context, "Rekaman dibatalkan", Toast.LENGTH_SHORT).show()
+                                    },
+                                    modifier = Modifier.size(42.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.DeleteOutline,
+                                        contentDescription = "Batal",
+                                        tint = Color(0xFFE53935),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(4.dp))
+                                IconButton(
+                                    onClick = {
+                                        val recordResult = voiceRecorder.stopRecording()
+                                        if (recordResult != null) {
+                                            val (file, duration) = recordResult
+                                            val replyTarget = replyingToMessage
+                                            replyingToMessage = null
+                                            onSendVoiceNote?.invoke(file, duration, replyTarget)
+                                        } else {
+                                            Toast.makeText(context, "Rekaman suara terlalu singkat", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    colors = IconButtonDefaults.iconButtonColors(
+                                        containerColor = EmeraldGreen,
+                                        contentColor = Color.White
+                                    ),
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .clip(CircleShape)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.Send,
+                                        contentDescription = "Kirim",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        } else {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 2.dp, bottom = 2.dp)
+                            ) {
                             // Attach Photo Button (Gallery -> Cloudflare R2)
                             IconButton(
                                 onClick = {
@@ -1010,6 +1218,43 @@ fun ChatDetailScreen(
                                         color = Color(0xFF94A3B8)
                                     )
                                 },
+                                trailingIcon = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(end = 4.dp)
+                                    ) {
+                                        if (inputText.isNotEmpty()) {
+                                            IconButton(
+                                                onClick = {
+                                                    inputText = ""
+                                                    onUserTyping?.invoke(false)
+                                                },
+                                                modifier = Modifier.size(28.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Close,
+                                                    contentDescription = "Hapus teks",
+                                                    tint = NeutralMedium,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.width(2.dp))
+                                        }
+                                        IconButton(
+                                            onClick = onTriggerSpeechToText,
+                                            modifier = Modifier
+                                                .size(34.dp)
+                                                .testTag("chat_btn_speech_to_text")
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.KeyboardVoice,
+                                                contentDescription = AppStrings.speechToTextTooltip(language),
+                                                tint = EmeraldGreen,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+                                },
                                 maxLines = 4,
                                 shape = RoundedCornerShape(24.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
@@ -1031,60 +1276,92 @@ fun ChatDetailScreen(
 
                             Spacer(modifier = Modifier.width(8.dp))
 
-                            IconButton(
-                                onClick = {
-                                    lastActivityTime = System.currentTimeMillis()
-                                    val replyTarget = replyingToMessage
-                                    replyingToMessage = null
-                                    if (pendingPhotoUri != null) {
-                                        val uriToSend = pendingPhotoUri!!
-                                        val caption = inputText
-                                        pendingPhotoUri = null
-                                        inputText = ""
-                                        onUserTyping?.invoke(false)
-                                        if (onSendPhotoMessageWithReply != null) {
-                                            onSendPhotoMessageWithReply(uriToSend, caption, replyTarget)
+                            if (inputText.isBlank() && pendingPhotoUri == null) {
+                                IconButton(
+                                    onClick = {
+                                        val hasPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+                                            context,
+                                            android.Manifest.permission.RECORD_AUDIO
+                                        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                                        if (hasPermission) {
+                                            voiceRecorder.startRecording()
                                         } else {
-                                            onSendPhotoMessage?.invoke(uriToSend, caption)
+                                            audioPermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
                                         }
-                                    } else if (inputText.isNotBlank()) {
-                                        val textToSend = inputText
-                                        inputText = ""
-                                        onUserTyping?.invoke(false)
-                                        if (onSendMessageWithReply != null) {
-                                            onSendMessageWithReply(textToSend, replyTarget)
-                                        } else {
-                                            onSendMessage(textToSend)
-                                        }
-                                    }
-                                },
-                                enabled = !isUploadingPhoto && (pendingPhotoUri != null || inputText.isNotBlank()),
-                                colors = IconButtonDefaults.iconButtonColors(
-                                    containerColor = EmeraldGreen,
-                                    contentColor = Color.White,
-                                    disabledContainerColor = EmeraldGreen.copy(alpha = 0.4f),
-                                    disabledContentColor = Color.White.copy(alpha = 0.6f)
-                                ),
-                                modifier = Modifier
-                                    .size(46.dp)
-                                    .clip(CircleShape)
-                                    .testTag("chat_send_button")
-                            ) {
-                                if (isUploadingPhoto) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(18.dp),
-                                        color = Color.White,
-                                        strokeWidth = 2.dp
-                                    )
-                                } else {
+                                    },
+                                    colors = IconButtonDefaults.iconButtonColors(
+                                        containerColor = EmeraldGreen,
+                                        contentColor = Color.White
+                                    ),
+                                    modifier = Modifier
+                                        .size(46.dp)
+                                        .clip(CircleShape)
+                                        .testTag("chat_btn_mic")
+                                ) {
                                     Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.Send,
-                                        contentDescription = AppStrings.chatSendBtn(language),
-                                        modifier = Modifier.size(20.dp)
+                                        imageVector = Icons.Default.Mic,
+                                        contentDescription = "Rekam Suara",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(22.dp)
                                     )
+                                }
+                            } else {
+                                IconButton(
+                                    onClick = {
+                                        lastActivityTime = System.currentTimeMillis()
+                                        val replyTarget = replyingToMessage
+                                        replyingToMessage = null
+                                        if (pendingPhotoUri != null) {
+                                            val uriToSend = pendingPhotoUri!!
+                                            val caption = inputText
+                                            pendingPhotoUri = null
+                                            inputText = ""
+                                            onUserTyping?.invoke(false)
+                                            if (onSendPhotoMessageWithReply != null) {
+                                                onSendPhotoMessageWithReply(uriToSend, caption, replyTarget)
+                                            } else {
+                                                onSendPhotoMessage?.invoke(uriToSend, caption)
+                                            }
+                                        } else if (inputText.isNotBlank()) {
+                                            val textToSend = inputText
+                                            inputText = ""
+                                            onUserTyping?.invoke(false)
+                                            if (onSendMessageWithReply != null) {
+                                                onSendMessageWithReply(textToSend, replyTarget)
+                                            } else {
+                                                onSendMessage(textToSend)
+                                            }
+                                        }
+                                    },
+                                    enabled = !isUploadingPhoto,
+                                    colors = IconButtonDefaults.iconButtonColors(
+                                        containerColor = EmeraldGreen,
+                                        contentColor = Color.White,
+                                        disabledContainerColor = EmeraldGreen.copy(alpha = 0.4f),
+                                        disabledContentColor = Color.White.copy(alpha = 0.6f)
+                                    ),
+                                    modifier = Modifier
+                                        .size(46.dp)
+                                        .clip(CircleShape)
+                                        .testTag("chat_send_button")
+                                ) {
+                                    if (isUploadingPhoto) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(18.dp),
+                                            color = Color.White,
+                                            strokeWidth = 2.dp
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.Send,
+                                            contentDescription = AppStrings.chatSendBtn(language),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
+                    }
 
                         // Emoji Keyboard Panel (collapsible below input bar)
                         AnimatedVisibility(
@@ -2443,8 +2720,25 @@ fun ChatBubble(
                     }
                 }
 
-                // If message has photo attachment
-                if (!message.imageUrl.isNullOrBlank()) {
+                // If message has voice note attachment
+                if (!message.audioUrl.isNullOrBlank()) {
+                    VoiceNoteBubbleContent(
+                        audioUrl = message.audioUrl,
+                        durationSeconds = message.audioDurationSeconds,
+                        messageId = message.id,
+                        isFromMe = message.isFromMe
+                    )
+                    if (message.text.isNotBlank() && !message.text.startsWith("🎙️")) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        MessageTextWithLinks(
+                            text = message.text,
+                            isFromMe = message.isFromMe,
+                            fontSize = 14.sp,
+                            textColor = NeutralDark,
+                            modifier = Modifier.padding(horizontal = 4.dp)
+                        )
+                    }
+                } else if (!message.imageUrl.isNullOrBlank()) {
                     Box(
                         modifier = Modifier
                             .widthIn(min = 140.dp, max = 220.dp)
@@ -3195,3 +3489,158 @@ fun EmojiKeyboardPanel(
     }
 }
 
+
+
+/**
+ * Komponen Pemutar Pesan Suara Modern (Voice Note Bubble) ala WhatsApp / Telegram.
+ * Dilengkapi tombol Putar/Jeda melingkar, gelombang audio interaktif (bisa di-tap untuk seek),
+ * durasi audio, dan ikon mikrofon.
+ */
+@Composable
+fun VoiceNoteBubbleContent(
+    audioUrl: String,
+    durationSeconds: Int,
+    messageId: String,
+    isFromMe: Boolean
+) {
+    val currentPlayingId by VoicePlayer.currentPlayingId.collectAsState()
+    val isPlaying by VoicePlayer.isPlaying.collectAsState()
+    val progress by VoicePlayer.playbackProgress.collectAsState()
+    val currentPosSec by VoicePlayer.currentPositionSeconds.collectAsState()
+
+    val isThisPlaying = currentPlayingId == messageId && isPlaying
+    val currentProgress = if (currentPlayingId == messageId) progress else 0f
+
+    val accentColor = if (isFromMe) EmeraldGreen else Color(0xFF00897B)
+    val trackBgColor = if (isFromMe) EmeraldGreen.copy(alpha = 0.28f) else Color(0xFF90A4AE).copy(alpha = 0.45f)
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .widthIn(min = 200.dp, max = 260.dp)
+            .padding(vertical = 4.dp, horizontal = 2.dp)
+    ) {
+        // Tombol Putar / Jeda Melingkar
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .clip(CircleShape)
+                .background(accentColor)
+                .clickable {
+                    VoicePlayer.play(messageId, audioUrl)
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = if (isThisPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                contentDescription = if (isThisPlaying) "Jeda" else "Putar",
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(10.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            // Visualisasi Gelombang Audio Interaktif
+            VoiceNoteWaveformTrack(
+                progress = currentProgress,
+                activeColor = accentColor,
+                inactiveColor = trackBgColor,
+                audioKey = messageId,
+                onSeek = { seekPct ->
+                    if (currentPlayingId == messageId) {
+                        VoicePlayer.seekTo(seekPct)
+                    } else {
+                        VoicePlayer.play(messageId, audioUrl)
+                        VoicePlayer.seekTo(seekPct)
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(28.dp)
+            )
+
+            Spacer(modifier = Modifier.height(2.dp))
+
+            // Timer & Durasi
+            val displaySec = if (currentPlayingId == messageId && currentPosSec > 0) currentPosSec else durationSeconds
+            val min = displaySec / 60
+            val sec = displaySec % 60
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = String.format(Locale.getDefault(), "%d:%02d", min, sec),
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = NeutralMedium
+                )
+                Icon(
+                    imageVector = Icons.Default.Mic,
+                    contentDescription = null,
+                    tint = accentColor.copy(alpha = 0.7f),
+                    modifier = Modifier.size(13.dp)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Trek Gelombang Suara (Waveform Bars) dengan ketinggian bervariasi.
+ * Mendukung interaksi ketukan (tap to seek).
+ */
+@Composable
+fun VoiceNoteWaveformTrack(
+    progress: Float,
+    activeColor: Color,
+    inactiveColor: Color,
+    audioKey: String,
+    onSeek: (Float) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val barCount = 26
+    val barHeights = remember(audioKey) {
+        val rand = java.util.Random(audioKey.hashCode().toLong())
+        List(barCount) {
+            0.25f + rand.nextFloat() * 0.75f
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .pointerInput(audioKey) {
+                detectTapGestures { offset ->
+                    val pct = (offset.x / size.width).coerceIn(0f, 1f)
+                    onSeek(pct)
+                }
+            }
+    ) {
+        androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+            val totalWidth = size.width
+            val totalHeight = size.height
+            val spacing = 2.dp.toPx()
+            val totalSpacing = spacing * (barCount - 1)
+            val barWidth = ((totalWidth - totalSpacing) / barCount).coerceAtLeast(2.dp.toPx())
+
+            for (i in 0 until barCount) {
+                val barFraction = i.toFloat() / barCount.toFloat()
+                val isPlayed = barFraction <= progress
+                val paintColor = if (isPlayed) activeColor else inactiveColor
+                val barHeight = totalHeight * barHeights[i]
+                val left = i * (barWidth + spacing)
+                val top = (totalHeight - barHeight) / 2f
+
+                drawRoundRect(
+                    color = paintColor,
+                    topLeft = androidx.compose.ui.geometry.Offset(left, top),
+                    size = androidx.compose.ui.geometry.Size(barWidth, barHeight),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(barWidth / 2f, barWidth / 2f)
+                )
+            }
+        }
+    }
+}

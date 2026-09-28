@@ -1,5 +1,8 @@
 package com.example.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.filled.KeyboardVoice
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -103,6 +106,92 @@ fun BottleScreen(
     var showThrowDialog by remember { mutableStateOf(false) }
     var throwMessageText by remember { mutableStateOf("") }
     var selectedTab by remember { mutableIntStateOf(0) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    val speechToTextLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val spokenMatches = result.data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)
+            val spokenText = spokenMatches?.firstOrNull()?.trim()
+            if (!spokenText.isNullOrEmpty()) {
+                val current = throwMessageText.trimEnd()
+                throwMessageText = if (current.isEmpty()) spokenText else "$current $spokenText"
+            }
+        }
+    }
+
+    val speechPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            val intent = android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                val langTag = when (language) {
+                    AppLanguage.INDONESIAN -> "id-ID"
+                    AppLanguage.ENGLISH -> "en-US"
+                    AppLanguage.CHINESE -> "zh-CN"
+                    AppLanguage.JAPANESE -> "ja-JP"
+                    AppLanguage.KOREAN -> "ko-KR"
+                    AppLanguage.ARABIC -> "ar-SA"
+                    AppLanguage.SPANISH -> "es-ES"
+                    AppLanguage.FRENCH -> "fr-FR"
+                    AppLanguage.GERMAN -> "de-DE"
+                    AppLanguage.RUSSIAN -> "ru-RU"
+                    AppLanguage.PORTUGUESE -> "pt-BR"
+                    else -> "id-ID"
+                }
+                putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE, langTag)
+                putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, langTag)
+                putExtra(android.speech.RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, false)
+                putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, AppStrings.speechToTextPrompt(language))
+            }
+            try {
+                speechToTextLauncher.launch(intent)
+            } catch (e: Exception) {
+                android.widget.Toast.makeText(context, AppStrings.speechNotAvailable(language), android.widget.Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            android.widget.Toast.makeText(context, AppStrings.micPermissionRequiredForSpeech(language), android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val startBottleSpeechToText: () -> Unit = {
+        val hasPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+            context,
+            android.Manifest.permission.RECORD_AUDIO
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (hasPermission) {
+            val intent = android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                val langTag = when (language) {
+                    AppLanguage.INDONESIAN -> "id-ID"
+                    AppLanguage.ENGLISH -> "en-US"
+                    AppLanguage.CHINESE -> "zh-CN"
+                    AppLanguage.JAPANESE -> "ja-JP"
+                    AppLanguage.KOREAN -> "ko-KR"
+                    AppLanguage.ARABIC -> "ar-SA"
+                    AppLanguage.SPANISH -> "es-ES"
+                    AppLanguage.FRENCH -> "fr-FR"
+                    AppLanguage.GERMAN -> "de-DE"
+                    AppLanguage.RUSSIAN -> "ru-RU"
+                    AppLanguage.PORTUGUESE -> "pt-BR"
+                    else -> "id-ID"
+                }
+                putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE, langTag)
+                putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, langTag)
+                putExtra(android.speech.RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, false)
+                putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, AppStrings.speechToTextPrompt(language))
+            }
+            try {
+                speechToTextLauncher.launch(intent)
+            } catch (e: Exception) {
+                android.widget.Toast.makeText(context, AppStrings.speechNotAvailable(language), android.widget.Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            speechPermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+        }
+    }
 
     // Wave floating animation
     val infiniteTransition = rememberInfiniteTransition(label = "wave_anim")
@@ -472,6 +561,19 @@ fun BottleScreen(
                         value = throwMessageText,
                         onValueChange = { throwMessageText = it },
                         placeholder = { Text(AppStrings.throwDialogPlaceholder(language), color = NeutralMedium) },
+                        trailingIcon = {
+                            IconButton(
+                                onClick = startBottleSpeechToText,
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.KeyboardVoice,
+                                    contentDescription = AppStrings.speechToTextTooltip(language),
+                                    tint = EmeraldGreen,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        },
                         minLines = 3,
                         maxLines = 5,
                         colors = OutlinedTextFieldDefaults.colors(

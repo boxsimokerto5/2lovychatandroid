@@ -48,6 +48,8 @@ data class SupabaseMessageDto(
     @Json(name = "deleted_for_sender") val deletedForSender: Boolean? = null,
     @Json(name = "deleted_for_receiver") val deletedForReceiver: Boolean? = null,
     @Json(name = "image_url") val imageUrl: String? = null,
+    @Json(name = "audio_url") val audioUrl: String? = null,
+    @Json(name = "audio_duration_seconds") val audioDurationSeconds: Int? = null,
     @Json(name = "is_read") val isRead: Boolean? = null,
     @Json(name = "reply_to_id") val replyToId: String? = null,
     @Json(name = "reply_to_sender") val replyToSender: String? = null,

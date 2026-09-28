@@ -549,6 +549,8 @@ class SupabaseRepository {
                 deletedForSender = message.deletedForSender,
                 deletedForReceiver = message.deletedForReceiver,
                 imageUrl = message.imageUrl,
+                audioUrl = message.audioUrl,
+                audioDurationSeconds = message.audioDurationSeconds,
                 isRead = null, // Jangan kirim kolom is_read saat insert agar kompatibel dengan tabel database yang belum memiliki kolom is_read
                 replyToId = message.replyToId,
                 replyToSender = message.replyToSender,

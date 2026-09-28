@@ -236,6 +236,8 @@ object CentrifugoRealtimeManager {
                     val text = data.optString("text")
                     val createdAt = data.optLong("created_at_ms", System.currentTimeMillis())
                     val imageUrl = data.optString("image_url").takeIf { it.isNotBlank() && it != "null" }
+                    val audioUrl = data.optString("audio_url").takeIf { it.isNotBlank() && it != "null" }
+                    val audioDurationSeconds = data.optInt("audio_duration_seconds", 0)
                     val isRead = data.optBoolean("is_read", false)
                     val replyToId = data.optString("reply_to_id").takeIf { it.isNotBlank() && it != "null" }
                     val replyToSender = data.optString("reply_to_sender").takeIf { it.isNotBlank() && it != "null" }
@@ -252,6 +254,8 @@ object CentrifugoRealtimeManager {
                         deletedForSender = false,
                         deletedForReceiver = false,
                         imageUrl = imageUrl,
+                        audioUrl = audioUrl,
+                        audioDurationSeconds = audioDurationSeconds,
                         isRead = isRead,
                         replyToId = replyToId,
                         replyToSender = replyToSender,
@@ -296,6 +300,8 @@ object CentrifugoRealtimeManager {
         receiverId: String,
         text: String,
         imageUrl: String? = null,
+        audioUrl: String? = null,
+        audioDurationSeconds: Int = 0,
         createdAtMs: Long = System.currentTimeMillis(),
         replyToId: String? = null,
         replyToSender: String? = null,
@@ -314,6 +320,8 @@ object CentrifugoRealtimeManager {
                     put("text", text)
                     put("created_at_ms", createdAtMs)
                     imageUrl?.let { put("image_url", it) }
+                    audioUrl?.let { put("audio_url", it) }
+                    if (audioDurationSeconds > 0) put("audio_duration_seconds", audioDurationSeconds)
                     put("is_read", false)
                     replyToId?.let { put("reply_to_id", it) }
                     replyToSender?.let { put("reply_to_sender", it) }

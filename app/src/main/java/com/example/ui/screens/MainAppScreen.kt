@@ -445,6 +445,15 @@ fun MainAppScreen(
                         replyToText = replySnippet
                     )
                 },
+                onSendVoiceNote = { audioFile, duration, replyTarget ->
+                    viewModel.sendVoiceNoteMessage(
+                        conversationId = screen.conversationId,
+                        audioFile = audioFile,
+                        durationSeconds = duration,
+                        partnerName = screen.partnerName,
+                        replyTarget = replyTarget
+                    )
+                },
                 isUploadingPhoto = uiState.isUploadingPhoto,
                 uploadProgressText = uiState.uploadProgressText,
                 onReactToMessage = { messageId, emoji ->

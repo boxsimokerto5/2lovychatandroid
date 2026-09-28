@@ -3186,6 +3186,92 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun sendVoiceNoteMessage(
+        conversationId: String,
+        audioFile: java.io.File,
+        durationSeconds: Int,
+        partnerName: String,
+        replyTarget: ChatMessage? = null
+    ) {
+        if (!audioFile.exists() || audioFile.length() == 0L) return
+        if (isUserBlocked(userName = partnerName)) return
+        updateUserActivity()
+
+        val tempMsgId = java.util.UUID.randomUUID().toString()
+        val currentMyId = _uiState.value.myLovyId.ifBlank { "me" }
+        val conv = _uiState.value.conversations.find { it.id == conversationId }
+        val partnerId = conv?.partnerId ?: extractPartnerIdFromConvId(conversationId, currentMyId)
+
+        viewModelScope.launch {
+            try {
+                val bytes = withContext(Dispatchers.IO) { audioFile.readBytes() }
+                val fileName = "vn_${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().take(6)}.m4a"
+                val uploadResult = com.example.data.storage.R2StorageClient.uploadVoiceNote(bytes, fileName)
+
+                if (uploadResult.isSuccess) {
+                    val publicAudioUrl = uploadResult.getOrThrow()
+                    val newMsg = ChatMessage(
+                        id = tempMsgId,
+                        conversationId = conversationId,
+                        text = "",
+                        timestamp = System.currentTimeMillis(),
+                        isFromMe = true,
+                        isRead = false,
+                        imageUrl = null,
+                        audioUrl = publicAudioUrl,
+                        audioDurationSeconds = durationSeconds,
+                        replyToId = replyTarget?.id,
+                        replyToSender = replyTarget?.let { if (it.isFromMe) "Anda" else partnerName },
+                        replyToText = replyTarget?.let {
+                            if (it.audioUrl != null) "🎙️ Pesan Suara (${it.audioDurationSeconds}d)"
+                            else if (it.imageUrl != null) "📷 Foto"
+                            else it.text
+                        }
+                    )
+
+                    val previewText = "🎙️ Pesan Suara (${durationSeconds}d)"
+                    val updatedMessages = (_uiState.value.messagesMap[conversationId] ?: emptyList()) + newMsg
+                    val updatedConversations = _uiState.value.conversations.map {
+                        if (it.id == conversationId) {
+                            it.copy(
+                                lastMessage = previewText,
+                                lastTimestamp = System.currentTimeMillis(),
+                                lastMessageIsFromMe = true,
+                                lastMessageIsRead = false
+                            )
+                        } else it
+                    }
+
+                    _uiState.update {
+                        it.copy(
+                            conversations = updatedConversations,
+                            messagesMap = it.messagesMap + (conversationId to updatedMessages)
+                        )
+                    }
+
+                    com.example.util.LovyNotificationHelper.vibrateSubtle(getApplication())
+                    withContext(Dispatchers.IO) {
+                        localChatRepo.saveMessage(newMsg)
+                        audioFile.delete()
+                    }
+
+                    supabaseRepo.sendChatMessage(
+                        message = newMsg,
+                        senderId = currentMyId,
+                        receiverId = partnerId
+                    )
+                } else {
+                    android.util.Log.w("LovyChatViewModel", "Gagal upload pesan suara ke R2: ${uploadResult.exceptionOrNull()?.message}")
+                    withContext(Dispatchers.Main) {
+                        android.widget.Toast.makeText(getApplication(), "Gagal mengirim pesan suara. Periksa koneksi internet.", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("LovyChatViewModel", "Error sending voice note", e)
+            }
+        }
+    }
+
     fun sendMessage(
         conversationId: String,
         text: String,
@@ -4059,6 +4145,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     deletedForSender = dto.deletedForSender ?: false,
                     deletedForReceiver = dto.deletedForReceiver ?: false,
                     imageUrl = dto.imageUrl,
+                    audioUrl = dto.audioUrl,
+                    audioDurationSeconds = dto.audioDurationSeconds ?: 0,
                     replyToId = dto.replyToId ?: prev?.replyToId,
                     replyToSender = dto.replyToSender ?: prev?.replyToSender,
                     replyToText = dto.replyToText ?: prev?.replyToText,

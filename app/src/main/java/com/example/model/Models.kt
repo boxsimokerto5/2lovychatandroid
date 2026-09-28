@@ -35,6 +35,8 @@ data class ChatMessage(
     val deletedForSender: Boolean = false,
     val deletedForReceiver: Boolean = false,
     val imageUrl: String? = null,
+    val audioUrl: String? = null,
+    val audioDurationSeconds: Int = 0,
     val replyToId: String? = null,
     val replyToSender: String? = null,
     val replyToText: String? = null,

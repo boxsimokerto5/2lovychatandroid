@@ -162,6 +162,21 @@ object R2StorageClient {
      * @param contentType MIME type (default "image/jpeg")
      * @return Result berisi URL aktif gambar
      */
+    /**
+     * Upload rekaman pesan suara (.m4a) ke Cloudflare R2 dalam folder voice_notes.
+     */
+    suspend fun uploadVoiceNote(
+        bytes: ByteArray,
+        fileName: String = "vn_${System.currentTimeMillis()}.m4a"
+    ): Result<String> {
+        return uploadImage(
+            bytes = bytes,
+            folder = "voice_notes",
+            fileName = fileName,
+            contentType = "audio/mp4"
+        )
+    }
+
     suspend fun uploadImage(
         bytes: ByteArray,
         folder: String,
