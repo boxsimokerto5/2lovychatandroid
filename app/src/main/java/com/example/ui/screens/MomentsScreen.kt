@@ -151,7 +151,7 @@ fun MomentsScreen(
     onBlockUser: ((User) -> Unit)? = null,
     onPostMoment: (String) -> Unit,
     onPostMomentWithDetails: ((content: String, imageUrl: String?, locationTag: String?) -> Unit)? = null,
-    onPostMomentWithPhotoUri: ((content: String, uri: android.net.Uri?, locationTag: String?) -> Unit)? = null,
+    onPostMomentWithPhotoUri: ((content: String, uri: android.net.Uri?, locationTag: String?, onResult: (Boolean) -> Unit) -> Unit)? = null,
     onDeleteMoment: ((String) -> Unit)? = null,
     onReportMoment: ((momentId: String, authorName: String, reason: String, notes: String) -> Unit)? = null,
     onRefresh: (() -> Unit)? = null,
@@ -550,7 +550,7 @@ fun MomentsScreen(
     // Dialog posting moment dengan opsi foto & lokasi
     if (showPostDialog) {
         AlertDialog(
-            onDismissRequest = { showPostDialog = false },
+            onDismissRequest = { if (!isUploadingPhoto) showPostDialog = false },
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
@@ -761,26 +761,48 @@ fun MomentsScreen(
                         if (postText.isNotBlank() || selectedPhotoUri != null) {
                             val contentToPost = postText.ifBlank { "📷 Foto momen" }
                             if (selectedPhotoUri != null && onPostMomentWithPhotoUri != null) {
-                                onPostMomentWithPhotoUri(contentToPost, selectedPhotoUri, postLocation)
+                                onPostMomentWithPhotoUri(contentToPost, selectedPhotoUri, postLocation) { success ->
+                                    if (success) {
+                                        postText = ""
+                                        selectedPhotoUri = null
+                                        showPostDialog = false
+                                    }
+                                }
                             } else if (onPostMomentWithDetails != null) {
                                 onPostMomentWithDetails(contentToPost, null, postLocation)
+                                postText = ""
+                                selectedPhotoUri = null
+                                showPostDialog = false
                             } else {
                                 onPostMoment(contentToPost)
+                                postText = ""
+                                selectedPhotoUri = null
+                                showPostDialog = false
                             }
-                            postText = ""
-                            selectedPhotoUri = null
-                            showPostDialog = false
                         }
                     },
                     enabled = !isUploadingPhoto && (postText.isNotBlank() || selectedPhotoUri != null),
                     colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
                     shape = RoundedCornerShape(10.dp)
                 ) {
-                    Text(AppStrings.momentsShareBtn(language), fontWeight = FontWeight.Bold)
+                    if (isUploadingPhoto) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(uploadProgressText ?: "Mengunggah...", fontWeight = FontWeight.Bold)
+                    } else {
+                        Text(AppStrings.momentsShareBtn(language), fontWeight = FontWeight.Bold)
+                    }
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showPostDialog = false }) {
+                TextButton(
+                    onClick = { showPostDialog = false },
+                    enabled = !isUploadingPhoto
+                ) {
                     Text(AppStrings.btnCancel(language), color = NeutralMedium)
                 }
             }

@@ -57,8 +57,6 @@ import com.example.ui.CurrentScreen
 import com.example.ui.LovyChatViewModel
 import com.example.ui.components.DisclosureType
 import com.example.ui.components.IronSourceBannerView
-import com.example.ui.components.LovyInterstitialAdDialog
-import com.example.ui.components.LovyRewardedAdDialog
 import com.example.ui.components.PermissionDisclosureDialog
 import com.example.ui.theme.EmeraldGreen
 import com.example.util.AdManager
@@ -358,8 +356,10 @@ fun MainAppScreen(
                 onPostMomentWithDetails = { content, img, loc ->
                     viewModel.postMoment(content, img, loc)
                 },
-                onPostMomentWithPhotoUri = { content, uri, loc ->
-                    viewModel.postMomentWithPhoto(content, uri, loc, context)
+                onPostMomentWithPhotoUri = { content, uri, loc, onDone ->
+                    viewModel.postMomentWithPhoto(content, uri, loc, context) { success ->
+                        onDone(success)
+                    }
                 },
                 onDeleteMoment = { momentId ->
                     viewModel.deleteMoment(momentId)
@@ -727,31 +727,6 @@ fun MainAppScreen(
                 }
             }
         }
-    }
-
-    // Tampilkan Iklan Interstitial Layar Penuh saat pemicu aktif
-    val activeInterstitialAd by AdManager.activeInterstitialAd.collectAsState()
-    activeInterstitialAd?.let { ad ->
-        LovyInterstitialAdDialog(
-            ad = ad,
-            onDismiss = {
-                AdManager.dismissInterstitialDialog()
-            }
-        )
-    }
-
-    // Tampilkan Iklan Video Berhadiah (Rewarded Ad) saat pemicu aktif
-    val activeRewardedAd by AdManager.activeRewardedAd.collectAsState()
-    activeRewardedAd?.let { ad ->
-        LovyRewardedAdDialog(
-            ad = ad,
-            onClaimReward = {
-                AdManager.dismissRewardedDialog(claimReward = true)
-            },
-            onDismiss = {
-                AdManager.dismissRewardedDialog(claimReward = false)
-            }
-        )
     }
 }
 

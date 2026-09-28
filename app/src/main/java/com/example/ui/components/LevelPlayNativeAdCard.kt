@@ -108,9 +108,6 @@ fun LevelPlayNativeAdCard(
     var isLiveAdLoaded by remember { mutableStateOf(false) }
     val isSdkInitialized by AdManager.isSdkInitialized.collectAsState()
 
-    // Rotating sponsored fallback ad
-    val fallbackAd = remember { AdManager.getNextSponsoredAd() }
-
     LaunchedEffect(activity, isSdkInitialized) {
         if (!isLiveAdLoaded) {
             val ad = AdManager.createNativeAd(
@@ -138,6 +135,11 @@ fun LevelPlayNativeAdCard(
         }
     }
 
+    // Jika native ad resmi belum dimuat dari ironSource, jangan tampilkan iklan tiruan
+    if (!isLiveAdLoaded || nativeAd == null) {
+        return
+    }
+
     Card(
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -147,17 +149,11 @@ fun LevelPlayNativeAdCard(
             .padding(vertical = 6.dp)
             .testTag(testTag)
     ) {
-        AnimatedContent(
-            targetState = isLiveAdLoaded && nativeAd != null,
-            transitionSpec = { fadeIn() togetherWith fadeOut() },
-            label = "native_ad_switch"
-        ) { isLive ->
-            if (isLive && nativeAd != null) {
-                // Official ironSource LevelPlay Native Ad View
-                AndroidView(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(14.dp),
+        // Official ironSource LevelPlay Native Ad View
+        AndroidView(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
                     factory = { ctx ->
                         val density = ctx.resources.displayMetrics.density
                         fun dpToPx(dp: Int): Int = (dp * density).toInt()
@@ -360,20 +356,6 @@ fun LevelPlayNativeAdCard(
                         }
                     }
                 )
-            } else {
-                // Tampilan Showcase Native Bersponsor Elegan (Mudah Tampil 100%)
-                SponsoredNativeCardFallback(
-                    ad = fallbackAd,
-                    onClick = {
-                        Toast.makeText(
-                            context,
-                            "Membuka promosi ${fallbackAd.advertiser}: ${fallbackAd.title}",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                )
-            }
-        }
     }
 }
 

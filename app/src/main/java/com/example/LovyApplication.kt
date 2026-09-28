@@ -11,6 +11,7 @@ class LovyApplication : Application(), ImageLoaderFactory {
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
         try {
             com.example.data.supabase.SupabaseClient.init(this)
             R2StorageClient.init(this)
@@ -44,5 +45,8 @@ class LovyApplication : Application(), ImageLoaderFactory {
 
     companion object {
         private const val TAG = "LovyApplication"
+        lateinit var instance: LovyApplication
+            private set
+        val appContext: android.content.Context get() = instance.applicationContext
     }
 }

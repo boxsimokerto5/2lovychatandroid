@@ -31,6 +31,7 @@ class R2StorageClientTest {
         val publicUrl = R2StorageClient.resolvePublicUrl(objectKey)
         assertNotNull(publicUrl)
         assertTrue(publicUrl.contains(objectKey))
+        assertTrue(publicUrl.startsWith("https://lovychat.my.id/"))
     }
 
     @Test

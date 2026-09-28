@@ -60,19 +60,17 @@ object R2StorageClient {
             // Bersihkan kredensial dummy atau placeholder yang mungkin tersimpan
             sharedPrefs?.let { prefs ->
                 val acc = prefs.getString(PREF_ACCOUNT_ID, null)
-                if (acc != null && !isValidValue(acc)) {
-                    prefs.edit()
-                        .remove(PREF_ACCOUNT_ID)
-                        .remove(PREF_ACCESS_KEY)
-                        .remove(PREF_SECRET_KEY)
-                        .remove(PREF_BUCKET_NAME)
-                        .apply()
+                val key = prefs.getString(PREF_ACCESS_KEY, null)
+                val secret = prefs.getString(PREF_SECRET_KEY, null)
+                val bucket = prefs.getString(PREF_BUCKET_NAME, null)
+                if (acc != null && !isValidValue(acc)) prefs.edit().remove(PREF_ACCOUNT_ID).apply()
+                if (key != null && !isValidValue(key)) prefs.edit().remove(PREF_ACCESS_KEY).apply()
+                if (secret != null && !isValidValue(secret)) prefs.edit().remove(PREF_SECRET_KEY).apply()
+                if (bucket != null && (!isValidValue(bucket) || bucket == "Backend_lovychat_api_token")) {
+                    prefs.edit().remove(PREF_BUCKET_NAME).apply()
                 }
-                // Hapus public domain lama jika tersimpan lovychat.my.id yang menyebabkan 403 Forbidden
-                val savedDomain = prefs.getString(PREF_PUBLIC_DOMAIN, null)
-                if (savedDomain != null && (savedDomain.contains("lovychat.my.id") || savedDomain.contains("r2.dev"))) {
-                    prefs.edit().remove(PREF_PUBLIC_DOMAIN).apply()
-                }
+                // Pastikan domain publik menggunakan custom domain resmi https://lovychat.my.id
+                prefs.edit().putString(PREF_PUBLIC_DOMAIN, "https://lovychat.my.id").apply()
             }
         }
     }
@@ -113,13 +111,13 @@ object R2StorageClient {
         val stored = sharedPrefs?.getString(PREF_PUBLIC_DOMAIN, null)?.takeIf { isValidValue(it) }
         val configured = stored
             ?: BuildConfig.R2_PUBLIC_DOMAIN.takeIf { isValidValue(it) }
-            ?: ""
+            ?: "https://lovychat.my.id"
 
-        val domain = configured.trim().removeSuffix("/")
-        val accountId = getAccountId()
-        // Jangan gunakan domain lovychat.my.id atau pub-*.r2.dev yang tidak memiliki izin publik (memberi 403 Forbidden)
-        if (domain.isBlank() || domain.contains("lovychat.my.id", ignoreCase = true) || (accountId.isNotBlank() && domain.contains("pub-$accountId.r2.dev", ignoreCase = true))) {
-            return ""
+        var domain = configured.trim().removeSuffix("/")
+        if (domain.isBlank()) {
+            domain = "https://lovychat.my.id"
+        } else if (!domain.startsWith("http://", ignoreCase = true) && !domain.startsWith("https://", ignoreCase = true)) {
+            domain = "https://$domain"
         }
         return domain
     }
@@ -284,11 +282,12 @@ object R2StorageClient {
      * Menggunakan public custom domain jika terkonfigurasi, atau menghasilkan Presigned GET URL resmi S3 (valid 7 hari).
      */
     fun resolvePublicUrl(objectKey: String): String {
+        val cleanKey = objectKey.trimStart('/')
         val publicDomain = getPublicDomain()
         if (publicDomain.isNotBlank()) {
-            return "$publicDomain/${objectKey.trimStart('/')}"
+            return "$publicDomain/$cleanKey"
         }
-        return generatePresignedGetUrl(objectKey, expiresInSeconds = 604800)
+        return generatePresignedGetUrl(cleanKey, expiresInSeconds = 604800)
     }
 
     /**
@@ -309,15 +308,13 @@ object R2StorageClient {
             !trimmed.startsWith("android.resource://", ignoreCase = true)
         ) {
             val key = trimmed.trimStart('/')
-            return generatePresignedGetUrl(key)
+            val domain = getPublicDomain()
+            return if (domain.isNotBlank()) "$domain/$key" else generatePresignedGetUrl(key)
         }
 
-        // 2. Jika domain lovychat.my.id yang tidak membuka izin akses publik (403 Forbidden)
+        // 1. Jika URL sudah menggunakan custom domain lovychat.my.id, langsung gunakan (publik & aktif)
         if (trimmed.contains("lovychat.my.id", ignoreCase = true)) {
-            val key = trimmed.substringAfter("lovychat.my.id/").substringBefore('?').trimStart('/')
-            if (key.isNotBlank()) {
-                return generatePresignedGetUrl(key)
-            }
+            return trimmed
         }
 
         // 3. Jika domain pub-*.r2.dev yang tidak publik

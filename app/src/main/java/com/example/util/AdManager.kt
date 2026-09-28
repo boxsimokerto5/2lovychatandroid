@@ -2,6 +2,7 @@ package com.example.util
 
 import android.app.Activity
 import android.util.Log
+import com.example.LovyApplication
 import com.ironsource.mediationsdk.ISBannerSize
 import com.ironsource.mediationsdk.IronSource
 import com.ironsource.mediationsdk.IronSourceBannerLayout
@@ -103,72 +104,10 @@ object AdManager {
 
     private var totalImpressions = 0
 
-    // Curated high-converting rotating sponsored ads for instant fallback fill
-    val SPONSORED_FALLBACK_ADS = listOf(
-        SponsoredAdContent(
-            id = "ad_lovy_vip",
-            title = "Lovy VIP Premium",
-            advertiser = "Lovy Official",
-            description = "Dapatkan radar tak terbatas, filter lokasi instan, dan lencana profil eksklusif sekarang!",
-            callToAction = "Coba Gratis",
-            iconEmoji = "👑",
-            category = "Fitur Unggulan",
-            primaryColorHex = 0xFF00A86B,
-            secondaryColorHex = 0xFF004D40
-        ),
-        SponsoredAdContent(
-            id = "ad_shopee_promo",
-            title = "Shopee Mega Sale",
-            advertiser = "Shopee Indonesia",
-            description = "Nikmati Gratis Ongkir Rp0 ke Seluruh Indonesia dan Flash Sale Serba Seribu setiap hari.",
-            callToAction = "Belanja Hemat",
-            iconEmoji = "🛍️",
-            category = "Belanja & Promo",
-            primaryColorHex = 0xFFEE4D2D,
-            secondaryColorHex = 0xFFC23516
-        ),
-        SponsoredAdContent(
-            id = "ad_traveloka",
-            title = "Traveloka Holiday Deals",
-            advertiser = "Traveloka",
-            description = "Pesan tiket pesawat, kereta api, dan hotel bintang 5 dengan diskon hingga 70%.",
-            callToAction = "Pesan Tiket",
-            iconEmoji = "✈️",
-            category = "Wisata & Hotel",
-            primaryColorHex = 0xFF0264D6,
-            secondaryColorHex = 0xFF003E8A
-        ),
-        SponsoredAdContent(
-            id = "ad_spotify",
-            title = "Spotify Duo & Family",
-            advertiser = "Spotify",
-            description = "Dengarkan jutaan lagu favorit tanpa jeda iklan bersama teman dan keluarga tercinta.",
-            callToAction = "Dengarkan Musik",
-            iconEmoji = "🎵",
-            category = "Musik & Hiburan",
-            primaryColorHex = 0xFF1DB954,
-            secondaryColorHex = 0xFF126930
-        ),
-        SponsoredAdContent(
-            id = "ad_tokopedia",
-            title = "Waktu Indonesia Belanja",
-            advertiser = "Tokopedia",
-            description = "Serbu diskon kilat cashback kilat hingga 90% hanya minggu ini di Tokopedia!",
-            callToAction = "Lihat Promo",
-            iconEmoji = "📦",
-            category = "Belanja Online",
-            primaryColorHex = 0xFF03AC0E,
-            secondaryColorHex = 0xFF026608
-        )
-    )
+    // Iklan palsu/tiruan telah dihapus sepenuhnya sesuai permintaan pengguna
+    val SPONSORED_FALLBACK_ADS = emptyList<SponsoredAdContent>()
 
-    private var sponsoredAdIndex = 0
-
-    fun getNextSponsoredAd(): SponsoredAdContent {
-        val ad = SPONSORED_FALLBACK_ADS[sponsoredAdIndex % SPONSORED_FALLBACK_ADS.size]
-        sponsoredAdIndex++
-        return ad
-    }
+    fun getNextSponsoredAd(): SponsoredAdContent? = null
 
     /**
      * Update or refresh current active Activity reference.
@@ -386,29 +325,31 @@ object AdManager {
 
     /**
      * Records a user feature click (navigation, tabs, bottle fishing, moment posting, radar).
-     * When count reaches threshold (20), triggers an Interstitial ad.
-     * If live ironSource interstitial is ready, displays it; otherwise shows the rich fallback sponsored interstitial.
+     * When count reaches threshold (20), triggers a real ironSource Interstitial ad.
+     * Tidak ada fallback iklan palsu/tiruan. Hanya iklan resmi ironSource yang ditayangkan.
      */
     fun recordFeatureClick(activity: Activity? = null): Boolean {
         _featureClickCount++
         Log.d(TAG, "Feature click recorded: $_featureClickCount / $CLICKS_THRESHOLD_FOR_INTERSTITIAL")
 
         // Preload proactively when getting close to threshold
-        if (_featureClickCount == CLICKS_THRESHOLD_FOR_INTERSTITIAL - 1) {
+        if (_featureClickCount >= CLICKS_THRESHOLD_FOR_INTERSTITIAL - 2) {
             loadInterstitial()
         }
 
         if (_featureClickCount >= CLICKS_THRESHOLD_FOR_INTERSTITIAL) {
             val act = activity ?: currentActivityRef?.get()
-            val shown = showInterstitial(activity = act, fallbackIfUnavailable = true)
-            if (shown) {
-                _featureClickCount = 0
+            if (IronSource.isInterstitialReady()) {
+                val shown = showInterstitial(activity = act, fallbackIfUnavailable = false)
+                if (shown) {
+                    _featureClickCount = 0
+                    return true
+                }
             } else {
-                // Keep counter at threshold so next attempt immediately triggers once ready
-                _featureClickCount = CLICKS_THRESHOLD_FOR_INTERSTITIAL
+                // Iklan asli masih dimuat di latar belakang, jangan tampilkan iklan tiruan
+                Log.d(TAG, "Threshold 20 aksi tercapai, iklan asli ironSource sedang dimuat di latar...")
                 loadInterstitial()
             }
-            return shown
         }
         return false
     }
@@ -430,12 +371,12 @@ object AdManager {
     }
 
     /**
-     * Show an Interstitial ad if ready, or show seamless fallback if requested.
+     * Show an Interstitial ad strictly from ironSource LevelPlay without fake fallbacks.
      */
     fun showInterstitial(
         activity: Activity? = null,
         placementName: String? = null,
-        fallbackIfUnavailable: Boolean = true
+        fallbackIfUnavailable: Boolean = false
     ): Boolean {
         val act = activity ?: currentActivityRef?.get()
         return try {
@@ -457,46 +398,35 @@ object AdManager {
                 Log.d(TAG, "ironSource Interstitial displayed successfully")
                 true
             } else {
-                Log.d(TAG, "ironSource Interstitial not ready yet, requesting reload")
+                Log.d(TAG, "ironSource Interstitial belum siap di memori, memuat ulang tanpa iklan palsu")
                 loadInterstitial()
-                if (fallbackIfUnavailable) {
-                    // Show our rich sponsored interstitial modal so the user gets an ad experience effortlessly
-                    totalImpressions++
-                    _activeInterstitialAd.value = getNextSponsoredAd()
-                    true
-                } else {
-                    false
-                }
+                false
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error showing Interstitial: ${e.message}", e)
-            if (fallbackIfUnavailable) {
-                totalImpressions++
-                _activeInterstitialAd.value = getNextSponsoredAd()
-                true
-            } else {
-                false
-            }
+            false
         }
     }
 
     fun showInterstitial(placementName: String? = null): Boolean {
-        return showInterstitial(activity = null, placementName = placementName, fallbackIfUnavailable = true)
+        return showInterstitial(activity = null, placementName = placementName, fallbackIfUnavailable = false)
     }
 
     /**
-     * Force-show an Interstitial ad on demand (ideal for testing or milestone rewards).
+     * Force-show a real ironSource Interstitial ad on demand.
      */
     fun forceShowInterstitial(activity: Activity? = null, onClosed: () -> Unit = {}): Boolean {
-        _featureClickCount = 0
         val act = activity ?: currentActivityRef?.get()
         if (IronSource.isInterstitialReady()) {
-            return showInterstitial(activity = act, fallbackIfUnavailable = true)
+            _featureClickCount = 0
+            return showInterstitial(activity = act, fallbackIfUnavailable = false)
         } else {
-            totalImpressions++
-            _activeInterstitialAd.value = getNextSponsoredAd()
             loadInterstitial()
-            return true
+            val ctx = act ?: LovyApplication.appContext
+            try {
+                android.widget.Toast.makeText(ctx, "Iklan sedang disiapkan dari jaringan ironSource...", android.widget.Toast.LENGTH_SHORT).show()
+            } catch (_: Throwable) {}
+            return false
         }
     }
 
@@ -506,8 +436,7 @@ object AdManager {
     }
 
     /**
-     * Show a Rewarded Video ad and trigger callback when completed.
-     * If live ironSource video is unavailable, opens the sponsored rewarded video modal so user can still earn the reward!
+     * Show a Rewarded Video ad strictly from ironSource LevelPlay.
      */
     fun showRewardedVideo(
         activity: Activity? = null,
@@ -535,16 +464,16 @@ object AdManager {
                 Log.d(TAG, "ironSource Rewarded Video launched")
                 true
             } else {
-                Log.d(TAG, "ironSource Rewarded video unavailable, launching sponsored video experience")
-                totalImpressions++
-                _activeRewardedAd.value = getNextSponsoredAd()
-                true
+                Log.d(TAG, "ironSource Rewarded video unavailable from network")
+                val ctx = act ?: LovyApplication.appContext
+                try {
+                    android.widget.Toast.makeText(ctx, "Iklan video belum siap, silakan coba sesaat lagi", android.widget.Toast.LENGTH_SHORT).show()
+                } catch (_: Throwable) {}
+                false
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error showing Rewarded Video: ${e.message}", e)
-            totalImpressions++
-            _activeRewardedAd.value = getNextSponsoredAd()
-            true
+            false
         }
     }
 

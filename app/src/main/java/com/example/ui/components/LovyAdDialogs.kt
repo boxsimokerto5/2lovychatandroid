@@ -567,8 +567,8 @@ fun AdTestCenterDialog(
                         )
                         AdStatusRow(
                             label = "Interstitial",
-                            status = if (isInterstitialReady) "Siap Tampil" else "Siap (Fallback Aktif)",
-                            isOk = true
+                            status = if (isInterstitialReady) "Siap Tampil (Resmi)" else "Memuat dari Jaringan...",
+                            isOk = isInterstitialReady
                         )
                         AdStatusRow(
                             label = "Pemicu Interstitial",
@@ -577,8 +577,8 @@ fun AdTestCenterDialog(
                         )
                         AdStatusRow(
                             label = "Rewarded Video",
-                            status = if (isRewardedReady) "Siap Tampil" else "Siap (Fallback Aktif)",
-                            isOk = true
+                            status = if (isRewardedReady) "Siap Tampil (Resmi)" else "Memuat dari Jaringan...",
+                            isOk = isRewardedReady
                         )
                     }
                 }
