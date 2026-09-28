@@ -1435,7 +1435,7 @@ fun MomentCard(
                 ) {
                     SubcomposeAsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
-                            .data(item.imageUrl)
+                            .data(com.example.util.ImageCompressor.resolveImageModel(item.imageUrl))
                             .crossfade(true)
                             .build(),
                         contentDescription = "Foto Momen ${item.authorName}",

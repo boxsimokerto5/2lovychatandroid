@@ -3535,8 +3535,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             gen
         }
         val authorAvatar = _uiState.value.userProfile.profilePicture?.takeIf { it.isNotBlank() }
+        val momentId = com.example.data.pocketbase.PocketBaseClient.toPbId(UUID.randomUUID().toString())
         val newMoment = MomentItem(
-            id = UUID.randomUUID().toString(),
+            id = momentId,
             authorName = _uiState.value.myName.ifBlank { "Pengguna Lovy" },
             authorAvatarHex = 0xFF00A86B,
             timeAgo = "Baru saja",
@@ -3576,6 +3577,11 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 val ok = supabaseRepo.sendMoment(newMoment, authorId)
                 if (ok) {
                     Log.d("LovyChatViewModel", "Momen berhasil disimpan ke server cloud: ${newMoment.id}")
+                    withContext(Dispatchers.Main) {
+                        try {
+                            android.widget.Toast.makeText(getApplication(), "Momen berhasil dibagikan!", android.widget.Toast.LENGTH_SHORT).show()
+                        } catch (_: Throwable) {}
+                    }
                 } else {
                     Log.w("LovyChatViewModel", "Gagal menyimpan momen ke server cloud: ${newMoment.id}, akan dicoba ulang otomatis saat sinkronisasi")
                 }
@@ -3768,30 +3774,25 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     return@launch
                 }
 
-                _uiState.update { it.copy(uploadProgressText = "Mengunggah foto momen (${bytes.size / 1024} KB)...") }
+                _uiState.update { it.copy(uploadProgressText = "Menyiapkan foto momen (${bytes.size / 1024} KB)...") }
                 val fileName = "moment_${UUID.randomUUID()}.jpg"
 
-                // 2. Upload langsung ke Cloudflare R2
+                // 2. Coba upload langsung ke Cloudflare R2 jika terhubung
                 val r2Result = com.example.data.storage.R2StorageClient.uploadImage(
                     bytes = bytes,
                     folder = "moments",
                     fileName = fileName
                 )
-                val uploadedUrl = r2Result.getOrNull()
+                var uploadedUrl = r2Result.getOrNull()
 
+                // Fallback: Jika upload R2 gagal/offline/tidak terkonfigurasi, ubah foto menjadi data URL Base64 yang kompatibel 100% dengan PocketBase
                 if (uploadedUrl.isNullOrBlank()) {
-                    // Upload foto gagal: JANGAN terbitkan momen kosong tanpa foto agar database tidak rusak
-                    val errMsg = r2Result.exceptionOrNull()?.localizedMessage ?: "Gagal mengunggah foto ke Cloudflare R2"
-                    Log.e("LovyChatViewModel", "Upload momen ke R2 gagal: $errMsg")
-                    _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }
-                    try {
-                        android.widget.Toast.makeText(ctx, "Gagal upload foto: $errMsg", android.widget.Toast.LENGTH_LONG).show()
-                    } catch (_: Throwable) {}
-                    onComplete?.invoke(false)
-                    return@launch
+                    Log.w("LovyChatViewModel", "Upload foto ke Cloudflare R2 tidak tersedia/gagal, menggunakan data URL Base64 untuk disimpan langsung di PocketBase")
+                    val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+                    uploadedUrl = "data:image/jpeg;base64,$base64"
                 }
 
-                // 3. Simpan momen dengan URL foto yang berhasil diunggah
+                // 3. Simpan momen dengan URL foto yang berhasil diunggah / di-encode
                 _uiState.update { it.copy(uploadProgressText = "Menerbitkan momen...") }
                 postMoment(finalContent, uploadedUrl, locationTag)
                 _uiState.update { it.copy(isUploadingPhoto = false, uploadProgressText = null) }

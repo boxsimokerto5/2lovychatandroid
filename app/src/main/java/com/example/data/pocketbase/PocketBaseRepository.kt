@@ -242,10 +242,13 @@ class PocketBaseRepository {
         val api = PocketBaseClient.getApi() ?: return@withContext false
         try {
             val pbId = PocketBaseClient.toPbId(moment.id)
+            val effectiveAuthorId = authorId.trim().ifBlank {
+                PocketBaseClient.toLovyId(moment.authorName)
+            }
             val payload = mutableMapOf<String, Any?>(
                 "id" to pbId,
-                "author_id" to PocketBaseClient.toPbId(authorId),
-                "author_name" to moment.authorName,
+                "author_id" to effectiveAuthorId,
+                "author_name" to moment.authorName.ifBlank { "Pengguna Lovy" },
                 "content" to moment.content,
                 "likes_count" to moment.likesCount,
                 "comments_count" to moment.commentsCount,
@@ -256,33 +259,40 @@ class PocketBaseRepository {
                 "location_tag" to (moment.locationTag ?: "Indonesia")
             )
             val response = api.createMoment(payload)
-            if (response.isSuccessful) return@withContext true
+            if (response.isSuccessful) {
+                Log.d(TAG, "Berhasil membuat momen di PocketBase: $pbId")
+                return@withContext true
+            }
 
             val err1 = response.errorBody()?.string() ?: ""
             Log.w(TAG, "Gagal createMoment PocketBase pertama: code=${response.code()} error=$err1")
 
             payload.remove("id")
             val retry = api.createMoment(payload)
-            if (retry.isSuccessful) return@withContext true
+            if (retry.isSuccessful) {
+                Log.d(TAG, "Berhasil membuat momen di PocketBase (retry tanpa id)")
+                return@withContext true
+            }
 
             // Fallback: Jika skema PocketBase belum memiliki kolom sekunder (author_avatar_url, location_tag, author_avatar_hex)
             val fallbackPayload = mutableMapOf<String, Any?>(
-                "author_id" to PocketBaseClient.toPbId(authorId),
-                "author_name" to moment.authorName,
+                "author_id" to effectiveAuthorId,
+                "author_name" to moment.authorName.ifBlank { "Pengguna Lovy" },
                 "content" to moment.content,
                 "likes_count" to moment.likesCount,
-                "created_at_ms" to System.currentTimeMillis()
+                "comments_count" to moment.commentsCount,
+                "created_at_ms" to System.currentTimeMillis(),
+                "image_url" to (moment.imageUrl ?: "")
             )
-            if (!moment.imageUrl.isNullOrBlank()) {
-                fallbackPayload["image_url"] = moment.imageUrl
-            }
             val retryFallback = api.createMoment(fallbackPayload)
-            if (!retryFallback.isSuccessful) {
-                Log.w(TAG, "Gagal createMoment PocketBase fallback: code=${retryFallback.code()} error=${retryFallback.errorBody()?.string()}")
+            if (retryFallback.isSuccessful) {
+                Log.d(TAG, "Berhasil membuat momen di PocketBase (fallback payload)")
+                return@withContext true
             }
-            retryFallback.isSuccessful
+            Log.w(TAG, "Gagal createMoment PocketBase fallback: code=${retryFallback.code()} error=${retryFallback.errorBody()?.string()}")
+            false
         } catch (e: Exception) {
-            Log.w(TAG, "Gagal mengirim momen ke PocketBase", e)
+            Log.e(TAG, "Gagal mengirim momen ke PocketBase", e)
             false
         }
     }

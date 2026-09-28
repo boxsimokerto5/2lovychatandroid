@@ -113,7 +113,7 @@ fun ZoomablePhotoViewerDialog(
                 contentAlignment = Alignment.Center
             ) {
                 SubcomposeAsyncImage(
-                    model = photoUrl,
+                    model = com.example.util.ImageCompressor.resolveImageModel(photoUrl),
                     contentDescription = title ?: "Foto Penuh",
                     contentScale = ContentScale.Fit,
                     loading = {

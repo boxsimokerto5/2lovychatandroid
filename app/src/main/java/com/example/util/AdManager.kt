@@ -339,17 +339,16 @@ object AdManager {
 
         if (_featureClickCount >= CLICKS_THRESHOLD_FOR_INTERSTITIAL) {
             val act = activity ?: currentActivityRef?.get()
-            if (IronSource.isInterstitialReady()) {
-                val shown = showInterstitial(activity = act, fallbackIfUnavailable = false)
-                if (shown) {
-                    _featureClickCount = 0
-                    return true
-                }
+            val shown = if (IronSource.isInterstitialReady()) {
+                showInterstitial(activity = act, fallbackIfUnavailable = false)
             } else {
                 // Iklan asli masih dimuat di latar belakang, jangan tampilkan iklan tiruan
                 Log.d(TAG, "Threshold 20 aksi tercapai, iklan asli ironSource sedang dimuat di latar...")
                 loadInterstitial()
+                false
             }
+            _featureClickCount = 0
+            return shown
         }
         return false
     }

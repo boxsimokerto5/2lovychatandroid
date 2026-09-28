@@ -21,7 +21,7 @@ object GoogleAuthHelper {
                 val field = com.example.BuildConfig::class.java.getField("GOOGLE_SERVER_CLIENT_ID")
                 field.get(null) as? String ?: ""
             } catch (_: Throwable) { "" }
-            return if (build.isNotBlank() && !build.startsWith("your_")) build
+            return if (build.isNotBlank() && !build.startsWith("your_") && !build.startsWith("default_")) build
             else "347302027962-9g1rvg326b9hvtgamckkqcn7mr00i2gp.apps.googleusercontent.com"
         }
 

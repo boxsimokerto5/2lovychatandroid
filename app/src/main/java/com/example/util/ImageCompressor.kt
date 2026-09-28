@@ -17,6 +17,38 @@ object ImageCompressor {
     private const val TAG = "ImageCompressor"
 
     /**
+     * Mengurai model gambar untuk Coil: jika merupakan data URI base64 ("data:image/...;base64,..."),
+     * didekode menjadi ByteArray agar dapat langsung dirender oleh Coil tanpa network request.
+     * Jika URL biasa atau objek lain, kembalikan apa adanya.
+     */
+    fun resolveImageModel(model: Any?): Any? {
+        if (model is String && model.startsWith("data:image/", ignoreCase = true) && model.contains("base64,")) {
+            return try {
+                val base64Data = model.substringAfter("base64,")
+                android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
+            } catch (_: Throwable) {
+                model
+            }
+        }
+        return model
+    }
+
+    /**
+     * Mengompresi gambar dan mengembalikannya sebagai data URL base64 JPEG yang ringan
+     * untuk disimpan langsung di PocketBase sebagai fallback jika penyimpanan eksternal (R2) tidak aktif.
+     */
+    suspend fun compressToBase64DataUrl(
+        context: Context,
+        uri: Uri,
+        maxDimension: Int = 800,
+        quality: Int = 75
+    ): String? = withContext(Dispatchers.IO) {
+        val bytes = compressImage(context, uri, maxDimension, quality) ?: return@withContext null
+        val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+        "data:image/jpeg;base64,$base64"
+    }
+
+    /**
      * Membaca dan mengompresi gambar dari Content URI (Galeri/Kamera/Photo Picker)
      * untuk diunggah ke Cloudflare R2 / S3.
      *
