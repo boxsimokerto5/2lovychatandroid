@@ -68,7 +68,7 @@ import kotlinx.coroutines.delay
 
 /**
  * Dialog Iklan Interstitial Layar Penuh (Fallback & Showcase Cepat).
- * Menjamin bahwa ketika threshold klik (4 klik) tercapai, iklan SELALU tampil
+ * Menjamin bahwa ketika threshold aksi (20 aksi) tercapai, iklan SELALU tampil
  * secara mulus tanpa kegagalan koneksi mediation.
  */
 @Composable

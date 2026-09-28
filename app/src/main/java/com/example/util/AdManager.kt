@@ -54,7 +54,7 @@ data class AdStatusInfo(
  * Manages ironSource (Unity LevelPlay) Ads integration:
  * - SDK Initialization with App Key
  * - Banner Ad creation, loading, automatic refresh, and disposal
- * - Interstitial Ads loading, smart low-threshold triggering (4 clicks), and display
+ * - Interstitial Ads loading, smart threshold triggering (20 clicks/actions), and display
  * - Rewarded Video Ads display with reward callback & seamless fallback
  * - Comprehensive Native Ad setup and robust state handling
  */
@@ -379,14 +379,14 @@ object AdManager {
         }
     }
 
-    // Lower threshold so interstitial ads trigger smoothly and naturally (e.g. after 4 feature actions/nav)
-    const val CLICKS_THRESHOLD_FOR_INTERSTITIAL = 4
+    // Threshold so interstitial ads trigger after 20 user actions/nav as requested
+    const val CLICKS_THRESHOLD_FOR_INTERSTITIAL = 20
     private var _featureClickCount = 0
     val featureClickCount: Int get() = _featureClickCount
 
     /**
      * Records a user feature click (navigation, tabs, bottle fishing, moment posting, radar).
-     * When count reaches threshold (4), triggers an Interstitial ad.
+     * When count reaches threshold (20), triggers an Interstitial ad.
      * If live ironSource interstitial is ready, displays it; otherwise shows the rich fallback sponsored interstitial.
      */
     fun recordFeatureClick(activity: Activity? = null): Boolean {
