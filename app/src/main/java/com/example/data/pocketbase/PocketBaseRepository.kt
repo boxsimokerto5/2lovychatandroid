@@ -258,12 +258,29 @@ class PocketBaseRepository {
             val response = api.createMoment(payload)
             if (response.isSuccessful) return@withContext true
 
+            val err1 = response.errorBody()?.string() ?: ""
+            Log.w(TAG, "Gagal createMoment PocketBase pertama: code=${response.code()} error=$err1")
+
             payload.remove("id")
             val retry = api.createMoment(payload)
-            if (!retry.isSuccessful) {
-                Log.w(TAG, "Gagal createMoment PocketBase: code=${retry.code()} error=${retry.errorBody()?.string()}")
+            if (retry.isSuccessful) return@withContext true
+
+            // Fallback: Jika skema PocketBase belum memiliki kolom sekunder (author_avatar_url, location_tag, author_avatar_hex)
+            val fallbackPayload = mutableMapOf<String, Any?>(
+                "author_id" to PocketBaseClient.toPbId(authorId),
+                "author_name" to moment.authorName,
+                "content" to moment.content,
+                "likes_count" to moment.likesCount,
+                "created_at_ms" to System.currentTimeMillis()
+            )
+            if (!moment.imageUrl.isNullOrBlank()) {
+                fallbackPayload["image_url"] = moment.imageUrl
             }
-            retry.isSuccessful
+            val retryFallback = api.createMoment(fallbackPayload)
+            if (!retryFallback.isSuccessful) {
+                Log.w(TAG, "Gagal createMoment PocketBase fallback: code=${retryFallback.code()} error=${retryFallback.errorBody()?.string()}")
+            }
+            retryFallback.isSuccessful
         } catch (e: Exception) {
             Log.w(TAG, "Gagal mengirim momen ke PocketBase", e)
             false
@@ -412,10 +429,58 @@ class PocketBaseRepository {
 
             payload.remove("id")
             val retry = api.createMessage(payload)
-            if (!retry.isSuccessful) {
-                Log.w(TAG, "Gagal createMessage PocketBase: code=${retry.code()} error=${retry.errorBody()?.string()}")
+            if (retry.isSuccessful) {
+                if (!receiverId.isNullOrBlank()) {
+                    com.example.data.centrifugo.CentrifugoRealtimeManager.publishChatMessage(
+                        messageId = pbId,
+                        conversationId = message.conversationId,
+                        senderId = senderId,
+                        receiverId = receiverId,
+                        text = message.text,
+                        imageUrl = message.imageUrl,
+                        audioUrl = message.audioUrl,
+                        audioDurationSeconds = message.audioDurationSeconds,
+                        createdAtMs = message.timestamp,
+                        replyToId = message.replyToId,
+                        replyToSender = message.replyToSender,
+                        replyToText = message.replyToText,
+                        reaction = message.reaction
+                    )
+                }
+                return@withContext true
             }
-            retry.isSuccessful
+
+            // Fallback: jika koleksi messages di PocketBase belum memiliki kolom audio_url / reply_to_*
+            val fallbackPayload = mutableMapOf<String, Any?>(
+                "conversation_id" to message.conversationId,
+                "sender_id" to senderId,
+                "receiver_id" to (receiverId ?: ""),
+                "text" to message.text,
+                "created_at_ms" to message.timestamp
+            )
+            if (!message.imageUrl.isNullOrBlank()) {
+                fallbackPayload["image_url"] = message.imageUrl
+            }
+            val retryFallback = api.createMessage(fallbackPayload)
+            if (retryFallback.isSuccessful) {
+                if (!receiverId.isNullOrBlank()) {
+                    com.example.data.centrifugo.CentrifugoRealtimeManager.publishChatMessage(
+                        messageId = pbId,
+                        conversationId = message.conversationId,
+                        senderId = senderId,
+                        receiverId = receiverId,
+                        text = message.text,
+                        imageUrl = message.imageUrl,
+                        audioUrl = message.audioUrl,
+                        audioDurationSeconds = message.audioDurationSeconds,
+                        createdAtMs = message.timestamp
+                    )
+                }
+                return@withContext true
+            }
+
+            Log.w(TAG, "Gagal createMessage PocketBase: code=${retryFallback.code()} error=${retryFallback.errorBody()?.string()}")
+            false
         } catch (e: Exception) {
             Log.w(TAG, "Gagal mengirim chat message ke PocketBase", e)
             false
