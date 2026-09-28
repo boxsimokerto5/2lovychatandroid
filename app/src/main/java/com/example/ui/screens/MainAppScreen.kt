@@ -31,6 +31,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -56,8 +57,11 @@ import com.example.ui.CurrentScreen
 import com.example.ui.LovyChatViewModel
 import com.example.ui.components.DisclosureType
 import com.example.ui.components.IronSourceBannerView
+import com.example.ui.components.LovyInterstitialAdDialog
+import com.example.ui.components.LovyRewardedAdDialog
 import com.example.ui.components.PermissionDisclosureDialog
 import com.example.ui.theme.EmeraldGreen
+import com.example.util.AdManager
 import com.example.ui.theme.NeutralBorder
 import com.example.ui.theme.NeutralMedium
 
@@ -723,6 +727,31 @@ fun MainAppScreen(
                 }
             }
         }
+    }
+
+    // Tampilkan Iklan Interstitial Layar Penuh saat pemicu aktif
+    val activeInterstitialAd by AdManager.activeInterstitialAd.collectAsState()
+    activeInterstitialAd?.let { ad ->
+        LovyInterstitialAdDialog(
+            ad = ad,
+            onDismiss = {
+                AdManager.dismissInterstitialDialog()
+            }
+        )
+    }
+
+    // Tampilkan Iklan Video Berhadiah (Rewarded Ad) saat pemicu aktif
+    val activeRewardedAd by AdManager.activeRewardedAd.collectAsState()
+    activeRewardedAd?.let { ad ->
+        LovyRewardedAdDialog(
+            ad = ad,
+            onClaimReward = {
+                AdManager.dismissRewardedDialog(claimReward = true)
+            },
+            onDismiss = {
+                AdManager.dismissRewardedDialog(claimReward = false)
+            }
+        )
     }
 }
 

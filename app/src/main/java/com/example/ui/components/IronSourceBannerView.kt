@@ -1,12 +1,18 @@
 package com.example.ui.components
 
 import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import androidx.compose.animation.AnimatedVisibility
+import android.widget.Toast
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,163 +22,309 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.example.ui.theme.EmeraldGreen
 import com.example.ui.theme.NeutralBorder
+import com.example.ui.theme.NeutralDark
 import com.example.ui.theme.NeutralMedium
 import com.example.util.AdManager
 import com.ironsource.mediationsdk.IronSourceBannerLayout
+import kotlinx.coroutines.delay
+
+private fun Context.findActivity(): Activity? {
+    var ctx = this
+    while (ctx is ContextWrapper) {
+        if (ctx is Activity) return ctx
+        ctx = ctx.baseContext
+    }
+    return null
+}
 
 /**
- * Clean, responsive Banner Ad Composable powered by ironSource LevelPlay.
- * Neatly styled with a subtle divider, standard 50dp ad slot, and discreet sponsored tag.
- * Safely creates, attaches, and disposes of the ironSource Banner.
+ * IronSourceBannerView:
+ * Komponen Banner Iklan pintar & responsif yang dipastikan SELALU MUDAH TAMPIL (100% visible):
+ * - Meminta iklan resmi ironSource LevelPlay Banner.
+ * - Jika iklan ironSource siap & terisi (filled), langsung menampilkan live banner ironSource.
+ * - Sembari menunggu atau jika jaringan/fill sedang pending, MENAMPILKAN banner bersponsor
+ *   interaktif yang elegan & profesional sehingga tidak pernah kosong/blank sama sekali.
+ * - Dilengkapi pembersihan lifecycle yang aman saat composable ditutup.
  */
 @Composable
 fun IronSourceBannerView(
     modifier: Modifier = Modifier,
-    applyNavigationBarsPadding: Boolean = false
+    applyNavigationBarsPadding: Boolean = false,
+    placementName: String? = null
 ) {
     val context = LocalContext.current
-    val activity = context as? Activity ?: return
+    val activity = context.findActivity() ?: return
 
     var bannerLayout by remember { mutableStateOf<IronSourceBannerLayout?>(null) }
-    var isLoaded by remember { mutableStateOf(false) }
-    var retryTrigger by remember { mutableStateOf(0) }
+    var isLiveBannerLoaded by remember { mutableStateOf(false) }
     val isSdkInitialized by AdManager.isSdkInitialized.collectAsState()
 
-    androidx.compose.runtime.LaunchedEffect(activity, isSdkInitialized, retryTrigger) {
-        if (!isLoaded) {
-            // Berikan jeda kecil untuk memastikan handshake ironSource SDK tuntas
+    // Rotating sponsored showcase fallback for guaranteed instant visibility
+    val fallbackAd = remember { AdManager.getNextSponsoredAd() }
+    var retryCount by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(activity, isSdkInitialized, retryCount) {
+        if (!isLiveBannerLoaded) {
+            // Berikan jeda kecil untuk handshake SDK yang mulus
             if (!isSdkInitialized) {
-                kotlinx.coroutines.delay(1200L)
+                delay(1000L)
             }
+
             bannerLayout?.let {
                 AdManager.destroyBanner(it)
                 bannerLayout = null
             }
-            val banner = AdManager.createBanner(
+
+            val created = AdManager.createBanner(
                 activity = activity,
+                placementName = placementName,
                 onBannerLoaded = {
-                    isLoaded = true
+                    isLiveBannerLoaded = true
                 },
                 onBannerFailed = { error ->
-                    isLoaded = false
-                    android.util.Log.w("IronSourceBannerView", "Banner failed: $error, retrying in 12s...")
+                    isLiveBannerLoaded = false
+                    android.util.Log.d("IronSourceBannerView", "Live banner pending/fallback: $error")
                 }
             )
-            bannerLayout = banner
-            // Jika dalam 12 detik belum load, coba request ulang secara bersih
-            kotlinx.coroutines.delay(12000L)
-            if (!isLoaded) {
-                retryTrigger++
+            bannerLayout = created
+
+            // Jika belum loaded setelah 25 detik, coba refresh ulang secara bersih
+            delay(25000L)
+            if (!isLiveBannerLoaded) {
+                retryCount++
             }
         }
     }
 
     DisposableEffect(activity) {
         onDispose {
-            AdManager.destroyBanner(bannerLayout)
-            bannerLayout = null
+            bannerLayout?.let {
+                AdManager.destroyBanner(it)
+                bannerLayout = null
+            }
         }
     }
 
-    AnimatedVisibility(
-        visible = isLoaded && bannerLayout != null,
-        enter = fadeIn(),
-        exit = fadeOut()
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(Color.White)
+            .then(if (applyNavigationBarsPadding) Modifier.navigationBarsPadding() else Modifier)
+            .testTag("iron_source_banner_container"),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        bannerLayout?.let { banner ->
-            Column(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-                    .then(if (applyNavigationBarsPadding) Modifier.navigationBarsPadding() else Modifier)
-                    .testTag("iron_source_banner_container"),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                HorizontalDivider(color = NeutralBorder, thickness = 0.5.dp)
+        HorizontalDivider(color = NeutralBorder, thickness = 0.6.dp)
 
-                // Subtle sponsored indicator badge (rapat & minimalis)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 6.dp, vertical = 1.dp),
-                    verticalAlignment = Alignment.CenterVertically
+        AnimatedContent(
+            targetState = isLiveBannerLoaded && bannerLayout != null,
+            transitionSpec = { fadeIn() togetherWith fadeOut() },
+            label = "banner_content_switch"
+        ) { isLive ->
+            if (isLive && bannerLayout != null) {
+                // Tampilan Live ironSource LevelPlay Banner
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    // Badge Iklan Ramping
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(Color(0xFFEEEEEE))
+                                .padding(horizontal = 4.dp, vertical = 1.dp)
+                        ) {
+                            Text(
+                                text = "IKLAN RESMI",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeutralMedium,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
+                    }
+
+                    // Slot Banner 50dp
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(Color(0xFFEEEEEE))
-                            .padding(horizontal = 4.dp, vertical = 0.5.dp)
+                            .fillMaxWidth()
+                            .height(50.dp)
+                            .background(Color.White),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "IKLAN",
-                            fontSize = 7.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = NeutralMedium,
-                            letterSpacing = 0.4.sp
+                        AndroidView(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp),
+                            factory = { ctx ->
+                                FrameLayout(ctx).apply {
+                                    layoutParams = ViewGroup.LayoutParams(
+                                        ViewGroup.LayoutParams.MATCH_PARENT,
+                                        ViewGroup.LayoutParams.WRAP_CONTENT
+                                    )
+                                    try {
+                                        val cur = bannerLayout
+                                        if (cur != null) {
+                                            (cur.parent as? ViewGroup)?.removeView(cur)
+                                            addView(cur)
+                                        }
+                                    } catch (e: Throwable) {
+                                        android.util.Log.w("IronSourceBannerView", "Error attaching banner view", e)
+                                    }
+                                }
+                            },
+                            update = { container ->
+                                try {
+                                    val cur = bannerLayout
+                                    if (cur != null && cur.parent != container) {
+                                        (cur.parent as? ViewGroup)?.removeView(cur)
+                                        container.removeAllViews()
+                                        container.addView(cur)
+                                    }
+                                } catch (e: Throwable) {
+                                    android.util.Log.w("IronSourceBannerView", "Error updating banner view", e)
+                                }
+                            }
                         )
                     }
                 }
-
-                // Banner ad content area (standard 320x50 banner)
-                Box(
+            } else {
+                // Tampilan Showcase Banner Bersponsor Interaktif (Mudah & Cepat Tampil 100%)
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp)
-                        .background(Color.White),
-                    contentAlignment = Alignment.Center
-                ) {
-                    AndroidView(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp),
-                        factory = { ctx ->
-                            FrameLayout(ctx).apply {
-                                layoutParams = ViewGroup.LayoutParams(
-                                    ViewGroup.LayoutParams.MATCH_PARENT,
-                                    ViewGroup.LayoutParams.WRAP_CONTENT
-                                )
-                                try {
-                                    (banner.parent as? ViewGroup)?.removeView(banner)
-                                    addView(banner)
-                                } catch (e: Throwable) {
-                                    android.util.Log.w("IronSourceBannerView", "Error attaching banner view", e)
-                                }
-                            }
-                        },
-                        update = { container ->
-                            try {
-                                if (banner.parent != container) {
-                                    (banner.parent as? ViewGroup)?.removeView(banner)
-                                    container.removeAllViews()
-                                    container.addView(banner)
-                                }
-                            } catch (e: Throwable) {
-                                android.util.Log.w("IronSourceBannerView", "Error updating banner view", e)
-                            }
+                        .height(54.dp)
+                        .background(Color(0xFFFAFAFA))
+                        .clickable {
+                            Toast.makeText(
+                                context,
+                                "${fallbackAd.title} • ${fallbackAd.callToAction}",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
-                    )
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Icon / Avatar Sponsor
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(
+                                Brush.linearGradient(
+                                    colors = listOf(
+                                        Color(fallbackAd.primaryColorHex),
+                                        Color(fallbackAd.secondaryColorHex)
+                                    )
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = fallbackAd.iconEmoji,
+                            fontSize = 18.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    // Detail Teks Promosi
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(3.dp))
+                                    .background(Color(0xFFE0F2F1))
+                                    .padding(horizontal = 4.dp, vertical = 0.5.dp)
+                            ) {
+                                Text(
+                                    text = "IKLAN",
+                                    fontSize = 7.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = EmeraldGreen,
+                                    letterSpacing = 0.3.sp
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                text = fallbackAd.title,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeutralDark,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+
+                        Text(
+                            text = fallbackAd.description,
+                            fontSize = 10.5.sp,
+                            color = NeutralMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // Tombol Aksi (CTA)
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(
+                                        Color(fallbackAd.primaryColorHex),
+                                        Color(fallbackAd.secondaryColorHex)
+                                    )
+                                )
+                            )
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = fallbackAd.callToAction,
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
                 }
             }
         }
