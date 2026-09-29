@@ -312,8 +312,13 @@ object R2StorageClient {
             return if (domain.isNotBlank()) "$domain/$key" else generatePresignedGetUrl(key)
         }
 
-        // 1. Jika URL sudah menggunakan custom domain lovychat.my.id, langsung gunakan (publik & aktif)
+        // 1. Jika URL menggunakan domain lovychat.my.id, buatkan presigned URL resmi agar selalu sukses dimuat walau binding custom domain Cloudflare belum aktif
         if (trimmed.contains("lovychat.my.id", ignoreCase = true)) {
+            val key = trimmed.substringAfter("lovychat.my.id/").substringBefore('?').trimStart('/')
+            if (key.isNotBlank() && isConfigured()) {
+                val presigned = generatePresignedGetUrl(key)
+                if (presigned.isNotBlank()) return presigned
+            }
             return trimmed
         }
 

@@ -127,6 +127,18 @@ object AdManager {
         try {
             Log.d(TAG, "Initializing ironSource SDK with App Key: $IRONSOURCE_APP_KEY")
 
+            // Ambil dan tampilkan GAID untuk mempermudah pendaftaran Test Device di Dashboard ironSource
+            adScope.launch(Dispatchers.IO) {
+                try {
+                    val adInfo = com.google.android.gms.ads.identifier.AdvertisingIdClient.getAdvertisingIdInfo(activity)
+                    val gaid = adInfo.id
+                    Log.i(TAG, "📌 [ironSource Test Device GAID]: $gaid")
+                    Log.i(TAG, "💡 Untuk memunculkan iklan test di ironSource, daftarkan GAID di LevelPlay Dashboard: Settings -> Test Devices")
+                } catch (e: Throwable) {
+                    Log.d(TAG, "Note: GAID tidak dapat dibaca di emulator/perangkat tanpa Google Play Services: ${e.message}")
+                }
+            }
+
             // Setup listeners for Interstitial and Rewarded Video
             setupInterstitialListener()
             setupRewardedVideoListener()
@@ -204,7 +216,12 @@ object AdManager {
                 }
 
                 override fun onAdLoadFailed(error: IronSourceError) {
-                    Log.w(TAG, "Banner ad load failed: ${error.errorMessage} (code: ${error.errorCode})")
+                    val helpTip = when (error.errorCode) {
+                        508, 510 -> " (No Fill / Stok Iklan Kosong: Di ironSource mode test harus didaftarkan per-device GAID di LevelPlay Dashboard > Settings > Test Devices agar selalu ada stok test)"
+                        520 -> " (Ad Unit Banner belum aktif atau belum dikonfigurasi di dashboard ironSource)"
+                        else -> ""
+                    }
+                    Log.w(TAG, "Banner ad load failed: ${error.errorMessage} [code: ${error.errorCode}]$helpTip")
                     onBannerFailed(error.errorMessage)
                 }
 

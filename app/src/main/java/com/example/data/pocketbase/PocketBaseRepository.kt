@@ -364,6 +364,8 @@ class PocketBaseRepository {
                         deletedForSender = false,
                         deletedForReceiver = false,
                         imageUrl = record.imageUrl,
+                        audioUrl = record.audioUrl,
+                        audioDurationSeconds = record.audioDurationSeconds ?: 0,
                         replyToId = record.replyToId,
                         replyToSender = record.replyToSender,
                         replyToText = record.replyToText
