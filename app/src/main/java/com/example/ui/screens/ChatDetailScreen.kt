@@ -78,6 +78,7 @@ import androidx.compose.material.icons.filled.FormatQuote
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Person
+import com.example.ui.components.PartnerPhotoPreviewDialog
 import com.example.ui.components.ReportDialog
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PlayArrow
@@ -2036,25 +2037,30 @@ fun PartnerProfileBottomSheet(
         )
     }
 
-    // Photo Preview Lightbox Dialog
+    // Photo Preview Lightbox Dialog dengan Dukungan Carousel Geser Kiri-Kanan
     previewMoment?.let { moment ->
-        val commentsForThis = momentComments[moment.id]
-        val accurateCommentsCount = maxOf(moment.commentsCount, commentsForThis?.size ?: 0)
-        val displayMoment = if (moment.commentsCount != accurateCommentsCount) {
-            moment.copy(commentsCount = accurateCommentsCount)
-        } else moment
+        val photoMoments = remember(partnerMoments, moment) {
+            val list = partnerMoments.filter { !it.isDeleted && !it.imageUrl.isNullOrBlank() }
+            if (list.any { it.id == moment.id }) list else (list + moment).distinctBy { it.id }
+        }
+        val commentsCounts = remember(momentComments) {
+            momentComments.mapValues { it.value.size }
+        }
 
         PartnerPhotoPreviewDialog(
             language = language,
-            moment = displayMoment,
+            moments = photoMoments,
+            initialMomentId = moment.id,
             partnerAvatarHex = partnerAvatarHex,
+            likedMoments = partnerMoments.filter { it.isLiked }.map { it.id }.toSet(),
+            momentCommentsCount = commentsCounts,
             onDismiss = { previewMoment = null },
-            onToggleLike = {
-                onToggleLikeMoment?.invoke(displayMoment.id)
+            onToggleLike = { momentId ->
+                onToggleLikeMoment?.invoke(momentId)
             },
-            onCommentClick = {
+            onCommentClick = { targetMoment ->
                 previewMoment = null
-                onCommentClick?.invoke(displayMoment)
+                onCommentClick?.invoke(targetMoment)
             }
         )
     }
@@ -2262,245 +2268,6 @@ fun PartnerMomentItemCard(
                                 fontSize = 12.sp,
                                 color = NeutralMedium
                             )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun PartnerPhotoPreviewDialog(
-    language: AppLanguage = AppLanguage.INDONESIAN,
-    moment: MomentItem,
-    partnerAvatarHex: Long,
-    onDismiss: () -> Unit,
-    onToggleLike: () -> Unit,
-    onCommentClick: (() -> Unit)? = null
-) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.92f))
-                .clickable { onDismiss() }
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Top Header Bar
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        LovyAvatar(
-                            name = moment.authorName,
-                            avatarColorHex = partnerAvatarHex,
-                            avatarUrl = moment.authorAvatarUrl,
-                            size = 36.dp,
-                            fontSize = 15.sp
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column {
-                            Text(
-                                text = moment.authorName,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                            Text(
-                                text = moment.timeAgo,
-                                fontSize = 11.5.sp,
-                                color = Color.White.copy(alpha = 0.75f)
-                            )
-                        }
-                    }
-
-                    IconButton(
-                        onClick = onDismiss,
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.2f))
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = AppStrings.commonClose(language),
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-
-                // Center: High-res photo with 2-finger zoom and double-tap zoom
-                if (!moment.imageUrl.isNullOrBlank()) {
-                    var scale by remember { mutableFloatStateOf(1f) }
-                    var offset by remember { mutableStateOf(Offset.Zero) }
-
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .padding(vertical = 12.dp)
-                            .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onDoubleTap = { tapOffset ->
-                                        if (scale > 1.2f) {
-                                            scale = 1f
-                                            offset = Offset.Zero
-                                        } else {
-                                            scale = 2.5f
-                                            offset = Offset(
-                                                x = (size.width / 2f - tapOffset.x) * 1.5f,
-                                                y = (size.height / 2f - tapOffset.y) * 1.5f
-                                            )
-                                        }
-                                    }
-                                )
-                            }
-                            .pointerInput(Unit) {
-                                detectTransformGestures { _, pan, zoom, _ ->
-                                    val newScale = (scale * zoom).coerceIn(0.85f, 5f)
-                                    scale = newScale
-                                    if (newScale > 1f) {
-                                        val maxOffsetX = (size.width * (newScale - 1f)) / 1.8f
-                                        val maxOffsetY = (size.height * (newScale - 1f)) / 1.8f
-                                        offset = Offset(
-                                            x = (offset.x + pan.x).coerceIn(-maxOffsetX, maxOffsetX),
-                                            y = (offset.y + pan.y).coerceIn(-maxOffsetY, maxOffsetY)
-                                        )
-                                    } else {
-                                        offset = Offset.Zero
-                                    }
-                                }
-                            }
-                    ) {
-                        AsyncImage(
-                            model = moment.imageUrl,
-                            contentDescription = "Foto momen penuh",
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .graphicsLayer(
-                                    scaleX = scale,
-                                    scaleY = scale,
-                                    translationX = offset.x,
-                                    translationY = offset.y
-                                )
-                        )
-                    }
-                } else {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-
-                // Bottom: Caption, Location, and Likes Card
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color(0xFF1E1E1E),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 12.dp)
-                        .clickable(enabled = false) {}
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp)
-                    ) {
-                        if (!moment.locationTag.isNullOrBlank()) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(bottom = 6.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.LocationOn,
-                                    contentDescription = null,
-                                    tint = EmeraldGreen,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = moment.locationTag,
-                                    fontSize = 12.sp,
-                                    color = Color.White.copy(alpha = 0.8f)
-                                )
-                            }
-                        }
-
-                        Text(
-                            text = moment.content,
-                            fontSize = 14.sp,
-                            lineHeight = 20.sp,
-                            color = Color.White
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            // Like toggle in dialog
-                            Button(
-                                onClick = onToggleLike,
-                                shape = RoundedCornerShape(10.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (moment.isLiked) Color(0xFFE91E63) else Color.White.copy(alpha = 0.15f)
-                                ),
-                                modifier = Modifier.height(36.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (moment.isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(15.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = AppStrings.partnerMomentLikesCount(language, moment.likesCount),
-                                    fontSize = 12.5.sp,
-                                    color = Color.White,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .then(
-                                        if (onCommentClick != null) Modifier.clickable { onCommentClick() }
-                                        else Modifier
-                                    )
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.ChatBubbleOutline,
-                                    contentDescription = null,
-                                    tint = Color.White.copy(alpha = 0.85f),
-                                    modifier = Modifier.size(15.dp)
-                                )
-                                Spacer(modifier = Modifier.width(5.dp))
-                                Text(
-                                    text = AppStrings.partnerMomentCommentsCount(language, moment.commentsCount),
-                                    fontSize = 12.sp,
-                                    color = Color.White.copy(alpha = 0.85f)
-                                )
-                            }
                         }
                     }
                 }

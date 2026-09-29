@@ -203,6 +203,7 @@ fun MomentsScreen(
     
     // State for viewing photos fullscreen
     var fullscreenPhotoUrl by remember { mutableStateOf<String?>(null) }
+    var previewMomentForLightbox by remember { mutableStateOf<MomentItem?>(null) }
 
     // State for viewing & adding comments
     var activeMomentIdForComments by remember { mutableStateOf<String?>(null) }
@@ -505,6 +506,7 @@ fun MomentsScreen(
                         },
                         onToggleLike = { onToggleLike(item.id) },
                         onPhotoClick = { url -> fullscreenPhotoUrl = url },
+                        onMomentPhotoClick = { moment -> previewMomentForLightbox = moment },
                         onCommentClick = { activeMomentIdForComments = item.id },
                         onShareClick = null,
                         onDeleteClick = if (isMyMoment && onDeleteMoment != null) {
@@ -805,6 +807,37 @@ fun MomentsScreen(
                 ) {
                     Text(AppStrings.btnCancel(language), color = NeutralMedium)
                 }
+            }
+        )
+    }
+
+    // Fullscreen Photo Modal dengan Carousel Geser Kiri-Kanan (Swipe antar-foto teman)
+    previewMomentForLightbox?.let { moment ->
+        val authorMoments = remember(moments, moment) {
+            val list = moments.filter {
+                it.authorName.equals(moment.authorName, ignoreCase = true) &&
+                        !it.isDeleted &&
+                        !it.imageUrl.isNullOrBlank()
+            }
+            if (list.any { it.id == moment.id }) list else (list + moment).distinctBy { it.id }
+        }
+        val commentsCounts = remember(momentComments) {
+            momentComments.mapValues { it.value.size }
+        }
+
+        com.example.ui.components.PartnerPhotoPreviewDialog(
+            language = language,
+            moments = authorMoments,
+            initialMomentId = moment.id,
+            partnerAvatarHex = moment.authorAvatarHex,
+            momentCommentsCount = commentsCounts,
+            onDismiss = { previewMomentForLightbox = null },
+            onToggleLike = { momentId ->
+                onToggleLike(momentId)
+            },
+            onCommentClick = { targetMoment ->
+                previewMomentForLightbox = null
+                activeMomentIdForComments = targetMoment.id
             }
         )
     }
@@ -1234,6 +1267,7 @@ fun MomentCard(
     onAuthorClick: (() -> Unit)? = null,
     onToggleLike: () -> Unit,
     onPhotoClick: (String) -> Unit,
+    onMomentPhotoClick: ((MomentItem) -> Unit)? = null,
     onShareClick: (() -> Unit)? = null,
     onCommentClick: () -> Unit = {},
     onDeleteClick: (() -> Unit)? = null,
@@ -1430,7 +1464,10 @@ fun MomentCard(
                         .height(210.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(Color(0xFFF1F3F4))
-                        .clickable { onPhotoClick(item.imageUrl) }
+                        .clickable {
+                            if (onMomentPhotoClick != null) onMomentPhotoClick(item)
+                            else onPhotoClick(item.imageUrl ?: "")
+                        }
                         .testTag("moment_image_${item.id}")
                 ) {
                     SubcomposeAsyncImage(

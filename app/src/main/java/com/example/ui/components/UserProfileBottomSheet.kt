@@ -627,12 +627,36 @@ fun UserProfileBottomSheet(
         )
     }
 
-    // Dialog Lightbox Foto Momen Full-Screen (dengan zoom 2 jari)
+    // Dialog Lightbox Foto Momen Full-Screen dengan Carousel Geser Kiri-Kanan
     previewMoment?.let { moment ->
-        com.example.ui.components.ZoomablePhotoViewerDialog(
-            photoUrl = moment.imageUrl,
-            title = com.example.util.AppStrings.partnerProfilePhotoTitle(language, moment.authorName),
-            onDismiss = { previewMoment = null }
+        val photoMoments = remember(userMoments, moment) {
+            val list = userMoments.filter { !it.imageUrl.isNullOrBlank() }
+            if (list.any { it.id == moment.id }) list else (list + moment).distinctBy { it.id }
+        }
+        val commentsCounts = remember(momentComments) {
+            momentComments.mapValues { it.value.size }
+        }
+
+        PartnerPhotoPreviewDialog(
+            language = language,
+            moments = photoMoments,
+            initialMomentId = moment.id,
+            partnerAvatarHex = user.avatarColorHex,
+            likedMoments = likedState.filterValues { it }.keys,
+            momentCommentsCount = commentsCounts,
+            onDismiss = { previewMoment = null },
+            onToggleLike = { momentId ->
+                val isLocallyLiked = likedState[momentId] ?: false
+                val nextState = !isLocallyLiked
+                likedState[momentId] = nextState
+                val delta = if (nextState) 1 else -1
+                likesCountDelta[momentId] = (likesCountDelta[momentId] ?: 0) + delta
+                onToggleLikeMoment?.invoke(momentId)
+            },
+            onCommentClick = { targetMoment ->
+                previewMoment = null
+                activeMomentForComments = targetMoment
+            }
         )
     }
 
