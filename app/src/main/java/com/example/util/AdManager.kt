@@ -131,11 +131,11 @@ object AdManager {
             setupInterstitialListener()
             setupRewardedVideoListener()
 
-            // Set metadata flags to assist ad fill
+            // Set metadata flags to assist ad fill for live production
             try {
                 IronSource.setMetaData("is_child_directed", "false")
                 IronSource.setMetaData("is_deviceid_optout", "false")
-                IronSource.setMetaData("is_test_suite", "enable")
+                IronSource.setMetaData("Google_Family_Policy", "false")
             } catch (e: Throwable) {
                 Log.w(TAG, "Could not set metadata: ${e.message}")
             }
@@ -318,36 +318,39 @@ object AdManager {
         }
     }
 
-    // Threshold so interstitial ads trigger after 20 user actions/nav as requested
-    const val CLICKS_THRESHOLD_FOR_INTERSTITIAL = 20
+    // Threshold so interstitial ads trigger after 15 user actions/nav as requested
+    const val CLICKS_THRESHOLD_FOR_INTERSTITIAL = 15
     private var _featureClickCount = 0
     val featureClickCount: Int get() = _featureClickCount
 
     /**
      * Records a user feature click (navigation, tabs, bottle fishing, moment posting, radar).
-     * When count reaches threshold (20), triggers a real ironSource Interstitial ad.
-     * Tidak ada fallback iklan palsu/tiruan. Hanya iklan resmi ironSource yang ditayangkan.
+     * When count reaches threshold (15), triggers a real ironSource Interstitial ad.
+     * Lancar dan tidak membuang kuota jika iklan sedang dalam proses pemuatan singkat.
      */
     fun recordFeatureClick(activity: Activity? = null): Boolean {
         _featureClickCount++
         Log.d(TAG, "Feature click recorded: $_featureClickCount / $CLICKS_THRESHOLD_FOR_INTERSTITIAL")
 
         // Preload proactively when getting close to threshold
-        if (_featureClickCount >= CLICKS_THRESHOLD_FOR_INTERSTITIAL - 2) {
+        if (_featureClickCount >= CLICKS_THRESHOLD_FOR_INTERSTITIAL - 3) {
             loadInterstitial()
         }
 
         if (_featureClickCount >= CLICKS_THRESHOLD_FOR_INTERSTITIAL) {
             val act = activity ?: currentActivityRef?.get()
             val shown = if (IronSource.isInterstitialReady()) {
-                showInterstitial(activity = act, fallbackIfUnavailable = false)
+                val res = showInterstitial(activity = act, fallbackIfUnavailable = false)
+                if (res) {
+                    _featureClickCount = 0
+                }
+                res
             } else {
-                // Iklan asli masih dimuat di latar belakang, jangan tampilkan iklan tiruan
-                Log.d(TAG, "Threshold 20 aksi tercapai, iklan asli ironSource sedang dimuat di latar...")
+                Log.d(TAG, "Threshold $CLICKS_THRESHOLD_FOR_INTERSTITIAL aksi tercapai, memuat ulang iklan ironSource di latar...")
                 loadInterstitial()
+                // Jangan reset counter ke 0 agar saat aksi berikutnya langsung tampil begitu iklan siap
                 false
             }
-            _featureClickCount = 0
             return shown
         }
         return false

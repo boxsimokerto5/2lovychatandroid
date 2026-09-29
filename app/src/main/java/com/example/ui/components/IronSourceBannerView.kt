@@ -114,8 +114,8 @@ fun IronSourceBannerView(
             )
             bannerLayout = created
 
-            // Jika belum loaded setelah 25 detik, coba refresh ulang secara bersih
-            delay(25000L)
+            // Jika belum loaded setelah 12 detik, coba refresh ulang secara bersih
+            delay(12000L)
             if (!isLiveBannerLoaded) {
                 retryCount++
             }
