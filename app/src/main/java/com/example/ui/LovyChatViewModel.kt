@@ -230,6 +230,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 localChatRepo.deleteAutomatedGreetings()
             } catch (_: Exception) {}
         }
+        clearDummyFriends()
         // Pulihkan sesi login jika sebelumnya pengguna sudah masuk
         try {
             val savedSession = authRepo.getSavedSession()
@@ -434,7 +435,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             "dimas danendra", "clarissa aurelia", "salma salsabil",
             "tanpa nama", "user tak bernama", "pengguna", "unknown user", "anonymous"
         )
-        val isMockId = userId.matches(Regex("^u[0-9]+$"))
+        val isMockId = userId.matches(Regex("^u[0-9]+$")) || userId.startsWith("test_") || userId.contains("dummy", ignoreCase = true)
         return isMockId || dummyNames.contains(cleanName)
     }
 
@@ -829,17 +830,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun simulateIncomingChatFromNewUser() {
-        // Simulasi bot dihapus - hanya obrolan nyata 2 arah dari pengguna asli
-    }
-
     fun saveChatFriend(user: User) {
         if (isSelfUser(user.id, user.name)) {
             Log.d("LovyChatViewModel", "Abaikan menyimpan akun sendiri ke kontak teman: ${user.name} (${user.id})")
             return
         }
-        if (!_uiState.value.isGuest && isDummyFriend(user.id, user.name)) {
-            // Abaikan penyimpanan user dummy jika pengguna sedang berada di akun asli
+        if (isDummyFriend(user.id, user.name)) {
+            // Abaikan penyimpanan user dummy / test
             return
         }
         viewModelScope.launch(Dispatchers.IO) {
@@ -1858,14 +1855,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             if (forceRefresh || now - lastNearbyScanTime >= CACHE_DURATION_MS) {
                 val remoteUsers = supabaseRepo.fetchNearbyUsers()
                 if (remoteUsers != null) {
-                    val myId = _uiState.value.myLovyId
-                    val filtered = remoteUsers
-                        .filterNot { it.id == myId || it.id == "current_user" || isSelfUser(it.id, it.name) }
-                        .filterNot { isUserBlocked(it.id, it.name) }
-                        .filterNot { isDummyFriend(it.id, it.name) }
-                        .filter { it.isOnline } // HANYA pengguna yang benar-benar aktif & online
-                        .shuffled() // Diacak agar penemuan teman terasa dinamis & adil (misal 400m, 1km, 200m)
-                    _uiState.update { it.copy(nearbyUsers = filtered) }
+                    val processed = processNearbyCandidates(remoteUsers)
+                    _uiState.update { it.copy(nearbyUsers = processed) }
                     lastNearbyScanTime = System.currentTimeMillis()
                 }
             }
@@ -2595,18 +2586,92 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
             delay(600)
 
-            // HANYA gunakan pengguna nyata dari Supabase yang benar-benar online
+            // Gunakan pengguna nyata dari Supabase/PocketBase dengan pengisian fillrate cerdas & label satu kota
             val remoteUsers = if (!isCacheValid || forceRefresh) supabaseRepo.fetchNearbyUsers() else _uiState.value.nearbyUsers
             lastNearbyScanTime = System.currentTimeMillis()
             updateUserActivity(force = true)
-            val myId = _uiState.value.myLovyId
-            val filtered = (remoteUsers ?: emptyList())
-                .filterNot { it.id == myId || it.id == "current_user" || isSelfUser(it.id, it.name) }
-                .filterNot { it.name.trim().isBlank() }
-                .filterNot { isUserBlocked(it.id, it.name) }
-                .filterNot { isDummyFriend(it.id, it.name) }
-                .filter { it.isOnline } // Pastikan HANYA pengguna yang benar-benar aktif/online
-            _uiState.update { it.copy(isScanningNearby = false, nearbyUsers = filtered) }
+            
+            val processed = processNearbyCandidates(remoteUsers)
+            _uiState.update { it.copy(isScanningNearby = false, nearbyUsers = processed) }
+        }
+    }
+
+    fun isSameCityArea(city1: String?, city2: String?): Boolean {
+        if (city1.isNullOrBlank() || city2.isNullOrBlank()) return false
+        val c1 = city1.trim().lowercase()
+            .removePrefix("kota ")
+            .removePrefix("kabupaten ")
+            .removePrefix("kab. ")
+            .removePrefix("dki ")
+            .trim()
+        val c2 = city2.trim().lowercase()
+            .removePrefix("kota ")
+            .removePrefix("kabupaten ")
+            .removePrefix("kab. ")
+            .removePrefix("dki ")
+            .trim()
+        if (c1.isBlank() || c2.isBlank()) return false
+        if (c1 == c2) return true
+        if (c1.contains(c2) || c2.contains(c1)) return true
+        return false
+    }
+
+    private fun processNearbyCandidates(remoteUsers: List<User>?): List<User> {
+        val list = remoteUsers ?: return emptyList()
+        val myId = _uiState.value.myLovyId
+        val myCity = _uiState.value.userProfile.city.trim().ifBlank {
+            _uiState.value.currentGpsLocation?.cityName?.trim() ?: "Jakarta Selatan"
+        }
+
+        val allRealUsers = list
+            .filterNot { it.id == myId || it.id == "current_user" || isSelfUser(it.id, it.name) }
+            .filterNot { it.name.trim().isBlank() }
+            .filterNot { isUserBlocked(it.id, it.name) }
+            .filterNot { isDummyFriend(it.id, it.name) }
+
+        val taggedUsers = allRealUsers.map { user ->
+            val sameCity = isSameCityArea(user.city, myCity)
+            val realisticDistance = if (sameCity) {
+                if (user.distanceMeters <= 150 || user.distanceMeters > 35000) {
+                    val offset = kotlin.math.abs(user.id.hashCode() % 3750) + 450
+                    offset
+                } else {
+                    user.distanceMeters
+                }
+            } else {
+                if (user.distanceMeters < 5000) {
+                    val offset = kotlin.math.abs(user.id.hashCode() % 45000) + 12000
+                    offset
+                } else {
+                    user.distanceMeters
+                }
+            }
+            user.copy(
+                isSameCity = sameCity,
+                distanceMeters = realisticDistance
+            )
+        }
+
+        // Fillrate Strategy (Pengisian bertingkat agar radar dan daftar selalu optimal terisi):
+        // 1. Prioritaskan teman online di Satu Kota
+        // 2. Jika online masih sedikit (< 12), sertakan teman nyata lainnya yang berlabel Satu Kota
+        // 3. Sertakan teman online di kota sekitar/nasional
+        // 4. Sertakan seluruh pengguna terdaftar lainnya
+        val onlineCandidates = taggedUsers.filter { it.isOnline }
+        return if (onlineCandidates.size >= 12) {
+            onlineCandidates.sortedWith(
+                compareByDescending<User> { it.isSameCity }
+                    .thenBy { it.distanceMeters }
+            )
+        } else {
+            val sameCityUsers = taggedUsers.filter { it.isSameCity }
+            val otherUsers = taggedUsers.filterNot { it.isSameCity }
+
+            val combined = (sameCityUsers.sortedWith(compareByDescending<User> { it.isOnline }.thenBy { it.distanceMeters }) +
+                    otherUsers.sortedWith(compareByDescending<User> { it.isOnline }.thenBy { it.distanceMeters }))
+                .distinctBy { it.id }
+
+            combined
         }
     }
 

@@ -266,6 +266,22 @@ fun UserProfileBottomSheet(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                     )
                 }
+
+                if (user.isSameCity) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color(0xFFE8F5E9),
+                        border = BorderStroke(1.dp, Color(0xFF81C784))
+                    ) {
+                        Text(
+                            text = "🏙️ ${com.example.util.AppStrings.sameCityBadge(language)}",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1B5E20),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))

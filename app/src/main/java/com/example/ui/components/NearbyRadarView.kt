@@ -610,8 +610,8 @@ fun NearbyRadarView(
                                         .size(if (isSelected) selectedAvatarSize else avatarSize)
                                         .shadow(6.dp, CircleShape)
                                         .border(
-                                            width = if (isSelected) 3.dp else 1.5.dp,
-                                            color = if (isSelected) Color(0xFFFFD54F) else Color(0xFFB9F6CA),
+                                            width = if (isSelected) 3.dp else if (user.isSameCity) 2.dp else 1.5.dp,
+                                            color = if (isSelected) Color(0xFFFFD54F) else if (user.isSameCity) Color(0xFF00E676) else Color(0xFFB9F6CA),
                                             shape = CircleShape
                                         )
                                 ) {
@@ -625,19 +625,29 @@ fun NearbyRadarView(
                                     )
                                 }
 
-                                // Label nama dan jarak di bawah avatar
+                                // Label nama dan jarak di bawah avatar (Prioritas label Satu Kota)
+                                val badgeText = when {
+                                    user.isSameCity -> "🏙️ 1 Kota"
+                                    hideExactDistance -> user.city
+                                    else -> "${user.distanceMeters}m"
+                                }
                                 Box(
                                     modifier = Modifier
                                         .offset(y = (-2).dp)
                                         .clip(RoundedCornerShape(6.dp))
-                                        .background(Color.Black.copy(alpha = 0.75f))
-                                        .padding(horizontal = 3.dp, vertical = 1.dp)
+                                        .background(if (user.isSameCity) Color(0xFF0A2E1C).copy(alpha = 0.90f) else Color.Black.copy(alpha = 0.75f))
+                                        .border(
+                                            width = if (user.isSameCity) 0.8.dp else 0.dp,
+                                            color = if (user.isSameCity) Color(0xFF00E676).copy(alpha = 0.7f) else Color.Transparent,
+                                            shape = RoundedCornerShape(6.dp)
+                                        )
+                                        .padding(horizontal = 4.dp, vertical = 1.dp)
                                 ) {
                                     Text(
-                                        text = if (hideExactDistance) user.city else "${user.distanceMeters}m",
+                                        text = badgeText,
                                         fontSize = distanceBadgeFontSize,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (isSelected) Color(0xFFFFD54F) else Color.White
+                                        color = if (isSelected) Color(0xFFFFD54F) else if (user.isSameCity) Color(0xFF69F0AE) else Color.White
                                     )
                                 }
                             }

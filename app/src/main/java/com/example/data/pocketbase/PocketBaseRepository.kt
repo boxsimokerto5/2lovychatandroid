@@ -57,7 +57,7 @@ class PocketBaseRepository {
     suspend fun fetchNearbyUsers(): List<User>? = withContext(Dispatchers.IO) {
         val api = PocketBaseClient.getApi() ?: return@withContext null
         try {
-            val response = api.getUsers(perPage = 50, sort = "-last_active_at")
+            val response = api.getUsers(perPage = 100, sort = "-last_active_at")
             if (response.isSuccessful) {
                 val items = response.body()?.items ?: return@withContext null
                 val now = System.currentTimeMillis()

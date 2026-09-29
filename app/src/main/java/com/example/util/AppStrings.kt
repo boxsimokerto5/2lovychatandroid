@@ -5881,6 +5881,34 @@ object AppStrings {
         else -> "🟢 Online Only"
     }
 
+    fun sameCityBadge(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "同城"
+        AppLanguage.JAPANESE -> "同じ街"
+        AppLanguage.KOREAN -> "같은 도시"
+        AppLanguage.ARABIC -> "نفس المدينة"
+        AppLanguage.SPANISH -> "Misma ciudad"
+        AppLanguage.FRENCH -> "Même ville"
+        AppLanguage.GERMAN -> "Gleiche Stadt"
+        AppLanguage.RUSSIAN -> "Один город"
+        AppLanguage.PORTUGUESE -> "Mesma cidade"
+        AppLanguage.INDONESIAN -> "Satu Kota"
+        else -> "Same City"
+    }
+
+    fun sameCityFilter(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "🏙️ 同城好友"
+        AppLanguage.JAPANESE -> "🏙️ 同じ街"
+        AppLanguage.KOREAN -> "🏙️ 같은 도시"
+        AppLanguage.ARABIC -> "🏙️ نفس المدينة"
+        AppLanguage.SPANISH -> "🏙️ Misma Ciudad"
+        AppLanguage.FRENCH -> "🏙️ Même Ville"
+        AppLanguage.GERMAN -> "🏙️ Gleiche Stadt"
+        AppLanguage.RUSSIAN -> "🏙️ Один город"
+        AppLanguage.PORTUGUESE -> "🏙️ Mesma Cidade"
+        AppLanguage.INDONESIAN -> "🏙️ Satu Kota"
+        else -> "🏙️ Same City"
+    }
+
     fun nearbyUnlockMoreTitle(lang: AppLanguage, hiddenCount: Int, tier: Int, nextTargetLimit: Int): String {
         return when (resolveLang(lang)) {
             AppLanguage.CHINESE -> if (tier >= 4) "解锁全部附近好友 ($nextTargetLimit 人)" else "多解锁 $hiddenCount 位附近好友"

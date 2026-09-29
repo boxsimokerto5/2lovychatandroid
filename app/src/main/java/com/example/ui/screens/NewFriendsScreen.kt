@@ -78,7 +78,6 @@ fun NewFriendsScreen(
     onIgnoreFriend: (String) -> Unit,
     onOpenChat: (User) -> Unit,
     onNavigateToNearby: () -> Unit,
-    onSimulateIncomingChat: (() -> Unit)? = null,
     searchUserByCode: (String, (User?) -> Unit) -> Unit = { _, callback -> callback(null) },
     myLovyId: String = "",
     myName: String = "",
@@ -266,22 +265,6 @@ fun NewFriendsScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(com.example.util.AppStrings.newFriendsFindNearbyBtn(language), fontSize = 13.sp)
-                            }
-                            if (onSimulateIncomingChat != null) {
-                                OutlinedButton(
-                                    onClick = onSimulateIncomingChat,
-                                    border = BorderStroke(1.dp, EmeraldGreen),
-                                    shape = RoundedCornerShape(20.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.AddComment,
-                                        contentDescription = null,
-                                        tint = EmeraldGreen,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(com.example.util.AppStrings.newFriendsSimulateBtn(language), fontSize = 13.sp, color = EmeraldGreen)
-                                }
                             }
                         }
                     }

@@ -192,12 +192,21 @@ fun NearbyScreen(
         }
     }
 
-    val filteredUsers = remember(users, selectedGenderFilter, selectedOnlyOnlineFilter, isUserBlocked) {
+    var filterSameCityOnly by remember { mutableStateOf(false) }
+
+    val filteredUsers = remember(users, selectedGenderFilter, selectedOnlyOnlineFilter, isUserBlocked, filterSameCityOnly) {
         val unblocked = users.filterNot { isUserBlocked(it.id, it.name) }
-        // Radar dan daftar pengguna secara ketat HANYA menampilkan pengguna yang benar-benar aktif online
+        // Mengutamakan online, namun tetap menjaga fillrate jika sedang sepi
         val onlineOnlyUsers = unblocked.filter { it.isOnline }
-        if (selectedGenderFilter == null) onlineOnlyUsers
-        else onlineOnlyUsers.filter { it.gender == selectedGenderFilter }
+        val baseUsers = if (onlineOnlyUsers.isNotEmpty()) onlineOnlyUsers else unblocked
+        val byCityUsers = if (filterSameCityOnly) {
+            val sameCityList = baseUsers.filter { it.isSameCity }
+            if (sameCityList.isNotEmpty()) sameCityList else baseUsers
+        } else {
+            baseUsers
+        }
+        if (selectedGenderFilter == null) byCityUsers
+        else byCityUsers.filter { it.gender == selectedGenderFilter }
     }
 
     val displayedLimit = when (nearbyExpansionTier) {
@@ -523,6 +532,26 @@ fun NearbyScreen(
                         .height(20.dp)
                         .width(1.dp)
                         .background(Color(0xFFE0E0E0))
+                )
+
+                FilterChip(
+                    selected = filterSameCityOnly,
+                    onClick = { filterSameCityOnly = !filterSameCityOnly },
+                    label = { 
+                        val sameCityCount = users.count { it.isSameCity }
+                        Text(
+                            text = if (sameCityCount > 0) "🏙️ ${com.example.util.AppStrings.sameCityBadge(language)} ($sameCityCount)" else "🏙️ ${com.example.util.AppStrings.sameCityBadge(language)}",
+                            maxLines = 1,
+                            softWrap = false,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold
+                        ) 
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Color(0xFF1B5E20),
+                        selectedLabelColor = Color.White
+                    ),
+                    modifier = Modifier.testTag("filter_same_city")
                 )
 
                 FilterChip(
@@ -988,6 +1017,29 @@ fun NearbyUserCard(
                             )
                         }
                     }
+
+                    if (user.isSameCity) {
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = Color(0xFFE8F5E9),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF81C784))
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                            ) {
+                                Text(
+                                    text = "🏙️ ${com.example.util.AppStrings.sameCityBadge(language)}",
+                                    color = Color(0xFF1B5E20),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                            }
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(2.dp))
@@ -1012,14 +1064,19 @@ fun NearbyUserCard(
                     Icon(
                         imageVector = Icons.Default.LocationOn,
                         contentDescription = null,
-                        tint = EmeraldGreen,
+                        tint = if (user.isSameCity) EmeraldGreen else NeutralMedium,
                         modifier = Modifier.size(11.dp)
                     )
+                    val locationText = when {
+                        user.isSameCity -> if (hideExactDistance) "${user.city} (Dalam Satu Kota)" else "${user.formattedDistance} • ${user.city} (Satu Kota)"
+                        hideExactDistance -> user.city
+                        else -> "${user.formattedDistance} • ${user.city}"
+                    }
                     Text(
-                        text = if (hideExactDistance) user.city else "${user.formattedDistance} • ${user.city}",
+                        text = locationText,
                         fontSize = 11.sp,
-                        color = EmeraldGreen,
-                        fontWeight = FontWeight.Medium,
+                        color = if (user.isSameCity) EmeraldGreen else NeutralMedium,
+                        fontWeight = if (user.isSameCity) FontWeight.SemiBold else FontWeight.Medium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )

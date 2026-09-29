@@ -24,7 +24,7 @@ interface SupabaseRestApi {
     suspend fun getNearbyUsers(
         @Header("apikey") apiKey: String,
         @Header("Authorization") authHeader: String,
-        @Query("limit") limit: Int = 30
+        @Query("limit") limit: Int = 100
     ): Response<List<SupabaseUserDto>>
 
     @GET("rest/v1/nearby_users?select=*")

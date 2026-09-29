@@ -90,7 +90,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.ui.components.AdTestCenterDialog
 import com.example.ui.theme.EmeraldGreen
 import com.example.ui.theme.NeutralBorder
 import com.example.ui.theme.NeutralDark
@@ -135,7 +134,6 @@ fun ProfileTabScreen(
     var showPrivacyPolicyDialog by remember { mutableStateOf(false) }
     var showAboutAppDialog by remember { mutableStateOf(false) }
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
-    var showAdTestCenterDialog by remember { mutableStateOf(false) }
     var showMyQrCodeDialog by remember { mutableStateOf(false) }
     var viewingPhotoUrl by remember { mutableStateOf<String?>(null) }
     var secretDevClickCount by remember { mutableIntStateOf(0) }
@@ -319,30 +317,6 @@ fun ProfileTabScreen(
                     title = com.example.util.AppStrings.languageSetting(language),
                     subtitle = if (isLocalMode) "LO (Lokal: ${language.displayName}) • $detectedGeoArea" else "EN (English Global)",
                     onClick = { showLanguagePicker = true }
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
-                ProfileMenuItem(
-                    icon = Icons.Default.Notifications,
-                    iconTint = EmeraldGreen,
-                    title = com.example.util.AppStrings.menuTestNotification(language),
-                    subtitle = com.example.util.AppStrings.menuTestNotificationSub(language),
-                    onClick = {
-                        com.example.util.LovyNotificationHelper.showChatNotification(
-                            context = context,
-                            conversationId = "test_notification_id",
-                            senderName = "Lovy Chat 💬",
-                            messageText = com.example.util.AppStrings.testNotificationSampleMessage(language)
-                        )
-                        Toast.makeText(context, com.example.util.AppStrings.testNotificationTriggerToast(language), Toast.LENGTH_SHORT).show()
-                    }
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
-                ProfileMenuItem(
-                    icon = Icons.Default.Campaign,
-                    iconTint = Color(0xFFE65100),
-                    title = "Status & Uji Coba Iklan",
-                    subtitle = "Banner, Interstitial, Native & Video berhadiah aktif",
-                    onClick = { showAdTestCenterDialog = true }
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
                 ProfileMenuItem(
@@ -679,11 +653,6 @@ fun ProfileTabScreen(
             language = language,
             onDismiss = { showMyQrCodeDialog = false }
         )
-    }
-
-    // Dialog Panel Status & Uji Coba Iklan LevelPlay
-    if (showAdTestCenterDialog) {
-        AdTestCenterDialog(onDismiss = { showAdTestCenterDialog = false })
     }
 }
 
