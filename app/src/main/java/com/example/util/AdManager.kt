@@ -148,6 +148,9 @@ object AdManager {
                 IronSource.setMetaData("is_child_directed", "false")
                 IronSource.setMetaData("is_deviceid_optout", "false")
                 IronSource.setMetaData("Google_Family_Policy", "false")
+                if (com.example.BuildConfig.DEBUG) {
+                    IronSource.setMetaData("is_test_suite", "enable")
+                }
             } catch (e: Throwable) {
                 Log.w(TAG, "Could not set metadata: ${e.message}")
             }
@@ -208,6 +211,9 @@ object AdManager {
     ): IronSourceBannerLayout? {
         return try {
             val bannerLayout = IronSource.createBanner(activity, ISBannerSize.BANNER)
+            var hasRetriedAlternative = false
+            val primaryPlacement = placementName?.takeIf { it.isNotBlank() } ?: AD_UNIT_BANNER_ID.takeIf { it.isNotBlank() }
+
             bannerLayout.levelPlayBannerListener = object : LevelPlayBannerListener {
                 override fun onAdLoaded(adInfo: AdInfo) {
                     Log.d(TAG, "Banner ad loaded successfully: ${adInfo.adNetwork}")
@@ -217,11 +223,30 @@ object AdManager {
 
                 override fun onAdLoadFailed(error: IronSourceError) {
                     val helpTip = when (error.errorCode) {
-                        508, 510 -> " (No Fill / Stok Iklan Kosong: Di ironSource mode test harus didaftarkan per-device GAID di LevelPlay Dashboard > Settings > Test Devices agar selalu ada stok test)"
-                        520 -> " (Ad Unit Banner belum aktif atau belum dikonfigurasi di dashboard ironSource)"
+                        508, 510 -> " (No Fill / Stok Iklan Kosong: Di ironSource mode test harus didaftarkan per-device GAID di LevelPlay Dashboard > Settings > Test Devices)"
+                        520 -> " (Ad Unit Banner / Placement belum aktif atau nama placement tidak cocok di dashboard ironSource)"
                         else -> ""
                     }
                     Log.w(TAG, "Banner ad load failed: ${error.errorMessage} [code: ${error.errorCode}]$helpTip")
+
+                    // Coba alternatif placement jika sebelumnya gagal karena placement name
+                    if (!hasRetriedAlternative) {
+                        hasRetriedAlternative = true
+                        if (primaryPlacement != null) {
+                            Log.d(TAG, "Mencoba loadBanner ulang tanpa placement name (DefaultBanner)...")
+                            try {
+                                IronSource.loadBanner(bannerLayout)
+                                return
+                            } catch (_: Throwable) {}
+                        } else if (AD_UNIT_BANNER_ID.isNotBlank()) {
+                            Log.d(TAG, "Mencoba loadBanner ulang dengan AD_UNIT_BANNER_ID ($AD_UNIT_BANNER_ID)...")
+                            try {
+                                IronSource.loadBanner(bannerLayout, AD_UNIT_BANNER_ID)
+                                return
+                            } catch (_: Throwable) {}
+                        }
+                    }
+
                     onBannerFailed(error.errorMessage)
                 }
 
@@ -242,9 +267,8 @@ object AdManager {
                 }
             }
 
-            val targetPlacement = placementName?.takeIf { it.isNotBlank() }
-            if (targetPlacement != null) {
-                IronSource.loadBanner(bannerLayout, targetPlacement)
+            if (primaryPlacement != null) {
+                IronSource.loadBanner(bannerLayout, primaryPlacement)
             } else {
                 IronSource.loadBanner(bannerLayout)
             }
