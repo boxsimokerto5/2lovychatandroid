@@ -33,7 +33,12 @@ class LocalChatRepository(context: Context) {
 
     suspend fun getMessagesForConversation(conversationId: String): List<ChatMessage> = withContext(Dispatchers.IO) {
         try {
-            chatMessageDao.getMessagesList(conversationId).map { it.toDomain() }
+            val list = chatMessageDao.getMessagesList(conversationId).map { it.toDomain() }
+            val normTarget = com.example.data.pocketbase.PocketBaseClient.normalizeConvId(conversationId)
+            val fallback = if (normTarget != conversationId) {
+                chatMessageDao.getMessagesList(normTarget).map { it.toDomain() }
+            } else emptyList()
+            (list + fallback).distinctBy { it.id }.sortedBy { it.timestamp }
         } catch (e: Exception) {
             Log.e(TAG, "Gagal memuat pesan lokal untuk $conversationId", e)
             emptyList()
@@ -59,7 +64,9 @@ class LocalChatRepository(context: Context) {
 
     suspend fun saveMessage(message: ChatMessage) = withContext(Dispatchers.IO) {
         try {
-            chatMessageDao.insertMessage(ChatMessageEntity.fromDomain(message))
+            val normConv = com.example.data.pocketbase.PocketBaseClient.normalizeConvId(message.conversationId)
+            val msgToSave = if (normConv != message.conversationId) message.copy(conversationId = normConv) else message
+            chatMessageDao.insertMessage(ChatMessageEntity.fromDomain(msgToSave))
         } catch (e: Exception) {
             Log.e(TAG, "Gagal menyimpan pesan lokal ${message.id}", e)
         }

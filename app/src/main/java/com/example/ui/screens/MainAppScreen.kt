@@ -481,7 +481,7 @@ fun MainAppScreen(
                     val partnerId = conv?.partnerId ?: viewModel.extractPartnerIdFromConvId(screen.conversationId, uiState.myLovyId)
                     viewModel.onUserTyping(screen.conversationId, partnerId, isTyping)
                 },
-                isFriend = uiState.chattedFriends.any { it.id == (conv?.partnerId ?: viewModel.extractPartnerIdFromConvId(screen.conversationId, uiState.myLovyId)) },
+                isFriend = uiState.chattedFriends.any { viewModel.isSameUser(it.id, conv?.partnerId ?: viewModel.extractPartnerIdFromConvId(screen.conversationId, uiState.myLovyId)) },
                 isPartnerBlocked = viewModel.isUserBlocked(
                     conv?.partnerId ?: viewModel.extractPartnerIdFromConvId(screen.conversationId, uiState.myLovyId),
                     screen.partnerName

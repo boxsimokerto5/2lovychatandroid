@@ -361,10 +361,12 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         val sessionUsername = savedSession?.username?.trim().orEmpty()
         val sessionDisplayName = savedSession?.displayName?.trim().orEmpty()
         val sessionLovyId = savedSession?.lovyId?.trim().orEmpty()
+        val myPbId = if (myLovyId.isNotBlank()) com.example.data.pocketbase.PocketBaseClient.toPbId(myLovyId) else ""
 
         if (cleanId.isNotBlank()) {
             if (cleanId.equals("me", ignoreCase = true) || cleanId.equals("current_user", ignoreCase = true)) return true
             if (myLovyId.isNotBlank() && cleanId.equals(myLovyId, ignoreCase = true)) return true
+            if (myPbId.isNotBlank() && (cleanId.equals(myPbId, ignoreCase = true) || com.example.data.pocketbase.PocketBaseClient.toPbId(cleanId).equals(myPbId, ignoreCase = true))) return true
             if (profileLovyId.isNotBlank() && cleanId.equals(profileLovyId, ignoreCase = true)) return true
             if (sessionLovyId.isNotBlank() && cleanId.equals(sessionLovyId, ignoreCase = true)) return true
             if (myName.isNotBlank() && cleanId.equals(myName, ignoreCase = true)) return true
@@ -383,6 +385,44 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
 
         return false
+    }
+
+    /**
+     * Memeriksa apakah dua user ID merujuk ke akun pengguna yang sama,
+     * baik format ID berupa lovy_XXXXXX, PocketBase 15-karakter hash (toPbId), maupun username.
+     */
+    fun isSameUser(id1: String?, id2: String?): Boolean {
+        if (id1.isNullOrBlank() || id2.isNullOrBlank()) return false
+        val clean1 = id1.trim()
+        val clean2 = id2.trim()
+        if (clean1.equals(clean2, ignoreCase = true)) return true
+        val pb1 = com.example.data.pocketbase.PocketBaseClient.toPbId(clean1)
+        val pb2 = com.example.data.pocketbase.PocketBaseClient.toPbId(clean2)
+        return pb1.isNotBlank() && pb1.equals(pb2, ignoreCase = true)
+    }
+
+    /**
+     * Memeriksa apakah dua ID percakapan merujuk ke ruang obrolan yang sama
+     * (memperhitungkan variasi kanonikal, format underscore tunggal/ganda, dan hash).
+     */
+    fun isSameConversation(convId1: String?, convId2: String?): Boolean {
+        if (convId1.isNullOrBlank() || convId2.isNullOrBlank()) return false
+        val c1 = convId1.trim()
+        val c2 = convId2.trim()
+        if (c1.equals(c2, ignoreCase = true)) return true
+        val norm1 = normalizeConversationId(c1)
+        val norm2 = normalizeConversationId(c2)
+        return norm1.equals(norm2, ignoreCase = true)
+    }
+
+    /**
+     * Mencari pengguna di daftar teman atau teman sekitar berdasarkan ID lovy (lovy_XXXXXX)
+     * ataupun ID PocketBase 15-karakter.
+     */
+    fun findUserById(queryId: String?): User? {
+        if (queryId.isNullOrBlank()) return null
+        return _uiState.value.chattedFriends.find { isSameUser(it.id, queryId) }
+            ?: _uiState.value.nearbyUsers.find { isSameUser(it.id, queryId) }
     }
 
     fun isDummyFriend(userId: String, userName: String): Boolean {
@@ -407,8 +447,28 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                         .filterNot { it.name.trim().isBlank() }
                         .filterNot { isDummyFriend(it.id, it.name) }
                         .filterNot { isSelfUser(it.id, it.name) }
-                    _uiState.update { it.copy(chattedFriends = finalFriends) }
-                    refreshNewFriendRequests(finalFriends)
+
+                    // Deduplikasi teman yang memiliki akun sama (misal id lovy_ vs pbId)
+                    val dedupedFriends = mutableListOf<User>()
+                    for (f in finalFriends) {
+                        val existingIdx = dedupedFriends.indexOfFirst { isSameUser(it.id, f.id) }
+                        if (existingIdx >= 0) {
+                            val old = dedupedFriends[existingIdx]
+                            val preferred = if (old.name.startsWith("Pengguna (") && !f.name.startsWith("Pengguna (")) {
+                                f
+                            } else if (!old.id.startsWith("lovy_") && f.id.startsWith("lovy_")) {
+                                f.copy(name = if (!f.name.startsWith("Pengguna (")) f.name else old.name)
+                            } else {
+                                old
+                            }
+                            dedupedFriends[existingIdx] = preferred
+                        } else {
+                            dedupedFriends.add(f)
+                        }
+                    }
+
+                    _uiState.update { it.copy(chattedFriends = dedupedFriends) }
+                    refreshNewFriendRequests(dedupedFriends)
                 }
             } catch (e: Exception) {
                 Log.w("LovyChatViewModel", "Gagal memuat teman mengobrol", e)
@@ -422,12 +482,12 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         val ignoredIds = state.ignoredNewFriendIds
 
         val requestsMap = state.newFriendRequests
-            .filterNot { 
-                it.user.id in friendIds || 
-                it.user.id in ignoredIds || 
-                it.user.name.trim().isBlank() || 
-                isDummyFriend(it.user.id, it.user.name) ||
-                isSelfUser(it.user.id, it.user.name)
+            .filterNot { req ->
+                currentFriends.any { isSameUser(it.id, req.user.id) } || 
+                ignoredIds.any { isSameUser(it, req.user.id) } || 
+                req.user.name.trim().isBlank() || 
+                isDummyFriend(req.user.id, req.user.name) ||
+                isSelfUser(req.user.id, req.user.name)
             }
             .associateBy { it.user.id }
             .toMutableMap()
@@ -435,7 +495,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         // Pindai pesan masuk di messagesMap untuk menemukan pesan teman baru yang belum ada di daftar teman
         for ((convId, msgs) in state.messagesMap) {
             val partnerId = extractPartnerIdFromConvId(convId, state.myLovyId)
-            if (partnerId.isBlank() || partnerId in friendIds || partnerId in ignoredIds || isDummyFriend(partnerId, "") || isSelfUser(partnerId, "")) continue
+            val isAlreadyFriend = currentFriends.any { isSameUser(it.id, partnerId) }
+            val isIgnored = ignoredIds.any { isSameUser(it, partnerId) }
+            if (partnerId.isBlank() || isAlreadyFriend || isIgnored || isDummyFriend(partnerId, "") || isSelfUser(partnerId, "")) continue
 
             val validMsgs = msgs.filterNot { 
                 it.text.startsWith("__TYPING_") || 
@@ -445,8 +507,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             }
             val lastPartnerMsg = validMsgs.filter { !it.isFromMe }.maxByOrNull { it.timestamp }
             if (lastPartnerMsg != null) {
-                if (!requestsMap.containsKey(partnerId)) {
-                    val candidateUser = state.nearbyUsers.find { it.id == partnerId }
+                if (!requestsMap.keys.any { isSameUser(it, partnerId) }) {
+                    val candidateUser = state.nearbyUsers.find { isSameUser(it.id, partnerId) }
                         ?: User(
                             id = partnerId,
                             name = "Pengguna (${partnerId.takeLast(4)})",
@@ -468,16 +530,18 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             }
         }
 
-        // Pindai juga dari conversations jika ada pengguna yang belum ada di friendIds
+        // Pindai juga dari conversations jika ada pengguna yang belum ada di daftar teman
         for (conv in state.conversations) {
             val partnerId = conv.partnerId
             val pName = conv.partnerName.trim()
-            if (partnerId.isBlank() || pName.isBlank() || isDummyFriend(partnerId, pName) || isSelfUser(partnerId, pName) || partnerId in friendIds || partnerId in ignoredIds) continue
+            val isAlreadyFriend = currentFriends.any { isSameUser(it.id, partnerId) }
+            val isIgnored = ignoredIds.any { isSameUser(it, partnerId) }
+            if (partnerId.isBlank() || pName.isBlank() || isDummyFriend(partnerId, pName) || isSelfUser(partnerId, pName) || isAlreadyFriend || isIgnored) continue
 
             // Pengguna lain yang mengirimi pesan obrolan tapi belum disetujui / belum ada di Kontak Saya
             if (!conv.lastMessageIsFromMe || conv.unreadCount > 0) {
-                if (!requestsMap.containsKey(partnerId)) {
-                    val candidateUser = state.nearbyUsers.find { it.id == partnerId }
+                if (!requestsMap.keys.any { isSameUser(it, partnerId) }) {
+                    val candidateUser = state.nearbyUsers.find { isSameUser(it.id, partnerId) }
                         ?: User(
                             id = partnerId,
                             name = conv.partnerName,
@@ -506,8 +570,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         // ATAU obrolan yang kita inisiasi sendiri. Teman baru yang belum disetujui tidak dimasukkan ke obrolan.
         val filteredConversations = state.conversations.filter { conv ->
             val pid = conv.partnerId
-            val isFriend = pid in friendIds
-            isFriend || (conv.lastMessageIsFromMe && !requestsMap.containsKey(pid))
+            val isFriend = currentFriends.any { isSameUser(it.id, pid) }
+            isFriend || (conv.lastMessageIsFromMe && !requestsMap.keys.any { isSameUser(it, pid) })
         }
 
         _uiState.update { 
@@ -626,12 +690,14 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         )
 
         _uiState.update { state ->
-            val updatedFriends = if (state.chattedFriends.any { it.id == user.id }) {
-                state.chattedFriends
+            val updatedFriends = if (state.chattedFriends.any { isSameUser(it.id, user.id) }) {
+                state.chattedFriends.map { if (isSameUser(it.id, user.id)) user else it }
             } else {
                 state.chattedFriends + user
             }
-            val existingIndex = state.conversations.indexOfFirst { it.id == convId || it.partnerId == user.id }
+            val existingIndex = state.conversations.indexOfFirst { 
+                isSameConversation(it.id, convId) || isSameUser(it.partnerId, user.id) 
+            }
             val updatedConvs = if (existingIndex >= 0) {
                 state.conversations.mapIndexed { idx, c -> if (idx == existingIndex) newConv else c }
             } else {
@@ -639,7 +705,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             }
             state.copy(
                 chattedFriends = updatedFriends.filterNot { isSelfUser(it.id, it.name) },
-                newFriendRequests = state.newFriendRequests.filterNot { it.user.id == user.id || isSelfUser(it.user.id, it.user.name) },
+                newFriendRequests = state.newFriendRequests.filterNot { isSameUser(it.user.id, user.id) || isSelfUser(it.user.id, it.user.name) },
                 conversations = updatedConvs
             )
         }
@@ -779,8 +845,11 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 // Pertahankan status isFavorite jika teman sudah ditandai favorit sebelumnya
-                val currentFriend = _uiState.value.chattedFriends.find { it.id == user.id }
+                val currentFriend = _uiState.value.chattedFriends.find { isSameUser(it.id, user.id) }
                 val isFav = user.isFavorite || (currentFriend?.isFavorite == true)
+                if (currentFriend != null && currentFriend.id != user.id) {
+                    try { chatFriendDao.deleteFriendById(currentFriend.id) } catch (_: Exception) {}
+                }
                 chatFriendDao.insertOrUpdateFriend(ChatFriendEntity.fromUser(user.copy(isFavorite = isFav)))
             } catch (e: Exception) {
                 Log.w("LovyChatViewModel", "Gagal menyimpan teman mengobrol", e)
@@ -2542,24 +2611,28 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun getCanonicalConversationId(id1: String, id2: String): String {
-        val clean1 = id1.trim()
-        val clean2 = id2.trim()
-        if (clean1.isEmpty() && clean2.isEmpty()) return "conv_chat"
-        if (clean1.isEmpty()) return "conv_$clean2"
-        if (clean2.isEmpty()) return "conv_$clean1"
-        val sorted = if (clean1 <= clean2) listOf(clean1, clean2) else listOf(clean2, clean1)
-        return "conv_${sorted[0]}__${sorted[1]}"
+        return com.example.data.pocketbase.PocketBaseClient.getCanonicalConversationId(id1, id2)
+    }
+
+    fun normalizeConversationId(rawConvId: String): String {
+        return com.example.data.pocketbase.PocketBaseClient.normalizeConvId(rawConvId)
     }
 
     fun extractPartnerIdFromConvId(convId: String, myId: String): String {
         if (!convId.startsWith("conv_")) return convId
         val content = convId.removePrefix("conv_")
         val cleanMyId = myId.trim()
+        val myPbId = if (cleanMyId.isNotBlank()) com.example.data.pocketbase.PocketBaseClient.toPbId(cleanMyId) else ""
 
         // 1. Format separator ganda '__' (sangat presisi untuk ID yang mengandung underscore)
         if (content.contains("__")) {
             val parts = content.split("__")
-            val partner = parts.firstOrNull { !it.equals(cleanMyId, ignoreCase = true) }
+            val partner = parts.firstOrNull { part ->
+                !isSelfUser(part, null) &&
+                !part.equals(cleanMyId, ignoreCase = true) &&
+                !part.equals(myPbId, ignoreCase = true) &&
+                (myPbId.isBlank() || com.example.data.pocketbase.PocketBaseClient.toPbId(part) != myPbId)
+            }
             if (!partner.isNullOrBlank()) return partner
             return ""
         }
@@ -2569,33 +2642,52 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             if (content.startsWith("${cleanMyId}__", ignoreCase = true)) {
                 return content.substring(cleanMyId.length + 2)
             }
+            if (myPbId.isNotBlank() && content.startsWith("${myPbId}__", ignoreCase = true)) {
+                return content.substring(myPbId.length + 2)
+            }
             if (content.startsWith("${cleanMyId}_", ignoreCase = true)) {
                 return content.substring(cleanMyId.length + 1)
+            }
+            if (myPbId.isNotBlank() && content.startsWith("${myPbId}_", ignoreCase = true)) {
+                return content.substring(myPbId.length + 1)
             }
             if (content.endsWith("__${cleanMyId}", ignoreCase = true)) {
                 return content.substring(0, content.length - cleanMyId.length - 2)
             }
+            if (myPbId.isNotBlank() && content.endsWith("__${myPbId}", ignoreCase = true)) {
+                return content.substring(0, content.length - myPbId.length - 2)
+            }
             if (content.endsWith("_${cleanMyId}", ignoreCase = true)) {
                 return content.substring(0, content.length - cleanMyId.length - 1)
+            }
+            if (myPbId.isNotBlank() && content.endsWith("_${myPbId}", ignoreCase = true)) {
+                return content.substring(0, content.length - myPbId.length - 1)
             }
         }
 
         // 3. Deteksi pola lovy ID: lovy_XXXXXX
         val lovyMatches = Regex("(lovy_[0-9a-zA-Z]+)").findAll(content).map { it.value }.toList()
         if (lovyMatches.size >= 2) {
-            val partner = lovyMatches.firstOrNull { !it.equals(cleanMyId, ignoreCase = true) }
-            if (!partner.isNullOrBlank()) return partner
+            val partner = lovyMatches.firstOrNull { !it.equals(cleanMyId, ignoreCase = true) && !isSelfUser(it, null) }
+            if (!partner.isNullOrBlank()) {
+                val resolved = findUserById(partner)
+                return if (resolved != null && resolved.id.isNotBlank() && !resolved.id.startsWith("u000")) resolved.id else partner
+            }
             return ""
         }
 
         // 4. Fallback legacy jika split 2 bagian
         val parts = content.split("_")
         if (parts.size == 2) {
-            val partner = parts.firstOrNull { !it.equals(cleanMyId, ignoreCase = true) }
-            return if (partner != null && !partner.equals(cleanMyId, ignoreCase = true)) partner else ""
+            val partner = parts.firstOrNull { !it.equals(cleanMyId, ignoreCase = true) && !isSelfUser(it, null) }
+            if (partner != null && !partner.equals(cleanMyId, ignoreCase = true)) {
+                val resolved = findUserById(partner)
+                return if (resolved != null && resolved.id.isNotBlank() && !resolved.id.startsWith("u000")) resolved.id else partner
+            }
         }
-        if (content.equals(cleanMyId, ignoreCase = true)) return ""
-        return content
+        if (content.equals(cleanMyId, ignoreCase = true) || isSelfUser(content, null)) return ""
+        val resolved = findUserById(content)
+        return if (resolved != null && resolved.id.isNotBlank() && !resolved.id.startsWith("u000")) resolved.id else content
     }
 
     fun sayHiToUser(user: User) {
@@ -2605,7 +2697,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         saveChatFriend(user)
         updateUserActivity()
         val convId = getCanonicalConversationId(_uiState.value.myLovyId, user.id)
-        val existing = _uiState.value.conversations.find { it.id == convId || it.partnerId == user.id }
+        val existing = _uiState.value.conversations.find { 
+            isSameConversation(it.id, convId) || isSameUser(it.partnerId, user.id) 
+        }
         
         if (existing == null) {
             val newConv = ChatConversation(
@@ -2628,20 +2722,40 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     conversations = listOf(newConv) + it.conversations
                 )
             }
+        } else if (existing.id != convId || existing.partnerName.startsWith("Pengguna (") || existing.partnerId != user.id) {
+            _uiState.update { state ->
+                val updated = state.conversations.map { c ->
+                    if (c.id == existing.id || isSameUser(c.partnerId, user.id)) {
+                        c.copy(
+                            id = convId,
+                            partnerId = user.id,
+                            partnerName = user.name,
+                            partnerAvatarUrl = user.avatarUrl ?: c.partnerAvatarUrl
+                        )
+                    } else c
+                }
+                state.copy(conversations = updated)
+            }
         }
 
         // Buka ruang obrolan langsung tanpa mengirim pesan default otomatis
-        openChat(convId, user.name, user.avatarColorHex)
+        val targetConvId = existing?.id ?: convId
+        openChat(targetConvId, user.name, user.avatarColorHex)
     }
 
     fun openChat(conversationId: String, partnerName: String, partnerAvatarHex: Long) {
         recordFeatureClick()
-        val conv = _uiState.value.conversations.find { it.id == conversationId }
-        if (conv != null && !isSelfUser(conv.partnerId, conv.partnerName) && _uiState.value.chattedFriends.any { it.id == conv.partnerId }) {
+        val conv = _uiState.value.conversations.find { isSameConversation(it.id, conversationId) }
+        val partnerId = conv?.partnerId ?: extractPartnerIdFromConvId(conversationId, _uiState.value.myLovyId)
+        val resolvedName = if (partnerName.startsWith("Pengguna (") && conv != null && !conv.partnerName.startsWith("Pengguna (")) {
+            conv.partnerName
+        } else partnerName
+
+        if (conv != null && !isSelfUser(conv.partnerId, conv.partnerName) && _uiState.value.chattedFriends.any { isSameUser(it.id, conv.partnerId) }) {
             saveChatFriend(
                 User(
                     id = conv.partnerId,
-                    name = conv.partnerName,
+                    name = resolvedName,
                     gender = conv.partnerGender,
                     age = conv.partnerAge,
                     distanceMeters = conv.partnerDistanceMeters,
@@ -2656,16 +2770,15 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
         _uiState.update {
             val updatedConvs = it.conversations.map { c ->
-                if (c.id == conversationId) c.copy(unreadCount = 0) else c
+                if (isSameConversation(c.id, conversationId)) c.copy(unreadCount = 0) else c
             }
             it.copy(
                 conversations = updatedConvs,
                 activeChatId = conversationId,
-                currentScreen = CurrentScreen.ChatDetail(conversationId, partnerName, partnerAvatarHex)
+                currentScreen = CurrentScreen.ChatDetail(conversationId, resolvedName, partnerAvatarHex)
             )
         }
 
-        val partnerId = conv?.partnerId ?: extractPartnerIdFromConvId(conversationId, _uiState.value.myLovyId)
         markConversationAsRead(conversationId, partnerId)
         com.example.util.LovyNotificationHelper.cancelNotification(getApplication(), conversationId)
 
@@ -2694,13 +2807,24 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             viewModelScope.launch(Dispatchers.IO) {
                 val cached = localChatRepo.getMessagesForConversation(conversationId)
                     .filterNot { it.text.contains("Salam kenal dari fitur Teman Sekitar") }
-                if (cached.isNotEmpty()) {
+                val deduplicatedCached = deduplicateAndMergeMessages(
+                    existing = cached,
+                    onObsoleteIdDetected = { obsoleteId ->
+                        viewModelScope.launch(Dispatchers.IO) {
+                            localChatRepo.deleteMessage(obsoleteId)
+                        }
+                    }
+                )
+                if (deduplicatedCached.isNotEmpty()) {
                     withContext(Dispatchers.Main) {
                         _uiState.update { state ->
                             val current = state.messagesMap[conversationId] ?: emptyList()
                             if (current.isEmpty()) {
-                                state.copy(messagesMap = state.messagesMap + (conversationId to cached))
-                            } else state
+                                state.copy(messagesMap = state.messagesMap + (conversationId to deduplicatedCached))
+                            } else {
+                                val mergedCurrent = deduplicateAndMergeMessages(current, deduplicatedCached)
+                                state.copy(messagesMap = state.messagesMap + (conversationId to mergedCurrent))
+                            }
                         }
                     }
                 }
@@ -2843,18 +2967,20 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                             !it.deletedForReceiver
                         }
 
-                        val msgMap = current.associateBy { it.id }.toMutableMap()
-                        for (m in processedMsgs) {
-                            msgMap[m.id] = m
-                        }
-                        val merged = msgMap.values
-                            .filterNot { 
-                                deletedMessageIds.contains(it.id) ||
-                                (it.deletedForSender && it.isFromMe) ||
-                                (it.deletedForReceiver && !it.isFromMe) ||
-                                it.timestamp <= convDeletedTimestamp
+                        val merged = deduplicateAndMergeMessages(
+                            existing = current,
+                            incoming = processedMsgs,
+                            onObsoleteIdDetected = { obsoleteId ->
+                                viewModelScope.launch(Dispatchers.IO) {
+                                    localChatRepo.deleteMessage(obsoleteId)
+                                }
                             }
-                            .sortedBy { it.timestamp }
+                        ).filterNot { 
+                            deletedMessageIds.contains(it.id) ||
+                            (it.deletedForSender && it.isFromMe) ||
+                            (it.deletedForReceiver && !it.isFromMe) ||
+                            it.timestamp <= convDeletedTimestamp
+                        }
 
                         val lastMsg = merged.lastOrNull()
                         val convExists = _uiState.value.conversations.any { it.id == conversationId }
@@ -3197,7 +3323,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         if (isUserBlocked(userName = partnerName)) return
         updateUserActivity()
 
-        val tempMsgId = java.util.UUID.randomUUID().toString()
+        val tempMsgId = com.example.data.pocketbase.PocketBaseClient.toPbId(java.util.UUID.randomUUID().toString())
         val currentMyId = _uiState.value.myLovyId.ifBlank { "me" }
         val conv = _uiState.value.conversations.find { it.id == conversationId }
         val partnerId = conv?.partnerId ?: extractPartnerIdFromConvId(conversationId, currentMyId)
@@ -3230,7 +3356,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     )
 
                     val previewText = "🎙️ Pesan Suara (${durationSeconds}d)"
-                    val updatedMessages = (_uiState.value.messagesMap[conversationId] ?: emptyList()) + newMsg
+                    val updatedMessages = deduplicateAndMergeMessages(
+                        existing = _uiState.value.messagesMap[conversationId] ?: emptyList(),
+                        incoming = listOf(newMsg)
+                    )
                     val updatedConversations = _uiState.value.conversations.map {
                         if (it.id == conversationId) {
                             it.copy(
@@ -3283,9 +3412,20 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     ) {
         if (text.isBlank() && imageUrl.isNullOrBlank()) return
         if (isUserBlocked(userName = partnerName)) return
+
+        // Proteksi anti-duplikasi: abaikan jika pesan identik baru saja dikirim (< 600ms)
+        val currentMsgs = _uiState.value.messagesMap[conversationId] ?: emptyList()
+        val lastSent = currentMsgs.lastOrNull { it.isFromMe }
+        if (lastSent != null && lastSent.text == text.trim() && lastSent.imageUrl == imageUrl &&
+            (System.currentTimeMillis() - lastSent.timestamp) < 600L) {
+            Log.d("LovyChatViewModel", "Pesan identik diabaikan untuk mencegah duplikasi (debounce)")
+            return
+        }
+
         updateUserActivity()
+        val messageId = com.example.data.pocketbase.PocketBaseClient.toPbId(UUID.randomUUID().toString())
         val newMsg = ChatMessage(
-            id = UUID.randomUUID().toString(),
+            id = messageId,
             conversationId = conversationId,
             text = text.trim(),
             timestamp = System.currentTimeMillis(),
@@ -3299,7 +3439,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
         val previewText = if (imageUrl != null && text.isBlank()) "📷 [Foto]" else text.trim()
 
-        val updatedMessages = (_uiState.value.messagesMap[conversationId] ?: emptyList()) + newMsg
+        val updatedMessages = deduplicateAndMergeMessages(
+            existing = currentMsgs,
+            incoming = listOf(newMsg)
+        )
         val updatedConversations = _uiState.value.conversations.map {
             if (it.id == conversationId) {
                 it.copy(
@@ -3857,8 +4000,9 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
                 if (!photoUrl.isNullOrBlank()) {
                     val displayText = caption.trim().ifBlank { "📷 Foto" }
+                    val messageId = com.example.data.pocketbase.PocketBaseClient.toPbId(UUID.randomUUID().toString())
                     val newMsg = ChatMessage(
-                        id = UUID.randomUUID().toString(),
+                        id = messageId,
                         conversationId = conversationId,
                         text = displayText,
                         timestamp = System.currentTimeMillis(),
@@ -3874,7 +4018,10 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                         localChatRepo.saveMessage(newMsg)
                     }
 
-                    val updatedMessages = (_uiState.value.messagesMap[conversationId] ?: emptyList()) + newMsg
+                    val updatedMessages = deduplicateAndMergeMessages(
+                        existing = _uiState.value.messagesMap[conversationId] ?: emptyList(),
+                        incoming = listOf(newMsg)
+                    )
                     val updatedConversations = _uiState.value.conversations.map {
                         if (it.id == conversationId) {
                             it.copy(
@@ -4050,6 +4197,73 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         return false
     }
 
+    /**
+     * Menggabungkan dan menduplikasi pesan obrolan secara cerdas.
+     * Mencegah pesan yang sama muncul 2x akibat perbedaan format ID lokal (UUID) dan server (PocketBase 15-karakter),
+     * atau akibat konfirmasi SSE / polling yang datang bersamaan dengan pesan optimistik.
+     */
+    private fun deduplicateAndMergeMessages(
+        existing: List<ChatMessage>,
+        incoming: List<ChatMessage> = emptyList(),
+        onObsoleteIdDetected: ((String) -> Unit)? = null
+    ): List<ChatMessage> {
+        val all = existing + incoming
+        if (all.isEmpty()) return emptyList()
+
+        val result = mutableListOf<ChatMessage>()
+        for (candidate in all) {
+            val existingIndex = result.indexOfFirst { existingMsg ->
+                if (existingMsg.id == candidate.id) return@indexOfFirst true
+                val pb1 = com.example.data.pocketbase.PocketBaseClient.toPbId(existingMsg.id)
+                val pb2 = com.example.data.pocketbase.PocketBaseClient.toPbId(candidate.id)
+                if (pb1 == pb2 && pb1.isNotBlank()) return@indexOfFirst true
+
+                val sameConv = existingMsg.conversationId == candidate.conversationId
+                val sameSender = existingMsg.isFromMe == candidate.isFromMe
+                val sameText = existingMsg.text == candidate.text
+                val sameImg = existingMsg.imageUrl == candidate.imageUrl
+                val sameAudio = existingMsg.audioUrl == candidate.audioUrl
+                val closeTime = kotlin.math.abs(existingMsg.timestamp - candidate.timestamp) <= 15000L
+
+                sameConv && sameSender && sameText && sameImg && sameAudio && closeTime
+            }
+
+            if (existingIndex >= 0) {
+                val old = result[existingIndex]
+                val preferredId = if (candidate.id.length == 15) {
+                    candidate.id
+                } else if (old.id.length == 15) {
+                    old.id
+                } else {
+                    candidate.id
+                }
+
+                if (old.id != preferredId) {
+                    onObsoleteIdDetected?.invoke(old.id)
+                }
+                if (candidate.id != preferredId) {
+                    onObsoleteIdDetected?.invoke(candidate.id)
+                }
+
+                val mergedMsg = old.copy(
+                    id = preferredId,
+                    isRead = old.isRead || candidate.isRead,
+                    reaction = candidate.reaction ?: old.reaction,
+                    replyToId = candidate.replyToId ?: old.replyToId,
+                    replyToSender = candidate.replyToSender ?: old.replyToSender,
+                    replyToText = candidate.replyToText ?: old.replyToText,
+                    deletedForSender = old.deletedForSender || candidate.deletedForSender,
+                    deletedForReceiver = old.deletedForReceiver || candidate.deletedForReceiver,
+                    timestamp = if (old.timestamp != 0L) old.timestamp else candidate.timestamp
+                )
+                result[existingIndex] = mergedMsg
+            } else {
+                result.add(candidate)
+            }
+        }
+        return result.sortedBy { it.timestamp }
+    }
+
     fun syncIncomingChats() {
         if (!SupabaseClient.isConfigured()) return
         val myId = _uiState.value.myLovyId
@@ -4065,26 +4279,61 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun processIncomingRecentMessages(recent: List<com.example.data.supabase.SupabaseMessageDto>, myId: String) {
-        val grouped = recent.groupBy { it.conversationId }
+        val grouped = recent.groupBy { normalizeConversationId(it.conversationId) }
         val currentConversations = _uiState.value.conversations.toMutableList()
         val currentMessages = _uiState.value.messagesMap.toMutableMap()
 
         for ((convId, dtoList) in grouped) {
-            val partnerId = extractPartnerIdFromConvId(convId, myId).ifBlank {
-                dtoList.firstNotNullOfOrNull { dto ->
-                    if (dto.senderId != myId && dto.senderId != "me") dto.senderId
-                    else if (dto.receiverId != null && dto.receiverId != myId) dto.receiverId
-                    else null
-                } ?: ""
-            }
-            if (partnerId.isBlank() || isSelfUser(partnerId, null)) continue
+            val rawConvId = dtoList.firstOrNull()?.conversationId ?: convId
 
-            val convDeletedTimestamp = deletedConversationTimestamps[convId] ?: 0L
+            // 1. Dapatkan kandidat partnerId dari DTO terlebih dahulu (prioritas dari pengirim asli)
+            val dtoPartnerId = dtoList.firstNotNullOfOrNull { dto ->
+                val s = dto.senderId.trim()
+                val r = dto.receiverId?.trim().orEmpty()
+                if (s.isNotBlank() && !isSelfUser(s, null)) s
+                else if (r.isNotBlank() && !isSelfUser(r, null)) r
+                else null
+            }
+            val candidatePartnerId = dtoPartnerId ?: extractPartnerIdFromConvId(convId, myId).ifBlank {
+                extractPartnerIdFromConvId(rawConvId, myId)
+            }
+            if (candidatePartnerId.isBlank() || isSelfUser(candidatePartnerId, null)) continue
+
+            // 2. Cari profil teman secara komprehensif (chattedFriends, nearbyUsers, existing conversations)
+            var partnerUser = findUserById(candidatePartnerId)
+                ?: (if (dtoPartnerId != null && dtoPartnerId != candidatePartnerId) findUserById(dtoPartnerId) else null)
+
+            if (partnerUser == null) {
+                val existingConvMatch = currentConversations.find { 
+                    isSameConversation(it.id, convId) || isSameUser(it.partnerId, candidatePartnerId) 
+                }
+                if (existingConvMatch != null && !existingConvMatch.partnerName.startsWith("Pengguna (")) {
+                    partnerUser = User(
+                        id = existingConvMatch.partnerId,
+                        name = existingConvMatch.partnerName,
+                        gender = existingConvMatch.partnerGender,
+                        age = existingConvMatch.partnerAge,
+                        distanceMeters = existingConvMatch.partnerDistanceMeters,
+                        bio = "Teman obrolan di Lovy Chat",
+                        avatarColorHex = existingConvMatch.partnerAvatarHex,
+                        isOnline = existingConvMatch.isOnline,
+                        avatarUrl = existingConvMatch.partnerAvatarUrl,
+                        city = existingConvMatch.partnerCity ?: "Indonesia"
+                    )
+                }
+            }
+
+            // Utamakan ID profil asli jika sudah terdaftar
+            val partnerId = partnerUser?.id?.takeIf { it.isNotBlank() && !it.startsWith("u000") } ?: candidatePartnerId
+
+            val convDeletedTimestamp = deletedConversationTimestamps[convId]
+                ?: (if (rawConvId != convId) deletedConversationTimestamps[rawConvId] else null)
+                ?: 0L
 
             // Proses sinyal reaksi emoji jika ada
             val reactionSignals = dtoList.filter { it.text.startsWith("__REACTION__:") }
             if (reactionSignals.isNotEmpty()) {
-                val existing = currentMessages[convId] ?: emptyList()
+                val existing = currentMessages[convId] ?: currentMessages[rawConvId] ?: emptyList()
                 var updatedExisting = existing
                 for (rDto in reactionSignals) {
                     val parts = rDto.text.split(":")
@@ -4102,7 +4351,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 currentMessages[convId] = updatedExisting
             }
 
-            // Abaikan sinyal ephemeral mengetik, pesan terhapus untuk semua orang, pesan reaksi, pesan yang sudah dihapus pengguna, atau pesan sebelum obrolan dihapus
+            // Abaikan sinyal ephemeral mengetik, pesan terhapus untuk semua orang, pesan reaksi, dsb.
             val chatDtos = dtoList.filterNot { dto ->
                 dto.text.startsWith("__TYPING_") || 
                 dto.text == "__DELETED_FOR_EVERYONE__" ||
@@ -4123,17 +4372,18 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                     it.createdAt <= convDeletedTimestamp
                 }.map { it.id }.toSet()
                 if (deletedIds.isNotEmpty()) {
-                    val existing = currentMessages[convId] ?: emptyList()
+                    val existing = currentMessages[convId] ?: currentMessages[rawConvId] ?: emptyList()
                     val filtered = existing.filterNot { deletedIds.contains(it.id) }
                     currentMessages[convId] = filtered
+                    if (rawConvId != convId) currentMessages.remove(rawConvId)
                     if (filtered.isEmpty()) {
-                        currentConversations.removeAll { it.id == convId }
+                        currentConversations.removeAll { isSameConversation(it.id, convId) || isSameUser(it.partnerId, partnerId) }
                     }
                 }
                 continue
             }
 
-            val existingMap = (currentMessages[convId] ?: emptyList()).associateBy { it.id }
+            val existingMap = ((currentMessages[convId] ?: emptyList()) + (if (rawConvId != convId) currentMessages[rawConvId] ?: emptyList() else emptyList())).associateBy { it.id }
             val sortedMsgs = chatDtos.sortedBy { it.createdAt }.map { dto ->
                 val prev = existingMap[dto.id]
                 ChatMessage(
@@ -4159,7 +4409,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 sortedMsgs.forEach { localChatRepo.saveMessage(it) }
             }
 
-            val existingMsgs = currentMessages[convId] ?: emptyList()
+            val existingMsgs = (currentMessages[convId] ?: emptyList()) + (if (rawConvId != convId) currentMessages.remove(rawConvId) ?: emptyList() else emptyList())
             val existingIds = existingMsgs.map { it.id }.toSet()
             val newIncomingMsgs = sortedMsgs.filter { 
                 !it.isFromMe && 
@@ -4169,48 +4419,51 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 !it.deletedForReceiver
             }
 
-            val msgMap = existingMsgs.associateBy { it.id }.toMutableMap()
-            for (m in sortedMsgs) {
-                msgMap[m.id] = m
-            }
-            val mergedMsgs = msgMap.values
-                .filterNot { 
-                    deletedMessageIds.contains(it.id) ||
-                    (it.deletedForSender && it.isFromMe) ||
-                    (it.deletedForReceiver && !it.isFromMe) ||
-                    it.timestamp <= convDeletedTimestamp
+            val mergedMsgs = deduplicateAndMergeMessages(
+                existing = existingMsgs,
+                incoming = sortedMsgs,
+                onObsoleteIdDetected = { obsoleteId ->
+                    viewModelScope.launch(Dispatchers.IO) {
+                        localChatRepo.deleteMessage(obsoleteId)
+                    }
                 }
-                .sortedBy { it.timestamp }
+            ).filterNot { 
+                deletedMessageIds.contains(it.id) ||
+                (it.deletedForSender && it.isFromMe) ||
+                (it.deletedForReceiver && !it.isFromMe) ||
+                it.timestamp <= convDeletedTimestamp
+            }
             currentMessages[convId] = mergedMsgs
 
             val lastMsg = mergedMsgs.lastOrNull()
             if (lastMsg == null) {
-                currentConversations.removeAll { it.id == convId }
+                currentConversations.removeAll { isSameConversation(it.id, convId) || isSameUser(it.partnerId, partnerId) }
                 continue
             }
 
             var resolvedPartnerName: String? = null
-            val isAlreadyFriend = _uiState.value.chattedFriends.any { it.id.equals(partnerId, ignoreCase = true) }
-            val isIgnored = _uiState.value.ignoredNewFriendIds.contains(partnerId)
+            val isAlreadyFriend = _uiState.value.chattedFriends.any { isSameUser(it.id, partnerId) }
+            val isIgnored = _uiState.value.ignoredNewFriendIds.any { isSameUser(it, partnerId) }
             if (isIgnored) continue
 
-            val partnerUser = _uiState.value.nearbyUsers.find { it.id == partnerId } 
-                ?: _uiState.value.chattedFriends.find { it.id == partnerId }
-            val cleanPartnerName = partnerUser?.name?.trim()?.takeIf { it.isNotBlank() } ?: "Pengguna (${partnerId.takeLast(4)})"
+            val cleanPartnerName = partnerUser?.name?.trim()?.takeIf { it.isNotBlank() } 
+                ?: (if (partnerId.startsWith("lovy_")) "Pengguna ($partnerId)" else "Pengguna (${partnerId.takeLast(4)})")
             resolvedPartnerName = cleanPartnerName
 
             if (partnerUser == null) {
                 viewModelScope.launch(Dispatchers.IO) {
-                    val cloudUser = supabaseRepo.fetchNearbyUserById(partnerId)
+                    val cloudUser = supabaseRepo.fetchNearbyUserById(candidatePartnerId)
+                        ?: (if (partnerId != candidatePartnerId) supabaseRepo.fetchNearbyUserById(partnerId) else null)
                     if (cloudUser != null && !isSelfUser(cloudUser.id, cloudUser.name)) {
                         withContext(Dispatchers.Main) {
                             _uiState.update { state ->
                                 val updatedReqs = state.newFriendRequests.map { req ->
-                                    if (req.user.id == partnerId) req.copy(user = cloudUser) else req
+                                    if (isSameUser(req.user.id, candidatePartnerId) || isSameUser(req.user.id, partnerId)) req.copy(user = cloudUser) else req
                                 }
                                 val updatedConvs = state.conversations.map { c ->
-                                    if (c.partnerId == partnerId) {
+                                    if (isSameConversation(c.id, convId) || isSameUser(c.partnerId, candidatePartnerId) || isSameUser(c.partnerId, partnerId)) {
                                         c.copy(
+                                            partnerId = cloudUser.id,
                                             partnerName = cloudUser.name,
                                             partnerAvatarUrl = cloudUser.avatarUrl,
                                             partnerGender = cloudUser.gender,
@@ -4229,7 +4482,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             if (!isAlreadyFriend && !lastMsg.isFromMe) {
                 // Teman baru yang belum ada di daftar teman:
                 // JANGAN dimasukkan ke obrolan! Hanya berada di menu Teman Baru menunggu disetujui atau diabaikan
-                currentConversations.removeAll { it.id == convId || it.partnerId == partnerId }
+                currentConversations.removeAll { isSameConversation(it.id, convId) || isSameUser(it.partnerId, partnerId) }
 
                 val candidateUser = partnerUser ?: User(
                     id = partnerId,
@@ -4245,7 +4498,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 )
 
                 _uiState.update { state ->
-                    val existingReqs = state.newFriendRequests.filterNot { it.user.id == partnerId }
+                    val existingReqs = state.newFriendRequests.filterNot { isSameUser(it.user.id, partnerId) }
                     val newReq = com.example.model.NewFriendRequest(
                         id = partnerId,
                         user = candidateUser,
@@ -4274,11 +4527,22 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             } else {
                 // Teman yang sudah ada di daftar teman (atau obrolan yang kita inisiasi):
                 // Masuk ke obrolan seperti biasa
-                val existingConvIndex = currentConversations.indexOfFirst { it.id == convId || it.partnerId == partnerId }
+                val existingConvIndex = currentConversations.indexOfFirst { 
+                    isSameConversation(it.id, convId) || isSameUser(it.partnerId, partnerId) 
+                }
                 if (existingConvIndex >= 0) {
                     val old = currentConversations[existingConvIndex]
+                    val updatedName = if (old.partnerName.startsWith("Pengguna (") && !cleanPartnerName.startsWith("Pengguna (")) {
+                        cleanPartnerName
+                    } else if (cleanPartnerName.startsWith("Pengguna (") && !old.partnerName.startsWith("Pengguna (")) {
+                        old.partnerName
+                    } else cleanPartnerName
+
                     currentConversations[existingConvIndex] = old.copy(
                         id = convId,
+                        partnerId = partnerId,
+                        partnerName = updatedName,
+                        partnerAvatarUrl = partnerUser?.avatarUrl ?: old.partnerAvatarUrl,
                         lastMessage = lastMsg.text,
                         lastTimestamp = lastMsg.timestamp,
                         lastMessageIsFromMe = lastMsg.isFromMe,
@@ -4326,9 +4590,52 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             }
         }
 
+        // DEDUPLIKASI FINAL: Jamin tidak pernah ada 2 percakapan untuk akun teman yang sama
+        val dedupedConvs = mutableListOf<ChatConversation>()
+        for (conv in currentConversations) {
+            val existingIdx = dedupedConvs.indexOfFirst { 
+                isSameConversation(it.id, conv.id) || isSameUser(it.partnerId, conv.partnerId) 
+            }
+            if (existingIdx >= 0) {
+                val old = dedupedConvs[existingIdx]
+                val preferred = if (old.partnerName.startsWith("Pengguna (") && !conv.partnerName.startsWith("Pengguna (")) {
+                    conv.copy(
+                        id = normalizeConversationId(conv.id),
+                        unreadCount = old.unreadCount + conv.unreadCount,
+                        lastMessage = if (conv.lastTimestamp >= old.lastTimestamp) conv.lastMessage else old.lastMessage,
+                        lastTimestamp = maxOf(conv.lastTimestamp, old.lastTimestamp)
+                    )
+                } else {
+                    old.copy(
+                        id = normalizeConversationId(old.id),
+                        unreadCount = old.unreadCount + conv.unreadCount,
+                        lastMessage = if (conv.lastTimestamp >= old.lastTimestamp) conv.lastMessage else old.lastMessage,
+                        lastTimestamp = maxOf(conv.lastTimestamp, old.lastTimestamp)
+                    )
+                }
+                dedupedConvs[existingIdx] = preferred
+            } else {
+                dedupedConvs.add(conv.copy(id = normalizeConversationId(conv.id)))
+            }
+        }
+
+        // Satukan pesan yang mungkin tersimpan di bawah rawConvId atau canonicalConvId
+        for (conv in dedupedConvs) {
+            val rawMsgs = currentMessages[conv.id] ?: emptyList()
+            val alternateKeys = currentMessages.keys.filter { it != conv.id && isSameConversation(it, conv.id) }
+            if (alternateKeys.isNotEmpty()) {
+                var merged = rawMsgs
+                for (altKey in alternateKeys) {
+                    val altMsgs = currentMessages.remove(altKey) ?: emptyList()
+                    merged = deduplicateAndMergeMessages(merged, altMsgs)
+                }
+                currentMessages[conv.id] = merged
+            }
+        }
+
         _uiState.update {
             it.copy(
-                conversations = currentConversations,
+                conversations = dedupedConvs,
                 messagesMap = currentMessages
             )
         }

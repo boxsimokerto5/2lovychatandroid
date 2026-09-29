@@ -116,4 +116,44 @@ object PocketBaseClient {
             null
         }
     }
+
+    /**
+     * Menghasilkan ID percakapan kanonikal unik dan simetris antara dua pengguna.
+     * Menggunakan hash toPbId dari kedua ID pengguna dan mengurutkannya,
+     * sehingga baik User A menghubungi User B duluan maupun sebaliknya,
+     * ID percakapan yang dihasilkan 100% IDENTIK dan tidak akan pernah terbelah dua.
+     */
+    fun getCanonicalConversationId(id1: String, id2: String): String {
+        val clean1 = toPbId(id1.trim())
+        val clean2 = toPbId(id2.trim())
+        if (clean1.isEmpty() && clean2.isEmpty()) return "conv_chat"
+        if (clean1.isEmpty()) return "conv_$clean2"
+        if (clean2.isEmpty()) return "conv_$clean1"
+        val sorted = if (clean1 <= clean2) listOf(clean1, clean2) else listOf(clean2, clean1)
+        return "conv_${sorted[0]}__${sorted[1]}"
+    }
+
+    /**
+     * Menormalisasi ID percakapan apapun (termasuk format lama atau asimetris)
+     * ke format kanonikal yang konsisten.
+     */
+    fun normalizeConvId(rawConvId: String): String {
+        if (!rawConvId.startsWith("conv_")) return rawConvId
+        val content = rawConvId.removePrefix("conv_")
+        if (content.contains("__")) {
+            val parts = content.split("__")
+            if (parts.size >= 2) {
+                return getCanonicalConversationId(parts[0], parts[1])
+            }
+        }
+        val lovyMatches = Regex("(lovy_[0-9a-zA-Z]+)").findAll(content).map { it.value }.toList()
+        if (lovyMatches.size >= 2) {
+            return getCanonicalConversationId(lovyMatches[0], lovyMatches[1])
+        }
+        val parts = content.split("_")
+        if (parts.size == 2) {
+            return getCanonicalConversationId(parts[0], parts[1])
+        }
+        return rawConvId
+    }
 }

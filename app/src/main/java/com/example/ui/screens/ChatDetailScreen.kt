@@ -58,6 +58,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import com.example.data.pocketbase.PocketBaseClient
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -244,6 +245,7 @@ fun ChatDetailScreen(
     val focusRequester = remember { FocusRequester() }
     var inputText by remember { mutableStateOf("") }
     var replyingToMessage by remember { mutableStateOf<ChatMessage?>(null) }
+    var lastSendClickTime by remember { mutableStateOf(0L) }
     val voiceRecorder = remember { VoiceRecorder(context) }
     val isRecordingVoice by voiceRecorder.isRecording.collectAsState()
     val recordingDurationSec by voiceRecorder.recordingDurationSeconds.collectAsState()
@@ -632,6 +634,9 @@ fun ChatDetailScreen(
             }
 
             // Messages List
+            val displayedMessages = remember(messages) {
+                deduplicateMessagesForUi(messages)
+            }
             LazyColumn(
                 state = listState,
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp),
@@ -641,7 +646,7 @@ fun ChatDetailScreen(
                     .fillMaxWidth()
             ) {
                 items(
-                    messages.filterNot { 
+                    displayedMessages.filterNot { 
                         (it.deletedForSender && it.isFromMe) || 
                         (it.deletedForReceiver && !it.isFromMe) ||
                         it.text.contains("Salam kenal dari fitur Teman Sekitar")
@@ -1308,7 +1313,10 @@ fun ChatDetailScreen(
                             } else {
                                 IconButton(
                                     onClick = {
-                                        lastActivityTime = System.currentTimeMillis()
+                                        val now = System.currentTimeMillis()
+                                        if (now - lastSendClickTime < 500L) return@IconButton
+                                        lastSendClickTime = now
+                                        lastActivityTime = now
                                         val replyTarget = replyingToMessage
                                         replyingToMessage = null
                                         if (pendingPhotoUri != null) {
@@ -3643,4 +3651,32 @@ fun VoiceNoteWaveformTrack(
             }
         }
     }
+}
+
+/**
+ * Filter anti-duplikasi UI untuk menjamin tidak ada balon chat ganda
+ * pada tampilan ChatDetailScreen.
+ */
+private fun deduplicateMessagesForUi(messages: List<ChatMessage>): List<ChatMessage> {
+    if (messages.size <= 1) return messages
+    val result = ArrayList<ChatMessage>(messages.size)
+    for (m in messages) {
+        val isDuplicate = result.any { existing ->
+            if (existing.id == m.id) return@any true
+            val pb1 = PocketBaseClient.toPbId(existing.id)
+            val pb2 = PocketBaseClient.toPbId(m.id)
+            if (pb1 == pb2 && pb1.isNotBlank()) return@any true
+            val sameConv = existing.conversationId == m.conversationId
+            val sameSender = existing.isFromMe == m.isFromMe
+            val sameText = existing.text == m.text
+            val sameImg = existing.imageUrl == m.imageUrl
+            val sameAudio = existing.audioUrl == m.audioUrl
+            val closeTime = kotlin.math.abs(existing.timestamp - m.timestamp) <= 15000L
+            sameConv && sameSender && sameText && sameImg && sameAudio && closeTime
+        }
+        if (!isDuplicate) {
+            result.add(m)
+        }
+    }
+    return result
 }

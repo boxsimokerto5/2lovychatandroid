@@ -76,8 +76,9 @@ class PocketBaseRepository {
                 }.map { record ->
                     val lastActive = record.lastActiveAt ?: 0L
                     val isTrulyOnline = (record.isOnline == true) && (now - lastActive <= ONLINE_TIMEOUT_MS)
+                    val effectiveId = record.username?.takeIf { it.startsWith("lovy_") } ?: record.id
                     User(
-                        id = record.id,
+                        id = effectiveId,
                         name = (record.name ?: "Pengguna").trim(),
                         gender = if (record.gender.equals("male", ignoreCase = true)) Gender.MALE else Gender.FEMALE,
                         age = 22,
@@ -104,16 +105,17 @@ class PocketBaseRepository {
             val pbId = PocketBaseClient.toPbId(userId)
             val resp = api.getUserById(pbId)
             val record = if (resp.isSuccessful) resp.body() else {
-                val query = api.getUsers(perPage = 1, filter = "id='$pbId' || id='$userId'")
+                val query = api.getUsers(perPage = 1, filter = "id='$pbId' || id='$userId' || username='$userId' || username='$pbId'")
                 query.body()?.items?.firstOrNull()
             } ?: return@withContext null
 
             val now = System.currentTimeMillis()
             val lastActive = record.lastActiveAt ?: 0L
             val isTrulyOnline = (record.isOnline == true) && (now - lastActive <= ONLINE_TIMEOUT_MS)
+            val effectiveId = record.username?.takeIf { it.startsWith("lovy_") } ?: record.id
 
             User(
-                id = record.id,
+                id = effectiveId,
                 name = (record.name ?: "Pengguna").trim(),
                 gender = if (record.gender.equals("male", ignoreCase = true)) Gender.MALE else Gender.FEMALE,
                 age = 22,
@@ -338,8 +340,10 @@ class PocketBaseRepository {
                 val formatSingle = "conv_${sorted[0]}_${sorted[1]}"
                 val p1 = PocketBaseClient.toPbId(currentUserId)
                 val p2 = PocketBaseClient.toPbId(partnerId)
+                val canonical = PocketBaseClient.getCanonicalConversationId(currentUserId, partnerId)
+                val norm = PocketBaseClient.normalizeConvId(conversationId)
                 val timeFilter = if (sinceTimestamp > 0) " && created_at_ms > $sinceTimestamp" else ""
-                "(conversation_id='$conversationId' || conversation_id='$formatDouble' || conversation_id='$formatSingle' || (sender_id='$clean1' && receiver_id='$clean2') || (sender_id='$clean2' && receiver_id='$clean1') || (sender_id='$p1' && receiver_id='$p2') || (sender_id='$p2' && receiver_id='$p1'))$timeFilter"
+                "(conversation_id='$conversationId' || conversation_id='$canonical' || conversation_id='$norm' || conversation_id='$formatDouble' || conversation_id='$formatSingle' || (sender_id='$clean1' && receiver_id='$clean2') || (sender_id='$clean2' && receiver_id='$clean1') || (sender_id='$p1' && receiver_id='$p2') || (sender_id='$p2' && receiver_id='$p1'))$timeFilter"
             } else {
                 val timeFilter = if (sinceTimestamp > 0) " && created_at_ms > $sinceTimestamp" else ""
                 "conversation_id='$conversationId'$timeFilter"
@@ -416,10 +420,11 @@ class PocketBaseRepository {
             )
             val response = api.createMessage(payload)
             if (response.isSuccessful) {
+                val finalId = response.body()?.id?.takeIf { it.isNotBlank() } ?: pbId
                 // Publikasikan secara instan via Centrifugo WebSocket ke channel penerima
                 if (!receiverId.isNullOrBlank()) {
                     com.example.data.centrifugo.CentrifugoRealtimeManager.publishChatMessage(
-                        messageId = pbId,
+                        messageId = finalId,
                         conversationId = message.conversationId,
                         senderId = senderId,
                         receiverId = receiverId,
@@ -440,9 +445,10 @@ class PocketBaseRepository {
             payload.remove("id")
             val retry = api.createMessage(payload)
             if (retry.isSuccessful) {
+                val finalRetryId = retry.body()?.id?.takeIf { it.isNotBlank() } ?: pbId
                 if (!receiverId.isNullOrBlank()) {
                     com.example.data.centrifugo.CentrifugoRealtimeManager.publishChatMessage(
-                        messageId = pbId,
+                        messageId = finalRetryId,
                         conversationId = message.conversationId,
                         senderId = senderId,
                         receiverId = receiverId,
@@ -473,9 +479,10 @@ class PocketBaseRepository {
             }
             val retryFallback = api.createMessage(fallbackPayload)
             if (retryFallback.isSuccessful) {
+                val finalFallbackId = retryFallback.body()?.id?.takeIf { it.isNotBlank() } ?: pbId
                 if (!receiverId.isNullOrBlank()) {
                     com.example.data.centrifugo.CentrifugoRealtimeManager.publishChatMessage(
-                        messageId = pbId,
+                        messageId = finalFallbackId,
                         conversationId = message.conversationId,
                         senderId = senderId,
                         receiverId = receiverId,
@@ -548,6 +555,7 @@ class PocketBaseRepository {
         try {
             val pbId = PocketBaseClient.toPbId(id)
             val updates = mutableMapOf<String, Any?>(
+                "username" to id.trim(),
                 "name" to name.trim(),
                 "gender" to if (gender == Gender.MALE) "male" else "female",
                 "bio" to bio,
