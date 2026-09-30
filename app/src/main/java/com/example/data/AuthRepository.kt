@@ -507,9 +507,18 @@ class AuthRepository(
                         isGoogleUser = true
                     )
                 } else {
-                    // Pengguna baru pertama kali login Google! Buat dan lekatkan akun secara permanen
-                    val newLovyId = getOrGenerateLovyId(googleEmail)
+                    // Pengguna pertama kali login Google: Cek apakah ada akun lokal atau akun username sebelumnya agar ID lama tetap dipakai (Account Linker)
+                    val saved = getSavedSession()
                     val baseUsername = googleEmail.substringBefore("@").replace(".", "_")
+                    val existingByUsername = supabaseRepo.findAccountByUsername(baseUsername)
+                        ?: if (displayName.isNotBlank() && !displayName.equals("Pengguna Lovy", ignoreCase = true)) {
+                            supabaseRepo.findAccountByUsername(displayName)
+                        } else null
+
+                    val candidateId = existingByUsername?.id
+                        ?: saved?.lovyId?.takeIf { it.isNotBlank() && it.startsWith("lovy_") }
+
+                    val newLovyId = getOrGenerateLovyId(googleEmail, candidateId)
 
                     val newAccount = SupabaseAccountDto(
                         id = newLovyId,

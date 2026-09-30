@@ -129,6 +129,16 @@ class LocalChatRepository(context: Context) {
         }
     }
 
+    suspend fun migrateConversationMessages(sourceConvId: String, targetConvId: String) = withContext(Dispatchers.IO) {
+        try {
+            if (sourceConvId.isNotBlank() && targetConvId.isNotBlank() && sourceConvId != targetConvId) {
+                chatMessageDao.migrateMessagesConversation(sourceConvId, targetConvId)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Gagal memigrasi pesan lokal dari $sourceConvId ke $targetConvId", e)
+        }
+    }
+
     suspend fun deleteAutomatedGreetings() = withContext(Dispatchers.IO) {
         try {
             chatMessageDao.deleteAutomatedGreetings()
