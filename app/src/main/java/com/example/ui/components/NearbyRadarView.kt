@@ -629,7 +629,9 @@ fun NearbyRadarView(
                                 val badgeText = when {
                                     user.isSameCity -> "🏙️ 1 Kota"
                                     hideExactDistance -> user.city
-                                    else -> "${user.distanceMeters}m"
+                                    user.distanceMeters < 1000 -> "${user.distanceMeters}m"
+                                    user.distanceMeters % 1000 == 0 -> "${user.distanceMeters / 1000}km"
+                                    else -> String.format(java.util.Locale.US, "%.1fkm", user.distanceMeters / 1000.0)
                                 }
                                 Box(
                                     modifier = Modifier
@@ -901,8 +903,13 @@ fun NearbyRadarView(
                                             modifier = Modifier.size(13.dp)
                                         )
                                         Spacer(modifier = Modifier.width(2.dp))
+                                        val formattedDist = when {
+                                            user.distanceMeters < 1000 -> "${user.distanceMeters} m"
+                                            user.distanceMeters % 1000 == 0 -> "${user.distanceMeters / 1000} km"
+                                            else -> String.format(java.util.Locale.US, "%.1f km", user.distanceMeters / 1000.0)
+                                        }
                                         Text(
-                                            text = if (hideExactDistance) user.city else "${user.distanceMeters} m • ${user.city}",
+                                            text = if (hideExactDistance) user.city else "$formattedDist • ${user.city}",
                                             fontSize = 11.5.sp,
                                             color = NeutralMedium,
                                             fontWeight = FontWeight.Medium
