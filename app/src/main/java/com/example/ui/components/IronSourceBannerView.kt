@@ -150,29 +150,6 @@ fun IronSourceBannerView(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Badge Iklan Ramping
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 2.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(3.dp))
-                        .background(Color(0xFFEEEEEE))
-                        .padding(horizontal = 4.dp, vertical = 1.dp)
-                ) {
-                    Text(
-                        text = "IKLAN RESMI",
-                        fontSize = 8.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = NeutralMedium,
-                        letterSpacing = 0.5.sp
-                    )
-                }
-            }
-
             // Slot Banner 50dp
             Box(
                 modifier = Modifier

@@ -16,6 +16,9 @@ data class PocketBasePage<T>(
 data class PocketBaseUserRecord(
     @Json(name = "id") val id: String,
     @Json(name = "username") val username: String? = null,
+    @Json(name = "email") val email: String? = null,
+    @Json(name = "emailVisibility") val emailVisibility: Boolean? = null,
+    @Json(name = "verified") val verified: Boolean? = null,
     @Json(name = "name") val name: String? = null,
     @Json(name = "gender") val gender: String? = null,
     @Json(name = "bio") val bio: String? = null,

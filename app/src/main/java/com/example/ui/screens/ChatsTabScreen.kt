@@ -111,8 +111,16 @@ fun ChatsTabScreen(
     val isSelectionMode = selectedConversationIds.isNotEmpty()
 
     val filtered = remember(conversations, searchQuery) {
-        if (searchQuery.isBlank()) conversations
-        else conversations.filter {
+        val nonTest = conversations.filterNot {
+            it.partnerName.contains("test", ignoreCase = true) ||
+            it.partnerName.contains("tester", ignoreCase = true) ||
+            it.partnerName.contains("dummy", ignoreCase = true) ||
+            it.partnerId.contains("test", ignoreCase = true) ||
+            it.partnerId.startsWith("test_") ||
+            it.partnerId.matches(Regex("^u[0-9]+$"))
+        }
+        if (searchQuery.isBlank()) nonTest
+        else nonTest.filter {
             it.partnerName.contains(searchQuery, ignoreCase = true) ||
             it.lastMessage.contains(searchQuery, ignoreCase = true)
         }

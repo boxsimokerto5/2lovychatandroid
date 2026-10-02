@@ -77,16 +77,21 @@ class SupabaseRepository {
                     "siti rahma", "rian pratama", "nadia putri", "dimas anggara", 
                     "alya zahra", "pengguna lovy", "rania putri", "clara monica",
                     "dimas danendra", "clarissa aurelia", "salma salsabil",
-                    "tanpa nama", "user tak bernama", "pengguna", "unknown user", "anonymous"
+                    "tanpa nama", "user tak bernama", "pengguna", "unknown user", "anonymous",
+                    "test user", "user test", "tester", "test", "demo", "sample"
                 )
                 val now = System.currentTimeMillis()
 
                 list
                     .filterNot { dto ->
                         val cleanName = dto.name.trim()
+                        val lower = cleanName.lowercase()
+                        val isTestAccount = lower.contains("test") || lower.contains("tester") || lower.contains("dummy")
                         cleanName.isEmpty() ||
-                        cleanName.lowercase() in dummyNames ||
-                        dto.id.matches(Regex("^u[0-9]+$"))
+                        lower in dummyNames ||
+                        isTestAccount ||
+                        dto.id.matches(Regex("^u[0-9]+$")) ||
+                        dto.id.startsWith("test_")
                     }
                     .map { dto ->
                         val lastActive = dto.lastActiveAt ?: 0L

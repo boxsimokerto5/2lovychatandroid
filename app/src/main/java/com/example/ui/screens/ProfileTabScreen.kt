@@ -539,7 +539,7 @@ fun ProfileTabScreen(
 
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "Uji Coba Langsung Bahasa Negara Lain:",
+                        text = com.example.util.AppStrings.languagePickerTestOtherLangs(language),
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 12.sp,
                         color = NeutralDark

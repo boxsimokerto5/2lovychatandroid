@@ -14,6 +14,20 @@ interface PocketBaseRestApi {
     @GET("api/health")
     suspend fun healthCheck(): Response<Map<String, Any?>>
 
+    // ================= Auth Providers & OAuth2 =================
+    @GET("api/collections/users/auth-methods")
+    suspend fun getAuthMethods(): Response<Map<String, Any?>>
+
+    @POST("api/collections/users/auth-with-oauth2")
+    suspend fun authWithOAuth2(
+        @Body body: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<Map<String, Any?>>
+
+    @POST("api/collections/users/auth-with-password")
+    suspend fun authWithPassword(
+        @Body body: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<Map<String, Any?>>
+
     // ================= Users =================
     @GET("api/collections/users/records")
     suspend fun getUsers(

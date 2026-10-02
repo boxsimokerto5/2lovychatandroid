@@ -14,9 +14,18 @@ import java.security.MessageDigest
 import java.util.UUID
 
 object GoogleAuthHelper {
+    private const val TAG = "GoogleAuthHelper"
+
+    @Volatile
+    var dynamicClientId: String? = null
+
     // Web Application Client ID dari Google Cloud Console proyek pengguna (wajib tipe Web untuk serverClientId)
     val SERVER_CLIENT_ID: String
         get() {
+            val dynamic = dynamicClientId
+            if (!dynamic.isNullOrBlank() && !dynamic.startsWith("your_") && !dynamic.startsWith("default_")) {
+                return dynamic.trim()
+            }
             val build = try {
                 val field = com.example.BuildConfig::class.java.getField("GOOGLE_SERVER_CLIENT_ID")
                 field.get(null) as? String ?: ""
@@ -25,13 +34,14 @@ object GoogleAuthHelper {
             else "347302027962-9g1rvg326b9hvtgamckkqcn7mr00i2gp.apps.googleusercontent.com"
         }
 
-
     data class GoogleUserResult(
         val idToken: String,
         val displayName: String,
         val email: String,
         val profilePictureUri: String? = null
     )
+
+    class GoogleSignInConfigException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
     suspend fun signInWithGoogle(context: Context): Result<GoogleUserResult> {
         return try {
@@ -71,16 +81,16 @@ object GoogleAuthHelper {
                     )
                 )
             } else {
-                Result.failure(Exception("Format kredensial tidak dikenali"))
+                Result.failure(Exception("Format kredensial Google tidak dikenali"))
             }
         } catch (e: GetCredentialCancellationException) {
-            Log.d("GoogleAuthHelper", "User cancelled Google Sign-In: ${e.message}")
+            Log.d(TAG, "User cancelled Google Sign-In: ${e.message}")
             Result.failure(Exception("Login Google dibatalkan oleh pengguna"))
         } catch (e: GetCredentialException) {
-            Log.e("GoogleAuthHelper", "Google Sign-In failed: ${e.type} -> ${e.message}", e)
-            Result.failure(Exception(e.localizedMessage ?: "Gagal terhubung dengan akun Google"))
+            Log.e(TAG, "Google Sign-In failed: ${e.type} -> ${e.message}", e)
+            Result.failure(GoogleSignInConfigException(e.localizedMessage ?: "Layanan Google Sign-In SDK memerlukan konfigurasi SHA-1 atau Google Play Services aktif.", e))
         } catch (e: Exception) {
-            Log.e("GoogleAuthHelper", "Unexpected error: ${e.message}", e)
+            Log.e(TAG, "Unexpected error: ${e.message}", e)
             Result.failure(e)
         }
     }

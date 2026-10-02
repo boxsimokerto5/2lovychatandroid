@@ -231,6 +231,18 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             } catch (_: Exception) {}
         }
         clearDummyFriends()
+        // Selaraskan Google Client ID dari konfigurasi PocketBase secara dinamis
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val pbClientId = com.example.data.pocketbase.PocketBaseRepository().extractGoogleClientIdFromPocketBase()
+                if (!pbClientId.isNullOrBlank()) {
+                    GoogleAuthHelper.dynamicClientId = pbClientId
+                    Log.d("LovyChatViewModel", "Google Client ID diselaraskan dari PocketBase: $pbClientId")
+                }
+            } catch (e: Exception) {
+                Log.d("LovyChatViewModel", "Sinkronisasi Google Client ID dari PocketBase: ${e.message}")
+            }
+        }
         // Pulihkan sesi login jika sebelumnya pengguna sudah masuk
         try {
             val savedSession = authRepo.getSavedSession()

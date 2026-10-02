@@ -413,7 +413,19 @@ fun BottleScreen(
             }
 
             // Content List
-            val displayList = if (selectedTab == 0) fishedBottles else myBottles
+            val cleanFished = fishedBottles.filterNot { 
+                it.senderName.contains("test", ignoreCase = true) ||
+                it.senderName.contains("tester", ignoreCase = true) ||
+                it.senderName.contains("dummy", ignoreCase = true) ||
+                it.senderId.contains("test", ignoreCase = true) ||
+                it.senderId.startsWith("test_") ||
+                it.senderId.matches(Regex("^u[0-9]+$"))
+            }
+            val cleanMy = myBottles.filterNot {
+                it.senderName.contains("test", ignoreCase = true) ||
+                it.senderId.contains("test", ignoreCase = true)
+            }
+            val displayList = if (selectedTab == 0) cleanFished else cleanMy
 
             if (displayList.isEmpty()) {
                 Box(

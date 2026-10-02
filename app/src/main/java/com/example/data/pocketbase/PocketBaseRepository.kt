@@ -65,14 +65,25 @@ class PocketBaseRepository {
                     "siti rahma", "rian pratama", "nadia putri", "dimas anggara",
                     "alya zahra", "pengguna lovy", "rania putri", "clara monica",
                     "dimas danendra", "clarissa aurelia", "salma salsabil",
-                    "tanpa nama", "user tak bernama", "pengguna", "unknown user", "anonymous"
+                    "tanpa nama", "user tak bernama", "pengguna", "unknown user", "anonymous",
+                    "test user", "user test", "tester", "test", "demo", "sample"
                 )
 
-                items.filterNot { record ->
+                val toDeleteUserIds = mutableListOf<String>()
+                val validUsers = items.filterNot { record ->
                     val cleanName = (record.name ?: "").trim()
-                    cleanName.isEmpty() ||
-                            cleanName.lowercase() in dummyNames ||
-                            record.id.matches(Regex("^u[0-9]+$"))
+                    val lower = cleanName.lowercase()
+                    val userLower = (record.username ?: "").lowercase().trim()
+                    val isTestAccount = lower.contains("test") || lower.contains("tester") || lower.contains("dummy") || userLower.contains("test") || userLower.contains("dummy")
+                    val isDummy = cleanName.isEmpty() ||
+                            lower in dummyNames ||
+                            isTestAccount ||
+                            record.id.matches(Regex("^u[0-9]+$")) ||
+                            record.id.startsWith("test_")
+                    if (isDummy && record.id.isNotBlank()) {
+                        toDeleteUserIds.add(record.id)
+                    }
+                    isDummy
                 }.map { record ->
                     val lastActive = record.lastActiveAt ?: 0L
                     val isTrulyOnline = (record.isOnline == true) && (now - lastActive <= ONLINE_TIMEOUT_MS)
@@ -90,6 +101,12 @@ class PocketBaseRepository {
                         avatarUrl = record.avatarUrl
                     )
                 }
+
+                for (delId in toDeleteUserIds) {
+                    try { api.deleteUser(delId) } catch (_: Throwable) {}
+                }
+
+                validUsers
             } else {
                 null
             }
@@ -138,7 +155,21 @@ class PocketBaseRepository {
             val response = api.getBottles(sort = "-created_at_ms", perPage = 50)
             if (response.isSuccessful) {
                 val items = response.body()?.items ?: return@withContext null
-                items.map { record ->
+                val dummyNames = setOf(
+                    "test user", "user test", "tester", "test", "demo", "sample"
+                )
+                val toDeleteBottleIds = mutableListOf<String>()
+                val validBottles = items.filterNot { record ->
+                    val cleanSender = (record.senderName ?: "").trim().lowercase()
+                    val cleanId = (record.senderId ?: "").trim().lowercase()
+                    val isTest = cleanSender.contains("test") || cleanSender.contains("tester") ||
+                            cleanSender.contains("dummy") || cleanId.contains("test") ||
+                            cleanSender in dummyNames || record.id.startsWith("test_")
+                    if (isTest && record.id.isNotBlank()) {
+                        toDeleteBottleIds.add(record.id)
+                    }
+                    isTest
+                }.map { record ->
                     BottleMessage(
                         id = record.id,
                         senderId = record.senderId ?: "",
@@ -152,6 +183,12 @@ class PocketBaseRepository {
                         avatarUrl = record.avatarUrl
                     )
                 }
+
+                for (delId in toDeleteBottleIds) {
+                    try { api.deleteBottle(delId) } catch (_: Throwable) {}
+                }
+
+                validBottles
             } else {
                 null
             }
@@ -216,7 +253,21 @@ class PocketBaseRepository {
             val response = api.getMoments(sort = "-created_at_ms", perPage = 50)
             if (response.isSuccessful) {
                 val items = response.body()?.items ?: return@withContext null
-                items.map { record ->
+                val dummyNames = setOf(
+                    "test user", "user test", "tester", "test", "demo", "sample"
+                )
+                val toDeleteMomentIds = mutableListOf<String>()
+                val validMoments = items.filterNot { record ->
+                    val cleanAuthor = (record.authorName ?: "").trim().lowercase()
+                    val cleanId = (record.authorId ?: "").trim().lowercase()
+                    val isTest = cleanAuthor.contains("test") || cleanAuthor.contains("tester") ||
+                            cleanAuthor.contains("dummy") || cleanId.contains("test") ||
+                            cleanAuthor in dummyNames || record.id.startsWith("test_")
+                    if (isTest && record.id.isNotBlank()) {
+                        toDeleteMomentIds.add(record.id)
+                    }
+                    isTest
+                }.map { record ->
                     MomentItem(
                         id = record.id,
                         authorName = record.authorName ?: "Pengguna Lovy",
@@ -231,6 +282,12 @@ class PocketBaseRepository {
                         authorId = record.authorId ?: ""
                     )
                 }
+
+                for (delId in toDeleteMomentIds) {
+                    try { api.deleteMoment(delId) } catch (_: Throwable) {}
+                }
+
+                validMoments
             } else {
                 null
             }
@@ -573,13 +630,26 @@ class PocketBaseRepository {
             val updateResp = api.updateUser(pbId, updates)
             if (updateResp.isSuccessful) return@withContext true
 
+            // Cari jika record ada dengan username yang sama
+            val search = api.getUsers(perPage = 1, filter = "username='${id.trim()}'")
+            val existing = search.body()?.items?.firstOrNull()
+            if (existing != null) {
+                val retry = api.updateUser(existing.id, updates)
+                if (retry.isSuccessful) return@withContext true
+            }
+
             // Jika belum ada, buat record baru
             updates["id"] = pbId
             val defaultPass = "pb_pass_${pbId.take(8)}!"
             updates["password"] = defaultPass
             updates["passwordConfirm"] = defaultPass
             val createResp = api.createUser(updates)
-            createResp.isSuccessful
+            if (createResp.isSuccessful) return@withContext true
+
+            // Retry create tanpa custom id
+            updates.remove("id")
+            val createNoId = api.createUser(updates)
+            createNoId.isSuccessful
         } catch (e: Exception) {
             Log.w(TAG, "Gagal registerOrUpdateUser di PocketBase", e)
             false
@@ -664,13 +734,15 @@ class PocketBaseRepository {
     suspend fun findAccountByUsername(username: String): SupabaseAccountDto? = withContext(Dispatchers.IO) {
         val api = PocketBaseClient.getApi() ?: return@withContext null
         try {
-            val filter = "username='$username' || name='$username'"
+            val clean = username.trim()
+            val cleanLower = clean.lowercase()
+            val filter = "username='$clean' || name='$clean' || email='$cleanLower'"
             val res = api.getUsers(perPage = 1, filter = filter)
             val item = res.body()?.items?.firstOrNull() ?: return@withContext null
             val permanentLovyId = when {
                 item.username?.startsWith("lovy_") == true -> item.username
-                username.startsWith("lovy_") -> username
-                else -> PocketBaseClient.toLovyId(username)
+                clean.startsWith("lovy_") -> clean
+                else -> PocketBaseClient.toLovyId(item.email ?: clean)
             }
             SupabaseAccountDto(
                 id = permanentLovyId,
@@ -679,6 +751,7 @@ class PocketBaseRepository {
                 gender = item.gender ?: "FEMALE",
                 bio = item.bio ?: "",
                 avatarUrl = item.avatarUrl,
+                googleEmail = item.email ?: (if (clean.contains("@")) clean else null),
                 lastLoginAt = item.lastActiveAt ?: System.currentTimeMillis(),
                 fcmToken = item.fcmToken
             )
@@ -692,69 +765,76 @@ class PocketBaseRepository {
         try {
             val cleanEmail = googleEmail.trim().lowercase()
             val expectedLovyId = PocketBaseClient.toLovyId(cleanEmail)
-            // 1. Cek langsung via ID deterministik berbasis email Google
+
+            // 1. Cari melalui filter email resmi PocketBase
+            val filter = "email='$cleanEmail'"
+            val res = api.getUsers(perPage = 1, filter = filter)
+            val item = res.body()?.items?.firstOrNull()
+            if (item != null) {
+                val permanentLovyId = when {
+                    item.username?.startsWith("lovy_") == true -> item.username
+                    else -> expectedLovyId
+                }
+                return@withContext SupabaseAccountDto(
+                    id = permanentLovyId,
+                    username = permanentLovyId,
+                    displayName = item.name ?: "",
+                    gender = item.gender ?: "FEMALE",
+                    bio = item.bio ?: "",
+                    avatarUrl = item.avatarUrl,
+                    googleEmail = cleanEmail,
+                    lastLoginAt = item.lastActiveAt ?: System.currentTimeMillis(),
+                    fcmToken = item.fcmToken
+                )
+            }
+
+            // 2. Cek via toPbId dari expectedLovyId
+            val expectedPbId = PocketBaseClient.toPbId(expectedLovyId)
+            try {
+                val byLovyIdRes = api.getUserById(expectedPbId)
+                if (byLovyIdRes.isSuccessful && byLovyIdRes.body() != null) {
+                    val userRec = byLovyIdRes.body()!!
+                    return@withContext SupabaseAccountDto(
+                        id = expectedLovyId,
+                        username = expectedLovyId,
+                        displayName = userRec.name ?: "",
+                        gender = userRec.gender ?: "FEMALE",
+                        bio = userRec.bio ?: "",
+                        avatarUrl = userRec.avatarUrl,
+                        googleEmail = cleanEmail,
+                        lastLoginAt = userRec.lastActiveAt ?: System.currentTimeMillis(),
+                        fcmToken = userRec.fcmToken
+                    )
+                }
+            } catch (_: Exception) {}
+
+            // 3. Cek via ID deterministik berbasis email Google
             val deterministicPbId = PocketBaseClient.toPbId("google_$cleanEmail")
             try {
                 val byIdRes = api.getUserById(deterministicPbId)
                 if (byIdRes.isSuccessful && byIdRes.body() != null) {
-                    val item = byIdRes.body()!!
+                    val userRec = byIdRes.body()!!
                     val permanentLovyId = when {
-                        item.username?.startsWith("lovy_") == true -> item.username
+                        userRec.username?.startsWith("lovy_") == true -> userRec.username
                         else -> expectedLovyId
                     }
                     return@withContext SupabaseAccountDto(
                         id = permanentLovyId,
                         username = permanentLovyId,
-                        displayName = item.name ?: "",
-                        gender = item.gender ?: "FEMALE",
-                        bio = item.bio ?: "",
-                        avatarUrl = item.avatarUrl,
+                        displayName = userRec.name ?: "",
+                        gender = userRec.gender ?: "FEMALE",
+                        bio = userRec.bio ?: "",
+                        avatarUrl = userRec.avatarUrl,
                         googleEmail = cleanEmail,
-                        lastLoginAt = item.lastActiveAt ?: System.currentTimeMillis(),
-                        fcmToken = item.fcmToken
+                        lastLoginAt = userRec.lastActiveAt ?: System.currentTimeMillis(),
+                        fcmToken = userRec.fcmToken
                     )
                 }
             } catch (_: Exception) {}
 
-            // 2. Cek via toPbId dari expectedLovyId
-            try {
-                val byLovyIdRes = api.getUserById(PocketBaseClient.toPbId(expectedLovyId))
-                if (byLovyIdRes.isSuccessful && byLovyIdRes.body() != null) {
-                    val item = byLovyIdRes.body()!!
-                    return@withContext SupabaseAccountDto(
-                        id = expectedLovyId,
-                        username = expectedLovyId,
-                        displayName = item.name ?: "",
-                        gender = item.gender ?: "FEMALE",
-                        bio = item.bio ?: "",
-                        avatarUrl = item.avatarUrl,
-                        googleEmail = cleanEmail,
-                        lastLoginAt = item.lastActiveAt ?: System.currentTimeMillis(),
-                        fcmToken = item.fcmToken
-                    )
-                }
-            } catch (_: Exception) {}
-
-            // 3. Cari melalui filter email
-            val filter = "email='$cleanEmail'"
-            val res = api.getUsers(perPage = 1, filter = filter)
-            val item = res.body()?.items?.firstOrNull() ?: return@withContext null
-            val permanentLovyId = when {
-                item.username?.startsWith("lovy_") == true -> item.username
-                else -> expectedLovyId
-            }
-            SupabaseAccountDto(
-                id = permanentLovyId,
-                username = permanentLovyId,
-                displayName = item.name ?: "",
-                gender = item.gender ?: "FEMALE",
-                bio = item.bio ?: "",
-                avatarUrl = item.avatarUrl,
-                googleEmail = cleanEmail,
-                lastLoginAt = item.lastActiveAt ?: System.currentTimeMillis(),
-                fcmToken = item.fcmToken
-            )
+            null
         } catch (e: Exception) {
+            Log.w(TAG, "findAccountByGoogle error: ${e.message}")
             null
         }
     }
@@ -782,6 +862,7 @@ class PocketBaseRepository {
                 gender = item.gender ?: "FEMALE",
                 bio = item.bio ?: "",
                 avatarUrl = item.avatarUrl,
+                googleEmail = item.email,
                 lastLoginAt = item.lastActiveAt ?: System.currentTimeMillis(),
                 fcmToken = item.fcmToken
             )
@@ -801,6 +882,8 @@ class PocketBaseRepository {
                 PocketBaseClient.toLovyId(account.googleEmail ?: account.username ?: account.id)
             }
             val pbId = PocketBaseClient.toPbId(permanentLovyId)
+            val cleanEmail = account.googleEmail?.trim()?.lowercase()
+
             val updates = mutableMapOf<String, Any?>(
                 "name" to account.displayName,
                 "gender" to (account.gender ?: "FEMALE").lowercase(),
@@ -810,33 +893,115 @@ class PocketBaseRepository {
                 "is_online" to true,
                 "username" to permanentLovyId
             )
-            account.googleEmail?.let { email ->
-                if (email.isNotBlank()) {
-                    updates["email"] = email.trim().lowercase()
-                    updates["emailVisibility"] = true
-                }
+            if (!cleanEmail.isNullOrBlank()) {
+                updates["email"] = cleanEmail
+                updates["emailVisibility"] = true
             }
             account.fcmToken?.let { updates["fcm_token"] = it }
 
-            val updateRes = api.updateUser(pbId, updates)
-            if (updateRes.isSuccessful) return@withContext true
+            // 1. Cari record pengguna yang mungkin sudah ada di PocketBase berdasarkan email atau username
+            var existingRecordId: String? = null
+            if (!cleanEmail.isNullOrBlank()) {
+                try {
+                    val emailSearch = api.getUsers(perPage = 1, filter = "email='$cleanEmail'")
+                    existingRecordId = emailSearch.body()?.items?.firstOrNull()?.id
+                } catch (_: Exception) {}
+            }
 
-            updates["id"] = pbId
-            val pwd = "pb_pass_${pbId.take(8)}!"
+            if (existingRecordId == null) {
+                try {
+                    val userSearch = api.getUsers(perPage = 1, filter = "username='$permanentLovyId'")
+                    existingRecordId = userSearch.body()?.items?.firstOrNull()?.id
+                } catch (_: Exception) {}
+            }
+
+            val targetId = existingRecordId ?: pbId
+
+            // 2. Coba update record yang ada terlebih dahulu
+            val updateRes = api.updateUser(targetId, updates)
+            if (updateRes.isSuccessful) {
+                authenticateUserSession(cleanEmail ?: permanentLovyId, pbId)
+                return@withContext true
+            }
+
+            // 3. Jika belum ada, buat record baru
+            updates["id"] = targetId
+            val pwd = "pb_pass_${targetId.take(8)}!"
             updates["password"] = pwd
             updates["passwordConfirm"] = pwd
             val createRes = api.createUser(updates)
-            if (createRes.isSuccessful) return@withContext true
+            if (createRes.isSuccessful) {
+                authenticateUserSession(cleanEmail ?: permanentLovyId, pbId)
+                return@withContext true
+            }
 
-            // Fallback retry update tanpa password
-            updates.remove("id")
-            updates.remove("password")
-            updates.remove("passwordConfirm")
-            val fallbackUpdate = api.updateUser(pbId, updates)
-            fallbackUpdate.isSuccessful
+            // 4. Jika pembuatan gagal karena konflik email/id, cari kembali dan timpa datanya
+            if (!cleanEmail.isNullOrBlank()) {
+                val retrySearch = api.getUsers(perPage = 1, filter = "email='$cleanEmail'")
+                val found = retrySearch.body()?.items?.firstOrNull()
+                if (found != null) {
+                    updates.remove("id")
+                    updates.remove("password")
+                    updates.remove("passwordConfirm")
+                    val retryUpdate = api.updateUser(found.id, updates)
+                    if (retryUpdate.isSuccessful) {
+                        authenticateUserSession(cleanEmail, pbId)
+                        return@withContext true
+                    }
+                }
+            }
+
+            false
         } catch (e: Exception) {
             Log.w(TAG, "Gagal registerOrUpdateAccount di PocketBase", e)
             false
+        }
+    }
+
+    private suspend fun authenticateUserSession(identity: String, pbId: String) {
+        val api = PocketBaseClient.getApi() ?: return
+        try {
+            val pwd = "pb_pass_${pbId.take(8)}!"
+            val authResp = api.authWithPassword(mapOf("identity" to identity, "password" to pwd))
+            if (authResp.isSuccessful) {
+                val token = authResp.body()?.get("token") as? String
+                if (!token.isNullOrBlank()) {
+                    PocketBaseClient.authToken = token
+                    Log.d(TAG, "Berhasil mengautentikasi sesi PocketBase untuk $identity")
+                }
+            }
+        } catch (e: Exception) {
+            Log.d(TAG, "Info authWithPassword (opsional): ${e.message}")
+        }
+    }
+
+    suspend fun getGoogleOAuthProvider(): Map<String, Any?>? = withContext(Dispatchers.IO) {
+        val api = PocketBaseClient.getApi() ?: return@withContext null
+        try {
+            val resp = api.getAuthMethods()
+            if (resp.isSuccessful) {
+                val body = resp.body() ?: return@withContext null
+                @Suppress("UNCHECKED_CAST")
+                val providers = body["authProviders"] as? List<Map<String, Any?>>
+                return@withContext providers?.firstOrNull { it["name"] == "google" }
+            }
+            null
+        } catch (e: Exception) {
+            Log.w(TAG, "Gagal mengambil Google auth provider dari PocketBase: ${e.message}")
+            null
+        }
+    }
+
+    suspend fun extractGoogleClientIdFromPocketBase(): String? = withContext(Dispatchers.IO) {
+        val provider = getGoogleOAuthProvider() ?: return@withContext null
+        val authUrl = provider["authUrl"] as? String ?: return@withContext null
+        try {
+            val matcher = Regex("client_id=([^&]+)").find(authUrl)
+            val rawClientId = matcher?.groupValues?.getOrNull(1) ?: return@withContext null
+            val decoded = java.net.URLDecoder.decode(rawClientId, "UTF-8")
+            decoded.removePrefix("https://").removePrefix("http://").trim()
+        } catch (_: Exception) {
+            null
         }
     }
 

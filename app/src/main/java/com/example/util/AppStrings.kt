@@ -7084,17 +7084,17 @@ object AppStrings {
     }
 
     fun languagePickerTestOtherLangs(lang: AppLanguage): String = when (resolveLang(lang)) {
-        AppLanguage.CHINESE -> "直接体验其他国家语言："
-        AppLanguage.JAPANESE -> "他の国の言語を直接試す:"
-        AppLanguage.KOREAN -> "다른 국가 언어 직접 테스트:"
-        AppLanguage.ARABIC -> "تجربة لغات البلدان الأخرى مباشرة:"
-        AppLanguage.SPANISH -> "Probar directamente idiomas de otros países:"
-        AppLanguage.FRENCH -> "Tester directement les langues d'autres pays :"
-        AppLanguage.GERMAN -> "Sprachen anderer Länder direkt testen:"
-        AppLanguage.RUSSIAN -> "Опробовать языки других стран:"
-        AppLanguage.PORTUGUESE -> "Testar diretamente idiomas de outros países:"
-        AppLanguage.INDONESIAN -> "Uji Coba Langsung Bahasa Negara Lain:"
-        else -> "Directly Test Other Country Languages:"
+        AppLanguage.CHINESE -> "其他可用国家语言："
+        AppLanguage.JAPANESE -> "利用可能なその他の言語:"
+        AppLanguage.KOREAN -> "기타 지원 국가 언어:"
+        AppLanguage.ARABIC -> "اللغات الأخرى المتاحة:"
+        AppLanguage.SPANISH -> "Otros idiomas disponibles:"
+        AppLanguage.FRENCH -> "Autres langues disponibles :"
+        AppLanguage.GERMAN -> "Weitere verfügbare Sprachen:"
+        AppLanguage.RUSSIAN -> "Другие доступные языки:"
+        AppLanguage.PORTUGUESE -> "Outros idiomas disponíveis:"
+        AppLanguage.INDONESIAN -> "Pilihan Bahasa Lainnya:"
+        else -> "Other Available Languages:"
     }
 
     fun deleteAccountSuccessToast(lang: AppLanguage): String = when (resolveLang(lang)) {

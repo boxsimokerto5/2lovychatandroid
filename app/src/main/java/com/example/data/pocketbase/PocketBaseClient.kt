@@ -22,6 +22,9 @@ object PocketBaseClient {
     @Volatile
     private var cachedUrl: String? = null
 
+    @Volatile
+    var authToken: String? = null
+
     fun getBaseUrl(): String {
         val configured = SupabaseClient.getSupabaseUrl()
         val url = if (configured.isNotBlank() && (configured.startsWith("http://") || configured.startsWith("https://"))) {
@@ -94,6 +97,18 @@ object PocketBaseClient {
             }
 
             val okHttpClient = OkHttpClient.Builder()
+                .addInterceptor { chain ->
+                    val original = chain.request()
+                    val token = authToken
+                    val request = if (!token.isNullOrBlank()) {
+                        original.newBuilder()
+                            .header("Authorization", token)
+                            .build()
+                    } else {
+                        original
+                    }
+                    chain.proceed(request)
+                }
                 .addInterceptor(logging)
                 .connectTimeout(15, TimeUnit.SECONDS)
                 .readTimeout(15, TimeUnit.SECONDS)

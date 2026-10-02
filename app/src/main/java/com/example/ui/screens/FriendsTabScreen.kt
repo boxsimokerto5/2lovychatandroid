@@ -128,7 +128,13 @@ fun FriendsTabScreen(
             (myLovyId.isNotBlank() && it.id.equals(myLovyId, ignoreCase = true)) ||
             (myName.isNotBlank() && it.name.equals(myName, ignoreCase = true)) ||
             it.id.equals("me", ignoreCase = true) ||
-            it.id.equals("current_user", ignoreCase = true)
+            it.id.equals("current_user", ignoreCase = true) ||
+            it.name.contains("test", ignoreCase = true) ||
+            it.name.contains("tester", ignoreCase = true) ||
+            it.name.contains("dummy", ignoreCase = true) ||
+            it.id.contains("test", ignoreCase = true) ||
+            it.id.startsWith("test_") ||
+            it.id.matches(Regex("^u[0-9]+$"))
         }
         val baseList = if (searchQuery.isBlank()) nonSelf
         else nonSelf.filter { it.name.contains(searchQuery, ignoreCase = true) }

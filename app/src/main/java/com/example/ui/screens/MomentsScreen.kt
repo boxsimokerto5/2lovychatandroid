@@ -387,6 +387,15 @@ fun MomentsScreen(
         containerColor = ScreenBackground,
         modifier = modifier.fillMaxSize()
     ) { paddingValues ->
+        val displayMoments = remember(moments) {
+            moments.filterNot { 
+                it.authorName.contains("test", ignoreCase = true) ||
+                it.authorName.contains("tester", ignoreCase = true) ||
+                it.authorName.contains("dummy", ignoreCase = true) ||
+                it.authorId.contains("test", ignoreCase = true) ||
+                it.authorId.startsWith("test_")
+            }
+        }
         LazyColumn(
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -410,7 +419,7 @@ fun MomentsScreen(
                         Text(text = "✨", fontSize = 16.sp)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = AppStrings.momentsViewingCount(language, moments.size),
+                            text = AppStrings.momentsViewingCount(language, displayMoments.size),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFF2E7D32)
@@ -419,7 +428,7 @@ fun MomentsScreen(
                 }
             }
 
-            if (moments.isEmpty()) {
+            if (displayMoments.isEmpty()) {
                 item {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -461,7 +470,7 @@ fun MomentsScreen(
                     }
                 }
             } else {
-                moments.forEachIndexed { index, item ->
+                displayMoments.forEachIndexed { index, item ->
                     val cleanMyId = currentUserId.trim()
                     val cleanAuthorId = item.authorId.trim()
                     val isMyMoment = when {
