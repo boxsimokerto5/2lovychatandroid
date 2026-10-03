@@ -24,35 +24,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudDone
-import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.VerifiedUser
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import com.example.model.Gender
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -96,22 +83,6 @@ fun LoginScreen(
 ) {
     var isGoogleLoading by remember { mutableStateOf(false) }
 
-    // Direct Google Email Login Dialog State
-    var showGoogleDirectDialog by remember { mutableStateOf(false) }
-    var directEmail by remember { mutableStateOf("") }
-    var directName by remember { mutableStateOf("") }
-    var directIsLoading by remember { mutableStateOf(false) }
-    var directError by remember { mutableStateOf<String?>(null) }
-
-    // PocketBase Username/Password Section State
-    var showPasswordSection by remember { mutableStateOf(false) }
-    var isRegisterMode by remember { mutableStateOf(false) }
-    var inputUsername by remember { mutableStateOf("") }
-    var inputPassword by remember { mutableStateOf("") }
-    var inputGender by remember { mutableStateOf(Gender.FEMALE) }
-    var isAuthLoading by remember { mutableStateOf(false) }
-    var authErrorMsg by remember { mutableStateOf<String?>(null) }
-
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -127,10 +98,11 @@ fun LoginScreen(
                 snackbarHostState.showSnackbar(authResult.message)
             }.onFailure { exception ->
                 isGoogleLoading = false
-                val errorMsg = exception.message ?: AppStrings.loginGoogleFailedToast(language)
-                snackbarHostState.showSnackbar(errorMsg)
-                // Jika terjadi kendala pada SDK Google (misal: SHA-1/Google Play Services), buka form email Google langsung
-                showGoogleDirectDialog = true
+                val isCancelled = exception.message?.contains("dibatalkan", ignoreCase = true) == true
+                if (!isCancelled) {
+                    val errorMsg = exception.message ?: AppStrings.loginGoogleFailedToast(language)
+                    snackbarHostState.showSnackbar(errorMsg)
+                }
             }
         }
     }
@@ -516,229 +488,7 @@ fun LoginScreen(
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            // Secondary: Masuk dengan Email Google Secara Langsung (Jalur Langsung ke PocketBase)
-                            OutlinedButton(
-                                onClick = {
-                                    directError = null
-                                    showGoogleDirectDialog = true
-                                },
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    containerColor = Color(0xFFF1F8F5),
-                                    contentColor = EmeraldGreen
-                                ),
-                                border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(
-                                    brush = Brush.horizontalGradient(listOf(EmeraldGreen.copy(alpha = 0.5f), EmeraldGreen)),
-                                    width = 1.dp
-                                ),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(44.dp)
-                                    .testTag("btn_google_direct_dialog")
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Email,
-                                    contentDescription = null,
-                                    tint = EmeraldGreen,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Masuk via Email Google (Jalur Langsung)",
-                                    fontSize = 12.5.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = EmeraldGreen
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            // Opsi Alternatif: Masuk dengan Akun PocketBase / Username
-                            TextButton(
-                                onClick = { showPasswordSection = !showPasswordSection },
-                                modifier = Modifier.testTag("btn_toggle_password_section")
-                            ) {
-                                Icon(
-                                    imageVector = if (showPasswordSection) Icons.Default.Close else Icons.Default.Lock,
-                                    contentDescription = null,
-                                    tint = NeutralMedium,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = if (showPasswordSection) "Sembunyikan Login Username / Password" else "Opsi Lain: Username & Kata Sandi PocketBase",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = NeutralMedium
-                                )
-                            }
-
-                            // Form Login / Register Akun PocketBase (Bisa di-expand)
-                            if (showPasswordSection) {
-                                Surface(
-                                    shape = RoundedCornerShape(14.dp),
-                                    color = Color(0xFFF9FBF9),
-                                    border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(
-                                        brush = Brush.horizontalGradient(listOf(Color(0xFFE0E0E0), Color(0xFFE0E0E0))),
-                                        width = 0.8.dp
-                                    ),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 8.dp)
-                                ) {
-                                    Column(
-                                        modifier = Modifier.padding(14.dp)
-                                    ) {
-                                        Text(
-                                            text = if (isRegisterMode) "Daftar Akun Baru di PocketBase" else "Masuk Akun PocketBase",
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 14.sp,
-                                            color = NeutralDark
-                                        )
-                                        Spacer(modifier = Modifier.height(10.dp))
-
-                                        OutlinedTextField(
-                                            value = inputUsername,
-                                            onValueChange = { inputUsername = it },
-                                            placeholder = { Text("Username atau Email", fontSize = 12.5.sp) },
-                                            leadingIcon = {
-                                                Icon(Icons.Default.Person, contentDescription = null, tint = EmeraldGreen, modifier = Modifier.size(18.dp))
-                                            },
-                                            singleLine = true,
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .testTag("input_username_pb")
-                                        )
-
-                                        Spacer(modifier = Modifier.height(8.dp))
-
-                                        OutlinedTextField(
-                                            value = inputPassword,
-                                            onValueChange = { inputPassword = it },
-                                            placeholder = { Text("Kata Sandi", fontSize = 12.5.sp) },
-                                            leadingIcon = {
-                                                Icon(Icons.Default.Lock, contentDescription = null, tint = EmeraldGreen, modifier = Modifier.size(18.dp))
-                                            },
-                                            singleLine = true,
-                                            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .testTag("input_password_pb")
-                                        )
-
-                                        if (isRegisterMode) {
-                                            Spacer(modifier = Modifier.height(10.dp))
-                                            Text(
-                                                text = "Jenis Kelamin:",
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = NeutralDark
-                                            )
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    modifier = Modifier.clickable { inputGender = Gender.FEMALE }
-                                                ) {
-                                                    RadioButton(
-                                                        selected = inputGender == Gender.FEMALE,
-                                                        onClick = { inputGender = Gender.FEMALE },
-                                                        colors = RadioButtonDefaults.colors(selectedColor = EmeraldGreen)
-                                                    )
-                                                    Text("Wanita", fontSize = 12.sp, color = NeutralDark)
-                                                }
-                                                Spacer(modifier = Modifier.width(16.dp))
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    modifier = Modifier.clickable { inputGender = Gender.MALE }
-                                                ) {
-                                                    RadioButton(
-                                                        selected = inputGender == Gender.MALE,
-                                                        onClick = { inputGender = Gender.MALE },
-                                                        colors = RadioButtonDefaults.colors(selectedColor = EmeraldGreen)
-                                                    )
-                                                    Text("Pria", fontSize = 12.sp, color = NeutralDark)
-                                                }
-                                            }
-                                        }
-
-                                        if (!authErrorMsg.isNullOrBlank()) {
-                                            Spacer(modifier = Modifier.height(6.dp))
-                                            Text(
-                                                text = authErrorMsg ?: "",
-                                                color = Color(0xFFD32F2F),
-                                                fontSize = 11.5.sp
-                                            )
-                                        }
-
-                                        Spacer(modifier = Modifier.height(12.dp))
-
-                                        Button(
-                                            onClick = {
-                                                if (inputUsername.isBlank() || inputPassword.isBlank()) {
-                                                    authErrorMsg = "Username dan kata sandi wajib diisi"
-                                                    return@Button
-                                                }
-                                                authErrorMsg = null
-                                                isAuthLoading = true
-                                                scope.launch {
-                                                    val res = if (isRegisterMode) {
-                                                        onPerformRegister(inputUsername.trim(), inputPassword.trim(), inputGender)
-                                                    } else {
-                                                        onPerformLogin(inputUsername.trim(), inputPassword.trim())
-                                                    }
-                                                    isAuthLoading = false
-                                                    if (res.success) {
-                                                        snackbarHostState.showSnackbar(res.message)
-                                                    } else {
-                                                        authErrorMsg = res.message
-                                                    }
-                                                }
-                                            },
-                                            enabled = !isAuthLoading,
-                                            colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
-                                            shape = RoundedCornerShape(10.dp),
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(42.dp)
-                                                .testTag("btn_submit_pb_auth")
-                                        ) {
-                                            if (isAuthLoading) {
-                                                CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
-                                            } else {
-                                                Text(
-                                                    text = if (isRegisterMode) "Daftar Akun ke PocketBase" else "Masuk ke PocketBase",
-                                                    fontWeight = FontWeight.Bold,
-                                                    fontSize = 13.sp,
-                                                    color = Color.White
-                                                )
-                                            }
-                                        }
-
-                                        Row(
-                                            horizontalArrangement = Arrangement.Center,
-                                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
-                                        ) {
-                                            TextButton(
-                                                onClick = {
-                                                    isRegisterMode = !isRegisterMode
-                                                    authErrorMsg = null
-                                                }
-                                            ) {
-                                                Text(
-                                                    text = if (isRegisterMode) "Sudah punya akun? Masuk" else "Belum punya akun? Buat Akun Baru",
-                                                    fontSize = 11.5.sp,
-                                                    color = EmeraldGreen,
-                                                    fontWeight = FontWeight.Medium
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(14.dp))
 
                             // Trust Badge
                             Row(
@@ -750,53 +500,18 @@ fun LoginScreen(
                                     imageVector = Icons.Default.Shield,
                                     contentDescription = null,
                                     tint = EmeraldGreen,
-                                    modifier = Modifier.size(13.dp)
+                                    modifier = Modifier.size(14.dp)
                                 )
-                                Spacer(modifier = Modifier.width(5.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = AppStrings.googleSignInTrustBadge(language),
-                                    fontSize = 11.sp,
+                                    fontSize = 11.5.sp,
                                     color = NeutralMedium,
                                     textAlign = TextAlign.Center
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            // Server PocketBase Status Pill
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(Color(0xFFE8F5E9))
-                                    .clickable { onNavigateToSupabaseConfig() }
-                                    .padding(horizontal = 10.dp, vertical = 6.dp)
-                                    .testTag("btn_pocketbase_status_pill")
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(7.dp)
-                                        .clip(CircleShape)
-                                        .background(EmeraldGreen)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "PocketBase Server: 173.249.59.183:8090",
-                                    fontSize = 11.sp,
-                                    color = EmeraldGreen,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Icon(
-                                    imageVector = Icons.Default.Settings,
-                                    contentDescription = "Pengaturan Server",
-                                    tint = EmeraldGreen,
-                                    modifier = Modifier.size(13.dp)
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
 
                             // Privacy and Permissions Setup
                             Row(
@@ -804,19 +519,19 @@ fun LoginScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
                                     .clickable { onRequestPermissionSetup() }
-                                    .padding(vertical = 4.dp, horizontal = 8.dp)
+                                    .padding(vertical = 6.dp, horizontal = 12.dp)
                                     .testTag("btn_login_permission_setup")
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Security,
                                     contentDescription = null,
                                     tint = EmeraldGreen,
-                                    modifier = Modifier.size(13.dp)
+                                    modifier = Modifier.size(14.dp)
                                 )
-                                Spacer(modifier = Modifier.width(4.dp))
+                                Spacer(modifier = Modifier.width(5.dp))
                                 Text(
                                     text = AppStrings.loginPermissionsAndPrivacyBtn(language),
-                                    fontSize = 11.5.sp,
+                                    fontSize = 12.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = EmeraldGreen
                                 )
@@ -826,153 +541,5 @@ fun LoginScreen(
                 }
             }
         }
-    }
-
-    // Dialog Masuk Langsung via Email Google ke PocketBase
-    if (showGoogleDirectDialog) {
-        AlertDialog(
-            onDismissRequest = {
-                if (!directIsLoading) showGoogleDirectDialog = false
-            },
-            shape = RoundedCornerShape(18.dp),
-            containerColor = Color.White,
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFF1F3F4))
-                    ) {
-                        Text(
-                            text = "G",
-                            fontWeight = FontWeight.Black,
-                            fontSize = 16.sp,
-                            color = Color(0xFF4285F4)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = "Masuk via Akun Google",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = NeutralDark
-                    )
-                }
-            },
-            text = {
-                Column {
-                    Text(
-                        text = "Hubungkan akun Google Anda secara langsung ke database PocketBase Lovy Chat untuk sinkronisasi profil permanen:",
-                        fontSize = 12.sp,
-                        color = NeutralMedium,
-                        lineHeight = 17.sp
-                    )
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    Text(
-                        text = "Email Akun Google:",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = NeutralDark
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    OutlinedTextField(
-                        value = directEmail,
-                        onValueChange = { directEmail = it },
-                        placeholder = { Text("contoh: nama@gmail.com", fontSize = 12.5.sp) },
-                        leadingIcon = {
-                            Icon(Icons.Default.Email, contentDescription = null, tint = EmeraldGreen, modifier = Modifier.size(18.dp))
-                        },
-                        singleLine = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("input_direct_google_email")
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Text(
-                        text = "Nama Tampilan (Opsional):",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = NeutralDark
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    OutlinedTextField(
-                        value = directName,
-                        onValueChange = { directName = it },
-                        placeholder = { Text("Nama Anda", fontSize = 12.5.sp) },
-                        leadingIcon = {
-                            Icon(Icons.Default.Person, contentDescription = null, tint = EmeraldGreen, modifier = Modifier.size(18.dp))
-                        },
-                        singleLine = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("input_direct_google_name")
-                    )
-
-                    if (!directError.isNullOrBlank()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = directError ?: "",
-                            fontSize = 11.5.sp,
-                            color = Color(0xFFD32F2F)
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val clean = directEmail.trim().lowercase()
-                        if (clean.isBlank() || !clean.contains("@")) {
-                            directError = "Masukkan email Google yang valid (misal: nama@gmail.com)"
-                            return@Button
-                        }
-                        directError = null
-                        directIsLoading = true
-                        scope.launch {
-                            val fallbackName = if (directName.isNotBlank()) directName.trim() else clean.substringBefore("@").replaceFirstChar { it.uppercase() }
-                            val googleUser = GoogleAuthHelper.GoogleUserResult(
-                                idToken = "pocketbase_direct_token",
-                                displayName = fallbackName,
-                                email = clean,
-                                profilePictureUri = null
-                            )
-                            val res = onPerformGoogleLogin(googleUser)
-                            directIsLoading = false
-                            if (res.success) {
-                                showGoogleDirectDialog = false
-                                snackbarHostState.showSnackbar(res.message)
-                            } else {
-                                directError = res.message
-                            }
-                        }
-                    },
-                    enabled = !directIsLoading,
-                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.testTag("btn_confirm_direct_google")
-                ) {
-                    if (directIsLoading) {
-                        CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Menyambungkan...", fontSize = 12.5.sp)
-                    } else {
-                        Text("Masuk & Hubungkan ke PocketBase", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showGoogleDirectDialog = false },
-                    enabled = !directIsLoading
-                ) {
-                    Text("Batal", color = NeutralMedium, fontSize = 12.5.sp)
-                }
-            }
-        )
     }
 }

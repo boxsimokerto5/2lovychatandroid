@@ -26,7 +26,7 @@ interface PocketBaseRestApi {
     @POST("api/collections/users/auth-with-password")
     suspend fun authWithPassword(
         @Body body: Map<String, @JvmSuppressWildcards Any?>
-    ): Response<Map<String, Any?>>
+    ): Response<PocketBaseAuthResponse>
 
     // ================= Users =================
     @GET("api/collections/users/records")

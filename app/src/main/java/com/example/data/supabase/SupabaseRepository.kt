@@ -1109,4 +1109,23 @@ class SupabaseRepository {
             false
         }
     }
+
+    suspend fun loginWithPassword(identity: String, password: String): com.example.data.AuthResult = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.loginWithPassword(identity, password)
+        }
+        com.example.data.AuthResult(false, "Server login tidak didukung")
+    }
+
+    suspend fun registerWithPassword(
+        username: String,
+        password: String,
+        displayName: String,
+        gender: Gender
+    ): com.example.data.AuthResult = withContext(Dispatchers.IO) {
+        if (SupabaseClient.isPocketBase()) {
+            return@withContext pbRepo.registerWithPassword(username, password, displayName, gender)
+        }
+        com.example.data.AuthResult(false, "Server registrasi tidak didukung")
+    }
 }

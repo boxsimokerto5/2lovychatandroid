@@ -334,7 +334,7 @@ fun ProfileTabScreen(
                     icon = Icons.Default.Info,
                     iconTint = Color(0xFF00B0FF),
                     title = com.example.util.AppStrings.menuAbout(language),
-                    subtitle = "Versi 1.0.0 (${com.example.util.AppStrings.motto(language)})",
+                    subtitle = "v${com.example.BuildConfig.VERSION_NAME} • ${com.example.util.AppStrings.motto(language)}",
                     onClick = { showAboutAppDialog = true }
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)

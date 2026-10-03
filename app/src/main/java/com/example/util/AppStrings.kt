@@ -736,6 +736,69 @@ object AppStrings {
         else -> "Share with Friends"
     }
 
+    fun updateDialogTitle(lang: AppLanguage, isForce: Boolean): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> if (isForce) "应用必须更新" else "发现新版本"
+        AppLanguage.JAPANESE -> if (isForce) "アプリの更新が必要です" else "新しいバージョンが利用可能です"
+        AppLanguage.KOREAN -> if (isForce) "필수 앱 업데이트" else "새로운 버전 사용 가능"
+        AppLanguage.ARABIC -> if (isForce) "تحديث إلزامي للتطبيق" else "يتوفر إصدار جديد"
+        AppLanguage.SPANISH -> if (isForce) "Actualización obligatoria" else "Nueva versión disponible"
+        AppLanguage.FRENCH -> if (isForce) "Mise à jour obligatoire" else "Nouvelle version disponible"
+        AppLanguage.GERMAN -> if (isForce) "App-Update erforderlich" else "Neue Version verfügbar"
+        AppLanguage.RUSSIAN -> if (isForce) "Обязательное обновление" else "Доступна новая версия"
+        AppLanguage.PORTUGUESE -> if (isForce) "Atualização obrigatória" else "Nova versão disponível"
+        AppLanguage.INDONESIAN -> if (isForce) "Pembaruan Aplikasi Wajib" else "Versi Baru Tersedia"
+        else -> if (isForce) "Update Required" else "New Version Available"
+    }
+
+    fun updateDialogDescForce(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "当前版本已停用。为了确保聊天消息与账号安全，请立即前往 Google Play 更新至最新版本。"
+        AppLanguage.JAPANESE -> "現在のバージョンはご利用いただけません。メッセージの送受信とセキュリティを確保するため、Google Play で最新版に更新してください。"
+        AppLanguage.KOREAN -> "현재 버전은 지원이 종료되었습니다. 원활한 메시지 전송과 보안을 위해 Google Play에서 최신 버전으로 업데이트해 주세요."
+        AppLanguage.ARABIC -> "لم يعد هذا الإصدار مدعوماً. لضمان عمل المراسلة وأمان حسابك، يُرجى التحديث إلى أحدث إصدار من Google Play."
+        AppLanguage.SPANISH -> "Esta versión ya no es compatible. Para garantizar el envío de mensajes y la seguridad, actualiza a la última versión en Google Play."
+        AppLanguage.FRENCH -> "Cette version n'est plus prise en charge. Veuillez effectuer la mise à jour sur Google Play pour continuer à discuter en toute sécurité."
+        AppLanguage.GERMAN -> "Diese Version wird nicht mehr unterstützt. Bitte aktualisieren Sie auf die neueste Version im Google Play Store."
+        AppLanguage.RUSSIAN -> "Эта версия приложения устарела. Для корректной работы чата и безопасности обновите приложение в Google Play."
+        AppLanguage.PORTUGUESE -> "Esta versão não é mais suportada. Para garantir o envio de mensagens e sua segurança, atualize no Google Play."
+        AppLanguage.INDONESIAN -> "Versi aplikasi Anda sudah tidak didukung. Untuk memastikan pesan, radar, dan keamanan akun berjalan lancar, silakan perbarui aplikasi sekarang di Google Play Store."
+        else -> "This version is no longer supported. To ensure smooth messaging, radar, and security, please update now on Google Play Store."
+    }
+
+    fun updateDialogDescOptional(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "Lovy Chat 推出了新版本，带来更流畅的体验与最新功能。建议您立即更新。"
+        AppLanguage.JAPANESE -> "新しいバージョンの Lovy Chat がリリースされました。より快適な機能をお試しください。"
+        AppLanguage.INDONESIAN -> "Versi terbaru Lovy Chat telah hadir dengan fitur baru dan peningkatan kenyamanan obrolan. Yuk perbarui sekarang!"
+        else -> "A new version of Lovy Chat is available with new features and improvements. Update now for the best experience!"
+    }
+
+    fun updateBtnNow(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "立即在 Google Play 更新"
+        AppLanguage.JAPANESE -> "Google Play で今すぐ更新"
+        AppLanguage.KOREAN -> "Google Play에서 지금 업데이트"
+        AppLanguage.ARABIC -> "تحديث الآن من Google Play"
+        AppLanguage.SPANISH -> "Actualizar en Google Play"
+        AppLanguage.FRENCH -> "Mettre à jour sur Google Play"
+        AppLanguage.GERMAN -> "Jetzt im Google Play aktualisieren"
+        AppLanguage.RUSSIAN -> "Обновить в Google Play"
+        AppLanguage.PORTUGUESE -> "Atualizar no Google Play"
+        AppLanguage.INDONESIAN -> "Perbarui di Google Play"
+        else -> "Update on Google Play"
+    }
+
+    fun updateBtnLater(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "稍后再说"
+        AppLanguage.JAPANESE -> "後で"
+        AppLanguage.KOREAN -> "나중에"
+        AppLanguage.ARABIC -> "لاحقاً"
+        AppLanguage.SPANISH -> "Más tarde"
+        AppLanguage.FRENCH -> "Plus tard"
+        AppLanguage.GERMAN -> "Später"
+        AppLanguage.RUSSIAN -> "Позже"
+        AppLanguage.PORTUGUESE -> "Mais tarde"
+        AppLanguage.INDONESIAN -> "Nanti Saja"
+        else -> "Later"
+    }
+
     fun menuLogout(lang: AppLanguage): String = when (resolveLang(lang)) {
         AppLanguage.CHINESE -> "退出登录"
         AppLanguage.JAPANESE -> "ログアウト"

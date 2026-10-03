@@ -79,8 +79,18 @@ fun SupabaseConfigScreen(
     onSaveCredentials: (String, String) -> Unit,
     onTestConnection: () -> Unit,
     onClearCredentials: () -> Unit,
+    onUpdateRemoteVersion: ((Int, Int, String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val currentAppVersionCode = com.example.BuildConfig.VERSION_CODE
+    val currentAppVersionName = com.example.BuildConfig.VERSION_NAME
+    val sharedPrefs = remember { context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE) }
+    
+    var minCodeInput by remember { mutableStateOf(sharedPrefs.getInt("remote_min_version_code", 1).toString()) }
+    var latestCodeInput by remember { mutableStateOf(sharedPrefs.getInt("remote_latest_version_code", 1).toString()) }
+    var latestNameInput by remember { mutableStateOf(sharedPrefs.getString("remote_latest_version_name", "1.0") ?: "1.0") }
+
     var urlInput by remember(currentUrl) { mutableStateOf(currentUrl) }
     var keyInput by remember(currentAnonKey) { mutableStateOf(currentAnonKey) }
     val clipboardManager = LocalClipboardManager.current
@@ -633,6 +643,135 @@ SELECT cron.schedule(
                     }
                 }
             }
+
+            // Card Pengaturan Versi & Force Update
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFE8F5E9))
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = EmeraldGreen,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Column {
+                            Text(
+                                text = "Kontrol Versi & Force Update",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeutralDark
+                            )
+                            Text(
+                                text = "Versi aplikasi saat ini: v$currentAppVersionName (Kode $currentAppVersionCode)",
+                                fontSize = 11.5.sp,
+                                color = NeutralMedium
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "Atur batas versi minimal pengguna. Jika versi di HP pengguna lebih kecil dari min_code, aplikasi akan terkunci otomatis dan mewajibkan update via Google Play Store.",
+                        fontSize = 11.5.sp,
+                        color = NeutralDark,
+                        lineHeight = 16.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Input min_code
+                    Text(
+                        text = "Kode Versi Minimal Wajib (min_code):",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = NeutralDark
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    OutlinedTextField(
+                        value = minCodeInput,
+                        onValueChange = { minCodeInput = it.filter { char -> char.isDigit() } },
+                        placeholder = { Text("Contoh: 2") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Input latest_code
+                    Text(
+                        text = "Kode Versi Terbaru (latest_code):",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = NeutralDark
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    OutlinedTextField(
+                        value = latestCodeInput,
+                        onValueChange = { latestCodeInput = it.filter { char -> char.isDigit() } },
+                        placeholder = { Text("Contoh: 2") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Input latest_name
+                    Text(
+                        text = "Label Versi Terbaru (latest_name):",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = NeutralDark
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    OutlinedTextField(
+                        value = latestNameInput,
+                        onValueChange = { latestNameInput = it },
+                        placeholder = { Text("Contoh: 1.1") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = {
+                            val minVal = minCodeInput.toIntOrNull() ?: 1
+                            val latestVal = latestCodeInput.toIntOrNull() ?: minVal
+                            val nameVal = latestNameInput.ifBlank { "1.0" }
+                            onUpdateRemoteVersion?.invoke(minVal, latestVal, nameVal)
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Force Update berhasil disinkronkan ke Cloud (min_code: $minVal)!")
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Terapkan Force Update ke Cloud", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
 
             // SQL Schema Helper Card
             Card(

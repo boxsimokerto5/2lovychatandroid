@@ -44,7 +44,7 @@ data class SavedSession(
 )
 
 class AuthRepository(
-    context: Context,
+    private val context: Context,
     private val supabaseRepo: SupabaseRepository? = null
 ) {
     private val prefs: SharedPreferences = context.getSharedPreferences("lovy_auth_store", Context.MODE_PRIVATE)
@@ -201,6 +201,7 @@ class AuthRepository(
 
     fun clearSession() {
         prefs.edit().remove(KEY_SAVED_SESSION).apply()
+        com.example.data.pocketbase.PocketBaseClient.clearAuthToken(context)
     }
 
     fun deleteAccount(username: String) {
@@ -256,8 +257,8 @@ class AuthRepository(
         if (trimmed.isEmpty()) {
             return@withContext AuthResult(false, "Username tidak boleh kosong")
         }
-        if (password.length < 4) {
-            return@withContext AuthResult(false, "Kata sandi minimal 4 karakter")
+        if (password.length < 6) {
+            return@withContext AuthResult(false, "Kata sandi minimal 6 karakter sesuai standar keamanan")
         }
 
         val normalizedKey = trimmed.lowercase()
@@ -266,43 +267,75 @@ class AuthRepository(
         val hashedPassword = hashPassword(password)
         val defaultBio = "Halo, saya pengguna baru Lovy Chat! ✨"
 
-        // 1. Cek & Simpan di Supabase jika terkonfigurasi
-        if (SupabaseClient.isConfigured() && supabaseRepo != null) {
+        // 1. Cek & Simpan di PocketBase / Backend Cloud
+        if (supabaseRepo != null) {
             try {
-                val existingAccount = supabaseRepo.findAccountByUsername(normalizedKey)
-                if (existingAccount != null) {
-                    return@withContext AuthResult(
-                        success = false,
-                        message = "Username \"$trimmed\" sudah terdaftar. Silakan gunakan username lain atau pilih Masuk."
+                if (SupabaseClient.isPocketBase()) {
+                    val pbResult = supabaseRepo.registerWithPassword(
+                        username = normalizedKey,
+                        password = password,
+                        displayName = finalDisplayName,
+                        gender = gender
+                    )
+                    if (!pbResult.success) {
+                        return@withContext pbResult
+                    }
+                    val effectiveLovyId = pbResult.lovyId ?: lovyId
+                    val userEmail = pbResult.email ?: (if (normalizedKey.contains("@")) normalizedKey else null)
+
+                    // Simpan cadangan di storage lokal agar tetap bisa login secara offline
+                    val map = getUsersMap()
+                    map[normalizedKey] = hashedPassword
+                    saveUsersMap(map)
+                    prefs.edit().putString("user_lovy_id_${normalizedKey}", effectiveLovyId).apply()
+
+                    val session = SavedSession(
+                        isLoggedIn = true,
+                        isGuest = false,
+                        lovyId = effectiveLovyId,
+                        username = pbResult.username ?: normalizedKey,
+                        displayName = pbResult.displayName ?: finalDisplayName,
+                        email = userEmail,
+                        gender = pbResult.gender,
+                        bio = pbResult.bio ?: defaultBio,
+                        avatarUrl = pbResult.avatarUrl,
+                        isGoogleUser = false
+                    )
+                    saveSession(session)
+                    return@withContext pbResult
+                } else if (SupabaseClient.isConfigured()) {
+                    val existingAccount = supabaseRepo.findAccountByUsername(normalizedKey)
+                    if (existingAccount != null) {
+                        return@withContext AuthResult(
+                            success = false,
+                            message = "Username \"$trimmed\" sudah terdaftar. Silakan gunakan username lain atau pilih Masuk."
+                        )
+                    }
+
+                    val accountDto = SupabaseAccountDto(
+                        id = lovyId,
+                        username = normalizedKey,
+                        passwordHash = hashedPassword,
+                        displayName = finalDisplayName,
+                        gender = gender.name,
+                        bio = defaultBio,
+                        avatarUrl = null,
+                        googleId = null,
+                        googleEmail = null,
+                        createdAt = System.currentTimeMillis(),
+                        lastLoginAt = System.currentTimeMillis()
+                    )
+
+                    supabaseRepo.registerOrUpdateAccount(accountDto)
+                    supabaseRepo.registerOrUpdateUser(
+                        id = lovyId,
+                        name = finalDisplayName,
+                        gender = gender,
+                        bio = defaultBio
                     )
                 }
-
-                val accountDto = SupabaseAccountDto(
-                    id = lovyId,
-                    username = normalizedKey,
-                    passwordHash = hashedPassword,
-                    displayName = finalDisplayName,
-                    gender = gender.name,
-                    bio = defaultBio,
-                    avatarUrl = null,
-                    googleId = null,
-                    googleEmail = null,
-                    createdAt = System.currentTimeMillis(),
-                    lastLoginAt = System.currentTimeMillis()
-                )
-
-                // Simpan ke Supabase app_accounts
-                supabaseRepo.registerOrUpdateAccount(accountDto)
-
-                // Sinkronkan juga ke nearby_users agar akun langsung tampil di radar
-                supabaseRepo.registerOrUpdateUser(
-                    id = lovyId,
-                    name = finalDisplayName,
-                    gender = gender,
-                    bio = defaultBio
-                )
             } catch (e: Exception) {
-                Log.w(TAG, "Peringatan saat mendaftar ke Supabase, fallback lokal tetap berjalan: ${e.message}")
+                Log.w(TAG, "Peringatan saat mendaftar ke server, fallback lokal tetap berjalan: ${e.message}")
             }
         }
 
@@ -353,62 +386,97 @@ class AuthRepository(
 
         val normalizedKey = trimmed.lowercase()
 
-        // 1. Coba pencocokan melalui Supabase jika terkonfigurasi
-        if (SupabaseClient.isConfigured() && supabaseRepo != null) {
+        // 1. Coba pencocokan melalui PocketBase jika aktif
+        if (supabaseRepo != null) {
             try {
-                val cloudAccount = supabaseRepo.findAccountByUsername(normalizedKey)
-                if (cloudAccount != null) {
-                    if (isPasswordMatching(cloudAccount.passwordHash, password)) {
-                        // Password cocok! Perbarui waktu login terakhir di Supabase
-                        supabaseRepo.updateAccountLoginTime(cloudAccount.id)
-                        supabaseRepo.updateUserLastActive(cloudAccount.id)
-
-                        val userGender = if (cloudAccount.gender?.equals("MALE", ignoreCase = true) == true) Gender.MALE else Gender.FEMALE
-                        val dispName = cloudAccount.displayName ?: cloudAccount.username
-                        val bioText = cloudAccount.bio ?: ""
-                        val cloudEmail = cloudAccount.googleEmail ?: if (normalizedKey.contains("@")) normalizedKey else null
+                if (SupabaseClient.isPocketBase()) {
+                    val pbResult = supabaseRepo.loginWithPassword(trimmed, password)
+                    if (pbResult.success) {
+                        val effectiveLovyId = pbResult.lovyId ?: getOrGenerateLovyId(normalizedKey)
+                        val userEmail = pbResult.email ?: (if (normalizedKey.contains("@")) normalizedKey else null)
+                        val hashedPassword = hashPassword(password)
 
                         // Simpan cadangan lokal
                         val map = getUsersMap()
-                        cloudAccount.passwordHash?.let { map[normalizedKey] = it }
+                        map[normalizedKey] = hashedPassword
                         saveUsersMap(map)
+                        prefs.edit().putString("user_lovy_id_${normalizedKey}", effectiveLovyId).apply()
 
                         val session = SavedSession(
                             isLoggedIn = true,
                             isGuest = false,
-                            lovyId = cloudAccount.id,
-                            username = cloudAccount.username,
-                            displayName = dispName,
-                            email = cloudEmail,
-                            gender = userGender,
-                            bio = bioText,
-                            avatarUrl = cloudAccount.avatarUrl,
+                            lovyId = effectiveLovyId,
+                            username = pbResult.username ?: normalizedKey,
+                            displayName = pbResult.displayName ?: trimmed,
+                            email = userEmail,
+                            gender = pbResult.gender,
+                            bio = pbResult.bio ?: "",
+                            avatarUrl = pbResult.avatarUrl,
+                            city = pbResult.city,
                             isGoogleUser = false
                         )
                         saveSession(session)
-
-                        return@withContext AuthResult(
-                            success = true,
-                            message = "Login berhasil! Selamat datang kembali.",
-                            username = cloudAccount.username,
-                            displayName = dispName,
-                            email = cloudEmail,
-                            lovyId = cloudAccount.id,
-                            gender = userGender,
-                            bio = bioText,
-                            avatarUrl = cloudAccount.avatarUrl,
-                            isGoogleUser = false
-                        )
+                        return@withContext pbResult
                     } else {
-                        // Username ada tapi kata sandi salah
-                        return@withContext AuthResult(
-                            success = false,
-                            message = "Kata sandi yang Anda masukkan salah. Silakan coba lagi."
-                        )
+                        // Jika server merespon dengan kegagalan kredensial, jangan fallback ke lokal kecuali masalah koneksi
+                        val msg = pbResult.message.lowercase()
+                        val isNetworkIssue = msg.contains("terputus") || msg.contains("koneksi") || msg.contains("timeout") || msg.contains("unable to resolve")
+                        if (!isNetworkIssue) {
+                            return@withContext pbResult
+                        }
+                    }
+                } else if (SupabaseClient.isConfigured()) {
+                    val cloudAccount = supabaseRepo.findAccountByUsername(normalizedKey)
+                    if (cloudAccount != null) {
+                        if (isPasswordMatching(cloudAccount.passwordHash, password)) {
+                            supabaseRepo.updateAccountLoginTime(cloudAccount.id)
+                            supabaseRepo.updateUserLastActive(cloudAccount.id)
+
+                            val userGender = if (cloudAccount.gender?.equals("MALE", ignoreCase = true) == true) Gender.MALE else Gender.FEMALE
+                            val dispName = cloudAccount.displayName ?: cloudAccount.username
+                            val bioText = cloudAccount.bio ?: ""
+                            val cloudEmail = cloudAccount.googleEmail ?: if (normalizedKey.contains("@")) normalizedKey else null
+
+                            val map = getUsersMap()
+                            cloudAccount.passwordHash?.let { map[normalizedKey] = it }
+                            saveUsersMap(map)
+
+                            val session = SavedSession(
+                                isLoggedIn = true,
+                                isGuest = false,
+                                lovyId = cloudAccount.id,
+                                username = cloudAccount.username,
+                                displayName = dispName,
+                                email = cloudEmail,
+                                gender = userGender,
+                                bio = bioText,
+                                avatarUrl = cloudAccount.avatarUrl,
+                                isGoogleUser = false
+                            )
+                            saveSession(session)
+
+                            return@withContext AuthResult(
+                                success = true,
+                                message = "Login berhasil! Selamat datang kembali.",
+                                username = cloudAccount.username,
+                                displayName = dispName,
+                                email = cloudEmail,
+                                lovyId = cloudAccount.id,
+                                gender = userGender,
+                                bio = bioText,
+                                avatarUrl = cloudAccount.avatarUrl,
+                                isGoogleUser = false
+                            )
+                        } else {
+                            return@withContext AuthResult(
+                                success = false,
+                                message = "Kata sandi yang Anda masukkan salah. Silakan coba lagi."
+                            )
+                        }
                     }
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "Gagal mencocokkan akun ke Supabase, mencoba pencocokan lokal: ${e.message}")
+                Log.w(TAG, "Gagal mencocokkan akun ke server, mencoba pencocokan lokal: ${e.message}")
             }
         }
 
@@ -493,6 +561,7 @@ class AuthRepository(
                         isGoogleUser = true
                     )
                     saveSession(session)
+                    com.example.data.pocketbase.PocketBaseClient.saveAuthToken(context, com.example.data.pocketbase.PocketBaseClient.authToken)
 
                     return@withContext AuthResult(
                         success = true,
@@ -556,6 +625,7 @@ class AuthRepository(
                         isGoogleUser = true
                     )
                     saveSession(session)
+                    com.example.data.pocketbase.PocketBaseClient.saveAuthToken(context, com.example.data.pocketbase.PocketBaseClient.authToken)
 
                     return@withContext AuthResult(
                         success = true,

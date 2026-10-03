@@ -1,6 +1,7 @@
 package com.example.data.pocketbase
 
 import android.util.Log
+import com.example.data.AuthResult
 import com.example.data.supabase.SupabaseAccountDto
 import com.example.data.supabase.SupabaseMessageDto
 import com.example.model.BottleMessage
@@ -775,6 +776,7 @@ class PocketBaseRepository {
                     item.username?.startsWith("lovy_") == true -> item.username
                     else -> expectedLovyId
                 }
+                authenticateUserSession(cleanEmail, item.id)
                 return@withContext SupabaseAccountDto(
                     id = permanentLovyId,
                     username = permanentLovyId,
@@ -958,15 +960,16 @@ class PocketBaseRepository {
         }
     }
 
-    private suspend fun authenticateUserSession(identity: String, pbId: String) {
+    suspend fun authenticateUserSession(identity: String, pbId: String) {
         val api = PocketBaseClient.getApi() ?: return
         try {
             val pwd = "pb_pass_${pbId.take(8)}!"
             val authResp = api.authWithPassword(mapOf("identity" to identity, "password" to pwd))
             if (authResp.isSuccessful) {
-                val token = authResp.body()?.get("token") as? String
+                val token = authResp.body()?.token
                 if (!token.isNullOrBlank()) {
                     PocketBaseClient.authToken = token
+                    PocketBaseClient.saveAuthToken(com.example.LovyApplication.appContext, token)
                     Log.d(TAG, "Berhasil mengautentikasi sesi PocketBase untuk $identity")
                 }
             }
@@ -1022,5 +1025,177 @@ class PocketBaseRepository {
 
     suspend fun purgeInactiveAccountsAndDeletedMessages(): Boolean = withContext(Dispatchers.IO) {
         true
+    }
+
+    suspend fun loginWithPassword(identity: String, password: String): AuthResult = withContext(Dispatchers.IO) {
+        val api = PocketBaseClient.getApi()
+            ?: return@withContext AuthResult(false, "Tidak dapat menghubungkan ke server PocketBase")
+
+        val cleanIdentity = identity.trim()
+        val cleanPassword = password.trim()
+        if (cleanIdentity.isEmpty() || cleanPassword.isEmpty()) {
+            return@withContext AuthResult(false, "Username atau Email dan kata sandi wajib diisi")
+        }
+
+        try {
+            val resp = api.authWithPassword(mapOf("identity" to cleanIdentity, "password" to cleanPassword))
+            if (resp.isSuccessful) {
+                val body = resp.body()
+                val token = body?.token
+                val record = body?.record
+
+                if (!token.isNullOrBlank()) {
+                    PocketBaseClient.authToken = token
+                    PocketBaseClient.saveAuthToken(com.example.LovyApplication.appContext, token)
+                }
+
+                if (record != null) {
+                    val permanentLovyId = when {
+                        record.username?.startsWith("lovy_") == true -> record.username
+                        cleanIdentity.startsWith("lovy_") -> cleanIdentity
+                        else -> PocketBaseClient.toLovyId(record.email ?: record.username ?: record.id)
+                    }
+
+                    updateUserPresence(record.id, isOnline = true)
+
+                    val userGender = if (record.gender?.equals("MALE", ignoreCase = true) == true) Gender.MALE else Gender.FEMALE
+                    val dispName = record.name?.takeIf { it.isNotBlank() } ?: record.username ?: cleanIdentity
+
+                    return@withContext AuthResult(
+                        success = true,
+                        message = "Login berhasil! Selamat datang kembali di Lovy Chat.",
+                        username = record.username ?: cleanIdentity,
+                        displayName = dispName,
+                        email = record.email,
+                        lovyId = permanentLovyId,
+                        gender = userGender,
+                        bio = record.bio ?: "",
+                        avatarUrl = record.avatarUrl,
+                        city = record.city,
+                        isGoogleUser = false
+                    )
+                }
+            }
+
+            val code = resp.code()
+            if (code == 400) {
+                val checkFilter = "username='$cleanIdentity' || email='${cleanIdentity.lowercase()}'"
+                val checkUser = try { api.getUsers(perPage = 1, filter = checkFilter).body()?.items?.firstOrNull() } catch (_: Exception) { null }
+                val errorMsg = if (checkUser != null) {
+                    "Kata sandi yang Anda masukkan salah. Silakan coba lagi."
+                } else {
+                    "Akun \"$cleanIdentity\" belum terdaftar di PocketBase. Silakan pilih menu Daftar Akun terlebih dahulu."
+                }
+                return@withContext AuthResult(false, errorMsg)
+            }
+
+            return@withContext AuthResult(false, "Login gagal (HTTP $code). Silakan periksa kembali koneksi atau akun Anda.")
+        } catch (e: Exception) {
+            Log.e(TAG, "Kesalahan saat login PocketBase", e)
+            return@withContext AuthResult(false, "Gagal terhubung ke server PocketBase: ${e.localizedMessage ?: "Koneksi terputus"}")
+        }
+    }
+
+    suspend fun registerWithPassword(
+        username: String,
+        password: String,
+        displayName: String = "",
+        gender: Gender = Gender.FEMALE
+    ): AuthResult = withContext(Dispatchers.IO) {
+        val api = PocketBaseClient.getApi()
+            ?: return@withContext AuthResult(false, "Tidak dapat menghubungkan ke server PocketBase")
+
+        val cleanUser = username.trim()
+        val cleanPassword = password.trim()
+        if (cleanUser.isEmpty()) {
+            return@withContext AuthResult(false, "Username tidak boleh kosong")
+        }
+        if (cleanPassword.length < 6) {
+            return@withContext AuthResult(false, "Kata sandi minimal 6 karakter sesuai standar keamanan PocketBase")
+        }
+
+        val normalizedKey = cleanUser.lowercase()
+        val finalDisplayName = if (displayName.isNotBlank()) displayName.trim() else cleanUser
+        val isEmail = cleanUser.contains("@")
+        val permanentLovyId = PocketBaseClient.toLovyId(normalizedKey)
+        val defaultBio = "Halo, saya pengguna baru Lovy Chat! ✨"
+
+        try {
+            // 1. Cek duplikasi akun di PocketBase
+            val checkFilter = if (isEmail) "email='$normalizedKey'" else "username='$cleanUser' || username='$permanentLovyId'"
+            val existing = api.getUsers(perPage = 1, filter = checkFilter)
+            if (existing.isSuccessful && !existing.body()?.items.isNullOrEmpty()) {
+                return@withContext AuthResult(
+                    success = false,
+                    message = "Username atau email \"$cleanUser\" sudah terdaftar di Lovy Chat. Silakan pilih menu Masuk."
+                )
+            }
+
+            // 2. Buat akun baru di koleksi users PocketBase
+            val pbUsername = if (isEmail) permanentLovyId else cleanUser.replace(" ", "_").filter { it.isLetterOrDigit() || it == '_' }
+            val pbId = PocketBaseClient.toPbId(permanentLovyId)
+
+            val recordData = mutableMapOf<String, Any?>(
+                "id" to pbId,
+                "username" to pbUsername,
+                "name" to finalDisplayName,
+                "gender" to gender.name.lowercase(),
+                "bio" to defaultBio,
+                "password" to cleanPassword,
+                "passwordConfirm" to cleanPassword,
+                "emailVisibility" to true,
+                "is_online" to true,
+                "last_active_at" to System.currentTimeMillis()
+            )
+            if (isEmail) {
+                recordData["email"] = normalizedKey
+            }
+
+            val createRes = api.createUser(recordData)
+            val createdUser = if (createRes.isSuccessful) {
+                createRes.body()
+            } else {
+                recordData.remove("id")
+                val fallback = api.createUser(recordData)
+                if (fallback.isSuccessful) fallback.body() else null
+            }
+
+            if (createdUser == null) {
+                val errorBody = createRes.errorBody()?.string() ?: ""
+                Log.w(TAG, "Gagal membuat user di PocketBase: code=${createRes.code()} body=$errorBody")
+                val friendlyMsg = when {
+                    errorBody.contains("validation_length_out_of_range") -> "Kata sandi minimal 6 karakter."
+                    errorBody.contains("validation_not_unique") -> "Username atau email sudah digunakan akun lain."
+                    else -> "Gagal mendaftar ke server (HTTP ${createRes.code()}). Silakan coba lagi."
+                }
+                return@withContext AuthResult(false, friendlyMsg)
+            }
+
+            // 3. Otentikasi langsung untuk mendapatkan sesi auth token resmi PocketBase
+            val loginIdentity = if (isEmail) normalizedKey else pbUsername
+            val authResp = api.authWithPassword(mapOf("identity" to loginIdentity, "password" to cleanPassword))
+            if (authResp.isSuccessful) {
+                val token = authResp.body()?.token
+                if (!token.isNullOrBlank()) {
+                    PocketBaseClient.authToken = token
+                    PocketBaseClient.saveAuthToken(com.example.LovyApplication.appContext, token)
+                }
+            }
+
+            return@withContext AuthResult(
+                success = true,
+                message = "Registrasi berhasil! Selamat datang di Lovy Chat.",
+                username = createdUser.username ?: pbUsername,
+                displayName = finalDisplayName,
+                email = if (isEmail) normalizedKey else null,
+                lovyId = permanentLovyId,
+                gender = gender,
+                bio = defaultBio,
+                isGoogleUser = false
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Kesalahan saat registrasi PocketBase", e)
+            return@withContext AuthResult(false, "Terjadi gangguan saat mendaftar: ${e.localizedMessage ?: "Coba lagi nanti"}")
+        }
     }
 }

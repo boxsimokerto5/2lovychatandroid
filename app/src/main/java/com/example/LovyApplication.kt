@@ -14,6 +14,7 @@ class LovyApplication : Application(), ImageLoaderFactory {
         instance = this
         try {
             com.example.data.supabase.SupabaseClient.init(this)
+            com.example.data.pocketbase.PocketBaseClient.init(this)
             R2StorageClient.init(this)
         } catch (t: Throwable) {
             Log.w(TAG, "Failed initializing client services in onCreate", t)

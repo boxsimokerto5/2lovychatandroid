@@ -86,6 +86,7 @@ class MainActivity : ComponentActivity() {
   override fun onResume() {
     super.onResume()
     AdManager.updateCurrentActivity(this)
+    viewModel.checkForAppUpdate()
     try {
       IronSource.onResume(this)
     } catch (e: Throwable) {

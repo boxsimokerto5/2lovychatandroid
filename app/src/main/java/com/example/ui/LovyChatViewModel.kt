@@ -1,6 +1,7 @@
 package com.example.ui
 
 import android.app.Application
+import com.example.BuildConfig
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.AppDatabase
@@ -56,6 +57,7 @@ data class LovyChatUiState(
     val newFriendRequests: List<com.example.model.NewFriendRequest> = emptyList(),
     val ignoredNewFriendIds: Set<String> = emptySet(),
     val ignoredNewFriendNames: Set<String> = emptySet(),
+    val appUpdateInfo: com.example.model.AppUpdateInfo? = null,
 
     val nearbyGenderFilter: Gender? = null,
     val nearbyOnlyOnlineFilter: Boolean = true,
@@ -253,6 +255,167 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         return false
     }
 
+    fun checkForAppUpdate() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // Periksa versi minimal dari remote database / SharedPrefs
+                val remoteMinVersion = prefs.getInt("remote_min_version_code", 1)
+                val remoteLatestVersion = prefs.getInt("remote_latest_version_code", 1)
+                val remoteLatestName = prefs.getString("remote_latest_version_name", "1.0") ?: "1.0"
+                val customTitle = prefs.getString("remote_update_title", "") ?: ""
+                val customMsg = prefs.getString("remote_update_message", "") ?: ""
+
+                var fetchedMinVersion = remoteMinVersion
+                var fetchedLatestVersion = remoteLatestVersion
+                var fetchedLatestName = remoteLatestName
+
+                // Cek konfigurasi versi minimal dari PocketBase
+                if (com.example.data.pocketbase.PocketBaseClient.isConfigured()) {
+                    try {
+                        val pbApi = com.example.data.pocketbase.PocketBaseClient.getApi()
+                        if (pbApi != null) {
+                            val res = pbApi.getUsers(perPage = 1, filter = "(username='__APP_CONFIG__')")
+                            if (res.isSuccessful && res.body()?.items?.isNotEmpty() == true) {
+                                val item = res.body()!!.items.first()
+                                val bioStr = item.bio.orEmpty()
+                                if (bioStr.contains("min_code")) {
+                                    val json = org.json.JSONObject(bioStr)
+                                    fetchedMinVersion = json.optInt("min_code", fetchedMinVersion)
+                                    fetchedLatestVersion = json.optInt("latest_code", fetchedLatestVersion)
+                                    fetchedLatestName = json.optString("latest_name", fetchedLatestName)
+                                }
+                            }
+                        }
+                    } catch (_: Exception) {}
+                }
+
+                if (SupabaseClient.isConfigured()) {
+                    try {
+                        val api = SupabaseClient.getApi()
+                        val apiKey = SupabaseClient.getSupabaseAnonKey()
+                        val auth = SupabaseClient.getAuthHeader()
+                        if (api != null) {
+                            val res = api.getAccountByUsername(apiKey, auth, "__APP_CONFIG__", limit = 1)
+                            if (res.isSuccessful && res.body()?.isNotEmpty() == true) {
+                                val item = res.body()!!.first()
+                                val bioStr = item.bio.orEmpty()
+                                if (bioStr.contains("min_code")) {
+                                    val json = org.json.JSONObject(bioStr)
+                                    fetchedMinVersion = json.optInt("min_code", fetchedMinVersion)
+                                    fetchedLatestVersion = json.optInt("latest_code", fetchedLatestVersion)
+                                    fetchedLatestName = json.optString("latest_name", fetchedLatestName)
+                                }
+                            }
+                        }
+                    } catch (_: Exception) {}
+                }
+
+                val currentCode = BuildConfig.VERSION_CODE
+                withContext(Dispatchers.Main) {
+                    if (fetchedMinVersion > currentCode) {
+                        // FORCE UPDATE: Aplikasi harus diperbarui ke Google Play sekarang juga
+                        _uiState.update {
+                            it.copy(
+                                appUpdateInfo = com.example.model.AppUpdateInfo(
+                                    minVersionCode = fetchedMinVersion,
+                                    latestVersionCode = fetchedLatestVersion,
+                                    latestVersionName = fetchedLatestName,
+                                    title = customTitle,
+                                    message = customMsg,
+                                    isForceUpdate = true
+                                )
+                            )
+                        }
+                    } else if (fetchedLatestVersion > currentCode) {
+                        // Pembaruan opsional
+                        val dismissedVersion = prefs.getInt("dismissed_optional_update_version", 0)
+                        if (dismissedVersion < fetchedLatestVersion) {
+                            _uiState.update {
+                                it.copy(
+                                    appUpdateInfo = com.example.model.AppUpdateInfo(
+                                        minVersionCode = fetchedMinVersion,
+                                        latestVersionCode = fetchedLatestVersion,
+                                        latestVersionName = fetchedLatestName,
+                                        title = customTitle,
+                                        message = customMsg,
+                                        isForceUpdate = false
+                                    )
+                                )
+                            }
+                        }
+                    } else {
+                        _uiState.update { it.copy(appUpdateInfo = null) }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w("LovyChatViewModel", "checkForAppUpdate error: ${e.message}")
+            }
+        }
+    }
+
+    fun dismissOptionalUpdate() {
+        val currentInfo = _uiState.value.appUpdateInfo ?: return
+        if (!currentInfo.isForceUpdate) {
+            prefs.edit().putInt("dismissed_optional_update_version", currentInfo.latestVersionCode).apply()
+            _uiState.update { it.copy(appUpdateInfo = null) }
+        }
+    }
+
+    /**
+     * Memungkinkan pengembang mengatur versi minimal aplikasi (Force Update) langsung dari aplikasi
+     */
+    fun setRemoteMinVersionCode(minVersion: Int, latestVersion: Int = minVersion, latestName: String = "1.0") {
+        prefs.edit()
+            .putInt("remote_min_version_code", minVersion)
+            .putInt("remote_latest_version_code", latestVersion)
+            .putString("remote_latest_version_name", latestName)
+            .apply()
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val payloadBio = org.json.JSONObject().apply {
+                put("min_code", minVersion)
+                put("latest_code", latestVersion)
+                put("latest_name", latestName)
+            }.toString()
+
+            // 1. Sync ke PocketBase
+            if (com.example.data.pocketbase.PocketBaseClient.isConfigured()) {
+                try {
+                    val pbApi = com.example.data.pocketbase.PocketBaseClient.getApi()
+                    if (pbApi != null) {
+                        val res = pbApi.getUsers(perPage = 1, filter = "(username='__APP_CONFIG__')")
+                        val configId = res.body()?.items?.firstOrNull()?.id ?: "dpjh5vim92i9xy9"
+                        pbApi.updateUser(configId, mapOf("bio" to payloadBio))
+                    }
+                } catch (e: Exception) {
+                    Log.w("LovyChatViewModel", "Sync __APP_CONFIG__ PocketBase info: ${e.message}")
+                }
+            }
+
+            // 2. Sync ke Supabase
+            if (SupabaseClient.isConfigured()) {
+                try {
+                    val api = SupabaseClient.getApi()
+                    val apiKey = SupabaseClient.getSupabaseAnonKey()
+                    val auth = SupabaseClient.getAuthHeader()
+                    if (api != null) {
+                        api.upsertAccount(
+                            apiKey = apiKey,
+                            authHeader = auth,
+                            account = com.example.data.supabase.SupabaseAccountDto(
+                                id = "__APP_CONFIG__",
+                                username = "__APP_CONFIG__",
+                                displayName = "System App Config",
+                                bio = payloadBio
+                            )
+                        )
+                    }
+                } catch (_: Exception) {}
+            }
+            checkForAppUpdate()
+        }
+    }
+
     companion object {
         // Cache data selama 3 menit untuk memangkas 80%+ query baca ke cloud
         private const val CACHE_DURATION_MS = 3 * 60 * 1000L
@@ -283,6 +446,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         refreshSupabaseState()
         refreshR2State()
         detectAndApplyGeoLanguage()
+        checkForAppUpdate()
         checkInitialGpsLocation()
         observeUserProfile()
         observeChatFriends()

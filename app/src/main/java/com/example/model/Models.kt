@@ -119,3 +119,13 @@ data class NewFriendRequest(
     val isAccepted: Boolean = false,
     val isIgnored: Boolean = false
 )
+
+data class AppUpdateInfo(
+    val minVersionCode: Int = 1,
+    val latestVersionCode: Int = 1,
+    val latestVersionName: String = "1.0",
+    val title: String = "",
+    val message: String = "",
+    val changelog: List<String> = emptyList(),
+    val isForceUpdate: Boolean = false
+)

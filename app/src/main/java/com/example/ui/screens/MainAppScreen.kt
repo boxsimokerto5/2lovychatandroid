@@ -385,7 +385,10 @@ fun MainAppScreen(
                 onBack = { viewModel.navigateBack() },
                 onSaveCredentials = { url, key -> viewModel.saveSupabaseCredentials(url, key) },
                 onTestConnection = { viewModel.testSupabaseConnection() },
-                onClearCredentials = { viewModel.clearSupabaseCredentials() }
+                onClearCredentials = { viewModel.clearSupabaseCredentials() },
+                onUpdateRemoteVersion = { minCode, latestCode, latestName ->
+                    viewModel.setRemoteMinVersionCode(minCode, latestCode, latestName)
+                }
             )
         }
         is CurrentScreen.ChatDetail -> {
@@ -727,6 +730,15 @@ fun MainAppScreen(
                 }
             }
         }
+    }
+
+    // Tampilkan Dialog Pembaruan Aplikasi (Force Update / Pembaruan Play Store)
+    uiState.appUpdateInfo?.let { updateInfo ->
+        com.example.ui.components.ForceUpdateDialog(
+            updateInfo = updateInfo,
+            language = uiState.language,
+            onDismiss = { viewModel.dismissOptionalUpdate() }
+        )
     }
 }
 

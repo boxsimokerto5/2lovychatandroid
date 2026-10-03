@@ -13,6 +13,12 @@ data class PocketBasePage<T>(
 )
 
 @JsonClass(generateAdapter = true)
+data class PocketBaseAuthResponse(
+    @Json(name = "token") val token: String? = null,
+    @Json(name = "record") val record: PocketBaseUserRecord? = null
+)
+
+@JsonClass(generateAdapter = true)
 data class PocketBaseUserRecord(
     @Json(name = "id") val id: String,
     @Json(name = "username") val username: String? = null,

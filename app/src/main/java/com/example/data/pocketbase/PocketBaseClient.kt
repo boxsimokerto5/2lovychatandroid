@@ -1,5 +1,6 @@
 package com.example.data.pocketbase
 
+import android.content.Context
 import android.util.Log
 import com.example.data.supabase.FlexibleTypeAdapters
 import com.example.data.supabase.SupabaseClient
@@ -15,6 +16,8 @@ import java.util.concurrent.TimeUnit
 object PocketBaseClient {
     private const val TAG = "PocketBaseClient"
     const val DEFAULT_POCKETBASE_URL = "http://173.249.59.183:8090/"
+    private const val PREFS_NAME = "pocketbase_prefs"
+    private const val KEY_AUTH_TOKEN = "pb_auth_token"
 
     @Volatile
     private var cachedApi: PocketBaseRestApi? = null
@@ -24,6 +27,41 @@ object PocketBaseClient {
 
     @Volatile
     var authToken: String? = null
+
+    fun init(context: Context?) {
+        if (context == null) return
+        try {
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val savedToken = prefs.getString(KEY_AUTH_TOKEN, null)
+            if (!savedToken.isNullOrBlank()) {
+                authToken = savedToken
+                Log.d(TAG, "Memuat token sesi PocketBase tersimpan")
+            }
+        } catch (e: Throwable) {
+            Log.w(TAG, "Gagal memuat token PocketBase tersimpan: ${e.message}")
+        }
+    }
+
+    fun saveAuthToken(context: Context?, token: String?) {
+        authToken = token
+        if (context == null) return
+        try {
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            if (token.isNullOrBlank()) {
+                prefs.edit().remove(KEY_AUTH_TOKEN).apply()
+            } else {
+                prefs.edit().putString(KEY_AUTH_TOKEN, token).apply()
+            }
+        } catch (e: Throwable) {
+            Log.w(TAG, "Gagal menyimpan token PocketBase: ${e.message}")
+        }
+    }
+
+    fun clearAuthToken(context: Context?) {
+        saveAuthToken(context, null)
+    }
+
+    fun isConfigured(): Boolean = getBaseUrl().isNotBlank()
 
     fun getBaseUrl(): String {
         val configured = SupabaseClient.getSupabaseUrl()
