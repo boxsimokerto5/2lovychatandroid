@@ -55,6 +55,7 @@ data class LovyChatUiState(
     val chattedFriends: List<User> = emptyList(),
     val newFriendRequests: List<com.example.model.NewFriendRequest> = emptyList(),
     val ignoredNewFriendIds: Set<String> = emptySet(),
+    val ignoredNewFriendNames: Set<String> = emptySet(),
 
     val nearbyGenderFilter: Gender? = null,
     val nearbyOnlyOnlineFilter: Boolean = true,
@@ -189,6 +190,69 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         } catch (_: Exception) {}
     }
 
+    // Pelacakan permintaan teman baru yang diabaikan agar tersimpan permanen dan tidak pernah muncul lagi di Teman Baru
+    private val ignoredFriendRequestIds = java.util.Collections.synchronizedSet(mutableSetOf<String>())
+    private val ignoredFriendRequestNames = java.util.Collections.synchronizedSet(mutableSetOf<String>())
+
+    private fun loadIgnoredFriendRequestsData() {
+        try {
+            val savedIds = prefs.getStringSet("ignored_friend_request_ids", emptySet()) ?: emptySet()
+            val savedNames = prefs.getStringSet("ignored_friend_request_names", emptySet()) ?: emptySet()
+            ignoredFriendRequestIds.addAll(savedIds)
+            ignoredFriendRequestNames.addAll(savedNames)
+            _uiState.update { 
+                it.copy(
+                    ignoredNewFriendIds = HashSet(ignoredFriendRequestIds),
+                    ignoredNewFriendNames = HashSet(ignoredFriendRequestNames)
+                ) 
+            }
+        } catch (e: Exception) {
+            Log.w("LovyChatViewModel", "loadIgnoredFriendRequestsData error: ${e.message}")
+        }
+    }
+
+    private fun persistIgnoredFriendRequest(id: String, name: String = "", requestId: String = "") {
+        if (id.isNotBlank()) {
+            val cleanId = id.trim()
+            ignoredFriendRequestIds.add(cleanId)
+            val pbId = com.example.data.pocketbase.PocketBaseClient.toPbId(cleanId)
+            if (pbId.isNotBlank()) ignoredFriendRequestIds.add(pbId)
+            userAliasMap[cleanId]?.let { ignoredFriendRequestIds.add(it) }
+        }
+        if (requestId.isNotBlank()) {
+            val cleanReqId = requestId.trim()
+            ignoredFriendRequestIds.add(cleanReqId)
+            val pbReqId = com.example.data.pocketbase.PocketBaseClient.toPbId(cleanReqId)
+            if (pbReqId.isNotBlank()) ignoredFriendRequestIds.add(pbReqId)
+            userAliasMap[cleanReqId]?.let { ignoredFriendRequestIds.add(it) }
+        }
+        if (name.isNotBlank()) {
+            ignoredFriendRequestNames.add(name.trim())
+        }
+        try {
+            prefs.edit()
+                .putStringSet("ignored_friend_request_ids", HashSet(ignoredFriendRequestIds))
+                .putStringSet("ignored_friend_request_names", HashSet(ignoredFriendRequestNames))
+                .apply()
+        } catch (_: Exception) {}
+    }
+
+    fun isIgnoredFriendRequest(partnerId: String?, partnerName: String? = null): Boolean {
+        if (!partnerId.isNullOrBlank()) {
+            val cleanId = partnerId.trim()
+            if (ignoredFriendRequestIds.any { isSameUser(it, cleanId) || it.equals(cleanId, ignoreCase = true) }) {
+                return true
+            }
+        }
+        if (!partnerName.isNullOrBlank()) {
+            val cleanName = partnerName.trim()
+            if (ignoredFriendRequestNames.any { it.equals(cleanName, ignoreCase = true) }) {
+                return true
+            }
+        }
+        return false
+    }
+
     companion object {
         // Cache data selama 3 menit untuk memangkas 80%+ query baca ke cloud
         private const val CACHE_DURATION_MS = 3 * 60 * 1000L
@@ -215,6 +279,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         loadSavedBottles()
         loadPrivacySettings()
         loadDeletedTrackingData()
+        loadIgnoredFriendRequestsData()
         refreshSupabaseState()
         refreshR2State()
         detectAndApplyGeoLanguage()
@@ -551,12 +616,12 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     fun refreshNewFriendRequests(currentFriends: List<User> = _uiState.value.chattedFriends) {
         val state = _uiState.value
         val friendIds = currentFriends.map { it.id }.toSet()
-        val ignoredIds = state.ignoredNewFriendIds
 
         val requestsMap = state.newFriendRequests
             .filterNot { req ->
                 currentFriends.any { isSameUser(it.id, req.user.id) || areUsersSamePerson(it.id, it.name, req.user.id, req.user.name) } || 
-                ignoredIds.any { isSameUser(it, req.user.id) } || 
+                isIgnoredFriendRequest(req.user.id, req.user.name) || 
+                isIgnoredFriendRequest(req.id, req.user.name) || 
                 req.user.name.trim().isBlank() || 
                 isDummyFriend(req.user.id, req.user.name) ||
                 isSelfUser(req.user.id, req.user.name)
@@ -573,7 +638,8 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 isSameUser(it.id, partnerId) || 
                 areUsersSamePerson(it.id, it.name, partnerId, partnerName) 
             }
-            val isIgnored = ignoredIds.any { isSameUser(it, partnerId) }
+            val isIgnored = isIgnoredFriendRequest(partnerId, partnerName) ||
+                (candidateUser != null && isIgnoredFriendRequest(candidateUser.id, candidateUser.name))
             if (partnerId.isBlank() || isAlreadyFriend || isIgnored || isDummyFriend(partnerId, "") || isSelfUser(partnerId, "")) continue
 
             val validMsgs = msgs.filterNot { 
@@ -611,11 +677,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         for (conv in state.conversations) {
             val partnerId = conv.partnerId
             val pName = conv.partnerName.trim()
+            val candidateUser = state.nearbyUsers.find { isSameUser(it.id, partnerId) || it.name.equals(pName, ignoreCase = true) }
             val isAlreadyFriend = currentFriends.any { 
                 isSameUser(it.id, partnerId) || 
                 areUsersSamePerson(it.id, it.name, partnerId, pName) 
             }
-            val isIgnored = ignoredIds.any { isSameUser(it, partnerId) }
+            val isIgnored = isIgnoredFriendRequest(partnerId, pName) ||
+                (candidateUser != null && isIgnoredFriendRequest(candidateUser.id, candidateUser.name))
             if (partnerId.isBlank() || pName.isBlank() || isDummyFriend(partnerId, pName) || isSelfUser(partnerId, pName) || isAlreadyFriend || isIgnored) continue
 
             // Pengguna lain yang mengirimi pesan obrolan tapi belum disetujui / belum ada di Kontak Saya
@@ -898,13 +966,51 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun ignoreNewFriend(userId: String) {
+    fun ignoreNewFriend(userId: String, userName: String = "", requestId: String = "") {
         recordFeatureClick()
-        _uiState.update { state ->
-            state.copy(
-                ignoredNewFriendIds = state.ignoredNewFriendIds + userId,
-                newFriendRequests = state.newFriendRequests.filterNot { it.user.id == userId },
-                conversations = state.conversations.filterNot { it.partnerId == userId }
+
+        val state = _uiState.value
+        val targetReq = state.newFriendRequests.find { 
+            it.user.id == userId || it.id == requestId || isSameUser(it.user.id, userId) || 
+            (requestId.isNotBlank() && isSameUser(it.id, requestId)) ||
+            (userName.isNotBlank() && it.user.name.equals(userName, ignoreCase = true))
+        }
+        val resolvedName = userName.ifBlank { targetReq?.user?.name.orEmpty() }
+        val resolvedUserId = userId.ifBlank { targetReq?.user?.id.orEmpty() }
+        val resolvedReqId = requestId.ifBlank { targetReq?.id.orEmpty() }
+
+        persistIgnoredFriendRequest(resolvedUserId, resolvedName, resolvedReqId)
+
+        // Hapus conversation atau tandai conversation sebagai deleted agar tidak muncul lagi di obrolan
+        val myId = state.myLovyId
+        if (resolvedUserId.isNotBlank()) {
+            val convId1 = getCanonicalConversationId(myId, resolvedUserId)
+            persistDeletedConversation(convId1)
+        }
+        if (resolvedReqId.isNotBlank() && resolvedReqId != resolvedUserId) {
+            val convId2 = getCanonicalConversationId(myId, resolvedReqId)
+            persistDeletedConversation(convId2)
+        }
+
+        _uiState.update { current ->
+            val updatedReqs = current.newFriendRequests.filterNot { req ->
+                isIgnoredFriendRequest(req.user.id, req.user.name) ||
+                isIgnoredFriendRequest(req.id, req.user.name) ||
+                req.user.id == resolvedUserId ||
+                req.id == resolvedReqId ||
+                (resolvedName.isNotBlank() && req.user.name.equals(resolvedName, ignoreCase = true))
+            }
+            val updatedConvs = current.conversations.filterNot { conv ->
+                isIgnoredFriendRequest(conv.partnerId, conv.partnerName) ||
+                conv.partnerId == resolvedUserId ||
+                conv.partnerId == resolvedReqId ||
+                (resolvedName.isNotBlank() && conv.partnerName.equals(resolvedName, ignoreCase = true))
+            }
+            current.copy(
+                ignoredNewFriendIds = HashSet(ignoredFriendRequestIds),
+                ignoredNewFriendNames = HashSet(ignoredFriendRequestNames),
+                newFriendRequests = updatedReqs,
+                conversations = updatedConvs
             )
         }
     }
@@ -4589,12 +4695,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
             var resolvedPartnerName: String? = null
             val isAlreadyFriend = _uiState.value.chattedFriends.any { isSameUser(it.id, partnerId) }
-            val isIgnored = _uiState.value.ignoredNewFriendIds.any { isSameUser(it, partnerId) }
-            if (isIgnored) continue
-
             val cleanPartnerName = partnerUser?.name?.trim()?.takeIf { it.isNotBlank() } 
                 ?: (if (partnerId.startsWith("lovy_")) "Pengguna ($partnerId)" else "Pengguna (${partnerId.takeLast(4)})")
             resolvedPartnerName = cleanPartnerName
+
+            val isIgnored = isIgnoredFriendRequest(partnerId, cleanPartnerName) ||
+                (partnerUser != null && isIgnoredFriendRequest(partnerUser.id, partnerUser.name))
+            if (isIgnored) continue
 
             if (partnerUser == null) {
                 viewModelScope.launch(Dispatchers.IO) {

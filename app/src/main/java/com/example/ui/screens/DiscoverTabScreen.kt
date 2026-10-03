@@ -21,6 +21,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Waves
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -36,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -47,6 +49,7 @@ import com.example.ui.theme.NeutralBorder
 import com.example.ui.theme.NeutralDark
 import com.example.ui.theme.NeutralMedium
 import com.example.ui.theme.ScreenBackground
+import com.example.util.AppShareHelper
 
 @Composable
 fun DiscoverTabScreen(
@@ -56,6 +59,7 @@ fun DiscoverTabScreen(
     onNavigateToMoments: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -211,6 +215,23 @@ fun DiscoverTabScreen(
                         description = com.example.util.AppStrings.menuMomentsSub(language),
                         testTag = "menu_moments",
                         onClick = onNavigateToMoments
+                    )
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(start = 76.dp, end = 16.dp),
+                        thickness = 0.8.dp,
+                        color = NeutralBorder
+                    )
+
+                    // Item 4: Bagikan Aplikasi
+                    DiscoverMenuItem(
+                        icon = Icons.Default.Share,
+                        iconTint = EmeraldGreen,
+                        iconBgColor = EmeraldGreen.copy(alpha = 0.12f),
+                        title = com.example.util.AppStrings.menuShareApp(language),
+                        description = com.example.util.AppStrings.menuShareAppSub(language),
+                        testTag = "menu_share_app",
+                        onClick = { AppShareHelper.shareApp(context, language) }
                     )
                 }
             }

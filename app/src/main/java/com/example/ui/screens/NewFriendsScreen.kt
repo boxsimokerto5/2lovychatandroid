@@ -75,7 +75,7 @@ fun NewFriendsScreen(
     requests: List<NewFriendRequest>,
     onBack: () -> Unit,
     onAcceptFriend: (User) -> Unit,
-    onIgnoreFriend: (String) -> Unit,
+    onIgnoreFriend: (userId: String, userName: String, requestId: String) -> Unit,
     onOpenChat: (User) -> Unit,
     onNavigateToNearby: () -> Unit,
     searchUserByCode: (String, (User?) -> Unit) -> Unit = { _, callback -> callback(null) },
@@ -288,7 +288,7 @@ fun NewFriendsScreen(
                             ).show()
                         },
                         onIgnore = { 
-                            onIgnoreFriend(request.user.id) 
+                            onIgnoreFriend(request.user.id, request.user.name, request.id) 
                             Toast.makeText(
                                 context,
                                 com.example.util.AppStrings.friendIgnoredToast(language, request.user.name),

@@ -636,6 +636,106 @@ object AppStrings {
         else -> "About Lovy Chat"
     }
 
+    fun menuRateApp(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "给应用评分"
+        AppLanguage.JAPANESE -> "アプリを評価する"
+        AppLanguage.KOREAN -> "앱 평가하기"
+        AppLanguage.ARABIC -> "تقييم التطبيق"
+        AppLanguage.SPANISH -> "Calificar la aplicación"
+        AppLanguage.FRENCH -> "Noter l'application"
+        AppLanguage.GERMAN -> "App bewerten"
+        AppLanguage.RUSSIAN -> "Оценить приложение"
+        AppLanguage.PORTUGUESE -> "Avaliar o aplicativo"
+        AppLanguage.INDONESIAN -> "Beri Rating Aplikasi"
+        else -> "Rate Lovy Chat"
+    }
+
+    fun menuRateAppSub(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "在 Google Play 给予 5 星好评与支持"
+        AppLanguage.JAPANESE -> "Google Play で5つ星レビューを投稿する"
+        AppLanguage.KOREAN -> "Google Play에서 별점 5점과 리뷰 남기기"
+        AppLanguage.ARABIC -> "ادعمنا بـ 5 نجوم على متجر Google Play"
+        AppLanguage.SPANISH -> "Califícanos con 5 estrellas en Google Play"
+        AppLanguage.FRENCH -> "Donnez 5 étoiles sur Google Play"
+        AppLanguage.GERMAN -> "Bewerte uns mit 5 Sternen im Google Play Store"
+        AppLanguage.RUSSIAN -> "Поставьте 5 звезд в Google Play"
+        AppLanguage.PORTUGUESE -> "Dê 5 estrelas no Google Play"
+        AppLanguage.INDONESIAN -> "Beri bintang 5 & ulasan di Google Play Store"
+        else -> "Support us with 5 stars on Google Play"
+    }
+
+    fun menuShareApp(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "分享应用"
+        AppLanguage.JAPANESE -> "アプリをシェア"
+        AppLanguage.KOREAN -> "앱 공유하기"
+        AppLanguage.ARABIC -> "مشاركة التطبيق"
+        AppLanguage.SPANISH -> "Compartir aplicación"
+        AppLanguage.FRENCH -> "Partager l'application"
+        AppLanguage.GERMAN -> "App teilen"
+        AppLanguage.RUSSIAN -> "Поделиться приложением"
+        AppLanguage.PORTUGUESE -> "Compartilhar aplicativo"
+        AppLanguage.INDONESIAN -> "Bagikan Aplikasi"
+        else -> "Share Lovy Chat"
+    }
+
+    fun menuShareAppSub(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "邀请好友加入，结识身边更有趣的人"
+        AppLanguage.JAPANESE -> "友達を招待して近くの新しい人と繋がろう"
+        AppLanguage.KOREAN -> "친구를 초대하고 주변의 새로운 사람을 만나보세요"
+        AppLanguage.ARABIC -> "ادعُ أصدقاءك وتواصل مع أشخاص جدد بالقرب منك"
+        AppLanguage.SPANISH -> "Invita amigos y conoce personas cerca de ti"
+        AppLanguage.FRENCH -> "Invitez des amis et rencontrez des personnes à proximité"
+        AppLanguage.GERMAN -> "Freunde einladen und Menschen in der Nähe kennenlernen"
+        AppLanguage.RUSSIAN -> "Приглашайте друзей и знакомьтесь с людьми рядом"
+        AppLanguage.PORTUGUESE -> "Convide amigos e conheça novas pessoas por perto"
+        AppLanguage.INDONESIAN -> "Ajak teman bergabung & temukan orang seru di sekitar"
+        else -> "Invite friends & connect with new people nearby"
+    }
+
+    fun shareAppMessage(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "快来和我一起使用 Lovy Chat 吧！结识新朋友，畅享趣味聊天：\nhttps://play.google.com/store/apps/details?id=com.lovychat.gecckocreator"
+        AppLanguage.JAPANESE -> "Lovy Chat で新しい友達を見つけよう！近くの人と楽しくおしゃべり：\nhttps://play.google.com/store/apps/details?id=com.lovychat.gecckocreator"
+        AppLanguage.KOREAN -> "Lovy Chat에서 만나요! 새로운 친구를 사귀고 즐거운 대화를 나눠보세요:\nhttps://play.google.com/store/apps/details?id=com.lovychat.gecckocreator"
+        AppLanguage.ARABIC -> "انضم إلي على Lovy Chat! تعرف على أصدقاء جدد واستمتع بالمحادثات:\nhttps://play.google.com/store/apps/details?id=com.lovychat.gecckocreator"
+        AppLanguage.SPANISH -> "¡Únete a mí en Lovy Chat! Conoce nuevos amigos y charla con personas cerca de ti:\nhttps://play.google.com/store/apps/details?id=com.lovychat.gecckocreator"
+        AppLanguage.FRENCH -> "Rejoins-moi sur Lovy Chat ! Rencontre de nouveaux amis et discute avec des personnes à proximité :\nhttps://play.google.com/store/apps/details?id=com.lovychat.gecckocreator"
+        AppLanguage.GERMAN -> "Komm zu Lovy Chat! Finde neue Freunde und chatte mit Leuten in deiner Nähe:\nhttps://play.google.com/store/apps/details?id=com.lovychat.gecckocreator"
+        AppLanguage.RUSSIAN -> "Присоединяйся ко мне в Lovy Chat! Знакомься с новыми друзьями и общайся с людьми поблизости:\nhttps://play.google.com/store/apps/details?id=com.lovychat.gecckocreator"
+        AppLanguage.PORTUGUESE -> "Junte-se a mim no Lovy Chat! Encontre novos amigos e converse com pessoas perto de você:\nhttps://play.google.com/store/apps/details?id=com.lovychat.gecckocreator"
+        AppLanguage.INDONESIAN -> "Yuk download Lovy Chat di Google Play Store! Temukan teman baru dan seru di sekitarmu:\nhttps://play.google.com/store/apps/details?id=com.lovychat.gecckocreator"
+        else -> "Join me on Lovy Chat! Meet new friends and connect with people nearby:\nhttps://play.google.com/store/apps/details?id=com.lovychat.gecckocreator"
+    }
+
+    fun shareAppSubject(lang: AppLanguage): String = "Lovy Chat - New friends, fun friends"
+
+    fun aboutAppRateButton(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "五星好评"
+        AppLanguage.JAPANESE -> "5つ星評価"
+        AppLanguage.KOREAN -> "별점 5점 주기"
+        AppLanguage.ARABIC -> "تقييم 5 نجوم"
+        AppLanguage.SPANISH -> "Calificar 5 estrellas"
+        AppLanguage.FRENCH -> "Noter 5 étoiles"
+        AppLanguage.GERMAN -> "5 Sterne bewerten"
+        AppLanguage.RUSSIAN -> "Оценить на 5 звезд"
+        AppLanguage.PORTUGUESE -> "Avaliar 5 estrelas"
+        AppLanguage.INDONESIAN -> "Beri Bintang 5"
+        else -> "Rate 5 Stars"
+    }
+
+    fun aboutAppShareButton(lang: AppLanguage): String = when (resolveLang(lang)) {
+        AppLanguage.CHINESE -> "分享给好友"
+        AppLanguage.JAPANESE -> "友達にシェア"
+        AppLanguage.KOREAN -> "친구에게 공유"
+        AppLanguage.ARABIC -> "مشاركة مع الأصدقاء"
+        AppLanguage.SPANISH -> "Compartir con amigos"
+        AppLanguage.FRENCH -> "Partager avec des amis"
+        AppLanguage.GERMAN -> "Mit Freunden teilen"
+        AppLanguage.RUSSIAN -> "Поделиться с друзьями"
+        AppLanguage.PORTUGUESE -> "Compartilhar com amigos"
+        AppLanguage.INDONESIAN -> "Bagikan ke Teman"
+        else -> "Share with Friends"
+    }
+
     fun menuLogout(lang: AppLanguage): String = when (resolveLang(lang)) {
         AppLanguage.CHINESE -> "退出登录"
         AppLanguage.JAPANESE -> "ログアウト"

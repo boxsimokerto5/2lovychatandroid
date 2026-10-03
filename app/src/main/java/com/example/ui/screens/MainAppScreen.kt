@@ -550,7 +550,7 @@ fun MainAppScreen(
                 requests = uiState.newFriendRequests,
                 onBack = { viewModel.navigateBack() },
                 onAcceptFriend = { user -> viewModel.acceptNewFriend(user) },
-                onIgnoreFriend = { userId -> viewModel.ignoreNewFriend(userId) },
+                onIgnoreFriend = { userId, userName, reqId -> viewModel.ignoreNewFriend(userId, userName, reqId) },
                 onOpenChat = { user ->
                     viewModel.acceptNewFriend(user)
                     val convId = viewModel.getCanonicalConversationId(uiState.myLovyId, user.id)

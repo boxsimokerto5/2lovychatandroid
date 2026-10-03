@@ -50,6 +50,8 @@ import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -95,6 +97,7 @@ import com.example.ui.theme.NeutralBorder
 import com.example.ui.theme.NeutralDark
 import com.example.ui.theme.NeutralMedium
 import com.example.ui.theme.ScreenBackground
+import com.example.util.AppShareHelper
 
 @Composable
 fun ProfileTabScreen(
@@ -333,6 +336,22 @@ fun ProfileTabScreen(
                     title = com.example.util.AppStrings.menuAbout(language),
                     subtitle = "Versi 1.0.0 (${com.example.util.AppStrings.motto(language)})",
                     onClick = { showAboutAppDialog = true }
+                )
+                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
+                ProfileMenuItem(
+                    icon = Icons.Default.Star,
+                    iconTint = Color(0xFFFFA000),
+                    title = com.example.util.AppStrings.menuRateApp(language),
+                    subtitle = com.example.util.AppStrings.menuRateAppSub(language),
+                    onClick = { AppShareHelper.openPlayStoreRating(context) }
+                )
+                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
+                ProfileMenuItem(
+                    icon = Icons.Default.Share,
+                    iconTint = EmeraldGreen,
+                    title = com.example.util.AppStrings.menuShareApp(language),
+                    subtitle = com.example.util.AppStrings.menuShareAppSub(language),
+                    onClick = { AppShareHelper.shareApp(context, language) }
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = NeutralBorder, thickness = 0.6.dp)
                 ProfileMenuItem(
@@ -1746,7 +1765,65 @@ fun AboutAppDialog(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Rating & Share Quick Action Buttons
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Button(
+                    onClick = { AppShareHelper.openPlayStoreRating(context) },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFF8E1)),
+                    shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFFD54F)),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp)
+                        .testTag("btn_about_rate_playstore")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = Color(0xFFFFA000),
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = com.example.util.AppStrings.aboutAppRateButton(language),
+                        color = Color(0xFFE65100),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.5.sp
+                    )
+                }
+
+                Button(
+                    onClick = { AppShareHelper.shareApp(context, language) },
+                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen.copy(alpha = 0.12f)),
+                    shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldGreen.copy(alpha = 0.4f)),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp)
+                        .testTag("btn_about_share_app")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Share,
+                        contentDescription = null,
+                        tint = EmeraldGreen,
+                        modifier = Modifier.size(17.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = com.example.util.AppStrings.aboutAppShareButton(language),
+                        color = EmeraldGreen,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.5.sp
+                    )
+                }
+            }
 
             // Action Buttons
             Row(
