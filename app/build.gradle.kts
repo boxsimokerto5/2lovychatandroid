@@ -133,9 +133,12 @@ dependencies {
 
   // ironSource Mediation SDK
   implementation("com.ironsource.sdk:mediationsdk:8.6.0")
-  // Pangle Adapter & SDK dinonaktifkan agar tidak membawa binary native .so lama yang belum 16 KB aligned
-  // implementation("com.ironsource.adapters:pangleadapter:4.3.36")
-  // implementation("com.pangle.global:ads-sdk:6.3.0.9")
+  // Pangle Adapter & SDK untuk Mediasi ironSource
+  implementation("com.ironsource.adapters:pangleadapter:4.3.36")
+  implementation("com.pangle.global:ads-sdk:6.3.0.9")
+  // Yandex Ads & ironSource Adapter
+  implementation("com.yandex.android:mobileads:7.12.0")
+  implementation("com.yandex.ads.adapter:ironsource-mobileads:7.9.0.0")
   implementation("com.google.android.gms:play-services-ads-identifier:18.2.0")
   implementation("com.google.android.gms:play-services-appset:16.1.0")
   implementation(libs.kotlinx.coroutines.android)

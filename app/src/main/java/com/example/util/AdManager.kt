@@ -155,6 +155,15 @@ object AdManager {
                 Log.w(TAG, "Could not set metadata: ${e.message}")
             }
 
+            // Initialize Yandex Mobile Ads to warm up mediation network
+            try {
+                com.yandex.mobile.ads.common.MobileAds.initialize(activity) {
+                    Log.d(TAG, "Yandex Mobile Ads SDK initialized for ironSource mediation")
+                }
+            } catch (t: Throwable) {
+                Log.d(TAG, "Yandex Mobile Ads init note: ${t.message}")
+            }
+
             // Initialize IronSource with Banner, Interstitial, Rewarded Video, and Native Ad
             IronSource.init(
                 activity,
