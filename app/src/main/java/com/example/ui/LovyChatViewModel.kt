@@ -3015,6 +3015,13 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         if (c1.isBlank() || c2.isBlank()) return false
         if (c1 == c2) return true
         if (c1.contains(c2) || c2.contains(c1)) return true
+        val cityPart1 = c1.substringBefore(",").trim()
+        val cityPart2 = c2.substringBefore(",").trim()
+        if (cityPart1.length >= 3 && cityPart2.length >= 3) {
+            if (cityPart1 == cityPart2 || cityPart1.contains(cityPart2) || cityPart2.contains(cityPart1)) {
+                return true
+            }
+        }
         return false
     }
 
@@ -3022,7 +3029,7 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         val list = remoteUsers ?: return emptyList()
         val myId = _uiState.value.myLovyId
         val myCity = _uiState.value.userProfile.city.trim().ifBlank {
-            _uiState.value.currentGpsLocation?.cityName?.trim() ?: "Jakarta Selatan"
+            _uiState.value.currentGpsLocation?.cityName?.trim().orEmpty()
         }
 
         val allRealUsers = list

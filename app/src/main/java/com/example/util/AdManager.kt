@@ -164,6 +164,14 @@ object AdManager {
                 Log.d(TAG, "Yandex Mobile Ads init note: ${t.message}")
             }
 
+            // Initialize Meta Audience Network (Facebook Ads) to warm up mediation network
+            try {
+                com.facebook.ads.AudienceNetworkAds.initialize(activity)
+                Log.d(TAG, "Meta Audience Network SDK initialized for ironSource mediation")
+            } catch (t: Throwable) {
+                Log.d(TAG, "Meta Audience Network init note: ${t.message}")
+            }
+
             // Initialize IronSource with Banner, Interstitial, Rewarded Video, and Native Ad
             IronSource.init(
                 activity,

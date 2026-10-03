@@ -133,9 +133,9 @@ dependencies {
 
   // ironSource Mediation SDK
   implementation("com.ironsource.sdk:mediationsdk:8.6.0")
-  // Pangle Adapter & SDK untuk Mediasi ironSource
-  implementation("com.ironsource.adapters:pangleadapter:4.3.36")
-  implementation("com.pangle.global:ads-sdk:6.3.0.9")
+  // Meta Audience Network (Facebook Ads) Adapter & SDK
+  implementation("com.ironsource.adapters:facebookadapter:4.3.52")
+  implementation("com.facebook.android:audience-network-sdk:6.18.0")
   // Yandex Ads & ironSource Adapter
   implementation("com.yandex.android:mobileads:7.12.0")
   implementation("com.yandex.ads.adapter:ironsource-mobileads:7.9.0.0")

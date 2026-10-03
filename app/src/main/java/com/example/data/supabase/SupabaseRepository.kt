@@ -117,7 +117,7 @@ class SupabaseRepository {
                             bio = dto.bio ?: "",
                             avatarColorHex = dto.avatarHex ?: 0xFF2E7D32,
                             isOnline = isTrulyOnline,
-                            city = dto.city?.takeIf { it.isNotBlank() } ?: "Indonesia",
+                            city = dto.city?.takeIf { it.isNotBlank() } ?: "Global",
                             avatarUrl = dto.avatarUrl
                         )
                     }
@@ -155,7 +155,7 @@ class SupabaseRepository {
                     bio = dto.bio ?: "",
                     avatarColorHex = dto.avatarHex ?: 0xFF2E7D32,
                     isOnline = isTrulyOnline,
-                    city = dto.city?.takeIf { it.isNotBlank() } ?: "Indonesia",
+                    city = dto.city?.takeIf { it.isNotBlank() } ?: "Global",
                     avatarUrl = dto.avatarUrl
                 )
             } else {
