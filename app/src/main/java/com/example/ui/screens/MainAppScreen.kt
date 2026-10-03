@@ -336,6 +336,7 @@ fun MainAppScreen(
                 language = uiState.language,
                 moments = uiState.moments,
                 myMomentIds = uiState.myMomentIds,
+                initialOnlyMyMoments = uiState.momentsFilterOnlyMine,
                 momentComments = uiState.momentComments,
                 currentUserId = uiState.myLovyId,
                 currentUserName = uiState.myName,
@@ -680,7 +681,7 @@ fun MainAppScreen(
                             },
                             onNavigateToMoments = {
                                 viewModel.refreshMoments(force = false)
-                                viewModel.navigateTo(CurrentScreen.Moments)
+                                viewModel.navigateToMoments(onlyMyMoments = false)
                             }
                         )
                         3 -> ProfileTabScreen(
@@ -710,7 +711,7 @@ fun MainAppScreen(
                                 viewModel.navigateTo(CurrentScreen.Bottle)
                             },
                             onNavigateToMoments = {
-                                viewModel.navigateTo(CurrentScreen.Moments)
+                                viewModel.navigateToMoments(onlyMyMoments = true)
                             },
                             onNavigateToSupabaseConfig = {
                                 viewModel.navigateTo(CurrentScreen.SupabaseConfig)

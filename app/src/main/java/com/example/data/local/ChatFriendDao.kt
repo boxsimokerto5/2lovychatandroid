@@ -30,7 +30,7 @@ interface ChatFriendDao {
     @Query("DELETE FROM chat_friends")
     suspend fun deleteAllFriends()
 
-    @Query("DELETE FROM chat_friends WHERE id LIKE 'u%' OR id LIKE 'test_%' OR lower(id) LIKE '%dummy%' OR trim(name) = '' OR name IS NULL OR lower(name) IN ('siti rahma', 'rian pratama', 'nadia putri', 'dimas anggara', 'alya zahra', 'pengguna lovy', 'rania putri', 'clara monica', 'dimas danendra', 'clarissa aurelia', 'salma salsabil', 'tanpa nama', 'user tak bernama', 'pengguna')")
+    @Query("DELETE FROM chat_friends WHERE id LIKE 'u%' OR id LIKE 'test_%' OR lower(id) LIKE '%dummy%' OR id LIKE '__%' OR id = 'dpjh5vim92i9xy9' OR lower(id) LIKE '%app_config%' OR trim(name) = '' OR name IS NULL OR lower(name) LIKE '%app config%' OR lower(name) LIKE '%system app%' OR lower(name) IN ('siti rahma', 'rian pratama', 'nadia putri', 'dimas anggara', 'alya zahra', 'pengguna lovy', 'rania putri', 'clara monica', 'dimas danendra', 'clarissa aurelia', 'salma salsabil', 'tanpa nama', 'user tak bernama', 'pengguna', 'system app config')")
     suspend fun deleteDummyFriends()
 
     @Query("DELETE FROM chat_friends WHERE (trim(:myId) != '' AND id = :myId) OR (trim(:myName) != '' AND lower(trim(name)) = lower(trim(:myName))) OR (trim(:myDisplayName) != '' AND lower(trim(name)) = lower(trim(:myDisplayName))) OR (trim(:username) != '' AND lower(trim(name)) = lower(trim(:username))) OR id = 'me' OR id = 'current_user'")

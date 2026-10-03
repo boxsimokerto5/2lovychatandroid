@@ -1630,17 +1630,17 @@ fun AboutAppDialog(
                         color = NeutralDark
                     )
 
-                    // Version Tag with Secret Tap (5x) for server settings
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = EmeraldGreen.copy(alpha = 0.12f),
+                    // Version Tag with Secret Tap (50x) for server settings - tanpa background & tanpa denyut ripple
+                    Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(16.dp))
-                            .clickable {
+                            .clickable(
+                                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                indication = null
+                            ) {
                                 val now = System.currentTimeMillis()
-                                if (now - lastDevClick < 800L) {
+                                if (now - lastDevClick < 1200L) {
                                     devClickCount++
-                                    if (devClickCount >= 5) {
+                                    if (devClickCount >= 50) {
                                         devClickCount = 0
                                         Toast.makeText(context, "Mode Pengembang: Pengaturan Server ☁️", Toast.LENGTH_SHORT).show()
                                         onOpenServerConfig()
@@ -1650,13 +1650,13 @@ fun AboutAppDialog(
                                 }
                                 lastDevClick = now
                             }
+                            .padding(vertical = 2.dp)
                     ) {
                         Text(
                             text = com.example.util.AppStrings.aboutAppVersionBadge(language),
-                            fontSize = 11.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = EmeraldGreen,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = NeutralMedium
                         )
                     }
 

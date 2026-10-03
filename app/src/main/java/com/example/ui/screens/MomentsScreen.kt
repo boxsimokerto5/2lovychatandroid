@@ -53,8 +53,10 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Share
@@ -144,6 +146,7 @@ fun MomentsScreen(
     currentUserProfile: UserProfile = UserProfile(),
     blockedUserIds: Set<String> = emptySet(),
     language: AppLanguage = AppLanguage.INDONESIAN,
+    initialOnlyMyMoments: Boolean = false,
     onBack: () -> Unit,
     onToggleLike: (String) -> Unit,
     onAddComment: ((momentId: String, text: String) -> Unit)? = null,
@@ -161,6 +164,7 @@ fun MomentsScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    var filterOnlyMyMoments by remember(initialOnlyMyMoments) { mutableStateOf(initialOnlyMyMoments) }
     var showPostDialog by remember { mutableStateOf(false) }
     var reportingMoment by remember { mutableStateOf<MomentItem?>(null) }
     var selectedUserForProfile by remember { mutableStateOf<User?>(null) }
@@ -314,13 +318,13 @@ fun MomentsScreen(
                 title = {
                     Column {
                         Text(
-                            text = AppStrings.momentsTitle(language),
+                            text = if (filterOnlyMyMoments) AppStrings.menuMyMoments(language) else AppStrings.momentsTitle(language),
                             fontSize = 19.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
                         Text(
-                            text = AppStrings.momentsSubtitle(language),
+                            text = if (filterOnlyMyMoments) AppStrings.menuMyMomentsSub(language) else AppStrings.momentsSubtitle(language),
                             fontSize = 11.5.sp,
                             color = Color.White.copy(alpha = 0.85f)
                         )
@@ -387,13 +391,22 @@ fun MomentsScreen(
         containerColor = ScreenBackground,
         modifier = modifier.fillMaxSize()
     ) { paddingValues ->
-        val displayMoments = remember(moments) {
-            moments.filterNot { 
+        val displayMoments = remember(moments, myMomentIds, currentUserId, currentUserName, filterOnlyMyMoments) {
+            val base = moments.filterNot { 
                 it.authorName.contains("test", ignoreCase = true) ||
                 it.authorName.contains("tester", ignoreCase = true) ||
                 it.authorName.contains("dummy", ignoreCase = true) ||
                 it.authorId.contains("test", ignoreCase = true) ||
                 it.authorId.startsWith("test_")
+            }
+            if (filterOnlyMyMoments) {
+                base.filter { moment ->
+                    (currentUserId.isNotBlank() && (moment.authorId == currentUserId || moment.authorId.equals(currentUserId, ignoreCase = true))) ||
+                    myMomentIds.contains(moment.id) ||
+                    (currentUserName.isNotBlank() && moment.authorName.equals(currentUserName, ignoreCase = true))
+                }
+            } else {
+                base
             }
         }
         LazyColumn(
@@ -403,11 +416,94 @@ fun MomentsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            // Tab Switcher: [Semua Momen (Publik)] vs [Momen Saya (Pribadi)]
+            item {
+                Card(
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 2.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        // Tab 1: Semua Momen (Komunitas / Temuan)
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (!filterOnlyMyMoments) EmeraldGreen else Color.Transparent,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable { filterOnlyMyMoments = false }
+                                .testTag("tab_all_moments")
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(vertical = 10.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Explore,
+                                    contentDescription = null,
+                                    tint = if (!filterOnlyMyMoments) Color.White else NeutralMedium,
+                                    modifier = Modifier.size(17.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = if (language == AppLanguage.INDONESIAN) "Semua Momen" else "All Moments",
+                                    fontSize = 13.5.sp,
+                                    fontWeight = if (!filterOnlyMyMoments) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (!filterOnlyMyMoments) Color.White else NeutralDark
+                                )
+                            }
+                        }
+
+                        // Tab 2: Momen Saya (Pribadi)
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (filterOnlyMyMoments) EmeraldGreen else Color.Transparent,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable { filterOnlyMyMoments = true }
+                                .testTag("tab_my_moments")
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(vertical = 10.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = if (filterOnlyMyMoments) Color.White else NeutralMedium,
+                                    modifier = Modifier.size(17.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = AppStrings.menuMyMoments(language),
+                                    fontSize = 13.5.sp,
+                                    fontWeight = if (filterOnlyMyMoments) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (filterOnlyMyMoments) Color.White else NeutralDark
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             // Header information strip
             item {
                 Card(
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (filterOnlyMyMoments) Color(0xFFFFF3E0) else Color(0xFFE8F5E9)
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -416,13 +512,23 @@ fun MomentsScreen(
                             .padding(horizontal = 14.dp, vertical = 11.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(text = "✨", fontSize = 16.sp)
+                        Text(text = if (filterOnlyMyMoments) "📸" else "✨", fontSize = 16.sp)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = AppStrings.momentsViewingCount(language, displayMoments.size),
+                            text = if (filterOnlyMyMoments) {
+                                if (language == AppLanguage.INDONESIAN) {
+                                    if (displayMoments.isEmpty()) "Anda belum memiliki momen yang dibagikan"
+                                    else "Menampilkan ${displayMoments.size} momen yang Anda bagikan"
+                                } else {
+                                    if (displayMoments.isEmpty()) "You haven't shared any moments yet"
+                                    else "Viewing ${displayMoments.size} moments shared by you"
+                                }
+                            } else {
+                                AppStrings.momentsViewingCount(language, displayMoments.size)
+                            },
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF2E7D32)
+                            color = if (filterOnlyMyMoments) Color(0xFFE65100) else Color(0xFF2E7D32)
                         )
                     }
                 }
@@ -437,21 +543,29 @@ fun MomentsScreen(
                             .padding(vertical = 48.dp, horizontal = 24.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.CameraAlt,
+                            imageVector = if (filterOnlyMyMoments) Icons.Default.Person else Icons.Default.CameraAlt,
                             contentDescription = null,
                             tint = EmeraldGreen.copy(alpha = 0.6f),
                             modifier = Modifier.size(56.dp)
                         )
                         Spacer(modifier = Modifier.height(14.dp))
                         Text(
-                            text = AppStrings.momentsEmptyTitle(language),
+                            text = if (filterOnlyMyMoments) {
+                                if (language == AppLanguage.INDONESIAN) "Belum Ada Momen Anda" else "No Moments Shared by You"
+                            } else {
+                                AppStrings.momentsEmptyTitle(language)
+                            },
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = NeutralDark
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = AppStrings.momentsEmptyDesc(language),
+                            text = if (filterOnlyMyMoments) {
+                                if (language == AppLanguage.INDONESIAN) "Ketuk tombol kamera oranye di kanan bawah untuk membagikan foto atau cerita pertama Anda!" else "Tap the orange camera button below to share your first photo or story!"
+                            } else {
+                                AppStrings.momentsEmptyDesc(language)
+                            },
                             fontSize = 13.sp,
                             color = NeutralMedium,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,

@@ -92,6 +92,11 @@ fun ActivityNotificationsBottomSheet(
         notifications.count { !it.isRead }
     }
 
+    // Otomatis tandai semua notifikasi sudah dibaca saat lembar notifikasi dibuka
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        onMarkAllAsRead()
+    }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,

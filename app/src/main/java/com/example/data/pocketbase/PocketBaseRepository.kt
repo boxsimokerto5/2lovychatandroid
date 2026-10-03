@@ -75,16 +75,29 @@ class PocketBaseRepository {
                     val cleanName = (record.name ?: "").trim()
                     val lower = cleanName.lowercase()
                     val userLower = (record.username ?: "").lowercase().trim()
+                    val bioLower = (record.bio ?: "").lowercase()
+
+                    val isSystemConfig = record.username?.startsWith("__") == true ||
+                            userLower.contains("app_config") ||
+                            userLower.contains("system") ||
+                            lower.contains("app config") ||
+                            lower.contains("system app") ||
+                            bioLower.contains("min_code") ||
+                            bioLower.contains("latest_code") ||
+                            record.id == "dpjh5vim92i9xy9"
+
                     val isTestAccount = lower.contains("test") || lower.contains("tester") || lower.contains("dummy") || userLower.contains("test") || userLower.contains("dummy")
                     val isDummy = cleanName.isEmpty() ||
                             lower in dummyNames ||
                             isTestAccount ||
                             record.id.matches(Regex("^u[0-9]+$")) ||
                             record.id.startsWith("test_")
-                    if (isDummy && record.id.isNotBlank()) {
+
+                    if (!isSystemConfig && isDummy && record.id.isNotBlank()) {
                         toDeleteUserIds.add(record.id)
                     }
-                    isDummy
+
+                    isSystemConfig || isDummy
                 }.map { record ->
                     val lastActive = record.lastActiveAt ?: 0L
                     val isTrulyOnline = (record.isOnline == true) && (now - lastActive <= ONLINE_TIMEOUT_MS)
@@ -126,6 +139,21 @@ class PocketBaseRepository {
                 val query = api.getUsers(perPage = 1, filter = "id='$pbId' || id='$userId' || username='$userId' || username='$pbId'")
                 query.body()?.items?.firstOrNull()
             } ?: return@withContext null
+
+            // Tolak akun konfigurasi sistem
+            val uLower = (record.username ?: "").lowercase().trim()
+            val nLower = (record.name ?: "").lowercase().trim()
+            val bLower = (record.bio ?: "").lowercase()
+            if (record.username?.startsWith("__") == true ||
+                uLower.contains("app_config") ||
+                uLower.contains("system") ||
+                nLower.contains("app config") ||
+                nLower.contains("system app") ||
+                bLower.contains("min_code") ||
+                bLower.contains("latest_code") ||
+                record.id == "dpjh5vim92i9xy9") {
+                return@withContext null
+            }
 
             val now = System.currentTimeMillis()
             val lastActive = record.lastActiveAt ?: 0L

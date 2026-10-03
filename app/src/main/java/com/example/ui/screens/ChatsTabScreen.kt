@@ -222,7 +222,10 @@ fun ChatsTabScreen(
                             modifier = Modifier.padding(end = 4.dp)
                         ) {
                             IconButton(
-                                onClick = { showNotificationsSheet = true },
+                                onClick = { 
+                                    showNotificationsSheet = true 
+                                    onMarkAllNotificationsAsRead?.invoke()
+                                },
                                 modifier = Modifier
                                     .size(34.dp)
                                     .testTag("btn_top_notifications")

@@ -113,7 +113,8 @@ data class LovyChatUiState(
     val showOnlineStatus: Boolean = true,
     val fcmToken: String = "",
     val typingMap: Map<String, Boolean> = emptyMap(),
-    val activityNotifications: List<com.example.model.ActivityNotification> = emptyList()
+    val activityNotifications: List<com.example.model.ActivityNotification> = emptyList(),
+    val momentsFilterOnlyMine: Boolean = false
 )
 
 class LovyChatViewModel(application: Application) : AndroidViewModel(application) {
@@ -710,14 +711,30 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             ?: _uiState.value.nearbyUsers.find { isSameUser(it.id, queryId) }
     }
 
-    fun isDummyFriend(userId: String, userName: String): Boolean {
+    fun isDummyFriend(userId: String, userName: String, bio: String = ""): Boolean {
         val cleanName = userName.trim().lowercase()
+        val cleanId = userId.trim().lowercase()
+        val cleanBio = bio.trim().lowercase()
         if (cleanName.isBlank()) return true // Tolak user tak bernama
+
+        // Tolak akun data konfigurasi sistem aplikasi (__APP_CONFIG__ / System App Config)
+        if (cleanId.startsWith("__") || 
+            cleanId.contains("app_config") || 
+            cleanId == "dpjh5vim92i9xy9" ||
+            cleanName.contains("app config") || 
+            cleanName.contains("system app") || 
+            cleanName == "system app config" ||
+            cleanBio.contains("min_code") ||
+            cleanBio.contains("latest_code")) {
+            return true
+        }
+
         val dummyNames = setOf(
             "siti rahma", "rian pratama", "nadia putri", "dimas anggara", 
             "alya zahra", "pengguna lovy", "rania putri", "clara monica",
             "dimas danendra", "clarissa aurelia", "salma salsabil",
-            "tanpa nama", "user tak bernama", "pengguna", "unknown user", "anonymous"
+            "tanpa nama", "user tak bernama", "pengguna", "unknown user", "anonymous",
+            "system app config", "app config"
         )
         val isMockId = userId.matches(Regex("^u[0-9]+$")) || userId.startsWith("test_") || userId.contains("dummy", ignoreCase = true)
         return isMockId || dummyNames.contains(cleanName)
@@ -896,9 +913,11 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         // Tambahkan notifikasi aktivitas ringan untuk permintaan teman baru
         val currentLang = _uiState.value.language
         for (req in sortedList.take(3)) {
+            val reqPartnerId = req.user.id.ifBlank { req.id }
+            if (isIgnoredFriendRequest(reqPartnerId, req.user.name) || isSelfUser(reqPartnerId, req.user.name)) continue
             addActivityNotification(
                 com.example.model.ActivityNotification(
-                    id = "friend_req_${req.id}",
+                    id = "friend_req_$reqPartnerId",
                     title = com.example.util.AppStrings.notifFriendRequestTitle(currentLang),
                     message = com.example.util.AppStrings.notifFriendRequestDesc(currentLang, req.user.name),
                     timestamp = req.timestamp,
@@ -1015,10 +1034,17 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
             } else {
                 listOf(newConv) + state.conversations
             }
+            val updatedNotifs = state.activityNotifications.filterNot { notif ->
+                notif.category == com.example.model.NotificationCategory.FRIEND && (
+                    notif.id.contains(user.id) ||
+                    (notif.senderName?.equals(user.name, ignoreCase = true) == true)
+                )
+            }
             state.copy(
                 chattedFriends = updatedFriends.filterNot { isSelfUser(it.id, it.name) },
                 newFriendRequests = state.newFriendRequests.filterNot { isSameUser(it.user.id, user.id) || isSelfUser(it.user.id, it.user.name) },
-                conversations = updatedConvs
+                conversations = updatedConvs,
+                activityNotifications = updatedNotifs
             )
         }
     }
@@ -1170,11 +1196,21 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
                 conv.partnerId == resolvedReqId ||
                 (resolvedName.isNotBlank() && conv.partnerName.equals(resolvedName, ignoreCase = true))
             }
+            val updatedNotifs = current.activityNotifications.filterNot { notif ->
+                notif.category == com.example.model.NotificationCategory.FRIEND && (
+                    (resolvedUserId.isNotBlank() && notif.id.contains(resolvedUserId)) ||
+                    (resolvedReqId.isNotBlank() && notif.id.contains(resolvedReqId)) ||
+                    (resolvedName.isNotBlank() && notif.senderName?.equals(resolvedName, ignoreCase = true) == true) ||
+                    (resolvedName.isNotBlank() && notif.message.contains(resolvedName, ignoreCase = true)) ||
+                    (resolvedUserId.isNotBlank() && isIgnoredFriendRequest(resolvedUserId, resolvedName))
+                )
+            }
             current.copy(
                 ignoredNewFriendIds = HashSet(ignoredFriendRequestIds),
                 ignoredNewFriendNames = HashSet(ignoredFriendRequestNames),
                 newFriendRequests = updatedReqs,
-                conversations = updatedConvs
+                conversations = updatedConvs,
+                activityNotifications = updatedNotifs
             )
         }
     }
@@ -1318,9 +1354,21 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
         }
         _uiState.update { state ->
             val updated = state.chattedFriends
-                .filterNot { isDummyFriend(it.id, it.name) }
+                .filterNot { isDummyFriend(it.id, it.name, it.bio) }
                 .filterNot { isSelfUser(it.id, it.name) }
-            state.copy(chattedFriends = updated)
+            val updatedNearby = state.nearbyUsers
+                .filterNot { isDummyFriend(it.id, it.name, it.bio) }
+                .filterNot { isSelfUser(it.id, it.name) }
+            val updatedReqs = state.newFriendRequests
+                .filterNot { isDummyFriend(it.user.id, it.user.name, it.user.bio) || isDummyFriend(it.id, it.user.name) }
+            val updatedConvs = state.conversations
+                .filterNot { isDummyFriend(it.partnerId, it.partnerName) }
+            state.copy(
+                chattedFriends = updated,
+                nearbyUsers = updatedNearby,
+                newFriendRequests = updatedReqs,
+                conversations = updatedConvs
+            )
         }
     }
 
@@ -2746,6 +2794,11 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
     fun navigateTo(screen: CurrentScreen) {
         recordFeatureClick()
         _uiState.update { it.copy(currentScreen = screen) }
+    }
+
+    fun navigateToMoments(onlyMyMoments: Boolean = false) {
+        recordFeatureClick()
+        _uiState.update { it.copy(momentsFilterOnlyMine = onlyMyMoments, currentScreen = CurrentScreen.Moments) }
     }
 
     fun navigateBack() {
@@ -4929,18 +4982,21 @@ class LovyChatViewModel(application: Application) : AndroidViewModel(application
 
                 // Tambahkan notifikasi aktivitas untuk pesan teman baru
                 val currentLang = _uiState.value.language
-                addActivityNotification(
-                    com.example.model.ActivityNotification(
-                        id = "friend_req_${partnerId}_${lastMsg.timestamp}",
-                        title = com.example.util.AppStrings.notifFriendRequestTitle(currentLang),
-                        message = com.example.util.AppStrings.notifFriendRequestDesc(currentLang, cleanPartnerName),
-                        timestamp = lastMsg.timestamp,
-                        isRead = false,
-                        category = com.example.model.NotificationCategory.FRIEND,
-                        senderName = cleanPartnerName,
-                        translationKey = "friend_request"
+                val notifId = "friend_req_$partnerId"
+                if (!isIgnoredFriendRequest(partnerId, cleanPartnerName) && !isSelfUser(partnerId, cleanPartnerName)) {
+                    addActivityNotification(
+                        com.example.model.ActivityNotification(
+                            id = notifId,
+                            title = com.example.util.AppStrings.notifFriendRequestTitle(currentLang),
+                            message = com.example.util.AppStrings.notifFriendRequestDesc(currentLang, cleanPartnerName),
+                            timestamp = lastMsg.timestamp,
+                            isRead = false,
+                            category = com.example.model.NotificationCategory.FRIEND,
+                            senderName = cleanPartnerName,
+                            translationKey = "friend_request"
+                        )
                     )
-                )
+                }
             } else {
                 // Teman yang sudah ada di daftar teman (atau obrolan yang kita inisiasi):
                 // Masuk ke obrolan seperti biasa

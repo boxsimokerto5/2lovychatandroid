@@ -150,8 +150,20 @@ object ImageCompressor {
                 }
             }
 
-            // 7. Kompresi ke format JPEG
-            var outputStream = ByteArrayOutputStream()
+            // 7. Jika gambar memiliki transparansi (misal PNG/WEBP), letakkan di latar belakang putih sebelum konversi JPEG
+            if (bitmap.hasAlpha()) {
+                val rgbBitmap = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
+                val canvas = android.graphics.Canvas(rgbBitmap)
+                canvas.drawColor(android.graphics.Color.WHITE)
+                canvas.drawBitmap(bitmap, 0f, 0f, null)
+                if (rgbBitmap != bitmap) {
+                    bitmap.recycle()
+                    bitmap = rgbBitmap
+                }
+            }
+
+            // 8. Kompresi ke format JPEG
+            val outputStream = ByteArrayOutputStream()
             bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
             var resultBytes = outputStream.toByteArray()
 

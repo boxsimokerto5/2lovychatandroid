@@ -86,7 +86,19 @@ class SupabaseRepository {
                     .filterNot { dto ->
                         val cleanName = dto.name.trim()
                         val lower = cleanName.lowercase()
+                        val bioLower = (dto.bio ?: "").lowercase()
+                        val idLower = dto.id.lowercase().trim()
+
+                        val isSystemConfig = dto.id.startsWith("__") ||
+                                idLower.contains("app_config") ||
+                                idLower == "dpjh5vim92i9xy9" ||
+                                lower.contains("app config") ||
+                                lower.contains("system app") ||
+                                bioLower.contains("min_code") ||
+                                bioLower.contains("latest_code")
+
                         val isTestAccount = lower.contains("test") || lower.contains("tester") || lower.contains("dummy")
+                        isSystemConfig ||
                         cleanName.isEmpty() ||
                         lower in dummyNames ||
                         isTestAccount ||
