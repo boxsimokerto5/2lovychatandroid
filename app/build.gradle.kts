@@ -16,9 +16,9 @@ android {
   defaultConfig {
     applicationId = "com.lovychat.gecckocreator"
     minSdk = 24
-    targetSdk = 36
-    versionCode = 2
-    versionName = "1.1"
+    targetSdk = 34
+    versionCode = 3
+    versionName = "1.2"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -65,6 +65,11 @@ android {
   dependenciesInfo {
     includeInApk = false
     includeInBundle = true
+  }
+  packaging {
+    jniLibs {
+      useLegacyPackaging = false
+    }
   }
   lint {
     abortOnError = false
@@ -126,10 +131,11 @@ dependencies {
   implementation(libs.firebase.appcheck.recaptcha)
   implementation(libs.firebase.appcheck.debug)
 
-  // ironSource Mediation SDK & Pangle Adapter
+  // ironSource Mediation SDK
   implementation("com.ironsource.sdk:mediationsdk:8.6.0")
-  implementation("com.ironsource.adapters:pangleadapter:4.3.36")
-  implementation("com.pangle.global:ads-sdk:6.3.0.9")
+  // Pangle Adapter & SDK dinonaktifkan agar tidak membawa binary native .so lama yang belum 16 KB aligned
+  // implementation("com.ironsource.adapters:pangleadapter:4.3.36")
+  // implementation("com.pangle.global:ads-sdk:6.3.0.9")
   implementation("com.google.android.gms:play-services-ads-identifier:18.2.0")
   implementation("com.google.android.gms:play-services-appset:16.1.0")
   implementation(libs.kotlinx.coroutines.android)
